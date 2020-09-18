@@ -1,3 +1,5 @@
 #ignore everything unless we add it here
 *
 !init.org
+!emacs-batch-tangle
+!tangle-init
