@@ -1,0 +1,55 @@
+
+Archived entries from file /home/n/.emacs.d/init.org
+* 2020
+** 2020-03 March
+*** 2020-03-21 Saturday
+**** DONE suggest tab-line-new-button-show on emacs-dev
+CLOSED: [2020-03-21 Sat 16:02]
+:PROPERTIES:
+:ARCHIVE_TIME: 2020-08-16 Sun 17:34
+:ARCHIVE_FILE: ~/.emacs.d/init.org
+:ARCHIVE_OLPATH: Packages/tab-line
+:ARCHIVE_CATEGORY: init
+:ARCHIVE_TODO: DONE
+:END:
+- State "STARTED"    from "TODO"       [2020-03-18 Wed 12:27]
+
+Archived entries from file /home/n/.emacs.d/init.org
+
+**** DONE suggest tab-line-new-button-show on emacs-dev
+CLOSED: [2020-03-21 Sat 16:02]
+:PROPERTIES:
+:ARCHIVE_TIME: 2020-08-16 Sun 17:34
+:ARCHIVE_FILE: ~/.emacs.d/init.org
+:ARCHIVE_OLPATH: Packages/tab-line
+:ARCHIVE_CATEGORY: init
+:ARCHIVE_TODO: DONE
+:END:
+- State "STARTED"    from "TODO"       [2020-03-18 Wed 12:27]
+** 2020-08 August
+*** 2020-08-16 Sunday
+**** DONE minor-mode bindings?
+CLOSED: [2020-08-16 Sun 21:09]
+:PROPERTIES:
+:ARCHIVE_TIME: 2020-08-16 Sun 21:09
+:ARCHIVE_FILE: ~/.emacs.d/init.org
+:ARCHIVE_OLPATH: Packages/general (key-bindings)
+:ARCHIVE_CATEGORY: init
+:ARCHIVE_TODO: DONE
+:END:
+- Note taken on [2018-05-30 Wed 12:49] \\
+My initial attempt involved defining a global-leader prefix under ',' and
+binding mode specific keys under that. The problem is, all the minor-mode
+keybindings share the same key map. I looked into how Spacemacs handles this sort
+of thing. The solution may be to define a key map per minor-mode and just remap
+the global-leader prefix to point to that map within my global-prefix (space) and
+in evil's states. I may be able to dynamically bind the minor-mode bindings
+based on the mode name. The idea would be something like this:
+#+begin_example emacs-lisp
+;;major or minor mode? Research this
+(define-keymap (concat (current-major-mode-name) "-map"))
+(defun get-minor-mode-keymap ()
+"Returns the keymap associated with the current major mode")
+;;then in the Global map/global-prefix map
+(genral-def "," 'get-minor-mode-keymap)
+#+end_example
