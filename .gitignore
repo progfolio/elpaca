@@ -1,5 +1,8 @@
 #ignore everything unless we add it here
 *
+#whitelist
+!*/
 !init.org
 !emacs-batch-tangle
 !tangle-init
+!/lisp/**
