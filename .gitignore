@@ -3,6 +3,7 @@
 #whitelist
 !*/
 !init.org
+!init-dev.el
 !README.org
 !emacs-batch-tangle
 !tangle-init
