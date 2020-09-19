@@ -26,6 +26,17 @@ CLOSED: [2020-03-21 Sat 16:02]
 :ARCHIVE_TODO: DONE
 :END:
 - State "STARTED"    from "TODO"       [2020-03-18 Wed 12:27]
+**** DONE suggest tab-line-new-button-show on emacs-dev
+CLOSED: [2020-03-21 Sat 16:02]
+:PROPERTIES:
+:ARCHIVE_TIME: 2020-09-19 Sat 02:39
+:ARCHIVE_FILE: ~/.emacs.d/init.org
+:ARCHIVE_OLPATH: Packages/tab-line
+:ARCHIVE_CATEGORY: init
+:ARCHIVE_TODO: DONE
+:END:
+- State "STARTED"    from "TODO"       [2020-03-18 Wed 12:27]
+
 ** 2020-08 August
 *** 2020-08-16 Sunday
 **** DONE minor-mode bindings?
