@@ -8,3 +8,5 @@
 !/lisp/**
 !/themes/**
 !/snippets/**
+
+/straight/**
