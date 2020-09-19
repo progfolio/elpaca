@@ -1,4 +1,4 @@
-;-*- eval: (progn (rainbow-mode) (add-hook 'after-save-hook (lambda () (my/change-theme (intern-soft (replace-regexp-in-string "-theme\.el" "" (buffer-name))))) nil t));   -*-
+;-*- eval: (progn (rainbow-mode) (fontify-face-mode) (add-hook 'after-save-hook (lambda () (my/change-theme (intern-soft (replace-regexp-in-string "-theme\.el" "" (buffer-name))))) nil t));   -*-
 ;;; mine-theme.el --- My personal theme
 
 ;;; Commentary:
@@ -20,7 +20,7 @@
                  (yellow      "#AFA27C"      "#C6B78D")))
 
        (faces '(;; basics
-                (cursor  :background ,green)
+                (cursor  :background ,green :foreground ,dark-purple :weight bold)
                 (default :background ,purple :foreground ,yellow :weight normal :height 97)
                 ;;not sure about this yet
                 (fringe :inherit default)
@@ -84,7 +84,7 @@
                 (font-lock-warning-face :foreground ,red :bold t)
                 ;;search/replace
                 (lazy-highlight :inherit hl-line :box t)
-                (query-replace :background ,yellow :foreground ,dark-purple :box t)
+                (query-replace :background ,yellow :foreground ,dark-purple :box t :weight bold)
                 (isearch :inherit hl-line :box t)
                 (evil-ex-substitute-replacement :background ,green :foreground ,purple :weight bold :slant italic :box t)
                 ;;mu4e
@@ -140,8 +140,8 @@
                 ;; minibuffer
                 (minibuffer-prompt :foreground ,green :bold t)
                 ;; company
-                (company-echo-common :foreground ,gray :background ,green)
-                (company-preview :background ,gray :foreground ,lavender)
+                (company-echo-common :foreground ,dark-purple :background ,green :weight bold)
+                (company-preview :background ,dark-purple :foreground ,lavender :weight bold)
                 (company-preview-common :foreground ,purple :foreground ,green)
                 (company-preview-search :inherit highlight)
                 (company-scrollbar-bg :background "#0B0B11")
