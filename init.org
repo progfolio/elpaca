@@ -2516,6 +2516,7 @@ https://github.com/alphapapa/org-make-toc
 #+end_quote
 #+begin_src emacs-lisp
 (use-package org-make-toc
+  :straight '(:fork (:repo "progfolio/org-make-toc"))
   :commands (org-make-toc))
 #+end_src
 ** org-region-link
