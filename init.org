@@ -445,6 +445,7 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
         :which-key "other-buffer")
   "p"  'previous-buffer
   "r"  'rename-buffer
+  "R"  'revert-buffer
   "M" '((lambda () (interactive) (switch-to-buffer "*Messages*"))
         :which-key "messages-buffer")
   "n"  'next-buffer
