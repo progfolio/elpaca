@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: clock-report
+# key: clk
+# --
+** [20$1-$2-$3--20$1-$4-$5]
+#+BEGIN: clocktable :maxlevel 3 :tstart "<20${1:YY}-${2:MM}-${3:DD}>" :tend "<20$1-${4:MM}-${5:DD}>" :scope ("~/Documents/todo/archives/work.org") :compact t
+$0
+#+TBLFM: \$4='(format "%0.2f" (* 12.00 (string-to-number \$3)))::@2\$4=@4\$4::@3\$4=@4\$4::@1\$4='(message "Pay")
+#+END: clocktable

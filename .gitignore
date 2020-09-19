@@ -7,3 +7,4 @@
 !tangle-init
 !/lisp/**
 !/themes/**
+!/snippets/**
