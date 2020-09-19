@@ -164,6 +164,10 @@ The following line turns on lexical binding for performance reasons.
 #+end_src
 
 ** Straight package manager
+#+begin_quote
+straight.el: next-generation, purely functional package manager for the Emacs hacker.
+https://github.com/raxod502/straight.el
+#+end_quote
 
 Bootstrap straight
 #+begin_src emacs-lisp
@@ -272,6 +276,10 @@ I keep my sensitive, personal information in a separate file so I can publish th
 :CUSTOM_ID: init-packages
 :END:
 ** evil
+#+begin_quote
+Evil is an extensible vi layer for Emacs. It emulates the main features of Vim, and provides facilities for writing custom extensions.
+https://github.com/emacs-evil/evil
+#+end_quote
 #+begin_src emacs-lisp
 (use-package evil
   :demand t
@@ -289,34 +297,6 @@ I keep my sensitive, personal information in a separate file so I can publish th
   <<+evil-kill-minibuffer>>
   :hook (after-init . evil-mode))
 #+end_src
-*** evil-anzu-mode
-Shows match counts in mode line.
-#+begin_src emacs-lisp
-(use-package evil-anzu
-  :defer 10
-  :config (global-anzu-mode))
-#+end_src
-*** evil-collection
-:PROPERTIES:
-:ID:       fe31fb46-abb8-4f19-ac06-9f1fd3b90f22
-:END:
-#+begin_src emacs-lisp
-(use-package evil-collection
-  :after (evil)
-  :config (evil-collection-init)
-  :custom
-  (evil-collection-setup-minibuffer t "Add evil bindings to minibuffer")
-  (evil-collection-company-use-tng t))
-#+end_src
-*** TODO evil/general interaction bug
-When loading evil after general Emacs takes roughly 7 times longer to start.
-I've culled both packages down to the bare minimum and can't reproduce.
-Culling evil to its bare minimum still exhibits the problem, so I suspect it lies in general's configuration.
-For now, I'll just load evil before general.
-There are a couple of keybindings that should be in evil's use-package form that are in general's until I solve the problem.
-
-Keep an eye on: https://github.com/noctuid/general.el/issues/180
-
 *** Evil mini-buffer bug
 :PROPERTIES:
 :header-args: :noweb-ref +evil-kill-minibuffer
@@ -338,11 +318,54 @@ Apparently this is a workaround:
 #+end_src
 
 Not sure why that hook is appropriate, but calling =evil-ex-search-exit= manually solves the issue as well.
+*** TODO evil/general interaction bug
+When loading evil after general Emacs takes roughly 7 times longer to start.
+I've culled both packages down to the bare minimum and can't reproduce.
+Culling evil to its bare minimum still exhibits the problem, so I suspect it lies in general's configuration.
+For now, I'll just load evil before general.
+There are a couple of keybindings that should be in evil's use-package form that are in general's until I solve the problem.
+
+Keep an eye on: https://github.com/noctuid/general.el/issues/180
+
+*** evil-anzu-mode
+#+begin_quote
+anzu for evil-mode
+https://github.com/emacsorphanage/evil-anzu
+#+end_quote
+
+Shows match counts in mode line.
+#+begin_src emacs-lisp
+(use-package evil-anzu
+  :defer 10
+  :config (global-anzu-mode))
+#+end_src
+*** evil-collection
+:PROPERTIES:
+:ID:       fe31fb46-abb8-4f19-ac06-9f1fd3b90f22
+:END:
+#+begin_quote
+This is a collection of Evil bindings for the parts of Emacs that Evil does not cover properly by default,This is a collection of Evil bindings for the parts of Emacs that Evil does not cover properly by default.
+https://github.com/emacs-evil/evil-collection
+#+end_quote
+#+begin_src emacs-lisp
+(use-package evil-collection
+  :after (evil)
+  :config (evil-collection-init)
+  :custom
+  (evil-collection-setup-minibuffer t "Add evil bindings to minibuffer")
+  (evil-collection-company-use-tng t))
+#+end_src
 ** general (key-bindings)
 :PROPERTIES:
 :CUSTOM_ID: key-bindings
 :END:
+#+begin_quote
+general.el provides a more convenient method for binding keys in emacs (for both evil and non-evil users).
+https://github.com/noctuid/general.el#about
+#+end_quote
+
 Load general before the remaining packages so they can make use of the ~:general~ keyword in their declarations.
+
 #+begin_src emacs-lisp
 (use-package general
   :demand t
@@ -571,6 +594,10 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
 #+end_src
 *** TODO org-mode meta-mappings á la Spacemacs. C - F 'clever-insert' in Spacemacs source.
 ** afternoon-theme
+#+begin_quote
+Dark color theme with a deep blue background
+https://github.com/osener/emacs-afternoon-theme
+#+end_quote
 #+begin_src emacs-lisp
 (use-package afternoon-theme :defer t)
 #+end_src
@@ -601,8 +628,7 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
   (add-hook 'before-save-hook '+asm-before-save-hook))
 #+end_src
 ** auto-fill-mode
-I usually want prose to split at 80 chars (Emacs defaults to 70).
-I'd rather have to toggle it off than on.
+I usually want lines to wrap at 80 chars (Emacs defaults to 70).
 #+begin_src emacs-lisp
 (use-feature simple
   :general
@@ -630,11 +656,21 @@ It also helps if multiple instances of Emacs are editing the same file.
   :commands (auto-tangle-mode))
 #+end_src
 ** buttercup
+#+begin_quote
+Buttercup is a behavior-driven development framework for testing Emacs Lisp code.
+https://github.com/jorgenschaefer/emacs-buttercup
+#+end_quote
 #+begin_src emacs-lisp
 (use-package buttercup
   :commands (buttercup-run-at-point))
 #+end_src
 ** company
+#+begin_quote
+Company is a text completion framework for Emacs.
+The name stands for "complete anything".
+It uses pluggable back-ends and front-ends to retrieve and display completion candidates.
+http://company-mode.github.io/
+#+end_quote
 #+begin_src emacs-lisp
 (use-package company
   :defer 5
@@ -703,6 +739,7 @@ It also helps if multiple instances of Emacs are editing the same file.
 ** default-text-scale
 #+begin_quote
 Easily adjust the font size in all Emacs frames
+https://github.com/purcell/default-text-scale
 #+end_quote
 #+begin_src emacs-lisp
 (use-package default-text-scale
@@ -712,11 +749,19 @@ Easily adjust the font size in all Emacs frames
               default-text-scale-increment))
 #+end_src
 ** diminish
+#+begin_quote
+This package implements hiding or abbreviation of the mode line displays (lighters) of minor-modes.
+https://github.com/emacsmirror/diminish
+#+end_quote
 #+begin_src emacs-lisp
 (use-package diminish
   :defer 10)
 #+end_src
 ** dimmer
+#+begin_quote
+Visually highlight the selected buffer.
+https://github.com/gonewest818/dimmer.el
+#+end_quote
 #+begin_src emacs-lisp
 (use-package dimmer
   :defer 5
@@ -733,12 +778,20 @@ Easily adjust the font size in all Emacs frames
   (dimmer-configure-helm))
 #+end_src
 ** doct
+#+begin_quote
+doct is a function that provides an alternative, declarative syntax for describing Org capture templates.
+https://github.com/progfolio/doct
+#+end_quote
 #+begin_src emacs-lisp
 (use-package doct
   :straight (:host github :repo "progfolio/doct" :branch "development")
   :commands (doct))
 #+end_src
 ** doom-modeline
+#+begin_quote
+A fancy and fast mode-line inspired by minimalism design.
+https://github.com/seagle0128/doom-modeline
+#+end_quote
 #+begin_src emacs-lisp
 (use-package doom-modeline
   :config
@@ -750,10 +803,18 @@ Easily adjust the font size in all Emacs frames
   (after-init . doom-modeline-mode))
 #+end_src
 ** doom-themes
+#+begin_quote
+DOOM Themes is an opinionated UI plugin and pack of themes extracted from [hlissner's] emacs.d, inspired by some of my favorite color themes.
+https://github.com/hlissner/emacs-doom-themes
+#+end_quote
 #+begin_src emacs-lisp
 (use-package doom-themes :defer t)
 #+end_src
 ** elfeed
+#+begin_quote
+Elfeed is an extensible web feed reader for Emacs, supporting both Atom and RSS.
+https://github.com/skeeto/elfeed
+#+end_quote
 I've put my elfeed database in under version control.
 I may move it from its default location (=~/.elfeed=), in =elfeed-db-directory=.
 #+begin_src emacs-lisp
@@ -847,6 +908,10 @@ These settings defined in C code, so we use the ~emacs~ pseudo-package to set th
   :commands (epoch-todo epoch-agenda-todo))
 #+end_src
 ** esup
+#+begin_quote
+Benchmark Emacs Startup time without ever leaving your Emacs.
+https://github.com/jschaf/esup
+#+end_quote
 #+begin_src emacs-lisp
 (use-package esup :commands (esup))
 #+end_src
@@ -923,7 +988,8 @@ I'd rather have everything in one folder to keep my file system tidy.
 #+end_src
 ** flycheck
 #+begin_quote
-"On the fly syntax checking"
+Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intended as replacement for the older Flymake extension which is part of GNU Emacs.
+https://www.flycheck.org/en/latest/
 #+end_quote
 #+begin_src emacs-lisp
 (use-package flycheck
@@ -967,13 +1033,19 @@ https://d12frosted.io/posts/2016-05-09-flyspell-correct-intro.html
 #+end_src
 ** fontify-face
 #+begin_quote
-Show symbols representing faces with their face.
+Fontify symbols representing faces with that face.
+https://github.com/Fuco1/fontify-face
 #+end_quote
+
 #+begin_src emacs-lisp
 (use-package fontify-face
   :commands (fontify-face-mode))
 #+end_src
 ** helm
+#+begin_quote
+Helm is an Emacs framework for incremental completions and narrowing selections.
+https://github.com/emacs-helm/helm
+#+end_quote
 #+begin_src emacs-lisp
 (use-package helm
   :init (require 'helm-config)
@@ -1015,15 +1087,19 @@ Show symbols representing faces with their face.
     "C-f" 'helm-complete-file-name-at-point))
 #+end_src
 *** helm-ag
+#+begin_quote
+helm-ag.el provides interfaces of The Silver Searcher with helm.
+https://github.com/emacsorphanage/helm-ag
+#+end_quote
 #+begin_src emacs-lisp
 (use-package helm-ag
   :commands (helm-ag helm-projectile-ag))
 #+end_src
 *** helm-describe-modes
 #+begin_quote
-"Major and minor mode info with Helm."
+helm-describe-modes provides a Helm interface to Emacs’s describe-mode.
+https://github.com/emacs-helm/helm-describe-modes
 #+end_quote
-Not sure how useful this package will be, but it should be good for educating myself while I figure Emacs out.
 #+begin_src emacs-lisp
 (use-package helm-describe-modes
   :commands (helm-describe-modes)
@@ -1034,6 +1110,10 @@ Not sure how useful this package will be, but it should be good for educating my
     "dm"  'helm-describe-modes))
 #+end_src
 *** helm-descbinds
+#+begin_quote
+Helm Descbinds provides an interface to emacs’ describe-bindings making the currently active key bindings interactively searchable with helm.
+https://github.com/emacs-helm/helm-descbinds
+#+end_quote
 #+begin_src emacs-lisp
 (use-package helm-descbinds
   :after (helm)
@@ -1057,6 +1137,10 @@ Supposedly better fuzzy finding for helm. Trying it out.
   (helm-flx-mode))
 #+end_src
 *** helm-flyspell
+#+begin_quote
+Helm extension for correcting words with Flyspell.
+https://github.com/pronobis/helm-flyspell
+#+end_quote
 #+begin_src emacs-lisp
 (use-package helm-flyspell
   :after (helm flyspell)
@@ -1065,7 +1149,10 @@ Supposedly better fuzzy finding for helm. Trying it out.
     "c" 'helm-flyspell-correct))
 #+end_src
 *** helm-org
-This allows completion for multiple tags with Helm.
+#+begin_quote
+Helm integration for org headlines and keywords.
+#+end_quote
+Necessary for completion of multiple tags with Helm.
 #+begin_src emacs-lisp
 (use-package helm-org
   :after (helm)
@@ -1088,6 +1175,11 @@ This allows completion for multiple tags with Helm.
     "r" 'helm-projectile-recentf))
 #+end_src
 *** helm-swoop
+#+begin_quote
+List match lines to another buffer, which is able to squeeze by any words you input.
+At the same time, the original buffer's cursor is jumping line to line according to moving up and down the line list.
+https://github.com/emacsorphanage/helm-swoop
+#+end_quote
 #+begin_src emacs-lisp
 (use-package helm-swoop
   :after (helm)
@@ -1102,6 +1194,10 @@ This allows completion for multiple tags with Helm.
   (help-window-select t "Always select the help window"))
 #+end_src
 ** highlight-indent-guides
+#+begin_quote
+This minor mode highlights indentation levels via font-lock.
+https://github.com/DarthFennec/highlight-indent-guides
+#+end_quote
 #+begin_src emacs-lisp
 (use-package highlight-indent-guides
   :commands
@@ -1130,12 +1226,20 @@ I've removed the default holiday lists that I don't need.
   (holiday-oriental-holidays nil))
 #+end_src
 ** htmlize
-This is necessary for org-exporting to HTML.
+#+begin_quote
+This package converts the buffer text and the associated decorations to HTML.
+https://github.com/hniksic/emacs-htmlize
+#+end_quote
+This is necessary for exporting Org files to HTML.
 #+begin_src emacs-lisp
 (use-package htmlize
   :defer t)
 #+end_src
 ** hydra
+#+begin_quote
+This is a package for GNU Emacs that can be used to tie related commands into a family of short bindings with a common prefix: a Hydra.
+https://github.com/abo-abo/hydra
+#+end_quote
 #+begin_src emacs-lisp
 (use-package hydra
   :after (general)
@@ -1175,6 +1279,10 @@ This is necessary for org-exporting to HTML.
     "." '(my/hydra-window-resize/body :which-key "window-resize")))
 #+end_src
 ** js2
+#+begin_quote
+Improved JavaScript editing mode for GNU Emacs
+https://github.com/mooz/js2-mode
+#+end_quote
 #+begin_src emacs-lisp
 (use-package js2-mode
   :commands
@@ -1188,8 +1296,14 @@ This is necessary for org-exporting to HTML.
                               (tern-mode t)
                               (add-to-list 'company-backends 'company-tern))))
 #+end_src
-*** TODO Not working with auto mode list?
+*** TODO May not need this on Emacs 27+
+Need to investigate, but js-mode might have been fixed/updated.
 ** link-hint
+#+begin_quote
+link-hint.el is inspired by the link hinting functionality in vim-like browsers and browser plugins such as pentadactyl.
+It provides commands for using avy to open, copy, or take a user-defined action on “links.”
+https://github.com/noctuid/link-hint.el
+#+end_quote
 #+begin_src emacs-lisp
 (use-package link-hint
   :general
@@ -1203,6 +1317,10 @@ This is necessary for org-exporting to HTML.
     "ya" 'link-hint-copy-multiple-links))
 #+end_src
 ** macrostep
+#+begin_quote
+macrostep is an Emacs minor mode for interactively stepping through the expansion of macros in Emacs Lisp source code.
+https://github.com/joddie/macrostep
+#+end_quote
 #+begin_src emacs-lisp
 (use-package macrostep
   :general
@@ -1216,6 +1334,10 @@ This is necessary for org-exporting to HTML.
     "mk" 'macrostep-prev-macro))
 #+end_src
 ** magit
+#+begin_quote
+Magit is an interface to the version control system Git, implemented as an Emacs package.
+https://magit.vc/
+#+end_quote
 #+begin_src emacs-lisp
 (use-package magit
   :defer t
@@ -1238,6 +1360,10 @@ This is necessary for org-exporting to HTML.
   :config)
 #+end_src
 ** markdown
+#+begin_quote
+markdown-mode is a major mode for editing Markdown-formatted text.
+https://jblevins.org/projects/markdown-mode/
+#+end_quote
 #+begin_src emacs-lisp
 (use-package markdown-mode
   :commands (markdown-mode gfm-mode)
@@ -1282,6 +1408,10 @@ A package for miscellaneous functions.
     "t"  '(my/change-theme              :which-key "change-theme")))
 #+end_src
 ** mu4e
+#+begin_quote
+An emacs-based e-mail client which uses mu as its back-end.
+https://www.djcbsoftware.nl/code/mu/mu4e.html
+#+end_quote
 #+begin_src emacs-lisp
 (use-package mu4e
   :straight (:host github :files ("mu4e/*") :repo "djcb/mu" :branch "master")
@@ -1357,21 +1487,17 @@ A package for miscellaneous functions.
                   (smtpmail-smtp-service . 587)
                   (smtpmail-debug-info . t)
                   (smtpmail-debug-verbose . t)))))
+
   (add-to-list 'mu4e-view-actions
                '("ViewInBrowser" . mu4e-action-view-in-browser) t)
-  ;;@HACK: working around bug in evil-collection for latest mu4e. @TODO: fix/report.
-  ;; (setq mu4e-main-mode-hook nil)
-  ;; (defun workaround/mu4e-evil-update-main-view ()
-  ;;   (let ((inhibit-read-only t))
-  ;;     (evil-collection-mu4e-update-main-view)))
-  ;; (advice-add #'mu4e~main-redraw-buffer :after #'workaround/mu4e-evil-update-main-view)
+
   (defun +mu4e-view-settings ()
     "Settings for mu4e-view-mode."
-
     (visual-line-mode)
     (olivetti-mode)
     (variable-pitch-mode))
   (add-hook 'mu4e-view-mode-hook #'+mu4e-view-settings)
+
   :general
   (+general-global-application "m" 'mu4e :which-key "mail")
   (global-leader
@@ -1379,6 +1505,11 @@ A package for miscellaneous functions.
     "a" 'mml-attach-file))
 #+end_src
 ** mu4e-alert
+#+begin_quote
+mu4e-alert is an Emacs extension providing desktop notifications for mu4e.
+Additionally it can display the number of unread emails in the mode-line.
+https://github.com/iqbalansari/mu4e-alert
+#+end_quote
 #+begin_src emacs-lisp
 (use-package mu4e-alert
   :after (org)
@@ -1392,7 +1523,10 @@ A package for miscellaneous functions.
                   (mu4e-alert-enable-notifications))))
 #+end_src
 ** nov (epub)
+#+begin_quote
 Major mode for reading EPUB files in Emacs
+https://depp.brause.cc/nov.el/
+#+end_quote
 #+begin_src emacs-lisp
 (use-package nov
   :custom
@@ -1411,6 +1545,10 @@ destructive or confusing commands. Don't need it.
   (disabled-command-function nil "Enable all commands"))
 #+end_src
 ** olivetti
+#+begin_quote
+A simple Emacs minor mode for a nice writing environment.
+https://github.com/rnkn/olivetti
+#+end_quote
 #+begin_src emacs-lisp
 (use-package olivetti
   :commands (olivetti-mode))
@@ -2154,13 +2292,6 @@ emacsclient --create-frame \
 :custom
 (org-capture-dir (concat (getenv "HOME") "/Documents/todo/")))
 #+end_src
-** org-chronicle
-#+begin_src emacs-lisp
-(use-private org-chronicle
-  :commands (org-chronicle)
-  :custom (org-chronicle-directory "~/Documents/journal/")
-  (org-chronicle-file-format-string "%Y.%m.%d"))
-#+end_src
 ** org-clean-refile
 #+begin_src emacs-lisp
 (use-private org-clean-refile
@@ -2171,6 +2302,10 @@ emacsclient --create-frame \
     "sr" 'org-clean-refile))
 #+end_src
 ** org-fancy-priorities
+#+begin_quote
+A minor mode that displays org priorities as custom strings.
+https://github.com/harrybournis/org-fancy-priorities
+#+end_quote
 #+begin_src emacs-lisp
 (use-package org-fancy-priorities
   ;;:disabled t
@@ -2320,14 +2455,22 @@ browser. On saving, the document is re-exported and the browser is refreshed.
   :commands (org-live-preview-mode))
 #+end_src
 ** org-mime
+#+begin_quote
+org-mime can be used to send HTML email using Org-mode HTML export.
+https://github.com/org-mime/org-mime
+#+end_quote
 #+begin_src emacs-lisp
 (use-package org-mime
   :after (org)
   :commands (org-mime-htmlize org-mime-org-buffer-htmlize))
 #+end_src
 ** org-make-toc
-Programmatically generate a table of contents for an Org buffer.
-Great for documentation pages.
+#+begin_quote
+This package makes it easy to have one or more customizable tables of contents in Org files.
+They can be updated manually, or automatically when the file is saved.
+Links to headings are created compatible with GitHub’s Org renderer.
+https://github.com/alphapapa/org-make-toc
+#+end_quote
 #+begin_src emacs-lisp
 (use-package org-make-toc
   :commands (org-make-toc))
@@ -2339,18 +2482,21 @@ Great for documentation pages.
   :after (org))
 #+end_src
 ** org-superstar
+#+begin_quote
+Prettify headings and plain lists in Org mode. This package is a direct descendant of ‘org-bullets’
+https://github.com/integral-dw/org-superstar-mode
+#+end_quote
 #+begin_src emacs-lisp
 (use-package org-superstar
   :after (org)
   :straight ( :type git :host github :repo "integral-dw/org-superstar-mode"
               :fork (:host github :repo "progfolio/org-superstar-mode")))
 #+end_src
-** org-ql
-#+begin_src emacs-lisp
-(use-package org-ql
-  :commands (org-ql org-ql-search))
-#+end_src
 ** ox-twbs
+#+begin_quote
+Export org-mode docs as HTML compatible with Twitter Bootstrap.
+https://github.com/marsmining/ox-twbs
+#+end_quote
 #+begin_example emacs-lisp
     (use-package ox-twbs
       :disabled nil
@@ -2360,7 +2506,11 @@ Great for documentation pages.
 #+end_example
 *** TODO add export-define-derived-backend
 ** package-lint
-For guidance on Elisp package conventions.
+#+begin_quote
+This library provides a linter for the metadata in Emacs Lisp files which are intended to be packages.
+You can integrate it into your build process.
+https://github.com/purcell/package-lint
+#+end_quote
 #+begin_src emacs-lisp
 (use-package package-lint
   :defer t
@@ -2397,8 +2547,12 @@ can make sure they're balanced easily.
   :config (show-paren-mode))
 #+end_src
 ** pdf-tools
-Replacement for Emacs's docview mode. It allows me to customize the color of the
-generated pdf.
+#+begin_quote
+PDF Tools is, among other things, a replacement of DocView for PDF files.
+The key difference is that pages are not pre-rendered by e.g. ghostscript and stored in the file-system, but rather created on-demand and stored in memory.
+https://github.com/politza/pdf-tools#about-this-package
+#+end_quote
+This  allows me to customize the color of the generated pdf.
 #+begin_src emacs-lisp
 (use-package pdf-tools
   :functions (pdf-isearch-batch-mode)
@@ -2413,7 +2567,11 @@ generated pdf.
   :mode (("\\.pdf\\'" . pdf-view-mode)))
 #+end_src
 ** projectile
-Project interaction library
+#+begin_quote
+Projectile is a project interaction library for Emacs.
+Its goal is to provide a nice set of features operating on a project level without introducing external dependencies (when feasible).
+https://github.com/bbatsov/projectile
+#+end_quote
 #+begin_src emacs-lisp
 (use-package projectile
   :after (general)
@@ -2441,6 +2599,10 @@ Project interaction library
   (projectile-mode))
 #+end_src
 ** rainbow-mode
+#+begin_quote
+Colorize color names in buffers
+https://elpa.gnu.org/packages/rainbow-mode.html
+#+end_quote
 #+begin_src emacs-lisp
 (use-package rainbow-mode
   :commands (rainbow-mode))
@@ -2467,6 +2629,10 @@ ten, but opening my org agenda files wipes that list out.
   (recentf-max-saved-items 1000 "Save more recent files"))
 #+end_src
 ** shackle
+#+begin_quote
+shackle gives you the means to put an end to popped up buffers not behaving they way you'd like them to.
+https://depp.brause.cc/shackle/
+#+end_quote
 #+begin_src emacs-lisp
 (use-package shackle
   :commands (shackle-mode)
@@ -2556,10 +2722,11 @@ ten, but opening my org agenda files wipes that list out.
   (tab-line-close-button-show nil)
   (tab-line-new-button-show   nil))
 #+end_src
-*** DONE suggest tab-line-new-button-show on emacs-dev
-CLOSED: [2020-03-21 Sat 16:02]
-- State "STARTED"    from "TODO"       [2020-03-18 Wed 12:27]
 ** tern
+#+begin_quote
+Tern is a stand-alone, editor-independent JavaScript analyzer that can be used to improve the JavaScript integration of existing editors.
+https://github.com/ternjs/tern
+#+end_quote
 #+begin_src emacs-lisp
 (use-package tern
   :commands (tern-mode)
@@ -2571,24 +2738,16 @@ I prefer to keep my themes in a sub-folder of =~/.emacs.d=
 (setq custom-theme-directory "~/.emacs.d/themes/")
 #+end_src
 
-I'm working on a theme that is readable and attractive. So far it
-doesn't work in a terminal setting, so I'm only conditionally loading
-it if Emacs is running in GUI mode.
+I'm working on a theme that is readable and attractive.
 
 #+begin_src emacs-lisp
 (setq my/theme 'mine)
-(unless custom-enabled-themes
-  (load-theme my/theme t))
+(unless custom-enabled-themes (load-theme my/theme t))
 #+end_src
 
-When starting Emacs a daemon, there is no frame when the theme is initially
-loaded. This code will conditionally load my theme upon creation of the first client frame.
-
-#+begin_src emacs-lisp
-#+end_src
 ** time
-I like to see the date and time in my mode line. I use doom-modeline for the
-rest of my mode line configuration.
+I like to see the date and time in my mode line.
+I use doom-modeline for the rest of my mode line configuration.
 #+begin_src emacs-lisp
 (use-feature time
   :custom
@@ -2597,13 +2756,17 @@ rest of my mode line configuration.
   (display-time))
 #+end_src
 ** vc-hooks
-You probably want this 99% of the time and it will skip an annoying prompt
+You probably want this 99% of the time and it will skip an annoying prompt.
 #+begin_src emacs-lisp
 (use-feature vc-hooks
   :custom
   (vc-follow-symlinks t "Visit real file when editing a symlink without prompting."))
 #+end_src
 ** vterm
+#+begin_quote
+Emacs-libvterm (vterm) is fully-fledged terminal emulator inside GNU Emacs based on libvterm, a C library.
+https://github.com/akermu/emacs-libvterm
+#+end_quote
 #+begin_src emacs-lisp
 (use-package vterm
   :commands (vterm vterm-other-window)
@@ -2616,6 +2779,10 @@ You probably want this 99% of the time and it will skip an annoying prompt
   (evil-set-initial-state 'vterm-mode 'emacs))
 #+end_src
 ** which-key
+#+begin_quote
+which-key is a minor mode for Emacs that displays the key bindings following your currently entered incomplete command (a prefix) in a popup.
+https://github.com/justbur/emacs-which-key
+#+end_quote
 #+begin_src emacs-lisp
 (use-package which-key
   :demand t
@@ -2631,17 +2798,6 @@ You probably want this 99% of the time and it will skip an annoying prompt
   :diminish which-key-mode)
 #+end_src
 
-** wikinforg
-#+begin_src emacs-lisp
-(use-package wikinfo
-  :defer t
-  :straight (:type git :host github :repo "progfolio/wikinfo"))
-#+end_src
-#+begin_src emacs-lisp
-(use-package wikinforg
-  :straight (:type git :host github :repo "progfolio/wikinforg")
-  :commands (wikinforg wikinforg-capture))
-#+end_src
 ** winner
 #+begin_src emacs-lisp
 (use-feature winner
@@ -2653,7 +2809,10 @@ You probably want this 99% of the time and it will skip an annoying prompt
   :config (winner-mode))
 #+end_src
 ** wordnut
-An interface to the wordnet (wn) command line tool
+#+begin_quote
+An Emacs interface to the wordnet (wn) command line tool.
+https://github.com/gromnitsky/wordnut
+#+end_quote
 #+begin_src emacs-lisp
 (use-package wordnut
   :general
@@ -2663,15 +2822,21 @@ An interface to the wordnet (wn) command line tool
     "ww"   'wordnut-lookup-current-word))
 #+end_src
 ** writegood
-Finds common writing problems. A linter for prose.
+#+begin_quote
+This is a minor mode to aid in finding common writing problems.
+https://github.com/bnbeckwith/writegood-mode
+#+end_quote
 #+begin_src emacs-lisp
 (use-package writegood-mode
   :commands (writegood-mode)
   :hook (org-mode))
 #+end_src
 ** yasnippet
-This package expands text based off of templates. Handy for automating things like
-journal sections and clock reports.
+#+begin_quote
+YASnippet is a template system for Emacs.
+It allows you to type an abbreviation and automatically expand it into function templates.
+https://github.com/joaotavora/yasnippet
+#+end_quote
 #+begin_src emacs-lisp
 (use-package yasnippet
   :commands (yas-global-mode)
@@ -2679,12 +2844,20 @@ journal sections and clock reports.
   (yas-snippet-dirs '("~/.emacs.d/snippets")))
 #+end_src
 ** zerodark-theme
+#+begin_quote
+A dark theme for Emacs, inspired from Niflheim and One Dark
+https://github.com/NicolasPetton/zerodark-theme
+#+end_quote
 #+begin_src emacs-lisp
 (use-package zerodark-theme :defer t)
 #+end_src
 * Experiments
-Packages and settings I'm not sold on yet.
+Packages and settings I'm not sold on, or haven't had too much time to try yet.
 ** ace-window
+#+begin_quote
+GNU Emacs package for selecting windows with single a single key.
+https://github.com/abo-abo/ace-window
+#+end_quote
 #+begin_src emacs-lisp
 (use-package ace-window :straight t :commands (ace-window))
 #+end_src
@@ -2693,6 +2866,11 @@ Packages and settings I'm not sold on yet.
 (use-private tongle
   :commands (tongle-mode)
   :init (setq tongle-disabled-string ""))
+#+end_src
+** org-ql
+#+begin_src emacs-lisp
+(use-package org-ql
+  :commands (org-ql org-ql-search))
 #+end_src
 * Development
 Space for packages which I'm developing but are not part of my usual configuration.
@@ -2713,6 +2891,13 @@ Space for packages which I'm developing but are not part of my usual configurati
     "org" 'org-roam-graph
     "ori" 'org-roam-insert))
 #+end_src
+** org-chronicle
+#+begin_src emacs-lisp
+(use-private org-chronicle
+  :commands (org-chronicle)
+  :custom (org-chronicle-directory "~/Documents/journal/")
+  (org-chronicle-file-format-string "%Y.%m.%d"))
+#+end_src
 ** org-relativity
 #+begin_src emacs-lisp
 (use-package org-relativity
@@ -2725,4 +2910,16 @@ Space for packages which I'm developing but are not part of my usual configurati
   :defer t
   :straight (:type git :host github :repo "RyanMillerC/poke-line" :fork "progfolio/poke-line"
                    :files (:defaults "img")))
+#+end_src
+
+** wikinforg
+#+begin_src emacs-lisp
+(use-package wikinfo
+  :defer t
+  :straight (:type git :host github :repo "progfolio/wikinfo"))
+#+end_src
+#+begin_src emacs-lisp
+(use-package wikinforg
+  :straight (:type git :host github :repo "progfolio/wikinforg")
+  :commands (wikinforg wikinforg-capture))
 #+end_src
