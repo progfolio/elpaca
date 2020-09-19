@@ -1,5 +1,5 @@
 ;-*- eval: (progn (auto-tangle-mode) (eldoc-mode) (add-hook 'auto-tangle-before-tangle-hook #'check-parens) (add-hook 'auto-tangle-after-tangle-hook (lambda () (load-file "~/.emacs.d/init.el"))));   -*-
-#  LocalWords:  TODOS yasnippet magit epub LocalWords MELPA ELPA init Spacemacs symlinked Elisp gc PDF Paren alist recentf smtpmail modeline zerodark quickhelp esup TLS vterm flycheck elfeed flyspell autoload descbinds :PROPERTIES: evilified
+#  LocalWords:  TODOS yasnippet magit epub LocalWords MELPA ELPA init Spacemacs symlinked Elisp gc PDF Paren alist recentf smtpmail modeline zerodark quickhelp esup TLS vterm flycheck elfeed flyspell autoload descbinds :PROPERTIES: evilified UI gpg
 #+title: My Emacs Configuration
 #+options: ^:{} html-postamble:nil
 #+property: header-args :mkdirp yes :tangle (concat (file-name-sans-extension (buffer-file-name)) ".el") :tangle-mode (identity #o444) :results silent :noweb yes
@@ -15,19 +15,11 @@ Tangling this file creates an Elisp file, =~/.emacs.d/lisp/init.el=.
 :END:
 Emacs 27.0 introduced an early-init file. It allows customization before package and UI initialization.
 #+begin_src emacs-lisp
-;;; -*- lexical-binding: t; -*-
-;;; early-init.el -- handles emacs early initialization
-
+;;; early-init.el -- Emacs pre package.el & GUI configuration ; -*- lexical-binding: t; -*-
 ;;; Code:
 #+end_src
 
-Emacs native branch can asynchronously compile packages to .eln files after they are lazy-loaded.
-Better for performance.
-#+begin_src emacs-lisp
-(setq comp-deferred-compilation t)
-#+end_src
-
-We want the org-plus-contrib version of Org mode.
+We want the =org-plus-contrib= version of Org mode.
 Removing the Emacs bundled version from the load-path *should* prevent loading mixed Org versions.
 e.g. After updating Org mode.
 #+begin_src emacs-lisp
@@ -41,12 +33,11 @@ e.g. After updating Org mode.
 #+end_src
 
 *** Debugging
-Running this form will hit the debugger after loading a package.
-Useful for finding out what dependency is requiring a package (perhaps earlier than you want).
-Usually snags me when running a different version of a package that Emacs includes by default.
-Use by tangling this block and launching emacs with =emacs --debug-init=.
+Running this form will launch the debugger after loading a package.
+This is useful for finding out when a dependency is requiring a package (perhaps earlier than you want).
+Use by tangling this block and launching Emacs with =emacs --debug-init=.
 
-#+begin_src emacs-lisp :var file=""
+#+begin_src emacs-lisp :var file="" :results silent
 (unless (string-empty-p file)
   (eval-after-load file
     '(debug)))
@@ -67,23 +58,22 @@ Adding a variable watcher can be a useful way to track down initialization and m
 
 *** initial-major-mode
 Prevent the \*scratch* buffer from loading a mode.
-#+begin_src emacs-lisp
-;;(setq initial-major-mode 'fundamental-mode)
+#+begin_src emacs-lisp :tangle no
+(setq initial-major-mode 'fundamental-mode)
 #+end_src
 
 *** file-name-handler-alist
-Skipping a bunch of regular expression searching in the
-=file-name-handler-alist= should improve start time.
+Skipping a bunch of regular expression searching in the =file-name-handler-alist= should improve start time.
 #+begin_src emacs-lisp
 (defvar default-file-name-handler-alist file-name-handler-alist)
 (setq file-name-handler-alist nil)
 #+end_src
 
 *** gc-cons threshold
-Emacs collects garbage every 800KB. This is overly aggressive
-on a modern machine during our init. Temporarily turning it off should
-decrease startup times. Resetting it afterward will ensure that normal
-operations don't suffer from a large GC period.
+Emacs collects garbage every 800KB.
+This is overly aggressive on a modern machine during our init.
+Temporarily turning it off should decrease startup times.
+Resetting it afterward will ensure that normal operations don't suffer from a large GC period.
 
 I'm still not sure on the optimal gc-cons-threshold value. The following is a
 table of values from popular Emacs configurations.
@@ -144,7 +134,7 @@ Ignore X resources.
 
 
 Taken from [[https://github.com/vsemyonoff/emacsrc/blob/14649a5bafea99cc7e13e7d048e9d15aed7926ce/early-init.el]]
-This helps with a bug I was hitting when using desktop-save mode's desktop-read.
+This helps with a bug I was hitting when using =desktop-save-mode='s =desktop-read=.
 #+begin_src emacs-lisp
 (setq desktop-restore-forces-onscreen nil)
 #+end_src
@@ -155,7 +145,7 @@ Add =lisp/= to load-path. This allows loading packages from that path.
   (normal-top-level-add-subdirs-to-load-path))
 #+end_src
 
-Keychain is allows me to cache my ssh credentials.
+[[https://www.funtoo.org/Keychain][Keychain]] is a gpg/ssh agent that allows me to cache my credentials.
 This package gets the correct environment variables so straight can use the ssh protocol.
 #+begin_src emacs-lisp
 (require 'keychain-environment)
