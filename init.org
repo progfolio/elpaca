@@ -1,5 +1,4 @@
-;-*- eval: (progn (auto-tangle-mode) (eldoc-mode) (add-hook 'auto-tangle-before-tangle-hook #'check-parens) (add-hook 'auto-tangle-after-tangle-hook (lambda () (load-file "~/.emacs.d/init.el"))));   -*-
-#  LocalWords:  TODOS yasnippet magit epub LocalWords MELPA ELPA init Spacemacs symlinked Elisp gc PDF Paren alist recentf smtpmail modeline zerodark quickhelp esup TLS vterm flycheck elfeed flyspell autoload descbinds :PROPERTIES: evilified UI gpg
+;-*- eval: (load-file "./init-dev.el");   -*-
 #+title: My Emacs Configuration
 #+options: ^:{} html-postamble:nil
 #+property: header-args :mkdirp yes :tangle (concat (file-name-sans-extension (buffer-file-name)) ".el") :tangle-mode (identity #o444) :results silent :noweb yes
@@ -15,7 +14,7 @@ Tangling this file creates an Elisp file, =~/.emacs.d/lisp/init.el=.
 :END:
 Emacs 27.0 introduced an early-init file. It allows customization before package and UI initialization.
 #+begin_src emacs-lisp
-;;; early-init.el -- Emacs pre package.el & GUI configuration ; -*- lexical-binding: t; -*-
+;;; early-init.el --- Emacs pre package.el & GUI configuration -*- lexical-binding: t; -*-
 ;;; Code:
 #+end_src
 
@@ -106,7 +105,7 @@ table of values from popular Emacs configurations.
 (add-hook 'emacs-startup-hook 'my/reset-init-values)
 #+end_src
 
-*** Pre-UI
+*** UI
 Turning off these visual elements before UI initialization should speed up init.
 #+begin_src emacs-lisp
 (push '(menu-bar-lines . 0) default-frame-alist)
@@ -196,12 +195,8 @@ Installing it this early *should* prevent mixed Org installations.
 #+end_src
 
 ** profiling
-We want to measure how long Emacs takes to start. That way we can have
-a general sense of when to profile or try, if at all, to optimize the
-init file.
-
-This function displays how long Emacs took to start. It's a rough way
-of knowing when/if I need to optimize my init file.
+This function displays how long Emacs took to start.
+It's a rough way of knowing when/if I need to optimize my init file.
 #+begin_src emacs-lisp
 (add-hook 'emacs-startup-hook
           (lambda ()
@@ -212,24 +207,7 @@ of knowing when/if I need to optimize my init file.
                      gcs-done)))
 #+end_src
 ** packaging
-*** MELPA & use-package
-MELPA is a third party package repository for Emacs. It has more
-packages available than GNU ELPA (the default repository).
-
-Since I'm using straight.el to manage packages, we want to avoid using package.el.
-#+begin_src emacs-lisp :tangle no
-(require 'package)
-(setq package-archives
-      '(("gnu"   . "https://elpa.gnu.org/packages/")
-        ("melpa" . "https://melpa.org/packages/")
-        ("org"   . "https://orgmode.org/elpa/")))
-#+end_src
-
-The following ensures packages are automatically installed and
-bootstraps a package called =use-package=. Use-package allows us to
-configure packages in a clean/compartmentalized fashion. It bundles the package
-installation code and configuration together.
-
+*** use-package
 #+begin_src emacs-lisp
 (defmacro use-feature (name &rest args)
   "Like `use-package' but with `straight-use-package-by-default' disabled.
@@ -283,8 +261,7 @@ Packages that I'm developing or aren't part of any online repositories go in =~/
 (setq literate-file (concat user-emacs-directory "init.org"))
 #+end_src
 * Secrets
-I keep my sensitive, personal information in a separate file so I can publish
-this configuration publicly.
+I keep my sensitive, personal information in a separate file so I can publish this configuration publicly.
 #+begin_src emacs-lisp
 (load-file "~/Documents/emacs-secrets.el")
 #+end_src
@@ -294,14 +271,6 @@ this configuration publicly.
 :ID:       f8affafe-3a4c-490c-a066-006aeb76f628
 :CUSTOM_ID: init-packages
 :END:
-** TODO evil/general interaction bug
-When loading evil after general Emacs takes roughly 7 times longer to start.
-I've culled both packages down to the bare minimum and can't reproduce.
-Culling evil to its bare minimum still exhibits the problem, so I suspect it lies in general's configuration.
-For now, I'll just load evil before general.
-There are a couple of keybindings that should be in evil's use-package form that are in general's until I solve the problem.
-
-Keep an eye on: https://github.com/noctuid/general.el/issues/180
 ** evil
 #+begin_src emacs-lisp
 (use-package evil
@@ -317,6 +286,7 @@ Keep an eye on: https://github.com/noctuid/general.el/issues/180
   :config
   ;;I want Emacs regular mouse click behavior
   (define-key evil-motion-state-map [down-mouse-1] nil)
+  <<+evil-kill-minibuffer>>
   :hook (after-init . evil-mode))
 #+end_src
 *** evil-anzu-mode
@@ -338,6 +308,36 @@ Shows match counts in mode line.
   (evil-collection-setup-minibuffer t "Add evil bindings to minibuffer")
   (evil-collection-company-use-tng t))
 #+end_src
+*** TODO evil/general interaction bug
+When loading evil after general Emacs takes roughly 7 times longer to start.
+I've culled both packages down to the bare minimum and can't reproduce.
+Culling evil to its bare minimum still exhibits the problem, so I suspect it lies in general's configuration.
+For now, I'll just load evil before general.
+There are a couple of keybindings that should be in evil's use-package form that are in general's until I solve the problem.
+
+Keep an eye on: https://github.com/noctuid/general.el/issues/180
+
+*** Evil mini-buffer bug
+:PROPERTIES:
+:header-args: :noweb-ref +evil-kill-minibuffer
+:END:
+Sometimes evil gets stuck and doubles the 'd' and 'c' keys among others.
+This has something to do with the mini-buffer according to this Spacemacs issue:
+
+https://github.com/syl20bnr/spacemacs/issues/10410
+
+Apparently this is a workaround:
+
+#+begin_src emacs-lisp
+(defun +evil-kill-minibuffer ()
+  (interactive)
+  (when (windowp (active-minibuffer-window))
+    (evil-ex-search-exit)))
+
+(add-hook 'mouse-leave-buffer-hook #'+evil-kill-minibuffer)
+#+end_src
+
+Not sure why that hook is appropriate, but calling =evil-ex-search-exit= manually solves the issue as well.
 ** general (key-bindings)
 :PROPERTIES:
 :CUSTOM_ID: key-bindings
@@ -378,7 +378,11 @@ We define a global-leader definer to access major-mode specific bindings:
   :keymaps 'override
   :states '(emacs normal hybrid motion visual operator)
   :prefix "SPC m"
-  "" '(:ignore t :which-key (lambda (arg) `(,(cadr (split-string (car arg) " ")) . ,(replace-regexp-in-string "-mode$" "" (symbol-name major-mode))))))
+  "" '( :ignore t
+        :which-key
+        (lambda (arg)
+          (cons (cadr (split-string (car arg) " "))
+                (replace-regexp-in-string "-mode$" "" (symbol-name major-mode))))))
 #+end_src
 
 And a macro to ease the creation of nested menu bindings:
@@ -467,8 +471,7 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
 #+end_src
 **** git version-control
 #+begin_src emacs-lisp
-(+general-global-menu! "git/version-control" "g"
-  "f"  '(:ignore t :which-key "file"))
+(+general-global-menu! "git/version-control" "g")
 #+end_src
 **** help
 #+begin_src emacs-lisp
@@ -598,8 +601,8 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
   (add-hook 'before-save-hook '+asm-before-save-hook))
 #+end_src
 ** auto-fill-mode
-I usually want prose to split at 80 chars (Emacs defaults to 70). I'd rather have
-to toggle it off than on.
+I usually want prose to split at 80 chars (Emacs defaults to 70).
+I'd rather have to toggle it off than on.
 #+begin_src emacs-lisp
 (use-feature simple
   :general
@@ -609,15 +612,10 @@ to toggle it off than on.
   (fill-column 80 "Wrap at 80 columns."))
 #+end_src
 ** auto-revert
-Automatically revert a buffer if it's associated file has changed on
-disk. This is what you would expect to happen when checking out
-different versions of a file in version control. It also helps if
-multiple instances of Emacs are open so that you don't unwittingly
-clobber the same file.
+Automatically revert a buffer if its file has changed on disk.
+This is useful when checking out different versions of a file in version control.
+It also helps if multiple instances of Emacs are editing the same file.
 
-I'm setting the =auto-revert-interval= low enough that it effectively
-reverts immediately. This seems preferable to me for now. Not sure if
-it will cause problems with longer running processes.
 #+begin_src emacs-lisp
 (use-feature autorevert
   :defer 2
@@ -640,9 +638,6 @@ it will cause problems with longer running processes.
 #+begin_src emacs-lisp
 (use-package company
   :defer 5
-  ;; :bind  (:map company-active-map
-  ;;              ("[escape]" . 'company-abort)
-  ;;              ("C-o" . 'company-other-backend))
   :commands (company-mode global-company-mode company-yasnippet)
   :diminish (company-mode . "co")
   :custom
@@ -686,16 +681,6 @@ it will cause problems with longer running processes.
     (general-def company-active-map "C-k"    'company-select-previous)
     (general-def company-active-map "RET"    'company-complete-selection))
   (global-company-mode))
-;; (setq-default company-backends '((company-files company-keywords company-capf company-yasnippet)
-;;                                  (company-abbrev company-dabbrev))
-;;               company-frontends '(company-tng-frontend
-;;                                   company-pseudo-tooltip-unless-just-one-frontend company-echo-metadata-frontend
-;;                                   company-preview-if-just-one-frontend))
-;; ;;for company-ispell backend
-;; ;;(setq ispell-alternate-dictionary "/usr/share/dict/words")
-;; ;;(add-hook 'text-mode-hook (lambda () (set (make-local-variable 'company-backends)
-;; ;;                                          (company-files company-ispell))))
-;; (global-company-mode t)
 #+end_src
 *** company-tern
 #+begin_src emacs-lisp
@@ -769,8 +754,8 @@ Easily adjust the font size in all Emacs frames
 (use-package doom-themes :defer t)
 #+end_src
 ** elfeed
-I've put my elfeed database in under version control. At some point I may move
-it from it's default location (=~/.elfeed=), stored in the =elfeed-db-directory= variable.
+I've put my elfeed database in under version control.
+I may move it from its default location (=~/.elfeed=), in =elfeed-db-directory=.
 #+begin_src emacs-lisp
 (use-package elfeed
   :commands (elfeed)
@@ -808,7 +793,7 @@ If SEPARATE is non-nil, launch a separate instance of mpv."
   (rmh-elfeed-org-auto-ignore-invalid-feeds nil))
 #+end_src
 ** Emacs
-Defined in C code, so we use the ~emacs~ pseudo-package to set them.
+These settings defined in C code, so we use the ~emacs~ pseudo-package to set them.
 #+begin_src emacs-lisp
 (use-feature emacs
   :demand t
@@ -832,6 +817,21 @@ Defined in C code, so we use the ~emacs~ pseudo-package to set them.
 (tab-stop-list (number-sequence 2 120 2))
 (tab-width 2 "Shorter tab widths")
 (completion-styles '(flex basic partial-completion emacs22))
+#+end_src
+** emacs-lisp
+#+begin_src emacs-lisp
+(use-feature elisp-mode
+  :general
+  (global-leader
+    :major-modes '(emacs-lisp-mode lisp-interaction-mode t)
+    :keymaps     '(emacs-lisp-mode-map lisp-interaction-mode-map)
+    "e"  '(:ignore t :which-key "eval")
+    "eb" 'eval-buffer
+    "ed" 'eval-defun
+    "ee" 'eval-expression
+    "ep" 'pp-eval-last-sexp
+    "es" 'eval-last-sexp
+    "i"  'elisp-index-search))
 #+end_src
 ** epg-config
 #+begin_src emacs-lisp
@@ -866,8 +866,8 @@ Defined in C code, so we use the ~emacs~ pseudo-package to set them.
             :which-key "packages")))
 #+end_src
 ** files
-By default Emacs saves backups in the current buffer's working
-directory. I'd rather have everything in one folder to keep my file system tidy.
+By default Emacs saves backups in the current buffer's working directory.
+I'd rather have everything in one folder to keep my file system tidy.
 #+begin_src emacs-lisp
 (use-feature files
   :hook
@@ -900,13 +900,8 @@ directory. I'd rather have everything in one folder to keep my file system tidy.
   (kept-old-versions 5)
   (version-control t)
   (safe-local-variable-values
-   '((eval require 'org-roam-dev)
-     (org-clean-refile-inherit-tags)
-     (eval progn
-           (auto-tangle-mode)
-           (add-hook 'auto-tangle-after-tangle-hook
-                     (lambda nil
-                       (load-file "~/.emacs.d/init.el")))))
+   '((eval load-file "./init-dev.el")
+     (org-clean-refile-inherit-tags))
    "Store safe local variables here instead of in emacs-custom.el"))
 #+end_src
 ** fill-column-indicator
@@ -936,7 +931,7 @@ directory. I'd rather have everything in one folder to keep my file system tidy.
   :custom (flycheck-emacs-lisp-load-path 'inherit "necessary with straight.el"))
 #+end_src
 *** flycheck-package
-package-lint integration for flycheck.
+=package-lint= integration for flycheck.
 #+begin_src emacs-lisp
 (use-package flycheck-package
   :after (flychceck)
@@ -972,7 +967,7 @@ https://d12frosted.io/posts/2016-05-09-flyspell-correct-intro.html
 #+end_src
 ** fontify-face
 #+begin_quote
-Fontify symbols representing faces with that face.
+Show symbols representing faces with their face.
 #+end_quote
 #+begin_src emacs-lisp
 (use-package fontify-face
@@ -1123,16 +1118,16 @@ This allows completion for multiple tags with Helm.
   (savehist-mode 1))
 #+end_src
 ** holidays
-I'd like to see holidays and anniversaries in my org-agenda and calendar, but I don't need
-some of the holiday lists that come by default.
+I'd like to see holidays and anniversaries in my org-agenda and calendar
+I've removed the default holiday lists that I don't need.
 #+begin_src emacs-lisp
 (use-feature holidays
   :commands (org-agenda)
-  :config
-  (setq holiday-bahai-holidays nil)
-  (setq holiday-hebrew-holidays nil)
-  (setq holiday-islamic-holidays nil)
-  (setq holiday-oriental-holidays nil))
+  :custom
+  (holiday-bahai-holidays nil)
+  (holiday-hebrew-holidays nil)
+  (holiday-islamic-holidays nil)
+  (holiday-oriental-holidays nil))
 #+end_src
 ** htmlize
 This is necessary for org-exporting to HTML.
@@ -1230,6 +1225,7 @@ This is necessary for org-exporting to HTML.
     "b"  'magit-branch
     "B"  'magit-blame
     "c"  'magit-clone
+    "f"  '(:ignore t :which-key "file")
     "ff" 'magit-find-file
     "fh" 'magit-log-buffer-file
     "i"  'magit-init
@@ -1396,7 +1392,7 @@ A package for miscellaneous functions.
                   (mu4e-alert-enable-notifications))))
 #+end_src
 ** nov (epub)
-Major mode for reading EPUBs in Emacs
+Major mode for reading EPUB files in Emacs
 #+begin_src emacs-lisp
 (use-package nov
   :custom
@@ -1407,7 +1403,7 @@ Major mode for reading EPUBs in Emacs
   (nov-mode))
 #+end_src
 ** novice
-Novice tries to help new users by disabling certain potentially
+This feature tries to help new users by disabling certain potentially
 destructive or confusing commands. Don't need it.
 #+begin_src emacs-lisp
 (use-feature novice
@@ -1808,7 +1804,7 @@ I don't need to see the word "Scheduled" before scheduled items.
 (org-agenda-scheduled-leaders '("" "%2dx "))
 #+end_src
 
-Align tags to 80th column in the agenda view:
+Align tags to column 80 in the agenda view:
 #+begin_src emacs-lisp
 (org-agenda-tags-column -80)
 #+end_src
@@ -1834,7 +1830,7 @@ Align tags to 80th column in the agenda view:
   :config
   <<org-babel-config>>)
 #+end_src
-*** Config
+*** config
 :PROPERTIES:
 :header-args: :noweb-ref org-babel-config
 :END:
@@ -2377,7 +2373,7 @@ For guidance on Elisp package conventions.
 :header-args: :noweb-ref +package-lint-straight
 :END:
 package-lint assumes package.el is the package manager.
-I use straight.el, so I get spurious warnings about packages not being installable.
+I use straight.el, so I get spurious warnings about uninstallable packages.
 This workaround creates a temporary package archive and enables package.el to appease package-lint.
 
 #+begin_src emacs-lisp
@@ -2674,7 +2670,7 @@ Finds common writing problems. A linter for prose.
   :hook (org-mode))
 #+end_src
 ** yasnippet
-YASnippet expands text based off of templates. Handy for automating things like
+This package expands text based off of templates. Handy for automating things like
 journal sections and clock reports.
 #+begin_src emacs-lisp
 (use-package yasnippet
@@ -2688,27 +2684,24 @@ journal sections and clock reports.
 #+end_src
 * Experiments
 Packages and settings I'm not sold on yet.
-** Evil bug?
-Sometimes evil gets stuck and doubles the 'd' and 'c' keys among others.
-Has something to do with the mini-buffer according to this:
-https://github.com/syl20bnr/spacemacs/issues/10410
-
-Apparently this is a workaround:
-#+begin_src emacs-lisp
-(defun +kill-minibuffer ()
-  (interactive)
-  (when (windowp (active-minibuffer-window))
-    (evil-ex-search-exit)))
-
-(add-hook 'mouse-leave-buffer-hook #'+kill-minibuffer)
-#+end_src
-
-Not sure why that hook is appropriate, but calling 'evil-ex-search-exit'
-manually solves the issue as well. Will look into it more later.
 ** ace-window
 #+begin_src emacs-lisp
 (use-package ace-window :straight t :commands (ace-window))
 #+end_src
+** tongle
+#+begin_src emacs-lisp
+(use-private tongle
+  :commands (tongle-mode)
+  :init (setq tongle-disabled-string ""))
+#+end_src
+* Development
+Space for packages which I'm developing but are not part of my usual configuration.
+** cleanroom
+#+begin_src emacs-lisp
+(use-package cleanroom
+  :straight (:type git :host github :repo "progfolio/cleanroom"))
+#+end_src
+
 ** org-roam
 #+begin_src emacs-lisp
 (use-package org-roam
@@ -2732,57 +2725,4 @@ manually solves the issue as well. Will look into it more later.
   :defer t
   :straight (:type git :host github :repo "RyanMillerC/poke-line" :fork "progfolio/poke-line"
                    :files (:defaults "img")))
-#+end_src
-** tongle
-#+begin_src emacs-lisp
-(use-private tongle
-  :commands (tongle-mode)
-  :init (setq tongle-disabled-string ""))
-#+end_src
-** emacs-lisp
-#+begin_src emacs-lisp
-(use-feature elisp-mode
-  :general
-  (global-leader
-    :major-modes '(emacs-lisp-mode lisp-interaction-mode t)
-    :keymaps     '(emacs-lisp-mode-map lisp-interaction-mode-map)
-    "e"  '(:ignore t :which-key "eval")
-    "eb" 'eval-buffer
-    "ed" 'eval-defun
-    "ee" 'eval-expression
-    "ep" 'pp-eval-last-sexp
-    "es" 'eval-last-sexp
-    "i"  'elisp-index-search))
-#+end_src
-** outshine
-#+begin_src emacs-lisp
-(use-package outshine
-  :general
-  ;;@TODO: fix this later. It shouldnt be in "narrow" menu.
-  ;;but we need to make an evil-intercept map similar to what is done
-  ;;in company config.
-  (+general-global-narrow
-    "o" '(:ignore t :which-key "outshine")
-    "oc" 'outshine-cycle
-    "ob" 'outshine-cycle-buffer))
-#+end_src
-** hideshow
-#+begin_src emacs-lisp
-(use-feature hideshow
-  :general
-  (+general-global-narrow
-    ;; for now we're just using the toggle, may add more later.
-    ;; "h"  '(:ignore t :which-key "hideshow")
-    "h" 'hs-toggle-hiding))
-#+end_src
-* Development
-** fuzzy-finder-el
-#+begin_src emacs-lisp
-(use-package fuzzy-finder
-  :straight (:type git :host github :repo "10sr/fuzzy-finder-el" :fork "progfolio/fuzzy-finder-el"))
-#+end_src
-** cleanroom
-#+begin_src emacs-lisp
-(use-package cleanroom
-  :straight (:type git :host github :repo "progfolio/cleanroom"))
 #+end_src
