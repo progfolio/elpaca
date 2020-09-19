@@ -6,8 +6,8 @@
 #+archive: archives/%s::datetree/
 #+startup: indent
 * An Explanation
-This is a literate configuration for =Emacs=. Tangling this file creates an Elisp
-file, =~/.emacs.d/lisp/bootstrap.el=, which is then byte-compiled and loaded in =~/emacs.d/init.el=.
+This is a literate configuration for =Emacs=.
+Tangling this file creates an Elisp file, =~/.emacs.d/lisp/init.el=.
 * Bootstrapping
 ** early-init
 :PROPERTIES:
