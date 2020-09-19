@@ -6,3 +6,4 @@
 !emacs-batch-tangle
 !tangle-init
 !/lisp/**
+!/themes/**
