@@ -132,7 +132,10 @@ Ignore X resources.
 #+end_src
 
 
-Taken from [[https://github.com/vsemyonoff/emacsrc/blob/14649a5bafea99cc7e13e7d048e9d15aed7926ce/early-init.el]]
+Taken from:
+
+[[https://github.com/vsemyonoff/emacsrc/blob/14649a5bafea99cc7e13e7d048e9d15aed7926ce/early-init.el]]
+
 This helps with a bug I was hitting when using =desktop-save-mode='s =desktop-read=.
 #+begin_src emacs-lisp
 (setq desktop-restore-forces-onscreen nil)
@@ -166,6 +169,7 @@ The following line turns on lexical binding for performance reasons.
 ** Straight package manager
 #+begin_quote
 straight.el: next-generation, purely functional package manager for the Emacs hacker.
+
 https://github.com/raxod502/straight.el
 #+end_quote
 
@@ -278,6 +282,7 @@ I keep my sensitive, personal information in a separate file so I can publish th
 ** evil
 #+begin_quote
 Evil is an extensible vi layer for Emacs. It emulates the main features of Vim, and provides facilities for writing custom extensions.
+
 https://github.com/emacs-evil/evil
 #+end_quote
 #+begin_src emacs-lisp
@@ -330,6 +335,7 @@ Keep an eye on: https://github.com/noctuid/general.el/issues/180
 *** evil-anzu-mode
 #+begin_quote
 anzu for evil-mode
+
 https://github.com/emacsorphanage/evil-anzu
 #+end_quote
 
@@ -345,6 +351,7 @@ Shows match counts in mode line.
 :END:
 #+begin_quote
 This is a collection of Evil bindings for the parts of Emacs that Evil does not cover properly by default,This is a collection of Evil bindings for the parts of Emacs that Evil does not cover properly by default.
+
 https://github.com/emacs-evil/evil-collection
 #+end_quote
 #+begin_src emacs-lisp
@@ -361,6 +368,7 @@ https://github.com/emacs-evil/evil-collection
 :END:
 #+begin_quote
 general.el provides a more convenient method for binding keys in emacs (for both evil and non-evil users).
+
 https://github.com/noctuid/general.el#about
 #+end_quote
 
@@ -596,6 +604,7 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
 ** afternoon-theme
 #+begin_quote
 Dark color theme with a deep blue background
+
 https://github.com/osener/emacs-afternoon-theme
 #+end_quote
 #+begin_src emacs-lisp
@@ -658,6 +667,7 @@ It also helps if multiple instances of Emacs are editing the same file.
 ** buttercup
 #+begin_quote
 Buttercup is a behavior-driven development framework for testing Emacs Lisp code.
+
 https://github.com/jorgenschaefer/emacs-buttercup
 #+end_quote
 #+begin_src emacs-lisp
@@ -669,6 +679,7 @@ https://github.com/jorgenschaefer/emacs-buttercup
 Company is a text completion framework for Emacs.
 The name stands for "complete anything".
 It uses pluggable back-ends and front-ends to retrieve and display completion candidates.
+
 http://company-mode.github.io/
 #+end_quote
 #+begin_src emacs-lisp
@@ -739,6 +750,7 @@ http://company-mode.github.io/
 ** default-text-scale
 #+begin_quote
 Easily adjust the font size in all Emacs frames
+
 https://github.com/purcell/default-text-scale
 #+end_quote
 #+begin_src emacs-lisp
@@ -751,6 +763,7 @@ https://github.com/purcell/default-text-scale
 ** diminish
 #+begin_quote
 This package implements hiding or abbreviation of the mode line displays (lighters) of minor-modes.
+
 https://github.com/emacsmirror/diminish
 #+end_quote
 #+begin_src emacs-lisp
@@ -760,6 +773,7 @@ https://github.com/emacsmirror/diminish
 ** dimmer
 #+begin_quote
 Visually highlight the selected buffer.
+
 https://github.com/gonewest818/dimmer.el
 #+end_quote
 #+begin_src emacs-lisp
@@ -780,6 +794,7 @@ https://github.com/gonewest818/dimmer.el
 ** doct
 #+begin_quote
 doct is a function that provides an alternative, declarative syntax for describing Org capture templates.
+
 https://github.com/progfolio/doct
 #+end_quote
 #+begin_src emacs-lisp
@@ -790,6 +805,7 @@ https://github.com/progfolio/doct
 ** doom-modeline
 #+begin_quote
 A fancy and fast mode-line inspired by minimalism design.
+
 https://github.com/seagle0128/doom-modeline
 #+end_quote
 #+begin_src emacs-lisp
@@ -805,6 +821,7 @@ https://github.com/seagle0128/doom-modeline
 ** doom-themes
 #+begin_quote
 DOOM Themes is an opinionated UI plugin and pack of themes extracted from [hlissner's] emacs.d, inspired by some of my favorite color themes.
+
 https://github.com/hlissner/emacs-doom-themes
 #+end_quote
 #+begin_src emacs-lisp
@@ -813,6 +830,7 @@ https://github.com/hlissner/emacs-doom-themes
 ** elfeed
 #+begin_quote
 Elfeed is an extensible web feed reader for Emacs, supporting both Atom and RSS.
+
 https://github.com/skeeto/elfeed
 #+end_quote
 I've put my elfeed database in under version control.
@@ -989,6 +1007,7 @@ I'd rather have everything in one folder to keep my file system tidy.
 ** flycheck
 #+begin_quote
 Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intended as replacement for the older Flymake extension which is part of GNU Emacs.
+
 https://www.flycheck.org/en/latest/
 #+end_quote
 #+begin_src emacs-lisp
@@ -1021,6 +1040,7 @@ at point, flyspell-correct-previous-word-generic to correct any visible word
 before point and flyspell-correct-next-word-generic to correct any visible word
 after point. In most cases second function is more convenient (at least in my
 opinion), so don’t forget to bind it." --
+
 https://d12frosted.io/posts/2016-05-09-flyspell-correct-intro.html
 #+end_quote
 #+begin_src emacs-lisp
@@ -1034,6 +1054,7 @@ https://d12frosted.io/posts/2016-05-09-flyspell-correct-intro.html
 ** fontify-face
 #+begin_quote
 Fontify symbols representing faces with that face.
+
 https://github.com/Fuco1/fontify-face
 #+end_quote
 
@@ -1044,6 +1065,7 @@ https://github.com/Fuco1/fontify-face
 ** helm
 #+begin_quote
 Helm is an Emacs framework for incremental completions and narrowing selections.
+
 https://github.com/emacs-helm/helm
 #+end_quote
 #+begin_src emacs-lisp
@@ -1089,6 +1111,7 @@ https://github.com/emacs-helm/helm
 *** helm-ag
 #+begin_quote
 helm-ag.el provides interfaces of The Silver Searcher with helm.
+
 https://github.com/emacsorphanage/helm-ag
 #+end_quote
 #+begin_src emacs-lisp
@@ -1098,6 +1121,7 @@ https://github.com/emacsorphanage/helm-ag
 *** helm-describe-modes
 #+begin_quote
 helm-describe-modes provides a Helm interface to Emacs’s describe-mode.
+
 https://github.com/emacs-helm/helm-describe-modes
 #+end_quote
 #+begin_src emacs-lisp
@@ -1112,6 +1136,7 @@ https://github.com/emacs-helm/helm-describe-modes
 *** helm-descbinds
 #+begin_quote
 Helm Descbinds provides an interface to emacs’ describe-bindings making the currently active key bindings interactively searchable with helm.
+
 https://github.com/emacs-helm/helm-descbinds
 #+end_quote
 #+begin_src emacs-lisp
@@ -1139,6 +1164,7 @@ Supposedly better fuzzy finding for helm. Trying it out.
 *** helm-flyspell
 #+begin_quote
 Helm extension for correcting words with Flyspell.
+
 https://github.com/pronobis/helm-flyspell
 #+end_quote
 #+begin_src emacs-lisp
@@ -1178,6 +1204,7 @@ Necessary for completion of multiple tags with Helm.
 #+begin_quote
 List match lines to another buffer, which is able to squeeze by any words you input.
 At the same time, the original buffer's cursor is jumping line to line according to moving up and down the line list.
+
 https://github.com/emacsorphanage/helm-swoop
 #+end_quote
 #+begin_src emacs-lisp
@@ -1196,6 +1223,7 @@ https://github.com/emacsorphanage/helm-swoop
 ** highlight-indent-guides
 #+begin_quote
 This minor mode highlights indentation levels via font-lock.
+
 https://github.com/DarthFennec/highlight-indent-guides
 #+end_quote
 #+begin_src emacs-lisp
@@ -1228,6 +1256,7 @@ I've removed the default holiday lists that I don't need.
 ** htmlize
 #+begin_quote
 This package converts the buffer text and the associated decorations to HTML.
+
 https://github.com/hniksic/emacs-htmlize
 #+end_quote
 This is necessary for exporting Org files to HTML.
@@ -1238,6 +1267,7 @@ This is necessary for exporting Org files to HTML.
 ** hydra
 #+begin_quote
 This is a package for GNU Emacs that can be used to tie related commands into a family of short bindings with a common prefix: a Hydra.
+
 https://github.com/abo-abo/hydra
 #+end_quote
 #+begin_src emacs-lisp
@@ -1281,6 +1311,7 @@ https://github.com/abo-abo/hydra
 ** js2
 #+begin_quote
 Improved JavaScript editing mode for GNU Emacs
+
 https://github.com/mooz/js2-mode
 #+end_quote
 #+begin_src emacs-lisp
@@ -1302,6 +1333,7 @@ Need to investigate, but js-mode might have been fixed/updated.
 #+begin_quote
 link-hint.el is inspired by the link hinting functionality in vim-like browsers and browser plugins such as pentadactyl.
 It provides commands for using avy to open, copy, or take a user-defined action on “links.”
+
 https://github.com/noctuid/link-hint.el
 #+end_quote
 #+begin_src emacs-lisp
@@ -1319,6 +1351,7 @@ https://github.com/noctuid/link-hint.el
 ** macrostep
 #+begin_quote
 macrostep is an Emacs minor mode for interactively stepping through the expansion of macros in Emacs Lisp source code.
+
 https://github.com/joddie/macrostep
 #+end_quote
 #+begin_src emacs-lisp
@@ -1336,6 +1369,7 @@ https://github.com/joddie/macrostep
 ** magit
 #+begin_quote
 Magit is an interface to the version control system Git, implemented as an Emacs package.
+
 https://magit.vc/
 #+end_quote
 #+begin_src emacs-lisp
@@ -1362,6 +1396,7 @@ https://magit.vc/
 ** markdown
 #+begin_quote
 markdown-mode is a major mode for editing Markdown-formatted text.
+
 https://jblevins.org/projects/markdown-mode/
 #+end_quote
 #+begin_src emacs-lisp
@@ -1410,6 +1445,7 @@ A package for miscellaneous functions.
 ** mu4e
 #+begin_quote
 An emacs-based e-mail client which uses mu as its back-end.
+
 https://www.djcbsoftware.nl/code/mu/mu4e.html
 #+end_quote
 #+begin_src emacs-lisp
@@ -1508,6 +1544,7 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
 #+begin_quote
 mu4e-alert is an Emacs extension providing desktop notifications for mu4e.
 Additionally it can display the number of unread emails in the mode-line.
+
 https://github.com/iqbalansari/mu4e-alert
 #+end_quote
 #+begin_src emacs-lisp
@@ -1525,6 +1562,7 @@ https://github.com/iqbalansari/mu4e-alert
 ** nov (epub)
 #+begin_quote
 Major mode for reading EPUB files in Emacs
+
 https://depp.brause.cc/nov.el/
 #+end_quote
 #+begin_src emacs-lisp
@@ -1547,6 +1585,7 @@ destructive or confusing commands. Don't need it.
 ** olivetti
 #+begin_quote
 A simple Emacs minor mode for a nice writing environment.
+
 https://github.com/rnkn/olivetti
 #+end_quote
 #+begin_src emacs-lisp
@@ -2304,6 +2343,7 @@ emacsclient --create-frame \
 ** org-fancy-priorities
 #+begin_quote
 A minor mode that displays org priorities as custom strings.
+
 https://github.com/harrybournis/org-fancy-priorities
 #+end_quote
 #+begin_src emacs-lisp
@@ -2457,6 +2497,7 @@ browser. On saving, the document is re-exported and the browser is refreshed.
 ** org-mime
 #+begin_quote
 org-mime can be used to send HTML email using Org-mode HTML export.
+
 https://github.com/org-mime/org-mime
 #+end_quote
 #+begin_src emacs-lisp
@@ -2469,6 +2510,7 @@ https://github.com/org-mime/org-mime
 This package makes it easy to have one or more customizable tables of contents in Org files.
 They can be updated manually, or automatically when the file is saved.
 Links to headings are created compatible with GitHub’s Org renderer.
+
 https://github.com/alphapapa/org-make-toc
 #+end_quote
 #+begin_src emacs-lisp
@@ -2484,6 +2526,7 @@ https://github.com/alphapapa/org-make-toc
 ** org-superstar
 #+begin_quote
 Prettify headings and plain lists in Org mode. This package is a direct descendant of ‘org-bullets’
+
 https://github.com/integral-dw/org-superstar-mode
 #+end_quote
 #+begin_src emacs-lisp
@@ -2495,6 +2538,7 @@ https://github.com/integral-dw/org-superstar-mode
 ** ox-twbs
 #+begin_quote
 Export org-mode docs as HTML compatible with Twitter Bootstrap.
+
 https://github.com/marsmining/ox-twbs
 #+end_quote
 #+begin_example emacs-lisp
@@ -2509,6 +2553,7 @@ https://github.com/marsmining/ox-twbs
 #+begin_quote
 This library provides a linter for the metadata in Emacs Lisp files which are intended to be packages.
 You can integrate it into your build process.
+
 https://github.com/purcell/package-lint
 #+end_quote
 #+begin_src emacs-lisp
@@ -2550,6 +2595,7 @@ can make sure they're balanced easily.
 #+begin_quote
 PDF Tools is, among other things, a replacement of DocView for PDF files.
 The key difference is that pages are not pre-rendered by e.g. ghostscript and stored in the file-system, but rather created on-demand and stored in memory.
+
 https://github.com/politza/pdf-tools#about-this-package
 #+end_quote
 This  allows me to customize the color of the generated pdf.
@@ -2570,6 +2616,7 @@ This  allows me to customize the color of the generated pdf.
 #+begin_quote
 Projectile is a project interaction library for Emacs.
 Its goal is to provide a nice set of features operating on a project level without introducing external dependencies (when feasible).
+
 https://github.com/bbatsov/projectile
 #+end_quote
 #+begin_src emacs-lisp
@@ -2601,6 +2648,7 @@ https://github.com/bbatsov/projectile
 ** rainbow-mode
 #+begin_quote
 Colorize color names in buffers
+
 https://elpa.gnu.org/packages/rainbow-mode.html
 #+end_quote
 #+begin_src emacs-lisp
@@ -2631,6 +2679,7 @@ ten, but opening my org agenda files wipes that list out.
 ** shackle
 #+begin_quote
 shackle gives you the means to put an end to popped up buffers not behaving they way you'd like them to.
+
 https://depp.brause.cc/shackle/
 #+end_quote
 #+begin_src emacs-lisp
@@ -2725,6 +2774,7 @@ https://depp.brause.cc/shackle/
 ** tern
 #+begin_quote
 Tern is a stand-alone, editor-independent JavaScript analyzer that can be used to improve the JavaScript integration of existing editors.
+
 https://github.com/ternjs/tern
 #+end_quote
 #+begin_src emacs-lisp
@@ -2765,6 +2815,7 @@ You probably want this 99% of the time and it will skip an annoying prompt.
 ** vterm
 #+begin_quote
 Emacs-libvterm (vterm) is fully-fledged terminal emulator inside GNU Emacs based on libvterm, a C library.
+
 https://github.com/akermu/emacs-libvterm
 #+end_quote
 #+begin_src emacs-lisp
@@ -2781,6 +2832,7 @@ https://github.com/akermu/emacs-libvterm
 ** which-key
 #+begin_quote
 which-key is a minor mode for Emacs that displays the key bindings following your currently entered incomplete command (a prefix) in a popup.
+
 https://github.com/justbur/emacs-which-key
 #+end_quote
 #+begin_src emacs-lisp
@@ -2811,6 +2863,7 @@ https://github.com/justbur/emacs-which-key
 ** wordnut
 #+begin_quote
 An Emacs interface to the wordnet (wn) command line tool.
+
 https://github.com/gromnitsky/wordnut
 #+end_quote
 #+begin_src emacs-lisp
@@ -2824,6 +2877,7 @@ https://github.com/gromnitsky/wordnut
 ** writegood
 #+begin_quote
 This is a minor mode to aid in finding common writing problems.
+
 https://github.com/bnbeckwith/writegood-mode
 #+end_quote
 #+begin_src emacs-lisp
@@ -2835,6 +2889,7 @@ https://github.com/bnbeckwith/writegood-mode
 #+begin_quote
 YASnippet is a template system for Emacs.
 It allows you to type an abbreviation and automatically expand it into function templates.
+
 https://github.com/joaotavora/yasnippet
 #+end_quote
 #+begin_src emacs-lisp
@@ -2846,6 +2901,7 @@ https://github.com/joaotavora/yasnippet
 ** zerodark-theme
 #+begin_quote
 A dark theme for Emacs, inspired from Niflheim and One Dark
+
 https://github.com/NicolasPetton/zerodark-theme
 #+end_quote
 #+begin_src emacs-lisp
@@ -2856,6 +2912,7 @@ Packages and settings I'm not sold on, or haven't had too much time to try yet.
 ** ace-window
 #+begin_quote
 GNU Emacs package for selecting windows with single a single key.
+
 https://github.com/abo-abo/ace-window
 #+end_quote
 #+begin_src emacs-lisp
