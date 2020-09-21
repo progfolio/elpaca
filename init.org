@@ -2163,8 +2163,18 @@ If there is no previous template, call `org-capture'."
   (interactive "P")
   (org-capture arg (plist-get org-capture-plist :key)))
 
-(defun +org-capture-property-drawer (&rest strings)
-  (string-join `(":PROPERTIES:" ,@strings ":END:") "\n"))
+(defun +org-capture-property-drawer ()
+  "Hook function run durning `org-capture-mode-hook'.
+If a template has a :properties keyword, add them to the entry."
+  (when (eq (org-capture-get :type 'local) 'entry)
+    (when-let ((properties (doct-get :properties t)))
+      (dolist (property properties)
+        (org-set-property
+         (symbol-name (car property))
+         (replace-regexp-in-string
+          "\n.*" ""
+          (org-capture-fill-template
+           (doct--replace-template-strings (cadr property)))))))))
 
 (defun +org-capture-todo ()
   "Set capture entry to TODO automatically"
@@ -2177,15 +2187,16 @@ If there is no previous template, call `org-capture'."
       (doct `(("Appointment"
                :keys "a"
                :id "2cd2f75e-b600-4e9b-95eb-6baefeaa61ac"
-               :template ("* %^{appointment} %^g"
-                          ,(+org-capture-property-drawer ":Created: %U")
-                          "%?")
-               :hook (lambda () (unless org-note-abort (+org-schedule-relative-to-deadline))))
+               :properties ((Created "%U"))
+               :template ("* %^{appointment} %^g" "%?")
+               :hook (lambda ()
+                       (+org-capture-property-drawer)
+                       (unless org-note-abort (+org-schedule-relative-to-deadline))))
               ("Account"
                :keys "A"
-               :template ("* TODO %^{description} %^g"
-                          ,(+org-capture-property-drawer ":Created: %U")
-                          "%?")
+               :properties ((Created "%U"))
+               :template ("* TODO %^{description} %^g" "%?")
+               :hook +org-capture-property-drawer
                :children (("Buy"
                            :keys "b"
                            :id "e1dcca6e-6d85-4c8e-b935-d50492b2cc58")
@@ -2194,14 +2205,12 @@ If there is no previous template, call `org-capture'."
                            :id "a318b8ba-ed1a-4767-84bd-4f45eb409aab"
                            :template ("* TODO Return %^{description} to %^{person} %^g"
                                       "DEADLINE: %^T"
-                                      ,(+org-capture-property-drawer ":Created: %U")
                                       "%?"))
                           ("Loan"
                            :keys "l"
                            :id "cfdd301d-c437-4aae-9738-da022eae8056"
                            :template ("* TODO Get %^{item} back from %^{person} %^g"
                                       "DEADLINE: %^T"
-                                      ,(+org-capture-property-drawer ":Created: %U")
                                       "%?"))
                           ("Favor"
                            :keys "f"
@@ -2211,10 +2220,10 @@ If there is no previous template, call `org-capture'."
                            :id "9c4a39c5-3ba6-4665-ac43-67e72f461c15")))
               ("Bookmark"
                :keys "b"
+               :hook +org-capture-property-drawer
                :id "7c20c705-80a3-4f5a-9181-2ea14a18fa75"
-               :template ("* [[%x][%^{title}]] %^g"
-                          ,(+org-capture-property-drawer ":Created: %U")
-                          "%?"))
+               :properties ((Created "%U"))
+               :template ("* [[%x][%^{title}]] %^g" "%?"))
               ("Health"
                :keys "h"
                :children (("Blood Pressure"
@@ -2225,10 +2234,8 @@ If there is no previous template, call `org-capture'."
                            :table-line-pos "II-1")))
               ("Listen"
                :keys "l"
-               :template ("* TODO %^{Title} %^g"
-                          ,(+org-capture-property-drawer
-                            ":Links: [[%^{URL}][%^{Description}]]"
-                            "%^{Genre}"))
+               :hook (lambda (+org-capture-property-drawer) (+org-capture-todo))
+               :template ("* TODO %^{Title} %^g" "%^{Genre}")
                :children (("Audio Book"
                            :keys "a"
                            :id "55a01ad5-24f5-40ec-947c-ed0bc507d4e8"
@@ -2236,11 +2243,11 @@ If there is no previous template, call `org-capture'."
                           ("Music"
                            :keys "m"
                            :id "dc9cfb0f-c65b-4ebe-a082-e751bb3261a6"
-                           :hook +org-capture-todo
                            :template "%(wikinforg-capture \"album\")")
                           ("Podcast"
                            :keys "p"
-                           :id "881ee183-37aa-4e76-a5af-5be8446fc346")
+                           :id "881ee183-37aa-4e76-a5af-5be8446fc346"
+                           :properties ((URL "[[%^{URL}][%^{Description}]]")))
                           ("Radio"
                            :keys "r"
                            :id "78da1d3e-c83a-4769-9fb2-91e8ff7ab5da")))
@@ -2298,12 +2305,11 @@ If there is no previous template, call `org-capture'."
               ("Todo" :keys "t"
                :id "0aeb95eb-25ee-44de-9ef5-2698514f6208"
                :hook (lambda ()
-                       "Auto prompt for org TODO keyword"
+                       (+org-capture-property-drawer)
                        ;;swallow org-todo quit so we don't abort the whole capture
                        (condition-case nil (org-todo) (quit nil)))
-               :template ("* %^{description} %^g"
-                          ,(+org-capture-property-drawer ":Created: %U")
-                          "%?"))
+               :properties (("Created" "%U"))
+               :template ("* %^{description} %^g" "%?"))
               ("Watch":keys "w"
                :template "%(wikinforg-capture \"%{entity}\")"
                :hook +org-capture-todo
