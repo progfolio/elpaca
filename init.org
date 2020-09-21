@@ -501,6 +501,24 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
   "v"   'find-variable-at-point
   "V"   'find-variable)
 #+end_src
+**** frames
+
+#+begin_src emacs-lisp
+(+general-global-menu! "frame" "F"
+  "D" 'delete-other-frames
+  "F" 'select-frame-by-name
+  "O" 'other-frame-prefix
+  "c" '(:ignore t :which-key "color")
+  "cb" 'set-background-color
+  "cb" 'set-cursor-color
+  "cf" 'set-foreground-color
+  "f" 'set-frame-font
+  "m" 'make-frame-on-monitor
+  "n" 'next-window-any-frame
+  "o" 'other-frame
+  "p" 'previous-window-any-frame
+  "r" 'set-frame-name)
+#+end_src
 **** git version-control
 #+begin_src emacs-lisp
 (+general-global-menu! "git/version-control" "g")
