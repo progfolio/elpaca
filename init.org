@@ -350,7 +350,7 @@ Shows match counts in mode line.
 :ID:       fe31fb46-abb8-4f19-ac06-9f1fd3b90f22
 :END:
 #+begin_quote
-This is a collection of Evil bindings for the parts of Emacs that Evil does not cover properly by default,This is a collection of Evil bindings for the parts of Emacs that Evil does not cover properly by default.
+This is a collection of Evil bindings for the parts of Emacs that Evil does not cover properly by default.
 
 https://github.com/emacs-evil/evil-collection
 #+end_quote
