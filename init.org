@@ -181,6 +181,7 @@ Bootstrap straight
 (setq straight-vc-git-default-protocol 'https)
 (setq straight-vc-git-force-protocol nil)
 (defvar bootstrap-version)
+(setq straight-host-usernames '((github . "progfolio")))
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
       (bootstrap-version 5))
@@ -818,7 +819,7 @@ https://github.com/progfolio/doct
 #+end_quote
 #+begin_src emacs-lisp
 (use-package doct
-  :straight (:host github :repo "progfolio/doct" :branch "development")
+  :straight (:branch "development")
   :commands (doct))
 #+end_src
 ** doom-modeline
@@ -2551,7 +2552,7 @@ https://github.com/alphapapa/org-make-toc
 #+end_quote
 #+begin_src emacs-lisp
 (use-package org-make-toc
-  :straight '(:fork (:repo "progfolio/org-make-toc"))
+  :straight (:fork t)
   :commands (org-make-toc))
 #+end_src
 ** org-region-link
@@ -2570,7 +2571,7 @@ https://github.com/integral-dw/org-superstar-mode
 (use-package org-superstar
   :after (org)
   :straight ( :type git :host github :repo "integral-dw/org-superstar-mode"
-              :fork (:host github :repo "progfolio/org-superstar-mode")))
+              :fork t))
 #+end_src
 ** ox-twbs
 #+begin_quote
@@ -3002,7 +3003,7 @@ Space for packages which I'm developing but are not part of my usual configurati
 #+begin_src emacs-lisp
 (use-package poke-line
   :defer t
-  :straight (:type git :host github :repo "RyanMillerC/poke-line" :fork "progfolio/poke-line"
+  :straight (:type git :host github :repo "RyanMillerC/poke-line" :fork t
                    :files (:defaults "img")))
 #+end_src
 
