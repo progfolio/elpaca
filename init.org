@@ -2309,7 +2309,7 @@ If a template has a :properties keyword, add them to the entry."
                        (+org-capture-property-drawer)
                        ;;swallow org-todo quit so we don't abort the whole capture
                        (condition-case nil (org-todo) (quit nil)))
-               :properties (("Created" "%U"))
+               :properties ((Created "%U"))
                :template ("* %^{description} %^g" "%?"))
               ("Watch":keys "w"
                :template "%(wikinforg-capture \"%{entity}\")"
