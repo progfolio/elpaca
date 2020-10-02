@@ -258,7 +258,10 @@
                 (shr-link :inherit org-link)
                 (shr-selected-link)
                 (shr-strike-through)
-
+                ;;erc
+                (erc-input-face :foreground ,red)
+                (erc-my-nick-face :foreground ,green)
+                (erc-nick-msg-face :foreground ,red :weight bold)
                 ;;ert
                 (ert-test-result-expected   :background ,dark-purple :foreground ,green)
                 (ert-test-result-unexpected :background ,dark-purple :foreground ,red :box ,red)
