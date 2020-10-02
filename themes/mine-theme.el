@@ -268,6 +268,10 @@
                 ;;wikinfo
                 (wikinfo-search-title :foreground ,blue :weight ultra-bold :underline t)
 
+                ;;smerge
+                (smerge-lower :background ,green :foreground , purple)
+                (smerge-refined-added :background ,green :foreground ,dark-purple :weight ultra-bold)
+
                 )))
   (apply #'custom-theme-set-faces
          'mine
