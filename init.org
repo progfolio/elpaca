@@ -1469,9 +1469,12 @@ A package for miscellaneous functions.
           :which-key "toggle-maximize-buffer"))
   (+general-global-toggle
     "S" '(my/toggle-syntax-highlighting :which-key "syntax-highlighting")
-    "m"  '(my/toggle-mode               :which-key "mode")
-    "n"  '(my/toggle-relative-lines     :which-key "relative-lines")
-    "t"  '(my/change-theme              :which-key "change-theme")))
+    "m" '(my/toggle-mode                :which-key "mode")
+    "n" '(my/toggle-relative-lines      :which-key "relative-lines")
+    "t" '(:ignore t :which-key "theme")
+    "tt" '(my/change-theme :which-key "toggle-theme")
+    "tn" '((lambda () (interactive) (my/theme-nth 1))  :which-key "theme-next")
+    "tp" '((lambda () (interactive) (my/theme-nth -1)) :which-key "theme-prev")))
 #+end_src
 ** mu4e
 #+begin_quote
