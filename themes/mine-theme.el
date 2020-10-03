@@ -167,7 +167,7 @@
                 (helm-ff-executable :foreground ,green :weight normal)
                 (helm-ff-file :inherit default)
                 (helm-ff-file-extension :foreground ,green :weight normal)
-                (helm-ff-invalid-symlink :foreground ,red :weight thin :strike-through t)
+                (helm-ff-invalid-symlink :foreground ,red :weight light :strike-through t)
                 (helm-ff-prefix :foreground ,green :weight normal)
                 (helm-ff-symlink :foreground ,blue :italic t :weight bold)
                 (helm-ff-dotted-directory :inherit helm-ff-directory)
