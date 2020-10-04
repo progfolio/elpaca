@@ -863,17 +863,15 @@ I may move it from its default location (=~/.elfeed=), in =elfeed-db-directory=.
     "Play selected videos in a shared mpv instance in chronological order.
 If SEPARATE is non-nil, launch a separate instance of mpv."
     (interactive "P")
-    (let* ((program (if separate "mpv" "umpv"))
-           (command-args (string-join (append
-                                       `(,(concat "nohup " program))
-                                       (nreverse
-                                        (mapcar
-                                         (lambda (entry) (elfeed-entry-link entry))
-                                         (elfeed-search-selected)))
-                                       '("> /dev/null")) " ")))
-      (start-process "*elfeed-mpv*" nil "bash" "-c" command-args)
-      (elfeed-search-untag-all-unread)
-      (message "Playing selected videos in mpv")))
+    (make-process :name "*elfeed-mpv*"
+                  :command `("nohup" ,(if separate "mpv" "umpv")
+                             ,@(nreverse (mapcar (lambda (entry)
+                                                   (elfeed-entry-link entry))
+                                                 (elfeed-search-selected))))
+                  ;; No need to query for detached process when closing Emacs.
+                  :noquery t)
+    (elfeed-search-untag-all-unread)
+    (message "Playing selected videos in mpv"))
   :general
   (+general-global-application
     "e"    'elfeed)
