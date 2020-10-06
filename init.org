@@ -867,7 +867,9 @@ If SEPARATE is non-nil, launch a separate instance of mpv."
                   :command `("nohup" ,(if separate "mpv" "umpv")
                              ,@(nreverse (mapcar (lambda (entry)
                                                    (elfeed-entry-link entry))
-                                                 (elfeed-search-selected))))
+                                                 (elfeed-search-selected)))
+                             ;; added to prevent nohup.out file
+                             "&>/dev/null")
                   ;; No need to query for detached process when closing Emacs.
                   :noquery t)
     (elfeed-search-untag-all-unread)
