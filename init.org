@@ -2065,7 +2065,8 @@ delete =~/.emacs.d/elpa/org-plus-contrib*/*.el(c)= files and restart
   :commands (org-babel-execute:python))
 (use-package ob-shell
   :straight org-plus-contrib
-  :commands (org-babel-execute:shell
+  :commands (org-babel-execute:bash
+             org-babel-execute:shell
              org-babel-expand-body:generic)
   :config (add-to-list 'org-babel-load-languages '(shell . t))
   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
