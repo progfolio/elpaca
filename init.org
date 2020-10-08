@@ -2288,7 +2288,7 @@ If a template has a :properties keyword, add them to the entry."
                :template "%(wikinforg-capture \"game\")")
               ("Read"
                :keys "r"
-               :template "%(wikinforg-capture \"novel book\")"
+               :template "%(wikinforg-capture \"book\")"
                :hook +org-capture-todo
                :children (("fiction"
                            :keys "f"
