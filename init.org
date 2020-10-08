@@ -1837,6 +1837,13 @@ Inverts normal logic of ARG."
     (interactive "P")
     (let ((current-prefix-arg (unless (or org-agenda-archives-mode arg) '(4))))
       (call-interactively #'org-agenda-archives-mode)))
+
+  (defun +org-agenda-place-point ()
+    "Place point on first agenda item."
+    (goto-char (point-min))
+    (org-agenda-find-same-or-today-or-agenda))
+
+  (add-hook 'org-agenda-finalize-hook #'+org-agenda-place-point 90)
   :general
   <<org-agenda-keybindings>>
   :custom
