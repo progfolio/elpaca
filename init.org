@@ -2986,17 +2986,6 @@ Space for packages which I'm developing but are not part of my usual configurati
   :straight (:type git :host github :repo "progfolio/cleanroom"))
 #+end_src
 
-** org-roam
-#+begin_src emacs-lisp
-(use-package org-roam
-  :straight (:type git :host github :repo "org-roam/org-roam" :fork "progfolio/org-roam")
-  :general
-  (+general-global-application
-    "or" '(:ignore t :which-key "org-roam")
-    "orf" 'org-roam-find-file
-    "org" 'org-roam-graph
-    "ori" 'org-roam-insert))
-#+end_src
 ** org-chronicle
 #+begin_src emacs-lisp
 (use-private org-chronicle
@@ -3009,6 +2998,17 @@ Space for packages which I'm developing but are not part of my usual configurati
 (use-package org-relativity
   :after (org)
   :straight (:type git :host github :repo "progfolio/org-relativity"))
+#+end_src
+** org-roam
+#+begin_src emacs-lisp
+(use-package org-roam
+  :straight (:type git :host github :repo "org-roam/org-roam" :fork "progfolio/org-roam")
+  :general
+  (+general-global-application
+    "or" '(:ignore t :which-key "org-roam")
+    "orf" 'org-roam-find-file
+    "org" 'org-roam-graph
+    "ori" 'org-roam-insert))
 #+end_src
 ** poke-line
 #+begin_src emacs-lisp
