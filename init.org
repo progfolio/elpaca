@@ -2980,6 +2980,30 @@ https://github.com/abo-abo/ace-window
 #+end_src
 * Development
 Space for packages which I'm developing but are not part of my usual configuration.
+** accord
+#+begin_src emacs-lisp
+(use-package accord
+  :straight (:type git :host github :repo "progfolio/accord")
+  :config
+  (defun accord-setup ()
+    (when accord-mode
+      (markdown-mode)
+      (flyspell-mode)
+      (visual-line-mode)
+      (let ((accord-mode-hook nil))
+        (accord-mode))))
+  (global-definer
+    :major-modes '(markdown-mode t)
+    :keymaps 'accord-mode-map
+    "m" '(:ignore t :which-key "accord-mode")
+    "me" nil
+    "me" '(accord-edit-message :which-key "accord-edit-message")
+    "md" 'accord-delete-message
+    "ms" 'accord-send-message
+    "m/" 'accord-select-channel
+    "m;" 'accord-last-channel)
+  (add-hook 'accord-mode-hook 'accord-setup))
+#+end_src
 ** cleanroom
 #+begin_src emacs-lisp
 (use-package cleanroom
