@@ -2985,24 +2985,54 @@ Space for packages which I'm developing but are not part of my usual configurati
 #+begin_src emacs-lisp
 (use-package accord
   :straight (:type git :host github :repo "progfolio/accord")
+  :general
+  (+general-global-application
+    "a" '(:ignore t :which-key "accord")
+    "aa" 'accord
+    "a/" 'accord-channel-search
+    "a;" 'accord-channel-last
+    "ac" '(:ignore t :which-key "channel")
+    "ac/" 'accord-channel-search
+    "ac;" 'accord-channel-last
+    "acj" 'accord-channel-scroll-down
+    "ack" 'accord-channel-scroll-up
+    "acn" 'accord-channel-next
+    "acp" 'accord-channel-prev
+    "acr" 'accord-channel-mark-read
+    "acu" 'accord-channel-goto-unread
+    "acu" 'accord-channel-scroll-up
+    "ad" 'accord-delete-message
+    "ae" 'accord-edit-message
+    "as" 'accord-send-message)
+  (global-leader
+    :major-modes '(accord-mode)
+    :keymaps     '(accord-mode-map)
+    "/" 'accord-channel-search
+    ";" 'accord-channel-last
+    "S" '(:ignore t :which-key "Server")
+    "SN" 'accord-server-next
+    "SP" 'accord-server-prev
+    "c" '(:ignore t :which-key "channel")
+    "c;" 'accord-channel-last
+    "c/" 'accord-channel-search
+    "cj" 'accord-channel-scroll-down
+    "ck" 'accord-channel-scroll-up
+    "cn" 'accord-channel-next
+    "cp" 'accord-channel-prev
+    "cr" 'accord-channel-mark-read
+    "cu" 'accord-channel-goto-unread
+    "cu" 'accord-channel-scroll-up
+    ;; These look superfluous, but without the :which-key value
+    ;; we're picking up names from org mode leader bindings...
+    ;; Not sure if it's a bug with general.el or my init.
+    "d" '(accord-delete-message :which-key "accord-delete-message")
+    "e" '(accord-edit-message   :which-key "accord-edit-message")
+    "s" '(accord-send-message   :which-key "accord-send-message"))
   :config
   (defun accord-setup ()
-    (when accord-mode
-      (markdown-mode)
-      (flyspell-mode)
-      (visual-line-mode)
-      (let ((accord-mode-hook nil))
-        (accord-mode))))
-  (global-definer
-    :major-modes '(markdown-mode t)
-    :keymaps 'accord-mode-map
-    "m" '(:ignore t :which-key "accord-mode")
-    "me" nil
-    "me" '(accord-edit-message :which-key "accord-edit-message")
-    "md" 'accord-delete-message
-    "ms" 'accord-send-message
-    "m/" 'accord-select-channel
-    "m;" 'accord-last-channel)
+    (flyspell-mode)
+    (visual-line-mode))
+
   (add-hook 'accord-mode-hook 'accord-setup))
 #+end_src
 ** cleanroom
