@@ -297,6 +297,7 @@ https://github.com/emacs-evil/evil
   (evil-complete-all-buffers nil)
   (evil-want-integration t)
   (evil-want-C-i-jump t)
+  (evil-search-module 'evil-search "use vim-like search instead of 'isearch")
   :config
   ;;I want Emacs regular mouse click behavior
   (define-key evil-motion-state-map [down-mouse-1] nil)
