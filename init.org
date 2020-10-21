@@ -1332,6 +1332,16 @@ https://github.com/abo-abo/hydra
   (+general-global-window
     "." '(my/hydra-window-resize/body :which-key "window-resize")))
 #+end_src
+** i3wm-config-mode
+#+begin_quote
+An expansion of conf-mode to bring proper syntax highlighting to your i3wm config.
+#+end_quote
+
+#+begin_src emacs-lisp
+(use-package i3wm-config-mode
+  :commands (i3wm-config-mode)
+  :straight '(:type git :host github :repo "Alexander-Miller/i3wm-Config-Mode"))
+#+end_src
 ** js2
 #+begin_quote
 Improved JavaScript editing mode for GNU Emacs
