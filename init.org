@@ -1457,7 +1457,11 @@ https://jblevins.org/projects/markdown-mode/
 ** miscellany
 A package for miscellaneous functions.
 #+begin_src emacs-lisp
-(use-private miscellany
+(use-package miscellany
+  :straight ( :repo "git@192.168.1.180:emacs/miscellany.git"
+              :branch "master"
+              :build ("/usr/bin/emacs" "--batch" "--execute"
+                      "(progn (require 'ob-tangle) (org-babel-tangle-file \"./miscellany.org\"))"))
   :commands (my/alternate-buffer
              my/change-theme
              my/compute-blood-pressure-table-row
@@ -2883,6 +2887,10 @@ https://github.com/akermu/emacs-libvterm
 #+end_quote
 #+begin_src emacs-lisp
 (use-package vterm
+  :straight (:post-build (cl-letf (((symbol-function #'pop-to-buffer)
+                                    (lambda (buffer) (with-current-buffer buffer (message (buffer-string))))))
+                           (setq vterm-always-compile-module t)
+                           (require 'vterm)))
   :commands (vterm vterm-other-window)
   :general
   (+general-global-application
