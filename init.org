@@ -511,9 +511,9 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
   "D" 'delete-other-frames
   "F" 'select-frame-by-name
   "O" 'other-frame-prefix
-  "c" '(:ignore t :which-key "color")
+  "c" '(:ingore t :which-key "color")
   "cb" 'set-background-color
-  "cb" 'set-cursor-color
+  "cc" 'set-cursor-color
   "cf" 'set-foreground-color
   "f" 'set-frame-font
   "m" 'make-frame-on-monitor
