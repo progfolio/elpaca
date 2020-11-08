@@ -2078,7 +2078,7 @@ Align tags to column 80 in the agenda view:
 I want language specific code block templates. I may use yasnippets for this
 later to have more flexibility.
 #+begin_src emacs-lisp
-(dolist (template '(("se" . "src emacs-lisp")
+(dolist (template '(("se" . "src emacs-lisp :lexical t")
                     ("ss" . "src shell")
                     ("sj" . "src javascript")))
   (add-to-list 'org-structure-template-alist template))
