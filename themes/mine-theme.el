@@ -172,6 +172,7 @@
                 (helm-ff-symlink :foreground ,blue :italic t :weight bold)
                 (helm-ff-dotted-directory :inherit helm-ff-directory)
                 (helm-ff-dotted-symlink-directory :inherit helm-ff-symlink)
+                (helm-lisp-show-completion :inherit org-code)
                 ;;(helm-grep-cmd-line :foreground ,green :background ,gray)
                 ;;(helm-grep-file :foreground ,green :background ,gray)
                 ;;(helm-grep-finish :foreground ,green :background ,gray)
