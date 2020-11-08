@@ -2287,20 +2287,27 @@ If a template has a :properties keyword, add them to the entry."
                            :id "78da1d3e-c83a-4769-9fb2-91e8ff7ab5da")))
               ("Note"
                :keys "n"
-               :file ,(defun my/project-note-file ()
-                        (let ((file (expand-file-name "notes.org" (when (functionp 'projectile-project-root)
-                                                                    (projectile-project-root)))))
-                          (with-current-buffer (find-file-noselect file)
-                            (org-mode)
-                            ;;set to utf-8 because we may be visiting raw file
-                            (setq buffer-file-coding-system 'utf-8-unix)
+               :file ,(defun +org-capture-repo-note-file ()
+                        "Find note for current repository."
+                        (require 'projectile)
+                        ;;@MAYBE: extract this to a global variable.
+                        (let* ((notedir "~/Documents/devops/repo-notes/")
+                               (project-root (projectile-project-root))
+                               (name (concat
+                                      (car (last (split-string (projectile-project-root) "/") 2))
+                                      ".org"))
+                               (path (expand-file-name name (file-truename notedir))))
+                          (with-current-buffer (find-file-noselect path)
+                            (unless (derived-mode-p 'org-mode) (org-mode)
+                                    ;;set to utf-8 because we may be visiting raw file
+                                    (setq buffer-file-coding-system 'utf-8-unix))
                             (when-let ((headline (doct-get :headline)))
                               (unless (org-find-exact-headline-in-buffer headline)
                                 (goto-char (point-max))
                                 (insert "* " headline)
                                 (org-set-tags (downcase headline))))
-                            (unless (file-exists-p file) (write-file file))
-                            file)))
+                            (unless (file-exists-p path) (write-file path))
+                            path)))
                :template (lambda () (concat  "* %{todo-state} " (when (y-or-n-p "Link? ") "%A\n") "%?"))
                :todo-state "TODO"
                :children (("bug" :keys "b" :headline "Bug")
