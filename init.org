@@ -1504,10 +1504,12 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
 #+end_quote
 #+begin_src emacs-lisp
 (use-package mu4e
-  :straight (:host github :files ("mu4e/*") :repo "djcb/mu" :branch "master")
+  :straight ( :host github :files ("mu4e/*") :repo "djcb/mu" :branch "master"
+              :build (("./autogen.sh")
+                      ("make")))
   :commands (mu4e mu4e-update-index)
   :custom
-  (mu4e-mu-version "1.5.5" "hack until straight.el supports build commands")
+  (mu4e-mu-binary (expand-file-name "mu/mu" (straight--repos-dir "mu")))
   (mu4e-org-support nil "Don't want mu4e loading Org unless I need to.")
   (message-mail-user-agent 'mu4e-user-agent "Use mu4e as default email program.")
   (mu4e-maildir (expand-file-name "~/Documents/emails/"))
@@ -1603,15 +1605,16 @@ https://github.com/iqbalansari/mu4e-alert
 #+end_quote
 #+begin_src emacs-lisp
 (use-package mu4e-alert
+  :defer 20
   :after (org)
   :config
   (setq mu4e-alert-set-window-urgency nil)
   (mu4e-alert-enable-mode-line-display)
   (mu4e-alert-enable-notifications)
-  :hook
-  (after-init . (lambda ()
-                  (mu4e-alert-enable-mode-line-display)
-                  (mu4e-alert-enable-notifications))))
+  :config
+  (lambda ()
+    (mu4e-alert-enable-mode-line-display)
+    (mu4e-alert-enable-notifications)))
 #+end_src
 ** nov (epub)
 #+begin_quote
