@@ -181,7 +181,8 @@ Bootstrap straight
 (setq straight-vc-git-default-protocol 'https)
 (setq straight-vc-git-force-protocol nil)
 (defvar bootstrap-version)
-(setq straight-host-usernames '((github . "progfolio")))
+(setq straight-host-usernames '((github . "progfolio")
+                                (gitlab . "iarchivedmywholelife")))
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
       (bootstrap-version 5))
