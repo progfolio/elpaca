@@ -2273,7 +2273,7 @@ If a template has a :properties keyword, add them to the entry."
                            :table-line-pos "II-1")))
               ("Listen"
                :keys "l"
-               :hook (lambda (+org-capture-property-drawer) (+org-capture-todo))
+               :hook (lambda () (+org-capture-property-drawer) (+org-capture-todo))
                :template ("* TODO %^{Title} %^g" "%^{Genre}")
                :children (("Audio Book"
                            :keys "a"
