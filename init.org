@@ -1087,6 +1087,16 @@ https://github.com/Fuco1/fontify-face
 (use-package fontify-face
   :commands (fontify-face-mode))
 #+end_src
+** fountain-mode
+#+begin_quote
+Fountain Mode is a screenwriting program for GNU Emacs using the Fountain plain text markup format.
+
+https://github.com/rnkn/fountain-mode
+#+end_quote
+#+begin_src emacs-lisp :lexical t
+(use-package fountain-mode
+  :mode "\\.fountain\\'")
+#+end_src
 ** helm
 #+begin_quote
 Helm is an Emacs framework for incremental completions and narrowing selections.
@@ -2083,7 +2093,8 @@ Align tags to column 80 in the agenda view:
 I want language specific code block templates. I may use yasnippets for this
 later to have more flexibility.
 #+begin_src emacs-lisp
-(dolist (template '(("se" . "src emacs-lisp :lexical t")
+(dolist (template '(("f" . "src fountain")
+                    ("se" . "src emacs-lisp :lexical t")
                     ("ss" . "src shell")
                     ("sj" . "src javascript")))
   (add-to-list 'org-structure-template-alist template))
