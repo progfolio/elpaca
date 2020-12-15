@@ -937,11 +937,18 @@ These settings defined in C code, so we use the ~emacs~ pseudo-package to set th
     "es" 'eval-last-sexp
     "i"  'elisp-index-search))
 #+end_src
-** epg-config
+** epa/g-config
 #+begin_src emacs-lisp
 (use-feature epg-config
   :defer t
   :init (setq epg-pinentry-mode 'loopback))
+#+end_src
+
+#+begin_src emacs-lisp
+(use-feature epa-file
+  :defer t
+  :init (setq epa-file-cache-passphrase-for-symmetric-encryption t))
+
 #+end_src
 ** epoch
 #+begin_src emacs-lisp
