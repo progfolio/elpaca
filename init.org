@@ -985,8 +985,8 @@ By default Emacs saves backups in the current buffer's working directory.
 I'd rather have everything in one folder to keep my file system tidy.
 #+begin_src emacs-lisp
 (use-feature files
-  :hook
-  (before-save . delete-trailing-whitespace)
+  ;;:hook
+  ;;(before-save . delete-trailing-whitespace)
   :config
   ;; source: http://steve.yegge.googlepages.com/my-dot-emacs-file
   (defun rename-file-and-buffer (new-name)
