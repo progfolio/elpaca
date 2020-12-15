@@ -1600,6 +1600,11 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
   (add-to-list 'mu4e-view-actions
                '("ViewInBrowser" . mu4e-action-view-in-browser) t)
 
+  (add-to-list 'mu4e-bookmarks
+               '( :name "straight.el"
+                  :query "list:straight.el.raxod502.github.com"
+                  :key ?s))
+
   (defun +mu4e-view-settings ()
     "Settings for mu4e-view-mode."
     (visual-line-mode)
