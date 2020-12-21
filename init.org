@@ -1444,7 +1444,8 @@ https://magit.vc/
     "s"  'magit-status
     "U"  'magit-unstage-file)
   :init
-  :config)
+  :config
+  (transient-bind-q-to-quit))
 #+end_src
 *** evil-magit
 #+begin_quote
