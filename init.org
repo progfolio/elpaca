@@ -1537,7 +1537,6 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
   (mu4e-use-fancy-chars t)
   (mu4e-view-show-addresses t)
   (mu4e-view-show-images t)
-  ;;(mu4e-sent-messages-behavior 'delete)
   (mu4e-sent-messages-behavior 'sent)
   (mu4e-get-mail-command "mbsync -c ~/.mbsyncrc -a")
   (mu4e-change-filenames-when-moving t "Needed for mbsync")
