@@ -850,6 +850,33 @@ https://github.com/hlissner/emacs-doom-themes
 #+begin_src emacs-lisp
 (use-package doom-themes :defer t)
 #+end_src
+** edebug
+#+begin_quote
+This minor mode allows programmers to step through Emacs Lisp source code while
+executing functions. You can also set breakpoints, trace (stopping at each
+expression), evaluate expressions as if outside Edebug, reevaluate and display a
+list of expressions, trap errors normally caught by debug, and display a debug
+style backtrace.
+#+end_quote
+
+#+begin_src emacs-lisp
+(use-feature edebug
+  :general
+  (global-leader
+    :major-modes '(emacs-lisp-mode lisp-interaction-mode t)
+    :keymaps     '(emacs-lisp-mode-map lisp-interaction-mode-map)
+    "d" '(:ignore t :which-key "debug")
+    "dA" 'edebug-all-defs
+    "db" '(:ignore t :which-key "breakpoint")
+    "dbU"  'edebug-unset-breakpoints
+    "dbc"  'edebug-set-conditional-breakpoint
+    "dbg"  'edebug-set-global-break-condition
+    "dbn"  'edebug-next-breakpoint
+    "dbs"  'edebug-set-breakpoint
+    "dbt"  'edebug-toggle-disable-breakpoint
+    "dbu"  'edebug-unset-breakpoint
+    "dw" 'edebug-where))
+#+end_src
 ** elfeed
 #+begin_quote
 Elfeed is an extensible web feed reader for Emacs, supporting both Atom and RSS.
