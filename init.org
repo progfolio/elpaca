@@ -2252,6 +2252,11 @@ If there is no previous template, call `org-capture'."
   (interactive "P")
   (org-capture arg (plist-get org-capture-plist :key)))
 
+(defun +org-capture-here ()
+  "Convenience command to insert a template at point"
+  (interactive)
+  (org-capture 0))
+
 (defun +org-capture-property-drawer ()
   "Hook function run durning `org-capture-mode-hook'.
 If a template has a :properties keyword, add them to the entry."
