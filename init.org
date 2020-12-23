@@ -2411,6 +2411,42 @@ If a template has a :properties keyword, add them to the entry."
                        (condition-case nil (org-todo) (quit nil)))
                :properties ((Created "%U"))
                :template ("* %^{description} %^g" "%?"))
+              ("use-package" :keys "u"
+               :file ,(expand-file-name "init.org" user-emacs-directory)
+               :function
+               ,(defun +org-capture-use-package-form ()
+                  "place point for use-package capture template."
+                  (org-show-all)
+                  (goto-char (org-find-entry-with-id "f8affafe-3a4c-490c-a066-006aeb76f628"))
+                  (org-narrow-to-subtree)
+                  ;;popping off parent headline, evil and general.el since they are order dependent.
+                  (when-let* ((name (read-string "package name: "))
+                              (headlines (nthcdr 4 (caddr (org-element-parse-buffer 'headline 'visible))))
+                              (packages (mapcar (lambda (headline) (cons (plist-get (cadr headline) :raw-value)
+                                                                         (plist-get (cadr headline) :contents-end)))
+                                                headlines))
+                              (target (let ((n (downcase name)))
+                                        (cdr
+                                         (cl-some (lambda (package) (and (string-greaterp n (downcase (car package))) package))
+                                                  (nreverse packages))))))
+                    ;;put name on template's doct plist
+                    (setq org-capture-plist
+                          (plist-put org-capture-plist :doct
+                                     (plist-put (org-capture-get :doct) :use-package name)))
+                    (goto-char target)
+                    (org-end-of-subtree)
+                    (open-line 1)
+                    (forward-line 1)))
+               :type plain
+               :empty-lines-after 1
+               :template ("** %(doct-get :use-package)"
+                          "#+begin_quote"
+                          "%(read-string \"package description:\")"
+                          "#+end_quote"
+                          "#+begin_src emacs-lisp"
+                          "(use-package %(doct-get :use-package)%?)"
+                          "#+end_src"))
+
               ("Watch":keys "w"
                :template "%(wikinforg-capture \"%{entity}\")"
                :hook +org-capture-todo
