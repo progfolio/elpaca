@@ -2733,7 +2733,7 @@ https://github.com/purcell/package-lint
 #+begin_src emacs-lisp
 (use-package package-lint
   :defer t
-  :commands (package-lint-current-buffer)
+  :commands (package-lint-current-buffer +package-lint-straight)
   :config
   <<+package-lint-straight>>)
 #+end_src
