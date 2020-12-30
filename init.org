@@ -2022,6 +2022,32 @@ buffers.
 :PROPERTIES:
 :header-args: :noweb-ref org-agenda-custom
 :END:
+Add a custom view for a simplified work agenda.
+#+begin_src emacs-lisp :lexical t
+(org-agenda-custom-commands
+ '(("w" "Work Schedule" agenda "+work"
+    ((org-agenda-files
+      '("~/Documents/todo/work.org"))
+     (org-agenda-span 'week)
+     (org-agenda-start-on-weekday 4)
+     (org-agenda-timegrid-use-ampm t)
+     (org-agenda-time-leading-zero t)
+     (org-agenda-finalize-hook
+      '((lambda nil
+          (save-excursion
+            (goto-char
+             (point-min))
+            (while
+                (re-search-forward "TODO Work" nil 'noerror)
+              (replace-match #1=""))))))
+     (org-agenda-format-date "%a %m-%d")
+     (org-agenda-show-all-dates nil)
+     (org-agenda-prefix-format
+      '((agenda . "%t ")))))
+   ("n" "Agenda and all TODOs"
+    ((agenda #1#)
+     (alltodo #1#)))))
+#+end_src
 #+BEGIN_SRC emacs-lisp
 (org-agenda-skip-deadline-prewarning-if-scheduled nil "Show approaching deadlines even when scheduled.")
 #+end_src
