@@ -1929,7 +1929,7 @@ Inverts normal logic of ARG."
 (+general-global-application
   "o#"   'org-agenda-list-stuck-projects
   "o/"   'org-occur-in-agenda-files
-  "oa"   'org-agenda-list
+  "oa"   '((lambda () (interactive) (org-agenda nil "a")) :which-key "agenda")
   "oe"   'org-store-agenda-views
   "oo"   'org-agenda)
 #+end_src
