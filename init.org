@@ -2028,7 +2028,7 @@ Add a custom view for a simplified work agenda.
  '(("w" "Work Schedule" agenda "+work"
     ((org-agenda-files '("~/Documents/todo/work.org"))
      (org-agenda-span 'week)
-     (org-agenda-start-on-weekday 4)
+     (org-agenda-start-on-weekday 2)
      (org-agenda-timegrid-use-ampm t)
      (org-agenda-time-leading-zero t)
      (org-agenda-weekend-days '(2 3))
