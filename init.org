@@ -2810,7 +2810,7 @@ https://github.com/politza/pdf-tools#about-this-package
 This  allows me to customize the color of the generated pdf.
 #+begin_src emacs-lisp
 (use-package pdf-tools
-  :straight (:post-build (pdf-tools-install 'no-query 'skip-dependencies))
+  :straight (:post-build ((require 'pdf-tools) (pdf-tools-install 'no-query 'skip-dependencies)))
   :functions (pdf-isearch-batch-mode)
   :commands (pdf-tools-install pdf-view-mode pdf-tools-install)
   :config (add-hook 'pdf-view-mode-hook
