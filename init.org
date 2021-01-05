@@ -1809,6 +1809,10 @@ https://github.com/rnkn/olivetti
     "sj" 'org-move-subtree-down
     "sk" 'org-move-subtree-up
     "sl" 'org-demote-subtree
+    "sp" '(:ignore t :which-key "priority")
+    "spu" 'org-priority-up
+    "spd" 'org-priority-down
+    "sps" 'org-priority-show
     "sm" 'org-match-sparse-tree
     "sn" 'org-toggle-narrow-to-subtree
     "sr" 'org-refile
