@@ -668,8 +668,8 @@ for your search query.
 
 #+begin_src emacs-lisp
 (use-package anzu
-:defer 10
-:config (global-anzu-mode))
+  :defer 10
+  :config (global-anzu-mode))
 #+end_src
 
 ** auto-fill-mode
