@@ -346,8 +346,7 @@ https://github.com/emacsorphanage/evil-anzu
 Shows match counts in mode line.
 #+begin_src emacs-lisp
 (use-package evil-anzu
-  :defer 10
-  :config (global-anzu-mode))
+  :after (evil anzu))
 #+end_src
 *** evil-collection
 :PROPERTIES:
@@ -659,6 +658,20 @@ https://github.com/osener/emacs-afternoon-theme
   (add-hook 'asm-mode-hook '+asm-mode-hook)
   (add-hook 'before-save-hook '+asm-before-save-hook))
 #+end_src
+** anzu
+#+begin_quote
+anzu.el provides a minor mode which displays 'current match/total
+matches' in the mode-line in various search modes.  This makes it
+easy to understand how many matches there are in the current buffer
+for your search query.
+#+end_quote
+
+#+begin_src emacs-lisp
+(use-package anzu
+:defer 10
+:config (global-anzu-mode))
+#+end_src
+
 ** auto-fill-mode
 I usually want lines to wrap at 80 chars (Emacs defaults to 70).
 #+begin_src emacs-lisp
