@@ -1520,8 +1520,8 @@ A package for miscellaneous functions.
 (use-package miscellany
   :straight ( :repo "git@192.168.1.180:emacs/miscellany.git"
               :branch "master"
-              :build ("/usr/bin/emacs" "--batch" "--execute"
-                      "(progn (require 'ob-tangle) (org-babel-tangle-file \"./miscellany.org\"))"))
+              :pre-build ("/usr/bin/emacs" "--batch" "--execute"
+                          "(progn (require 'ob-tangle) (org-babel-tangle-file \"./miscellany.org\"))"))
   :commands (my/alternate-buffer
              my/change-theme
              my/compute-blood-pressure-table-row
@@ -1563,8 +1563,8 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
 #+begin_src emacs-lisp
 (use-package mu4e
   :straight ( :host github :files ("mu4e/*") :repo "djcb/mu" :branch "master"
-              :build (("./autogen.sh")
-                      ("make")))
+              :pre-build (("./autogen.sh")
+                          ("make")))
   :commands (mu4e mu4e-update-index)
   :custom
   (mu4e-mu-binary (expand-file-name "mu/mu" (straight--repos-dir "mu")))
