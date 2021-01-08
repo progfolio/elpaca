@@ -3019,7 +3019,8 @@ I'm working on a theme that is readable and attractive.
 
 #+begin_src emacs-lisp
 (setq my/theme 'mine)
-(unless custom-enabled-themes (load-theme my/theme t))
+;; remove synthetic use-package theme
+(unless (remq 'use-package custom-enabled-themes) (load-theme my/theme t))
 #+end_src
 
 ** time
