@@ -1487,17 +1487,6 @@ https://magit.vc/
   :config
   (transient-bind-q-to-quit))
 #+end_src
-*** evil-magit
-#+begin_quote
-This library configures Magit and Evil to play well with each other.
-
-https://github.com/emacs-evil/evil-magit
-#+end_quote
-#+begin_src emacs-lisp
-(use-package evil-magit
-  :after (magit)
-  :custom (evil-magit-state 'normal))
-#+end_src
 ** markdown
 #+begin_quote
 markdown-mode is a major mode for editing Markdown-formatted text.
