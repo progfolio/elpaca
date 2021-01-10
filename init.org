@@ -2037,6 +2037,7 @@ Add a custom view for a simplified work agenda.
      (org-agenda-start-on-weekday 2)
      (org-agenda-timegrid-use-ampm t)
      (org-agenda-time-leading-zero t)
+     (org-agenda-use-time-grid nil)
      (org-agenda-weekend-days '(2 3))
      (org-agenda-format-date "%a %m-%d")
      (org-agenda-prefix-format '((agenda . " %t")))
