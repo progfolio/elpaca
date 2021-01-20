@@ -1556,6 +1556,7 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
                           ("make")))
   :commands (mu4e mu4e-update-index)
   :custom
+  (mail-user-agent 'mu4e-user-agent)
   (mu4e-mu-binary (expand-file-name "mu/mu" (straight--repos-dir "mu")))
   (mu4e-org-support nil "Don't want mu4e loading Org unless I need to.")
   (message-mail-user-agent 'mu4e-user-agent "Use mu4e as default email program.")
