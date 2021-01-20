@@ -2393,8 +2393,9 @@ If a template has a :properties keyword, add them to the entry."
                :file ,(defun +org-capture-repo-note-file ()
                         "Find note for current repository."
                         (require 'projectile)
-                        ;;@MAYBE: extract this to a global variable.
-                        (let* ((notedir "~/Documents/devops/repo-notes/")
+                        (let* ((coding-system-for-write 'utf-8)
+                               ;;@MAYBE: extract this to a global variable.
+                               (notedir "~/Documents/devops/repo-notes/")
                                (project-root (projectile-project-root))
                                (name (concat
                                       (car (last (split-string (projectile-project-root) "/") 2))
