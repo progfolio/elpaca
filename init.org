@@ -410,8 +410,9 @@ We define a global-leader definer to access major-mode specific bindings:
 #+begin_src emacs-lisp
 (general-create-definer global-leader
   :keymaps 'override
-  :states '(normal hybrid motion visual operator)
+  :states '(insert normal hybrid motion visual operator)
   :prefix "SPC m"
+  :non-normal-prefix "S-SPC m"
   "" '( :ignore t
         :which-key
         (lambda (arg)
