@@ -3263,5 +3263,9 @@ Space for packages which I'm developing but are not part of my usual configurati
 #+begin_src emacs-lisp
 (use-package wikinforg
   :straight (:type git :host github :repo "progfolio/wikinforg")
-  :commands (wikinforg wikinforg-capture))
+  :commands (wikinforg wikinforg-capture)
+  :custom
+  (wikinforg-include-thumbnail t)
+  (wikinforg-thumbnail-directory
+   (expand-file-name "wikinforg" user-emacs-directory)))
 #+end_src
