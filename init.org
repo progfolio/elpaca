@@ -2724,10 +2724,11 @@ https://github.com/org-mime/org-mime
   :commands (org-mime-htmlize
              org-mime-org-buffer-htmlize
              org-mime-org-subtree-htmlize)
-  :custom (org-mime-export-options '( :with-latex dvipng
-                                      :section-numbers nil
-                                      :with-author nil
-                                      :with-toc nil)))
+  :config
+  (setq org-mime-export-options '( :with-latex dvipng
+                                   :section-numbers nil
+                                   :with-author nil
+                                   :with-toc nil)))
 #+end_src
 ** org-make-toc
 #+begin_quote
