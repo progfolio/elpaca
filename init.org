@@ -3220,6 +3220,7 @@ Space for packages which I'm developing but are not part of my usual configurati
 ** cleanroom
 #+begin_src emacs-lisp
 (use-package cleanroom
+  :defer t
   :straight (:type git :host github :repo "progfolio/cleanroom"))
 #+end_src
 
