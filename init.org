@@ -3260,7 +3260,7 @@ Space for packages which I'm developing but are not part of my usual configurati
 #+begin_src emacs-lisp
 (use-package wikinfo
   :defer t
-  :straight (:type git :host github :repo "progfolio/wikinfo"))
+  :straight (:type git :host github :repo "progfolio/wikinfo" :branch "develop"))
 #+end_src
 #+begin_src emacs-lisp
 (use-package wikinforg
