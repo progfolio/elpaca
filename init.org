@@ -773,7 +773,7 @@ http://company-mode.github.io/
   :after (company)
   :commands (tern-mode)
   :config
-  (add-hook 'js-mode-hook '(lambda ()
+  (add-hook 'js-mode-hook #'(lambda ()
                              (company-mode t)
                              (tern-mode t)
                              (add-to-list 'company-backends 'company-tern))))
@@ -1416,7 +1416,7 @@ https://github.com/mooz/js2-mode
   (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
   (add-to-list 'interpreter-mode-alist '("nodejs" . js2-mode))
   (add-to-list 'interpreter-mode-alist '("node" . js2-mode))
-  (add-hook 'js2-mode-hook '(lambda ()
+  (add-hook 'js2-mode-hook #'(lambda ()
                               (company-mode t)
                               (tern-mode t)
                               (add-to-list 'company-backends 'company-tern))))
