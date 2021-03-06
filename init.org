@@ -3240,6 +3240,12 @@ Space for packages which I'm developing but are not part of my usual configurati
   :straight (:type git :host github :repo "progfolio/cleanroom"))
 #+end_src
 
+** emacs-director
+#+begin_src emacs-lisp :lexical t
+(use-package emacs-director
+  :defer t
+  :straight (:host github :repo "bard/emacs-director" :fork t))
+#+end_src
 ** org-chronicle
 #+begin_src emacs-lisp
 (use-private org-chronicle
