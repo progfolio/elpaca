@@ -3082,6 +3082,22 @@ https://github.com/justbur/emacs-which-key
   :diminish which-key-mode)
 #+end_src
 
+** wikinforg
+#+begin_src emacs-lisp
+(use-package wikinfo
+  :defer t
+  :straight (:type git :host github :repo "progfolio/wikinfo" :branch "develop"))
+#+end_src
+#+begin_src emacs-lisp
+(use-package wikinforg
+  :straight (:type git :host github :repo "progfolio/wikinforg")
+  :commands (wikinforg wikinforg-capture)
+  :custom
+  (wikinforg-include-thumbnail t)
+  (wikinforg-post-insert-hook '(org-redisplay-inline-images))
+  (wikinforg-thumbnail-directory
+   (expand-file-name "wikinforg" user-emacs-directory)))
+#+end_src
 ** winner
 #+begin_src emacs-lisp
 (use-feature winner
@@ -3254,20 +3270,4 @@ Space for packages which I'm developing but are not part of my usual configurati
   :defer t
   :straight (:type git :host github :repo "RyanMillerC/poke-line" :fork t
                    :files (:defaults "img")))
-#+end_src
-
-** wikinforg
-#+begin_src emacs-lisp
-(use-package wikinfo
-  :defer t
-  :straight (:type git :host github :repo "progfolio/wikinfo" :branch "develop"))
-#+end_src
-#+begin_src emacs-lisp
-(use-package wikinforg
-  :straight (:type git :host github :repo "progfolio/wikinforg")
-  :commands (wikinforg wikinforg-capture)
-  :custom
-  (wikinforg-include-thumbnail t)
-  (wikinforg-thumbnail-directory
-   (expand-file-name "wikinforg" user-emacs-directory)))
 #+end_src
