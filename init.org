@@ -3270,10 +3270,3 @@ Space for packages which I'm developing but are not part of my usual configurati
     "org" 'org-roam-graph
     "ori" 'org-roam-insert))
 #+end_src
-** poke-line
-#+begin_src emacs-lisp
-(use-package poke-line
-  :defer t
-  :straight (:type git :host github :repo "RyanMillerC/poke-line" :fork t
-                   :files (:defaults "img")))
-#+end_src
