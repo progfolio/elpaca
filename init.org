@@ -774,9 +774,9 @@ http://company-mode.github.io/
   :commands (tern-mode)
   :config
   (add-hook 'js-mode-hook #'(lambda ()
-                             (company-mode t)
-                             (tern-mode t)
-                             (add-to-list 'company-backends 'company-tern))))
+                              (company-mode t)
+                              (tern-mode t)
+                              (add-to-list 'company-backends 'company-tern))))
 #+end_src
 ** custom-set-variables
 #+begin_src emacs-lisp
@@ -1417,9 +1417,9 @@ https://github.com/mooz/js2-mode
   (add-to-list 'interpreter-mode-alist '("nodejs" . js2-mode))
   (add-to-list 'interpreter-mode-alist '("node" . js2-mode))
   (add-hook 'js2-mode-hook #'(lambda ()
-                              (company-mode t)
-                              (tern-mode t)
-                              (add-to-list 'company-backends 'company-tern))))
+                               (company-mode t)
+                               (tern-mode t)
+                               (add-to-list 'company-backends 'company-tern))))
 #+end_src
 *** TODO May not need this on Emacs 27+
 Need to investigate, but js-mode might have been fixed/updated.
