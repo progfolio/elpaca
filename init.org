@@ -779,6 +779,19 @@ http://company-mode.github.io/
                               (tern-mode t)
                               (add-to-list 'company-backends 'company-tern))))
 #+end_src
+** compile
+#+begin_src emacs-lisp :lexical t
+(use-feature compile
+  :custom (compilation-scroll-output 'first-error)
+  :config
+  (defun +compilation-colorize ()
+    "Colorize from `compilation-filter-start' to `point'."
+    (require 'ansi-color)
+    (let ((inhibit-read-only t))
+      (ansi-color-apply-on-region (point-min) (point-max))))
+
+  (add-hook 'compilation-filter-hook #'+compilation-colorize))
+#+end_src
 ** custom-set-variables
 #+begin_src emacs-lisp
 (use-feature cus-edit
