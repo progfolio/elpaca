@@ -1109,6 +1109,11 @@ https://www.flycheck.org/en/latest/
   :after (flychceck)
   :config (flycheck-package-setup))
 #+end_src
+** flymake
+#+begin_src emacs-lisp :lexical t
+(use-feature flymake
+  :init (add-hook 'flymake-mode-hook #'flymake-show-diagnostics-buffer 100))
+#+end_src
 ** flyspell
 #+begin_src emacs-lisp
 (use-feature flyspell
