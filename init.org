@@ -681,6 +681,7 @@ I usually want lines to wrap at 80 chars (Emacs defaults to 70).
   (+general-global-toggle
     "f" 'auto-fill-mode)
   :custom
+  (eval-expression-debug-on-error nil)
   (fill-column 80 "Wrap at 80 columns."))
 #+end_src
 ** auto-revert
