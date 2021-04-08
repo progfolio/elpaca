@@ -3291,3 +3291,35 @@ Space for packages which I'm developing but are not part of my usual configurati
     "org" 'org-roam-graph
     "ori" 'org-roam-insert))
 #+end_src
+** speedo
+#+begin_src emacs-lisp :lexical t
+(use-package speedo
+  :straight (:type git :host github :repo "progfolio/speedo")
+  :commands (speedo speedo-load-file)
+  :custom
+  (speedo-directory "~/.emacs.d/straight/repos/speedo/")
+  (speedo-default-splits-file "./test-splits.el")
+  :config
+  (let ((interval 0.5)
+        timer)
+    (defun +speedo-debounced-mistake (advised)
+      "Execute `speedo-mistake' after last key press.
+This allows me to spam the button to get through the retry screen
+as fast as possible without recording multiple mistakes."
+      (when timer (cancel-timer timer))
+      (setq timer (run-at-time interval nil advised))))
+
+  (advice-add 'speedo-mistake :around #'+speedo-debounced-mistake))
+
+(defun +speedo-ensure-controller-support ()
+  "Launch controller program if it isn't already running."
+  (interactive)
+  (when (string-empty-p (shell-command-to-string "pgrep antimicrox"))
+    (make-process
+     :name "antimicrox"
+     :noquery t ; Don't ask to kill this process when exiting Emacs.
+     :buffer "*antimicrox*"
+     :command '("antimicrox" "--tray"))))
+
+(add-hook 'speedo-mode-hook #'+speedo-ensure-controller-support)
+#+end_src
