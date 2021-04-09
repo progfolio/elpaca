@@ -740,6 +740,7 @@ http://company-mode.github.io/
   (company-dabbrev-downcase nil)
   (company-auto-complete nil)
   (company-global-modes '(not erc-mode message-mode help-mode gud-mode))
+  (company-format-margin-function #'company-vscode-dark-icons-margin)
   (company-frontends '(company-pseudo-tooltip-frontend
                        company-echo-metadata-frontend
                        company-tng-frontend))
