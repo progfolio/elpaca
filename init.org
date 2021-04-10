@@ -3299,7 +3299,12 @@ Space for packages which I'm developing but are not part of my usual configurati
   :commands (speedo speedo-load-file)
   :custom
   (speedo-directory "~/.emacs.d/straight/repos/speedo/")
-  (speedo-default-splits-file "./test-splits.el")
+  (speedo-default-splits-file "./mock-splits")
+  :general
+  (+general-global-application
+    "s" '(:ignore t :which-key "speedo")
+    "ss" 'speedo
+    "sl" 'speedo-load-file)
   :config
   (let ((interval 0.5)
         timer)
