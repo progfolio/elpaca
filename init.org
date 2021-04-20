@@ -402,7 +402,8 @@ The global definer allows me to use a leader key in most states.
 #+begin_src emacs-lisp
 (global-definer
   "!"   'shell-command
-  ":"   'eval-expression)
+  ":"   'eval-expression
+  "."   'repeat)
 #+end_src
 
 We define a global-leader definer to access major-mode specific bindings:
