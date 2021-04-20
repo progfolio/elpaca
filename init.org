@@ -3311,14 +3311,16 @@ Space for packages which I'm developing but are not part of my usual configurati
     "org" 'org-roam-graph
     "ori" 'org-roam-insert))
 #+end_src
+
 ** speedo
 #+begin_src emacs-lisp :lexical t
 (use-package speedo
-  :straight (:type git :host github :repo "progfolio/speedo")
+  :straight (:type git :host github :repo "progfolio/speedo" :files ("speedo.el"))
   :commands (speedo speedo-load-file)
   :custom
   (speedo-directory "~/.emacs.d/straight/repos/speedo/")
   (speedo-default-splits-file "./mock-splits")
+  (speedo-confirm-evaluate nil)
   :general
   (+general-global-application
     "s" '(:ignore t :which-key "speedo")
