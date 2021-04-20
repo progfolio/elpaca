@@ -3301,7 +3301,7 @@ Space for packages which I'm developing but are not part of my usual configurati
   :straight (:type git :host github :repo "progfolio/org-relativity"))
 #+end_src
 ** org-roam
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (use-package org-roam
   :straight (:type git :host github :repo "org-roam/org-roam" :fork "progfolio/org-roam")
   :general
