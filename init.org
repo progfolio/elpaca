@@ -923,19 +923,11 @@ I may move it from its default location (=~/.elfeed=), in =elfeed-db-directory=.
     "Play selected videos in a shared mpv instance in chronological order.
 If SEPARATE is non-nil, launch a separate instance of mpv."
     (interactive "P")
-    (make-process :name "*elfeed-mpv*"
-                  :buffer "*elfeed-mpv*"
-                  :command (list "bash" "-c"
-                                 (string-join
-                                  `("nohup" ,(if separate "mpv" "umpv")
-                                    ,@(nreverse (mapcar (lambda (entry)
-                                                          (elfeed-entry-link entry))
-                                                        (elfeed-search-selected)))
-                                    "&> /dev/null") " "))
-                  ;; No need to query for detached process when closing Emacs.
-                  :noquery t)
-    (elfeed-search-untag-all-unread)
-    (message "Playing selected videos in mpv"))
+    (let ((entries (nreverse (mapcar (lambda (entry) (elfeed-entry-link entry))
+                                     (elfeed-search-selected)))))
+      (dolist (entry entries) (emp-open-url entry))
+      (elfeed-search-untag-all-unread)
+      (message "Playing selected videos in mpv")))
   :general
   (+general-global-application
     "e"    'elfeed)
@@ -994,6 +986,32 @@ These settings defined in C code, so we use the ~emacs~ pseudo-package to set th
     "es" 'eval-last-sexp
     "i"  'elisp-index-search))
 #+end_src
+** emp
+#+begin_quote
+MPV integration
+#+end_quote
+#+begin_src emacs-lisp
+(use-package emp
+  :straight (:host github :repo "progfolio/emp")
+  :commands (emp-play)
+  :config
+  :general
+  (+general-global-application
+    "v"  '(:ignore t :which-key "video/audio")
+    "vQ" 'emp-kill
+    "vf" '(:ignore t :which-key "frame")
+    "vfb" 'emp-frame-back-step
+    "vff" 'emp-frame-step
+    "vi" 'emp-insert-playback-time
+    "vo" 'emp-open
+    "vO" 'emp-cycle-osd
+    "v SPC" 'emp-pause
+    "vs" 'emp-seek
+    "vt" 'emp-seek-absolute
+    "vv" 'emp-set-context
+    "vS" 'emp-speed-set))
+#+end_src
+
 ** epa/g-config
 #+begin_src emacs-lisp
 (use-feature epg-config
