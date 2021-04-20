@@ -1132,7 +1132,15 @@ https://www.flycheck.org/en/latest/
 ** flymake
 #+begin_src emacs-lisp :lexical t
 (use-feature flymake
-  :init (add-hook 'flymake-mode-hook #'flymake-show-diagnostics-buffer 100))
+  :init (add-hook 'flymake-mode-hook #'+flymake-toggle-diagnostics-buffer 100)
+  :config
+  (defun +flymake-toggle-diagnostics-buffer ()
+    "Toggle the diagnostics buffer when entering/exiting `flymake-mode'."
+    (if flymake-mode
+        (flymake-show-diagnostics-buffer)
+      (with-selected-window
+          (get-buffer-window (flymake--diagnostics-buffer-name))
+        (kill-buffer-and-window)))))
 #+end_src
 ** flyspell
 #+begin_src emacs-lisp
