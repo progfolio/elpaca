@@ -1007,6 +1007,7 @@ MPV integration
     "vO" 'emp-cycle-osd
     "v SPC" 'emp-pause
     "vs" 'emp-seek
+    "vr" 'emp-revert-seek
     "vt" 'emp-seek-absolute
     "vv" 'emp-set-context
     "vS" 'emp-speed-set))
