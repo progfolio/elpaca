@@ -1996,53 +1996,29 @@ Inverts normal logic of ARG."
 
 Consider cribbing =evilified-state= from Spacemacs?
 #+begin_src emacs-lisp
-(general-define-key
- :keymaps 'org-agenda-mode-map
- :states '(emacs normal motion)
- "<"     'org-agenda-filter-by-category
- "^"     'org-agenda-filter-by-top-headline
- "="     'org-agenda-filter-by-regexp
- "_"     'org-agenda-filter-by-effort
- "|"     'org-agenda-filter-remove-all
- "."     'org-agenda-goto-today
- "<tab>" 'org-agenda-goto
- "A"     '+org-agenda-archives
- "C"     'org-agenda-clockreport-mode
- "D"     'org-agenda-goto-date
- "E"     'epoch-agenda-todo
- "F"     'org-agenda-follow-mode
- "G"     'org-agenda-toggle-time-grid
- "H"     'org-habit-toggle-habits
- "I"     'org-agenda-clock-in
- "J"     'org-agenda-next-item
- "K"     'org-agenda-previous-item
- "O"     'org-agenda-clock-out
- "R"     'org-agenda-refile
- "S"     'org-agenda-schedule
- "W"     'org-agenda-fortnight-view
- "X"     'org-agenda-clock-cancel
- "RET"   'org-agenda-recenter
- "["     'org-agenda-manipulate-query-add
- "a"     '+org-capture-again
- "b"     'org-agenda-earlier
- "c"     'org-agenda-capture
- "d"     'org-agenda-day-view
- "e"     'org-agenda-set-effort
- "f"     'org-agenda-later
- "j"     'org-agenda-next-line
- "k"     'org-agenda-previous-line
- "l"     'org-agenda-log-mode
- "m"     'org-agenda-month-view
- "o"     'delete-other-windows
- "q"     'org-agenda-quit
- "x"     'org-agenda-exit
- "r"     'org-agenda-redo
- "s"     'org-save-all-org-buffers
- "t"     'org-agenda-set-tags
- "T"     'org-agenda-todo
- "u"     'org-agenda-undo
- "w"     'org-agenda-week-view
- "y"     'org-agenda-year-view)
+(with-eval-after-load 'org-agenda
+  (evil-make-intercept-map org-agenda-mode-map)
+  (general-define-key
+   :keymaps 'org-agenda-mode-map
+   ;;:states '(emacs normal motion)
+   "A"     '+org-agenda-archives
+   "C"     'org-agenda-clockreport-mode
+   "D"     'org-agenda-goto-date
+   "E"     'epoch-agenda-todo
+   "H"     'org-habit-toggle-habits
+   "J"     'org-agenda-next-item
+   "K"     'org-agenda-previous-item
+   "R"     'org-agenda-refile
+   "S"     'org-agenda-schedule
+   "RET"   'org-agenda-recenter
+   "a"     '+org-capture-again
+   "c"     'org-agenda-capture
+   "j"     'org-agenda-next-line
+   "k"     'org-agenda-previous-line
+   "m"     'org-agenda-month-view
+   "t"     'org-agenda-set-tags
+   "T"     'org-agenda-todo
+   "u"     'org-agenda-undo))
 #+end_src
 
 When saving, I want changes to my org-files reflected in any open org agenda
