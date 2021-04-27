@@ -3311,6 +3311,7 @@ Space for packages which I'm developing but are not part of my usual configurati
     "ss" 'speedo
     "sl" 'speedo-load-file)
   :config
+  (evil-make-intercept-map speedo-mode-map)
   (let ((interval 0.5)
         timer)
     (defun +speedo-debounced-mistake (advised)
