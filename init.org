@@ -2914,7 +2914,7 @@ necessary when building regular expressions.
 #+begin_src emacs-lisp
 (use-feature re-builder
   :custom
-  (reb-re-syntax 'string)
+  (reb-re-syntax 'rx)
   :commands (re-builder))
 #+end_src
 ** recentf
