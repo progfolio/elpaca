@@ -660,6 +660,16 @@ https://github.com/osener/emacs-afternoon-theme
   (add-hook 'asm-mode-hook '+asm-mode-hook)
   (add-hook 'before-save-hook '+asm-before-save-hook))
 #+end_src
+** all-the-icons
+#+begin_quote
+svg icons for emacs
+#+end_quote
+#+begin_src emacs-lisp
+(use-package all-the-icons
+  :straight (:fork t)
+  :defer t)
+#+end_src
+
 ** anzu
 #+begin_quote
 anzu.el provides a minor mode which displays 'current match/total
