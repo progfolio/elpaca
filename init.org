@@ -1140,9 +1140,9 @@ https://www.flycheck.org/en/latest/
     "Toggle the diagnostics buffer when entering/exiting `flymake-mode'."
     (if flymake-mode
         (flymake-show-diagnostics-buffer)
-      (with-selected-window
-          (get-buffer-window (flymake--diagnostics-buffer-name))
-        (kill-buffer-and-window)))))
+      (when-let ((window (get-buffer-window (flymake--diagnostics-buffer-name))))
+        (with-selected-window window
+          (kill-buffer-and-window))))))
 #+end_src
 ** flyspell
 #+begin_src emacs-lisp
