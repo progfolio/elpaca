@@ -3317,17 +3317,17 @@ as fast as possible without recording multiple mistakes."
       (when timer (cancel-timer timer))
       (setq timer (run-at-time interval nil advised))))
 
-  (advice-add 'speedo-mistake :around #'+speedo-debounced-mistake))
+  (advice-add 'speedo-mistake :around #'+speedo-debounced-mistake)
 
-(defun +speedo-ensure-controller-support ()
-  "Launch controller program if it isn't already running."
-  (interactive)
-  (when (string-empty-p (shell-command-to-string "pgrep antimicrox"))
-    (make-process
-     :name "antimicrox"
-     :noquery t ; Don't ask to kill this process when exiting Emacs.
-     :buffer "*antimicrox*"
-     :command '("antimicrox" "--tray"))))
+  (defun +speedo-ensure-controller-support ()
+    "Launch controller program if it isn't already running."
+    (interactive)
+    (when (string-empty-p (shell-command-to-string "pgrep antimicrox"))
+      (make-process
+       :name "antimicrox"
+       :noquery t ; Don't ask to kill this process when exiting Emacs.
+       :buffer "*antimicrox*"
+       :command '("antimicrox" "--tray"))))
 
-(add-hook 'speedo-mode-hook #'+speedo-ensure-controller-support)
+  (add-hook 'speedo-mode-hook #'+speedo-ensure-controller-support))
 #+end_src
