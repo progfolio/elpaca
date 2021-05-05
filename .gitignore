@@ -2,6 +2,7 @@
 *
 #whitelist
 !*/
+!/images/**
 !init.org
 !init-dev.el
 !README.org
@@ -10,6 +11,7 @@
 !/lisp/**
 !/themes/**
 !/snippets/**
+
 
 /straight/**
 /snippets/*/*.el

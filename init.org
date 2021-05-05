@@ -660,15 +660,6 @@ https://github.com/osener/emacs-afternoon-theme
   (add-hook 'asm-mode-hook '+asm-mode-hook)
   (add-hook 'before-save-hook '+asm-before-save-hook))
 #+end_src
-** all-the-icons
-#+begin_quote
-svg icons for emacs
-#+end_quote
-#+begin_src emacs-lisp
-(use-package all-the-icons
-  :straight (:fork t)
-  :defer t)
-#+end_src
 
 ** anzu
 #+begin_quote
@@ -2122,43 +2113,35 @@ for me and I like to see inherited tags on tasks.
 #+begin_src emacs-lisp
 (org-agenda-use-tag-inheritance nil)
 #+end_src
-Org agenda has support for category icons. It looks neat, but I'm not sure if I like
-the idea of tying into font-awesome, but I may be able to copy the icons I need
-into a local folder, such as =.emacs.d/icons=.
-I have to load =all-the-icons.el= in order to use these...
-This may impact my startup time. Going to look into fixing this.
+I find category icons to be a nice visual shorthand that keeps the agenda less cluttered.
 #+begin_src emacs-lisp
+(org-agenda-prefix-format '((agenda . " %i %?-12t% s")))
 (org-agenda-category-icon-alist
- `(("[Ww]ork" ,(list (all-the-icons-faicon "cog"))
-    nil nil :ascent center)
-   ("[Rr]efile" ,(list (all-the-icons-faicon "clone"))
-    nil nil :ascent center)
-   ("[Aa]ccounting" ,(list (all-the-icons-faicon "clock-o"))
-    nil nil :ascent center)
-   ("[Cc]hore" ,(list (all-the-icons-octicon "home"))
-    nil nil :ascent center)
-   ("[Ee]xercise" ,(list (all-the-icons-material "directions_walk"))
-    nil nil :ascent center)
-   ("[Ff]ood" ,(list (all-the-icons-material "local_pizza"))
-    nil nil :ascent center)
-   ("[Hh]abit" ,(list (all-the-icons-faicon "repeat"))
-    nil nil :ascent center)
-   ("[Hh]ealth" ,(list (all-the-icons-faicon "heartbeat"))
-    nil nil :ascent center)
-   ("[Ii]n" ,(list (all-the-icons-faicon "chevron-circle-left"))
-    nil nil :ascent center)
-   ("[Oo]ut" ,(list (all-the-icons-faicon "chevron-circle-right"))
-    nil nil :ascent center)
-   ("[Ll]isten" ,(list (all-the-icons-faicon "assistive-listening-systems"))
-    nil nil :ascent center)
-   ("[Pp]lay" ,(list (all-the-icons-faicon "gamepad"))
-    nil nil :ascent center)
-   ("[Rr]ead" ,(list (all-the-icons-faicon "book"))
-    nil nil :ascent center)
-   ("[Ww]atch" ,(list (all-the-icons-material "tv"))
-    nil nil :ascent center)
-   ("[Cc]alendar" ,(list (all-the-icons-faicon "calendar"))
-    nil nil :ascent center)))
+ (let ((image-dir (expand-file-name "images/org/" user-emacs-directory))
+       (categories '(("[Aa]ccounting" "accounting.svg")
+                     ("[Bb]irthday"   "birthday.svg")
+                     ("[Cc]alendar"   "calendar.svg")
+                     ("[Cc]hore"      "chore.svg"    :height 25)
+                     ("[Ee]xercise"   "exercise.svg" :height 24)
+                     ("[Ff]ood"       "food.svg")
+                     ("[Hh]abit"      "habit.svg")
+                     ("[Hh]ealth"     "health.svg")
+                     ("[Ii]n"         "in.svg")
+                     ("[Ll]isten"     "listen.svg")
+                     ("[Oo]ut"        "out.svg")
+                     ("[Pp]lay"       "play.svg")
+                     ("[Rr]efile"     "refile.svg")
+                     ("[Rr]ead"       "read.svg")
+                     ("[Ww]atch"      "watch.svg")
+                     ("[Ww]ork"       "work.svg"))))
+   (mapcar (lambda (category)
+             (list (nth 0 category)
+                   (expand-file-name (nth 1 category) image-dir)
+                   'svg
+                   nil
+                   :height (or (plist-get category :height) 20)
+                   :ascent (or (plist-get category :ascent) 'center)))
+           categories)))
 #+end_src
 This sorting strategy will place habits in/next to the agenda time-grid.
 #+begin_src emacs-lisp
@@ -2620,16 +2603,20 @@ https://github.com/harrybournis/org-fancy-priorities
   :config
   (defun +org-habit-graph-on-own-line (graph)
     "Place org habit consitency graph below the habit."
-    (add-text-properties (line-beginning-position) (line-end-position)
-                         `(display ,(concat (when-let ((icon (car (org-agenda-get-category-icon
-                                                                   (org-agenda-get-category)))))
-
-                                              (format " %s " icon))
-                                            (string-trim-left (thing-at-point 'line))
-                                            (make-string (or org-habit-graph-column 0) ? )
-                                            (string-trim-right
-                                             (propertize graph 'display '(height (+ 1))
-                                                         'mouse-face 'inherit))))))
+    (let* ((count 0)
+           icon)
+      (save-excursion
+        (beginning-of-line)
+        (while (and (eq (char-after) ? ) (not (eolp)))
+          (when (get-text-property (point) 'display) (setq icon t))
+          (setq count (1+ count))
+          (forward-char)))
+      (add-text-properties (+ (line-beginning-position) count) (line-end-position)
+                           `(display ,(concat (unless icon "  ")
+                                              (string-trim-left (thing-at-point 'line))
+                                              (make-string (or org-habit-graph-column 0) ? )
+                                              (string-trim-right
+                                               (propertize graph 'mouse-face 'inherit)))))))
   <<org-habit-graph-placement-advice>>
   :custom
   <<org-habit-custom>>)
