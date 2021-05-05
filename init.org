@@ -18,7 +18,7 @@ Emacs 27.0 introduced an early-init file. It allows customization before package
 ;;; Code:
 #+end_src
 
-We want the =org-plus-contrib= version of Org mode.
+We want the latest version of Org mode.
 Removing the Emacs bundled version from the load-path *should* prevent loading mixed Org versions.
 e.g. After updating Org mode.
 #+begin_src emacs-lisp
@@ -198,10 +198,10 @@ Bootstrap straight
 (setq straight-vc-git-default-protocol 'ssh)
 #+end_src
 
-*** Install org-plus-contrib
+*** Install org-contrib
 Installing it this early *should* prevent mixed Org installations.
 #+begin_src emacs-lisp
-(straight-use-package 'org-plus-contrib)
+(straight-use-package 'org-contrib)
 #+end_src
 
 ** profiling
@@ -1762,7 +1762,14 @@ https://github.com/rnkn/olivetti
 ** org
 #+begin_src emacs-lisp
 (use-package org
-  :straight org-plus-contrib
+  :straight (:includes (ob-js
+                        ob-python
+                        ob-shell
+                        ob-tangle
+                        org-agenda
+                        org-capture
+                        org-habit
+                        org-indent))
   :defer t
   :general
   (general-define-key :states '(normal) :keymaps 'org-mode-map
@@ -1964,8 +1971,6 @@ https://github.com/rnkn/olivetti
 ** org-agenda
 #+begin_src emacs-lisp
 (use-package org-agenda
-  :straight org-plus-contrib
-  :preface (require 'all-the-icons)
   :after   (general evil)
   :config
   (defun +org-agenda-archives (&optional arg)
@@ -2187,7 +2192,6 @@ Align tags to column 80 in the agenda view:
 (use-package ob-tangle
   :after (org)
   :ensure nil
-  :straight org-plus-contrib
   :custom
   (org-src-window-setup 'current-window)
   (org-src-preserve-indentation t)
@@ -2218,17 +2222,16 @@ later to have more flexibility.
 #+end_src
 **** Languages
 If =C-c-c= refuses to run code blocks and you get an error message:
+#+begin_quote
 "evaluation of language x disabled"
-delete =~/.emacs.d/elpa/org-plus-contrib*/*.el(c)= files and restart
+#+end_quote
+delete the =~/.emacs.d/straight/build/org/ob-*.el(c)= files and restart
 #+begin_src emacs-lisp
 (use-package ob-js
-  :straight org-plus-contrib
   :commands (org-babel-execute:js))
 (use-package ob-python
-  :straight org-plus-contrib
   :commands (org-babel-execute:python))
 (use-package ob-shell
-  :straight org-plus-contrib
   :commands (org-babel-execute:bash
              org-babel-execute:shell
              org-babel-expand-body:generic)
@@ -2294,7 +2297,6 @@ Purely cosmetic. I may ditch this at some point.
 ** org-capture
 #+begin_src emacs-lisp
 (use-package org-capture
-  :straight org-plus-contrib
   :config
   (add-hook 'org-capture-mode-hook #'evil-insert-state)
 #+end_src
@@ -2614,7 +2616,6 @@ https://github.com/harrybournis/org-fancy-priorities
 ** org-habit
 #+begin_src emacs-lisp
 (use-package org-habit
-  :straight org-plus-contrib
   :after (org)
   :config
   (defun +org-habit-graph-on-own-line (graph)
@@ -2680,7 +2681,6 @@ to override the default placement.
 ** org-indent
 #+begin_src emacs-lisp
 (use-package org-indent
-  :straight org-plus-contrib
   :diminish ""
   :after (org)
   :hook (org-mode . org-indent-mode))
