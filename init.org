@@ -2049,10 +2049,10 @@ buffers.
                                            ("#+BEGIN_SRC"     . "λ")
                                            ("#+end_src"       . "λ")
                                            ("#+END_SRC"       . "λ")
-                                           (":PROPERTIES:"       . "⚙")
-                                           (":properties:"       . "⚙")
+                                           (":PROPERTIES:"    . "⚙")
+                                           (":properties:"    . "⚙")
                                            (":END:"           . "∎")
-                                           ("#+RESULTS:"           . "→")))
+                                           ("#+RESULTS:"      . "→")))
             (prettify-symbols-mode 1)))
 #+END_SRC
 *** :custom
