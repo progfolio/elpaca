@@ -1,7 +1,7 @@
 ;-*- eval: (load-file "./init-dev.el");   -*-
 #+title: My Emacs Configuration
 #+options: ^:{} html-postamble:nil
-#+property: header-args :mkdirp yes :tangle (concat (file-name-sans-extension (buffer-file-name)) ".el") :tangle-mode (identity #o444) :results silent :noweb yes
+#+property: header-args :mkdirp yes :tangle yes :tangle-mode (identity #o444) :results silent :noweb yes
 #+archive: archives/%s::datetree/
 #+startup: indent
 * An Explanation
