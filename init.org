@@ -461,10 +461,7 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
 #+end_src
 **** bookmarks
 #+begin_src emacs-lisp
-(+general-global-menu! "bookmark" "B"
-  "j" 'bookmark-jump
-  "s" 'bookmark-set
-  "r" 'bookmark-rename)
+(+general-global-menu! "bookmark" "B")
 #+end_src
 **** eval
 #+begin_src emacs-lisp
@@ -703,6 +700,16 @@ It also helps if multiple instances of Emacs are editing the same file.
 #+begin_src emacs-lisp
 (use-private auto-tangle-mode
   :commands (auto-tangle-mode))
+#+end_src
+** bookmark
+#+begin_src emacs-lisp :lexical t
+(use-feature bookmark
+  :custom (bookmark-fontify nil)
+  :general
+  (+general-global-bookmark
+    "j" 'bookmark-jump
+    "s" 'bookmark-set
+    "r" 'bookmark-rename))
 #+end_src
 ** buttercup
 #+begin_quote
