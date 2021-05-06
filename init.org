@@ -3290,13 +3290,12 @@ Space for packages which I'm developing but are not part of my usual configurati
   :straight (:type git :host github :repo "progfolio/org-relativity"))
 #+end_src
 ** org-roam
-#+begin_src emacs-lisp 
+#+begin_src emacs-lisp :lexical t
 (use-package org-roam
   :straight (:type git :host github :repo "org-roam/org-roam" :fork t :branch "v2")
   :general
   (+general-global-application
-    "or" '(:ignore t :which-key "org-roam")
-    ))
+    "or" '(:ignore t :which-key "org-roam")))
 #+end_src
 
 ** speedo
