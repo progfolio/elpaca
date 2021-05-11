@@ -87,7 +87,10 @@ table of values from popular Emacs configurations.
 (setq gc-cons-threshold most-positive-fixnum)
 
 (defun my/gc-after-focus-change ()
-  (unless (frame-focus-state) (garbage-collect)))
+  "Run GC when frame is unfocused."
+  (run-with-idle-timer
+   5 nil
+   (lambda () (unless (frame-focus-state) (garbage-collect)))))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -98,9 +101,8 @@ table of values from popular Emacs configurations.
      (setq file-name-handler-alist default-file-name-handler-alist
            gc-cons-threshold 100000000)
      (message "gc-cons-threshold & file-name-handler-alist restored")
-     (if (boundp 'after-focus-change-function)
-         (advice-add #'after-focus-change-function
-                     :after #'my/gc-after-focus-change)))))
+     (when (boundp 'after-focus-change-function)
+       (add-function :after after-focus-change-function #'my/gc-after-focus-change)))))
 
 (add-hook 'emacs-startup-hook 'my/reset-init-values)
 #+end_src
