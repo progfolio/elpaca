@@ -2082,6 +2082,7 @@ Add a custom view for a simplified work agenda.
      (org-agenda-prefix-format '((agenda . " %t")))
      (org-agenda-finalize-hook
       '((lambda ()
+          "Format custom agenda command for work schedule."
           (save-excursion
             (goto-char (point-min))
             (while (re-search-forward "TODO Work" nil 'noerror)
@@ -2093,14 +2094,14 @@ Add a custom view for a simplified work agenda.
                 (let (fn)
                   (save-excursion
                     (forward-line)
-                    (setq fn (cond
-                              ((or (eobp)
-                                   (get-text-property (point) 'org-agenda-date-header))
-                               (lambda () (end-of-line) (insert " OFF")))
-                              ((get-text-property (point) 'time)
-                               (lambda () (forward-line) (join-line))))))
-                  (funcall fn)
-                  (forward-line))))))))))
+                    (setq fn
+                          (cond ((or (eobp)
+                                     (get-text-property (point) 'org-agenda-date-header))
+                                 (lambda () (end-of-line) (insert " OFF")))
+                                ((get-text-property (point) 'time)
+                                 (lambda () (forward-line) (join-line))))))
+                  (funcall fn)))
+              (forward-line))))))))
    ("n" "Agenda and all TODOs" ((agenda "") (alltodo "")))))
 #+end_src
 #+BEGIN_SRC emacs-lisp
