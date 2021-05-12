@@ -87,7 +87,7 @@ table of values from popular Emacs configurations.
 (setq gc-cons-threshold most-positive-fixnum)
 
 (defun my/gc-after-focus-change ()
-  "Run GC when frame is unfocused."
+  "Run GC when frame loses focus."
   (run-with-idle-timer
    5 nil
    (lambda () (unless (frame-focus-state) (garbage-collect)))))
