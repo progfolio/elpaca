@@ -145,7 +145,7 @@ This helps with a bug I was hitting when using =desktop-save-mode='s =desktop-re
 
 Add =lisp/= to load-path. This allows loading packages from that path.
 #+begin_src emacs-lisp
-(let ((default-directory "~/.emacs.d/lisp/"))
+(let ((default-directory (expand-file-name "./lisp/" user-emacs-directory)))
   (normal-top-level-add-subdirs-to-load-path))
 #+end_src
 
