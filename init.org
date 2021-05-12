@@ -143,19 +143,6 @@ This helps with a bug I was hitting when using =desktop-save-mode='s =desktop-re
 (setq desktop-restore-forces-onscreen nil)
 #+end_src
 
-Add =lisp/= to load-path. This allows loading packages from that path.
-#+begin_src emacs-lisp
-(let ((default-directory (expand-file-name "./lisp/" user-emacs-directory)))
-  (normal-top-level-add-subdirs-to-load-path))
-#+end_src
-
-[[https://www.funtoo.org/Keychain][Keychain]] is a gpg/ssh agent that allows me to cache my credentials.
-This package gets the correct environment variables so straight can use the ssh protocol.
-#+begin_src emacs-lisp
-(require 'keychain-environment)
-(keychain-refresh-environment)
-#+end_src
-
 *** provide early-init
 #+begin_src emacs-lisp
 (provide 'early-init)
@@ -196,7 +183,15 @@ Bootstrap straight
       (goto-char (point-max))
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
-;;set here after bootstrap
+#+end_src
+
+[[https://www.funtoo.org/Keychain][Keychain]] is a gpg/ssh agent that allows me to cache my credentials.
+This package gets the correct environment variables so straight can use the ssh protocol.
+
+#+begin_src emacs-lisp
+(straight-use-package 'keychain-environment)
+(require 'keychain-environment)
+(keychain-refresh-environment)
 (setq straight-vc-git-default-protocol 'ssh)
 #+end_src
 
