@@ -3303,8 +3303,8 @@ Space for packages which I'm developing but are not part of my usual configurati
   :straight (:type git :host github :repo "progfolio/speedo" :files ("speedo.el"))
   :commands (speedo speedo-load-file)
   :custom
-  (speedo-directory "~/.emacs.d/straight/repos/speedo/")
-  (speedo-default-splits-file "./mock-splits")
+  (speedo-directory "~/.emacs.d/straight/repos/speedo/test/")
+  (speedo-default-splits-file "./Akogare-Mario-World")
   (speedo-confirm-evaluate nil)
   :general
   (+general-global-application
