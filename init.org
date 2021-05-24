@@ -2940,8 +2940,9 @@ https://depp.brause.cc/shackle/
   :commands (shackle-mode)
   :custom (shackle-rules '(("*Flycheck errors*"  :align below :size 0.15)
                            ("\\`\\*Flymake diagnostics.*?\\*\\'" :align below :size 0.15 :regexp t :same nil)
-                           ("*accord*" :align below :size 0.20)))
-  :hook ((flycheck-mode global-flycheck-mode flymake-mode accord-mode) . shackle-mode))
+                           ("*accord*" :align below :size 0.20)
+                           ("*padscape*" :align below :size 0.20)))
+  :hook ((flycheck-mode global-flycheck-mode flymake-mode accord-mode padscape-mode) . shackle-mode))
 #+end_src
 ** shr-color
 #+begin_src emacs-lisp
@@ -3334,4 +3335,21 @@ as fast as possible without recording multiple mistakes."
        :command '("antimicrox" "--tray"))))
 
   (add-hook 'speedo-mode-hook #'+speedo-ensure-controller-support))
+#+end_src
+
+** joymacs
+#+begin_src emacs-lisp :lexical t
+(use-package joymacs
+  :straight '(joymacs :host github :repo "skeeto/joymacs"
+                      :pre-build ("make")
+                      :files (:defaults "joymacs.c"
+                                        "joymacs.so")
+                      :fork t))
+#+end_src
+
+** padscape
+#+begin_src emacs-lisp :lexical t
+(use-package padscape
+  :commands (padscape)
+  :straight '(padscape :host github :repo "progfolio/padscape"))
 #+end_src
