@@ -2542,7 +2542,7 @@ emacsclient --create-frame \
 (defun +org-capture-delete-frame (&rest _args)
   "Delete frame with a name frame-parameter set to \"capture\""
   (when (and (daemonp) (string= (frame-parameter (selected-frame) 'name) "capture"))
-      (delete-frame)))
+    (delete-frame)))
 (add-hook 'org-capture-after-finalize-hook #'+org-capture-delete-frame 100)
 #+end_src
 
