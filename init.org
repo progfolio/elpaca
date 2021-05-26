@@ -86,7 +86,7 @@ table of values from popular Emacs configurations.
 #+begin_src emacs-lisp
 (setq gc-cons-threshold most-positive-fixnum)
 
-(defun my/gc-after-focus-change ()
+(defun +gc-after-focus-change ()
   "Run GC when frame loses focus."
   (run-with-idle-timer
    5 nil
@@ -94,7 +94,7 @@ table of values from popular Emacs configurations.
 #+end_src
 
 #+begin_src emacs-lisp
-(defun my/reset-init-values ()
+(defun +reset-init-values ()
   (run-with-idle-timer
    5 nil
    (lambda ()
@@ -102,9 +102,9 @@ table of values from popular Emacs configurations.
            gc-cons-threshold 100000000)
      (message "gc-cons-threshold & file-name-handler-alist restored")
      (when (boundp 'after-focus-change-function)
-       (add-function :after after-focus-change-function #'my/gc-after-focus-change)))))
+       (add-function :after after-focus-change-function #'+gc-after-focus-change)))))
 
-(add-hook 'emacs-startup-hook 'my/reset-init-values)
+(add-hook 'emacs-startup-hook '+reset-init-values)
 #+end_src
 
 *** UI
@@ -227,14 +227,14 @@ NAME and ARGS are in `use-package'."
 
 ;;eventually move this into emacs-secrets. Not particularly sensitive
 ;;right now, but no need to share in the future.
-(defvar my/git-server-address "192.168.1.180")
+(defvar +git-server-address "192.168.1.180")
 
 (defmacro use-private (name &rest args)
   "Like `use-package' but with :straight pointing to local git server.
 NAME and ARGS are in `use-package'."
   (declare (indent defun))
   `(use-package ,name
-     :straight (,name :repo ,(concat "git@" my/git-server-address ":emacs/"
+     :straight (,name :repo ,(concat "git@" +git-server-address ":emacs/"
                                      (symbol-name name) ".git")
                       :branch "master")
      ,@args))
@@ -1410,9 +1410,9 @@ https://github.com/abo-abo/hydra
 (use-package hydra
   :after (general)
   :config
-  (defhydra my/hydra-zoom (:pre (setq which-key-inhibit t)
-                                :post (setq which-key-inhibit nil)
-                                :hint none)
+  (defhydra +hydra-zoom (:pre (setq which-key-inhibit t)
+                              :post (setq which-key-inhibit nil)
+                              :hint none)
     ;;newline is necessary here!
     "
 ^Zoom ^ ^-----^ _i_ in _o_ out _r_ reset (capital for all frames)"
@@ -1423,8 +1423,8 @@ https://github.com/abo-abo/hydra
     ("O" default-text-scale-decrease "all out")
     ("r" (text-scale-adjust 0) "reset")
     ("R" default-text-scale-reset "reset all"))
-  (defhydra my/hydra-window-resize (:pre (setq which-key-inhibit t)
-                                         :post (setq which-key-inhibit nil))
+  (defhydra +hydra-window-resize (:pre (setq which-key-inhibit t)
+                                       :post (setq which-key-inhibit nil))
     ;;newline is necessary here!
     "
 ^Resize Windows^ "
@@ -1440,9 +1440,9 @@ https://github.com/abo-abo/hydra
     ("l" (lambda () (interactive) (enlarge-window-horizontally 1)) "enlarge-horizontal"))
   :general
   (global-definer
-    "z"   '(my/hydra-zoom/body :which-key "zoom"))
+    "z"   '(+hydra-zoom/body :which-key "zoom"))
   (+general-global-window
-    "." '(my/hydra-window-resize/body :which-key "window-resize")))
+    "." '(+hydra-window-resize/body :which-key "window-resize")))
 #+end_src
 ** i3wm-config-mode
 #+begin_quote
@@ -1564,37 +1564,37 @@ A package for miscellaneous functions.
               :branch "master"
               :pre-build ("/usr/bin/emacs" "--batch" "--execute"
                           "(progn (require 'ob-tangle) (org-babel-tangle-file \"./miscellany.org\"))"))
-  :commands (my/alternate-buffer
-             my/change-theme
-             my/compute-blood-pressure-table-row
-             my/kill-other-buffers
-             my/org-fix-close-times
-             my/org-remove-timestamp-time
-             my/org-toggle-hide-emphasis-markers
-             my/recompile-user-package-dir
-             my/server-eval-all
-             my/toggle-maximize-buffer
-             my/toggle-relative-lines
-             my/toggle-syntax-highlighting
-             my/universal-arg)
+  :commands (+alternate-buffer
+             +change-theme
+             +compute-blood-pressure-table-row
+             +kill-other-buffers
+             +org-fix-close-times
+             +org-remove-timestamp-time
+             +org-toggle-hide-emphasis-markers
+             +recompile-user-package-dir
+             +server-eval-all
+             +toggle-maximize-buffer
+             +toggle-relative-lines
+             +toggle-syntax-highlighting
+             +universal-arg)
   :general
   (global-definer
-    "u" '(my/universal-arg :which-key "universal-arg"))
+    "u" '(+universal-arg :which-key "universal-arg"))
   (+general-global-buffer
-    "a" '(my/alternate-buffer   :which-key "alternate-buffer")
-    "m" '(my/kill-other-buffers :which-key "kill-other-buffers")
-    "N" '(my/normalize-buffer   :which-key "normalize-buffer"))
+    "a" '(+alternate-buffer   :which-key "alternate-buffer")
+    "m" '(+kill-other-buffers :which-key "kill-other-buffers")
+    "N" '(+normalize-buffer   :which-key "normalize-buffer"))
   (+general-global-window
-    "f" '(my/toggle-maximize-buffer
+    "f" '(+toggle-maximize-buffer
           :which-key "toggle-maximize-buffer"))
   (+general-global-toggle
-    "S" '(my/toggle-syntax-highlighting :which-key "syntax-highlighting")
-    "m" '(my/toggle-mode                :which-key "mode")
-    "n" '(my/toggle-relative-lines      :which-key "relative-lines")
+    "S" '(+toggle-syntax-highlighting :which-key "syntax-highlighting")
+    "m" '(+toggle-mode                :which-key "mode")
+    "n" '(+toggle-relative-lines      :which-key "relative-lines")
     "t" '(:ignore t :which-key "theme")
-    "tt" '(my/change-theme :which-key "toggle-theme")
-    "tn" '((lambda () (interactive) (my/theme-nth 1))  :which-key "theme-next")
-    "tp" '((lambda () (interactive) (my/theme-nth -1)) :which-key "theme-prev")))
+    "tt" '(+change-theme :which-key "toggle-theme")
+    "tn" '((lambda () (interactive) (+theme-nth 1))  :which-key "theme-next")
+    "tp" '((lambda () (interactive) (+theme-nth -1)) :which-key "theme-prev")))
 #+end_src
 ** mu4e
 #+begin_quote
@@ -1817,7 +1817,7 @@ https://github.com/rnkn/olivetti
 
     "d"  '(:ignore t :which-key "dates")
     "dd" 'org-deadline
-    "df" '((lambda () (interactive) (my/org-fix-close-times))
+    "df" '((lambda () (interactive) (+org-fix-close-times))
            :which-key "org-fix-close-time")
     "ds" 'org-schedule
     "di" 'org-time-stamp-inactive
@@ -1867,7 +1867,7 @@ https://github.com/rnkn/olivetti
     "sn" 'org-toggle-narrow-to-subtree
     "sr" 'org-refile
     "sS" 'org-sort
-    "ss" 'my/org-sparse-tree
+    "ss" '+org-sparse-tree
 
     "t"   '(:ignore t :which-key "tables")
     "ta"  'org-table-align
@@ -1907,7 +1907,7 @@ https://github.com/rnkn/olivetti
     "T"  '(:ignore t :which-key "toggle")
     "Tc"  'org-toggle-checkbox
     "Te"  'org-toggle-pretty-entities
-    "TE"  'my/org-toggle-hide-emphasis-markers
+    "TE"  '+org-toggle-hide-emphasis-markers
     "Th"  'org-toggle-heading
     "Ti"  'org-toggle-item
     "TI"  'org-toggle-inline-images
@@ -1922,25 +1922,25 @@ https://github.com/rnkn/olivetti
     "-"   'org-ctrl-c-minus
     "A"   'org-attach)
   :config
-  (defun my/org-sparse-tree (&optional arg type)
+  (defun +org-sparse-tree (&optional arg type)
     (interactive)
     (funcall #'org-sparse-tree arg type)
     (org-remove-occur-highlights))
 
-  (defun my/insert-heading-advice (&rest _args)
+  (defun +insert-heading-advice (&rest _args)
     "Enter insert mode after org-insert-heading. Useful so I can tab to control level of inserted heading."
     (when evil-mode (evil-insert 1)))
 
-  (advice-add #'org-insert-heading :after #'my/insert-heading-advice)
+  (advice-add #'org-insert-heading :after #'+insert-heading-advice)
 
-  (defun my/org-update-cookies ()
+  (defun +org-update-cookies ()
     (interactive)
     (org-update-statistics-cookies "ALL"))
 
   ;; TOO SLOW!
   ;; (add-hook 'org-mode-hook
   ;;           (lambda ()
-  ;;             (add-hook 'before-save-hook 'my/org-update-cookies nil 'local)))
+  ;;             (add-hook 'before-save-hook '+org-update-cookies nil 'local)))
 
   :custom
   ;;default:
@@ -2037,7 +2037,7 @@ buffers.
 :config
 ;;for org-agenda-icon-alist
 (evil-set-initial-state 'org-agenda-mode 'normal)
-(defun my/org-agenda-redo-all ()
+(defun +org-agenda-redo-all ()
   "Rebuild all agenda buffers"
   (interactive)
   (dolist (buffer (buffer-list))
@@ -2047,7 +2047,7 @@ buffers.
 
 (add-hook 'org-mode-hook
           (lambda ()
-            (add-hook 'after-save-hook 'my/org-agenda-redo-all nil t)
+            (add-hook 'after-save-hook '+org-agenda-redo-all nil t)
             (setq prettify-symbols-unprettify-at-point 'right-edge)
             (setq prettify-symbols-alist '(("#+begin_src"     . "λ")
                                            ("#+BEGIN_SRC"     . "λ")
@@ -2231,7 +2231,7 @@ delete the =~/.emacs.d/straight/build/org/ob-*.el(c)= files and restart
 (use-private org-better-repeat-mode
   :after (org)
   :config
-  (defun my/org-delete-after-prop-drawer ()
+  (defun +org-delete-after-prop-drawer ()
     (interactive)
     "If entry has a property drawer, delete everything after it."
     (save-excursion
@@ -2244,7 +2244,7 @@ delete the =~/.emacs.d/straight/build/org/ob-*.el(c)= files and restart
                             end)))
         (delete-region beginning end))))
 
-  (defun my/org-remove-style-property ()
+  (defun +org-remove-style-property ()
     (interactive)
     "Removes 'STYLE' property of org entry.
 I use this so that archived copies of repeating tasks will show in org-agenda-archive-mode."
@@ -2253,13 +2253,13 @@ I use this so that archived copies of repeating tasks will show in org-agenda-ar
         (org-narrow-to-subtree)
         (org-delete-property "STYLE"))))
 
-  (defun my/org-archive-habit ()
+  (defun +org-archive-habit ()
     (interactive)
-    (my/org-fix-close-times)
-    (my/org-delete-after-prop-drawer)
-    (my/org-remove-style-property))
+    (+org-fix-close-times)
+    (+org-delete-after-prop-drawer)
+    (+org-remove-style-property))
 
-  (defun my/calc-run-time ()
+  (defun +calc-run-time ()
     (let* ((data (mapcar #'string-to-number
                          (org-entry-get-multivalued-property (point) "OBR-data")))
            (rate-of-growth (car data))
@@ -2392,7 +2392,7 @@ If a template has a :properties keyword, add them to the entry."
                            :keys "b"
                            :type table-line
                            :id "4d0c16dd-ce99-4e1b-bf9f-fb10802e48a1"
-                           :template "%(my/compute-blood-pressure-table-row)|%?|"
+                           :template "%(+compute-blood-pressure-table-row)|%?|"
                            :table-line-pos "II-1")))
               ("Listen"
                :keys "l"
@@ -2682,7 +2682,7 @@ This function allows me to refile within the currently open org files
 as well as agenda files. Useful for structural editing.
 Stolen from: [[https://emacs.stackexchange.com/questions/22128/how-to-org-refile-to-a-target-within-the-current-file?rq=1][stackoverflow: how to org-refile to a target within the current file?]]
 #+begin_src emacs-lisp
-(defun my/org-files-list ()
+(defun +org-files-list ()
   "Returns a list of the file names for currently open Org files"
   (delq nil
         (mapcar (lambda (buffer)
@@ -2693,12 +2693,12 @@ Stolen from: [[https://emacs.stackexchange.com/questions/22128/how-to-org-refile
                 (org-buffer-list 'files t))))
 #+end_src
 #+begin_src emacs-lisp
-(setq my/org-max-refile-level 20)
+(setq +org-max-refile-level 20)
 (setq org-outline-path-complete-in-steps nil
       org-refile-allow-creating-parent-nodes 'confirm
       org-refile-use-outline-path 'file
-      org-refile-targets `((org-agenda-files  :maxlevel . ,my/org-max-refile-level)
-                           (my/org-files-list :maxlevel . ,my/org-max-refile-level)))
+      org-refile-targets `((org-agenda-files  :maxlevel . ,+org-max-refile-level)
+                           (+org-files-list :maxlevel . ,+org-max-refile-level)))
 #+end_src
 *** settings
 #+begin_src emacs-lisp
@@ -3047,9 +3047,9 @@ I prefer to keep my themes in a sub-folder of =~/.emacs.d=
 I'm working on a theme that is readable and attractive.
 
 #+begin_src emacs-lisp
-(setq my/theme 'mine)
+(setq +theme 'mine)
 ;; remove synthetic use-package theme
-(unless (remq 'use-package custom-enabled-themes) (load-theme my/theme t))
+(unless (remq 'use-package custom-enabled-themes) (load-theme +theme t))
 #+end_src
 
 ** time
