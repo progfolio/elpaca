@@ -695,7 +695,11 @@ It also helps if multiple instances of Emacs are editing the same file.
 #+end_src
 ** auto-tangle-mode
 #+begin_src emacs-lisp
-(use-private auto-tangle-mode
+(use-package auto-tangle-mode
+  :straight (auto-tangle-mode
+             :host github
+             :repo "progfolio/auto-tangle-mode.el"
+             :local-repo "auto-tangle-mode")
   :commands (auto-tangle-mode))
 #+end_src
 ** bookmark
