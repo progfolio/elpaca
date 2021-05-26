@@ -1560,7 +1560,9 @@ https://jblevins.org/projects/markdown-mode/
 A package for miscellaneous functions.
 #+begin_src emacs-lisp
 (use-package miscellany
-  :straight ( :repo "git@192.168.1.180:emacs/miscellany.git"
+  :straight ( :host github
+              :repo "progfolio/miscellany.el"
+              :local-repo "miscellany"
               :branch "master"
               :pre-build ("/usr/bin/emacs" "--batch" "--execute"
                           "(progn (require 'ob-tangle) (org-babel-tangle-file \"./miscellany.org\"))"))
