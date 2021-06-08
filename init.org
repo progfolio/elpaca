@@ -2862,8 +2862,11 @@ This  allows me to customize the color of the generated pdf.
   :straight (:post-build ((require 'pdf-tools) (pdf-tools-install 'no-query 'skip-dependencies)))
   :functions (pdf-isearch-batch-mode)
   :commands (pdf-tools-install pdf-view-mode pdf-tools-install)
+  :custom (pdf-view-midnight-colors '("#AFA27C" . "#0F0E16"))
   :config (add-hook 'pdf-view-mode-hook
                     (lambda ()
+                      ;; get rid of borders on pdf's edges
+                      (set (make-local-variable 'evil-normal-state-cursor) (list nil))
                       ;;for fast i-search in pdf buffers
                       (pdf-isearch-minor-mode)
                       (pdf-isearch-batch-mode)
