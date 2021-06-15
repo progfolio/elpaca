@@ -3133,7 +3133,13 @@ https://github.com/justbur/emacs-which-key
   (wikinforg-include-thumbnail t)
   (wikinforg-post-insert-hook '(org-redisplay-inline-images))
   (wikinforg-thumbnail-directory
-   (expand-file-name "wikinforg" user-emacs-directory)))
+   (expand-file-name "wikinforg" user-emacs-directory))
+  :config
+  (add-hook 'wikinforg-mode-hook #'visual-line-mode)
+  (add-hook 'wikinforg-mode-hook #'olivetti-mode)
+  (add-hook 'wikinforg-mode-hook (lambda () (writegood-mode -1)))
+  ;; So we can bury temp buffers without evil bindings taking precedence
+  (evil-make-intercept-map wikinforg-mode-map))
 #+end_src
 ** winner
 #+begin_src emacs-lisp
