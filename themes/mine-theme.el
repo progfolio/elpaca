@@ -176,7 +176,7 @@
   (key-binding :weight bold :inherit defualt :foreground ,green))
 
 (mine-add-faces hl
-  (line :background ,red :foreground ,dark-purple :weight bold :extend t))
+  (line :background ,blue :foreground ,purple :weight bold :extend t))
 
 (mine-add-faces info
   (string :foreground ,green))
