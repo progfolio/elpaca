@@ -628,6 +628,14 @@ https://github.com/osener/emacs-afternoon-theme
 #+begin_src emacs-lisp
 (use-package afternoon-theme :defer t)
 #+end_src
+** almost-mono-themes
+#+begin_quote
+A collection of almost monochrome emacs themes in a couple of variants.
+https://github.com/cryon/almost-mono-themes
+#+end_quote
+#+begin_src emacs-lisp
+(use-package almost-mono-themes :defer t)
+#+end_src
 ** asm-mode
 #+begin_src emacs-lisp
 (use-feature asm-mode
