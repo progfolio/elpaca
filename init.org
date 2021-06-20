@@ -1054,8 +1054,8 @@ https://github.com/jschaf/esup
 #+begin_src emacs-lisp
 (use-private explorg
   :commands (explorg-by-id explorg)
-  :config
-  (setq explorg-files `("~/.emacs.d/init.org" ,@(org-add-archive-files (org-agenda-files))))
+  :custom
+  (explorg-files (directory-files-recursively "~/Documents/" "org$"))
   :general
   (+general-global-application
     "of" 'explorg-by-id)
