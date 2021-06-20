@@ -2062,7 +2062,7 @@ buffers.
                             (":properties:"    . "⚙")
                             (":end:"           . "∎")
                             ("#+results:"      . "→"))))
-                  (prettify-symbols-mode 1)))
+            (prettify-symbols-mode 1)))
 #+END_SRC
 *** :custom
 :PROPERTIES:
