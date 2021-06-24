@@ -991,6 +991,9 @@ These settings defined in C code, so we use the ~emacs~ pseudo-package to set th
 ** emacs-lisp
 #+begin_src emacs-lisp
 (use-feature elisp-mode
+  :custom (elisp-flymake-byte-compile-load-path
+           (append (list "./") (straight--directory-files (straight--build-dir) nil 'full))
+           "Prevent straight from confusing flymake.")
   :general
   (global-leader
     :major-modes '(emacs-lisp-mode lisp-interaction-mode t)
