@@ -1939,6 +1939,32 @@ https://github.com/rnkn/olivetti
     "-"   'org-ctrl-c-minus
     "A"   'org-attach)
   :config
+  ;;Fix off-by-one paren matching in Org src blocks.
+  ;;https://emacs.stackexchange.com/questions/50216/org-mode-code-block-parentheses-mismatch
+  (defun +org-src-substitute-syntax-table (start end)
+    "Change syntax of characters ?< and ?> to symbol within source code blocks."
+    (let ((case-fold-search t))
+      (when (eq major-mode 'org-mode)
+        (save-excursion
+          (goto-char start)
+          (while (re-search-forward "<\\|>" end 'noerror)
+            (when (save-excursion
+                    (and
+                     (re-search-backward "[[:space:]]*#\\+\\(begin\\|end\\)_src\\_>" nil t)
+                     (string-equal (downcase (match-string 1)) "begin")))
+              ;; This is a < or > in an org-src block
+              (put-text-property (point) (1- (point))
+                                 'syntax-table (string-to-syntax "_"))))))))
+
+  (defun +org-src-fix-syntax ()
+    "Setup for characters ?< and ?> in source code blocks.
+Add this function to `org-mode-hook'."
+    (make-local-variable 'syntax-propertize-function)
+    (setq syntax-propertize-function #'+org-src-substitute-syntax-table)
+    (syntax-propertize (point-max)))
+
+  (add-hook 'org-mode-hook #'+org-src-fix-syntax)
+
   (defun +org-sparse-tree (&optional arg type)
     (interactive)
     (funcall #'org-sparse-tree arg type)
