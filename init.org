@@ -1228,6 +1228,7 @@ https://github.com/emacs-helm/helm
   (helm-split-window-inside-p t "split window inside current window")
   (helm-move-to-line-cycle-in-source t "cycle to beggining or end afte reaching top/bottom of list")
   (helm-show-completion-display-function nil "don't want to open a separate frame for this")
+  (helm-completion-style 'emacs "Necessary to have multiline candidates/text-properties show in completion buffer")
 
   :config
   (add-hook 'helm-after-initialize-hook (lambda () (with-helm-buffer (visual-line-mode))))
