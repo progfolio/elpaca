@@ -1258,7 +1258,11 @@ https://github.com/emacs-helm/helm
     "a" 'helm-apropos)
   (completion-def
     :keymaps 'insert
-    "C-f" 'helm-complete-file-name-at-point))
+    "C-f" 'helm-complete-file-name-at-point)
+  (global-leader
+    :major-modes '(org-mode t)
+    :keymaps     '(org-mode-map)
+    "/"  'helm-org-in-buffer-headings))
 #+end_src
 *** helm-ag
 #+begin_quote
