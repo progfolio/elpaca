@@ -861,6 +861,16 @@ https://github.com/gonewest818/dimmer.el
   (dimmer-configure-which-key)
   (dimmer-configure-helm))
 #+end_src
+** dired
+#+begin_quote
+Directory browsing commands
+#+end_quote
+#+begin_src emacs-lisp
+(use-feature dired
+  :defer t
+  :general
+  (+general-global-application "d" 'dired))
+#+end_src
 ** doct
 #+begin_quote
 doct is a function that provides an alternative, declarative syntax for describing Org capture templates.
@@ -3036,7 +3046,7 @@ https://depp.brause.cc/shackle/
              "W" '((lambda () (interactive) (stardict-define))
                    :which-key "define word"))
   (+general-global-application
-    "d" '((lambda () (interactive) (stardict-define t))
+    "D" '((lambda () (interactive) (stardict-define t))
           :which-key "dictionary"))
   (+general-global-text
     "d" '((lambda () (interactive) (stardict-define))
