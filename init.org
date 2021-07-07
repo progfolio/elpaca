@@ -2782,6 +2782,7 @@ A minor mode I wrote to export org documents to HTML and preview them in a
 browser. On saving, the document is re-exported and the browser is refreshed.
 #+begin_src emacs-lisp
 (use-private org-live-preview
+  :disabled t ;requires an outdated 'utils' function
   :after (org)
   :commands (org-live-preview-mode))
 #+end_src
