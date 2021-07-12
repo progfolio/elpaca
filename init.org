@@ -1815,21 +1815,30 @@ https://github.com/rnkn/olivetti
                       (kbd "RET") 'org-open-at-point)
   ;;<tab> is for GUI only. TAB maps to C-i on terminals.
   (+general-global-application
-    "o"    '(:ignore t :which-key "org")
-    "oc"   'org-capture
-    "oC"   '+org-capture-again
-    "oi"   'org-insert-link
-    "oj"   'org-chronicle
-    "ok"   '(:ignore t :which-key "clock")
-    "okg"  'org-clock-goto
-    "oki"  'org-clock-in-last
-    "okj"  'org-clock-jump-to-current-clock
-    "oko"  'org-clock-out
-    "okr"  'org-resolve-clocks
-    "ol"   'org-store-link
-    "om"   'org-tags-view
-    "os"   'org-search-view
-    "ot"   'org-todo-list)
+    "o"   '(:ignore t :which-key "org")
+    "oc"  'org-capture
+    "oC"  '+org-capture-again
+    "oi"  'org-insert-link
+    "oj"  'org-chronicle
+    "ok"  '(:ignore t :which-key "clock")
+    "okg" 'org-clock-goto
+    "oki" 'org-clock-in-last
+    "okj" 'org-clock-jump-to-current-clock
+    "oko" 'org-clock-out
+    "okr" 'org-resolve-clocks
+    "ol"  'org-store-link
+    "om"  'org-tags-view
+    "os"  'org-search-view
+    "oT"  'org-todo-list
+    "ot"  '(:ignore t :which-key "timer")
+    "ott" 'org-timer
+    "otS" 'org-timer-stop
+    "otC" 'org-timer-change-times-in-region
+    "otc" 'org-timer-set-timer
+    "ots" 'org-timer-start
+    "oti" 'org-timer-item
+    "otp" 'org-timer-pause-or-continue
+    "otr" 'org-timer-show-remaining-time)
 
   (global-leader
     ;;for terminals
