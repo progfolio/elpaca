@@ -1966,6 +1966,7 @@ https://github.com/rnkn/olivetti
   :config
   ;;Fix off-by-one paren matching in Org src blocks.
   ;;https://emacs.stackexchange.com/questions/50216/org-mode-code-block-parentheses-mismatch
+  ;;@TODO: slow in "work schedule" org-agenda command. Not sure why.
   (defun +org-src-substitute-syntax-table (start end)
     "Change syntax of characters ?< and ?> to symbol within source code blocks."
     (let ((case-fold-search t))
@@ -2136,6 +2137,7 @@ Add a custom view for a simplified work agenda.
  '(("w" "Work Schedule" agenda "+work"
     ((org-agenda-files '("~/Documents/todo/work.org"))
      (org-agenda-span 'week)
+     (org-mode-hook nil)
      (org-agenda-start-on-weekday 2)
      (org-agenda-timegrid-use-ampm t)
      (org-agenda-time-leading-zero t)
