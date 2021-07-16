@@ -868,6 +868,7 @@ Directory browsing commands
 #+begin_src emacs-lisp
 (use-feature dired
   :defer t
+  :custom (dired-listing-switches "-alh" "Human friendly file sizes.")
   :general
   (+general-global-application "d" 'dired))
 #+end_src
