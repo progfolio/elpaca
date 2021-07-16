@@ -3371,7 +3371,8 @@ Space for packages which I'm developing but are not part of my usual configurati
   :straight (:type git :host github :repo "org-roam/org-roam" :fork t :branch "v2")
   :general
   (+general-global-application
-    "or" '(:ignore t :which-key "org-roam")))
+    "or" '(:ignore t :which-key "org-roam"))
+  :init (setq org-roam-v2-ack t))
 #+end_src
 
 ** speedo
