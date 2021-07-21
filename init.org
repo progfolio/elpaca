@@ -260,6 +260,7 @@ NAME and ARGS are in `use-package'."
 Packages that I'm developing or aren't part of any online repositories go in =~/emacs.d/lisp/=.
 #+begin_src emacs-lisp
 (let ((default-directory "~/.emacs.d/lisp/"))
+  (normal-top-level-add-to-load-path '("."))
   (normal-top-level-add-subdirs-to-load-path))
 #+end_src
 * Custom variables
