@@ -3373,10 +3373,10 @@ Space for packages which I'm developing but are not part of my usual configurati
 ** org-roam
 #+begin_src emacs-lisp :lexical t
 (use-package org-roam
-  :straight (:type git :host github :repo "org-roam/org-roam" :fork t :branch "v2")
+  :straight (:type git :host github :repo "org-roam/org-roam" :fork t)
   :general
   (+general-global-application
-    "or" '(:ignore t :which-key "org-roam"))
+    "or" '(:ignore t :which-key "org-roam-setup"))
   :init (setq org-roam-v2-ack t))
 #+end_src
 
