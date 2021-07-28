@@ -3005,6 +3005,12 @@ ten, but opening my org agenda files wipes that list out.
   (recentf-max-menu-items 1000 "Offer more recent files in menu")
   (recentf-max-saved-items 1000 "Save more recent files"))
 #+end_src
+** sendmail
+#+begin_src emacs-lisp
+(use-feature sendmail
+  :defer t
+  :custom (send-mail-function 'smtpmail-send-it "inform emacs-bug-report how we want to send mail"))
+#+end_src
 ** shackle
 #+begin_quote
 shackle gives you the means to put an end to popped up buffers not behaving they way you'd like them to.
