@@ -1077,7 +1077,8 @@ https://github.com/jschaf/esup
 #+end_src
 ** explorg
 #+begin_src emacs-lisp
-(use-private explorg
+(use-package explorg
+  :straight (explorg :host github :repo "progfolio/explorg")
   :commands (explorg-by-id explorg)
   :custom
   (explorg-files (directory-files-recursively "~/Documents/" "org$"))
