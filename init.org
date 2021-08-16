@@ -2652,7 +2652,6 @@ https://github.com/harrybournis/org-fancy-priorities
 #+end_quote
 #+begin_src emacs-lisp
 (use-package org-fancy-priorities
-  ;;:disabled t
   :commands (org-fancy-priorities-mode)
   :hook (org-mode . org-fancy-priorities-mode)
   :diminish ""
