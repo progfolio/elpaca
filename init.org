@@ -224,20 +224,6 @@ NAME and ARGS are in `use-package'."
      :straight nil
      :ensure nil
      ,@args))
-
-;;eventually move this into emacs-secrets. Not particularly sensitive
-;;right now, but no need to share in the future.
-(defvar +git-server-address "192.168.1.180")
-
-(defmacro use-private (name &rest args)
-  "Like `use-package' but with :straight pointing to local git server.
-NAME and ARGS are in `use-package'."
-  (declare (indent defun))
-  `(use-package ,name
-     :straight (,name :repo ,(concat "git@" +git-server-address ":emacs/"
-                                     (symbol-name name) ".git")
-                      :branch "master")
-     ,@args))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -2301,7 +2287,8 @@ delete the =~/.emacs.d/straight/build/org/ob-*.el(c)= files and restart
 #+end_src
 ** org-better-repeat
 #+begin_src emacs-lisp
-(use-private org-better-repeat-mode
+(use-package org-better-repeat-mode
+  :straight (org-better-repeat-mode :host github :repo "progfolio/org-better-repeat-mode")
   :after (org)
   :config
   (defun +org-delete-after-prop-drawer ()
@@ -2648,7 +2635,9 @@ emacsclient --create-frame \
 #+end_src
 ** org-clean-refile
 #+begin_src emacs-lisp
-(use-private org-clean-refile
+(use-package org-clean-refile
+  :straight '(org-clean-refile :host github :repo "progfolio/org-clean-refile")
+  :commands (org-clean-refile)
   :after (org)
   :general
   (global-leader
@@ -2803,15 +2792,6 @@ Set clock report duration format to floating point hours
 *** 'TODO' Keywords
 #+begin_src emacs-lisp
 #+end_src
-** org-live-preview
-A minor mode I wrote to export org documents to HTML and preview them in a
-browser. On saving, the document is re-exported and the browser is refreshed.
-#+begin_src emacs-lisp
-(use-private org-live-preview
-  :disabled t ;requires an outdated 'utils' function
-  :after (org)
-  :commands (org-live-preview-mode))
-#+end_src
 ** org-mime
 #+begin_quote
 org-mime can be used to send HTML email using Org-mode HTML export.
@@ -2845,7 +2825,9 @@ https://github.com/alphapapa/org-make-toc
 #+end_src
 ** org-region-link
 #+begin_src emacs-lisp
-(use-private org-region-link
+(use-package org-region-link
+  :straight (org-region-link :host github :repo "progfolio/org-region-link")
+  :disabled t
   :defer 10
   :after (org))
 #+end_src
@@ -3036,8 +3018,9 @@ https://depp.brause.cc/shackle/
 #+end_src
 ** skip-buffers
 #+begin_src emacs-lisp
-(use-private skip-buffers
-  :defer 1
+(use-package skip-buffers
+  :straight (skip-buffers :host github :repo "progfolio/skip-buffers")
+  :defer 10
   :config
   (add-to-list 'skip-buffers-blacklist "*Help*")
   (add-to-list 'skip-buffers-blacklist "*Calendar*")
@@ -3061,7 +3044,8 @@ https://depp.brause.cc/shackle/
 #+end_src
 ** stardict-utils
 #+begin_src emacs-lisp
-(use-private stardict-utils
+(use-package stardict-utils
+  :straight (stardict-utils :host github :repo "progfolio/stardict-utils")
   :after (general helm)
   :commands (stardict-define)
   :general (global-definer
@@ -3286,7 +3270,9 @@ https://github.com/abo-abo/ace-window
 #+end_src
 ** tongle
 #+begin_src emacs-lisp
-(use-private tongle
+(use-package tongle
+  :straight (tongle :host "github" :repo "progfolio/tongle")
+  :disabled t
   :commands (tongle-mode)
   :init (setq tongle-disabled-string ""))
 #+end_src
@@ -3366,7 +3352,8 @@ Space for packages which I'm developing but are not part of my usual configurati
 #+end_src
 ** org-chronicle
 #+begin_src emacs-lisp
-(use-private org-chronicle
+(use-package org-chronicle
+  :straight (org-chronicle :host github :repo "progfolio/org-chronicle")
   :commands (org-chronicle)
   :custom (org-chronicle-directory "~/Documents/journal/")
   (org-chronicle-file-format-string "%Y.%m.%d"))
