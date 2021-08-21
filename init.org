@@ -940,11 +940,10 @@ I may move it from its default location (=~/.elfeed=), in =elfeed-db-directory=.
     "Play selected videos in a shared mpv instance in chronological order.
 If SEPARATE is non-nil, launch a separate instance of mpv."
     (interactive "P")
-    (let ((entries (nreverse (mapcar (lambda (entry) (elfeed-entry-link entry))
-                                     (elfeed-search-selected)))))
-      (dolist (entry entries) (emp-open-url entry))
-      (elfeed-search-untag-all-unread)
-      (message "Playing selected videos in mpv")))
+    (mapc #'emp-open-url (nreverse (mapcar #'elfeed-entry-link (elfeed-search-selected))))
+    (elfeed-search-untag-all-unread)
+    (message "Playing selected videos in mpv"))
+
   (defun +elfeed-download ()
     "Download selected videos."
     (interactive)
