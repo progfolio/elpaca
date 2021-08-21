@@ -1634,7 +1634,7 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
   :custom
   (mail-user-agent 'mu4e-user-agent)
   (mu4e-mu-binary (expand-file-name "mu/mu" (straight--repos-dir "mu")))
-  (mu4e-org-support nil "Don't want mu4e loading Org unless I need to.")
+  (mu4e-org-support t)
   (message-mail-user-agent 'mu4e-user-agent "Use mu4e as default email program.")
   (mu4e-maildir (expand-file-name "~/Documents/emails/"))
   (mu4e-attachment-dir "~/Downloads")
