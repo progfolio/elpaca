@@ -940,24 +940,27 @@ I may move it from its default location (=~/.elfeed=), in =elfeed-db-directory=.
     "Play selected videos in a shared mpv instance in chronological order.
 If SEPARATE is non-nil, launch a separate instance of mpv."
     (interactive "P")
-    (mapc #'emp-open-url (nreverse (mapcar #'elfeed-entry-link (elfeed-search-selected))))
-    (elfeed-search-untag-all-unread)
-    (message "Playing selected videos in mpv"))
+    (mapc (lambda (entry)
+            (emp-open-url (elfeed-entry-link entry))
+            (message "Playing %S in MPV" (elfeed-entry-title entry)))
+          (nreverse (elfeed-search-selected)))
+    (elfeed-search-untag-all-unread))
 
   (defun +elfeed-download ()
     "Download selected videos."
     (interactive)
     (let ((default-directory (expand-file-name "~/Videos/youtube")))
-      (dolist (link (nreverse (mapcar #'elfeed-entry-link (elfeed-search-selected))))
-        (message "Attempting to download %S" link)
-        (make-process
-         :name "elfeed-download"
-         :buffer "elfeed-download"
-         :command (list "youtube-dl" link)
-         :sentinel (lambda (process _event)
-                     (when (= 0 (process-exit-status process))
-                       (message "Successfully downloaded %S" link))))))
-    (elfeed-search-untag-all-unread))
+      (dolist (entry (nreverse (elfeed-search-selected)))
+        (let ((title (elfeed-entry-title entry)))
+          (message "Attempting to download %S" (elfeed-entry-title entry))
+          (make-process
+           :name "elfeed-download"
+           :buffer "elfeed-download"
+           :command (list "youtube-dl" (elfeed-entry-link entry))
+           :sentinel (lambda (process _event)
+                       (when (= 0 (process-exit-status process))
+                         (message "Successfully downloaded %S" title))))))
+      (elfeed-search-untag-all-unread)))
   :general
   (+general-global-application
     "e"    'elfeed)
