@@ -1482,6 +1482,27 @@ https://github.com/abo-abo/hydra
   (+general-global-window
     "." '(+hydra-window-resize/body :which-key "window-resize")))
 #+end_src
+** ielm
+#+begin_quote
+Provides a nice interface to evaluating Emacs Lisp expressions.
+Input is handled by the comint package, and output is passed through the pretty-printer.
+
+ielm.el commentary
+#+end_quote
+
+#+begin_src emacs-lisp :lexical t
+(use-feature inferior-emacs-lisp-mode
+  :general
+  (global-leader
+    :major-modes '(inferior-emacs-lisp-mode)
+    :keymaps     '(inferior-emacs-lisp-mode-map)
+    "b"  '(:ignore t :which-key "buffer")
+    "bb" 'ielm-change-working-buffer
+    "bd" 'ielm-display-working-buffer
+    "bp" 'ielm-print-working-buffer
+    "c"  'comint-clear-buffer)
+  (+general-global-application "i" 'ielm))
+#+end_src
 ** i3wm-config-mode
 #+begin_quote
 An expansion of conf-mode to bring proper syntax highlighting to your i3wm config.
