@@ -968,7 +968,12 @@ If SEPARATE is non-nil, launch a separate instance of mpv."
    :states '(normal)
    :keymaps 'elfeed-search-mode-map
    "p" '+elfeed-play-in-mpv
-   "d" '+elfeed-download))
+   "d" '+elfeed-download)
+  (general-define-key
+   :states '(normal)
+   :keymaps 'elfeed-show-mode-map
+   "J" 'elfeed-show-next
+   "K" 'elfeed-show-prev))
 #+end_src
 *** elfeed-org
 #+begin_src emacs-lisp :lexical t
