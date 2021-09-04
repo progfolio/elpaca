@@ -162,16 +162,15 @@ straight.el: next-generation, purely functional package manager for the Emacs ha
 https://github.com/raxod502/straight.el
 #+end_quote
 
-Bootstrap straight
 #+begin_src emacs-lisp :lexical t
-(setq straight-repository-branch "develop")
-(setq straight-check-for-modifications '(watch-files))
-(setq straight-use-package-by-default t)
-(setq straight-vc-git-default-protocol 'https)
-(setq straight-vc-git-force-protocol nil)
-(defvar bootstrap-version)
-(setq straight-host-usernames '((github . "progfolio")
+(setq straight-repository-branch "develop"
+      straight-check-for-modifications '(watch-files)
+      straight-use-package-by-default t
+      straight-vc-git-default-protocol 'https
+      straight-vc-git-force-protocol nil
+      straight-host-usernames '((github . "progfolio")
                                 (gitlab . "iarchivedmywholelife")))
+(defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
       (bootstrap-version 5))
