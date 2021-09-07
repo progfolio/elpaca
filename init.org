@@ -3481,3 +3481,10 @@ as fast as possible without recording multiple mistakes."
   :commands (padscape)
   :straight '(padscape :host github :repo "progfolio/padscape"))
 #+end_src
+
+** yodel
+#+begin_src emacs-lisp :lexical t
+(use-package yodel
+  :straight '(:host github :repo "progfolio/yodel")
+  :defer t)
+#+end_src
