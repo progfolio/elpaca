@@ -552,7 +552,7 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
 #+end_src
 **** spelling
 #+begin_src emacs-lisp :lexical t
-(+general-global-menu! "spelling" "S")
+(+general-global-menu! "spelling" "s")
 #+end_src
 **** text
 #+begin_src emacs-lisp :lexical t
@@ -1193,6 +1193,12 @@ https://www.flycheck.org/en/latest/
   (+general-global-toggle
     "ss" 'flyspell-mode
     "sp" 'flyspell-prog-mode)
+  (+general-global-spelling
+    "n" 'flyspell-goto-next-error
+    "b" 'flyspell-buffer
+    "w" 'flyspell-word
+    "r" 'flyspell-region
+    "p" 'flyspell-correct-at-point)
   :hook ((org-mode) . flyspell-mode))
 #+end_src
 *** flyspell-correct
