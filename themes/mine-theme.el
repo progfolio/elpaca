@@ -1,4 +1,4 @@
-;;; mine-theme.el --- My personal theme ;-*- eval: (progn (rainbow-mode) (fontify-face-mode) (add-hook 'after-save-hook (lambda () (+change-theme (intern-soft (replace-regexp-in-string "-theme\.el" "" (buffer-name))))) nil t)); lexical-binding: t; -*-
+;;; mine-theme.el --- My personal theme ;-*- eval: (progn (rainbow-mode) (fontify-face-mode) (add-hook 'after-save-hook (lambda () (makunbound 'mine-palette) (+change-theme (intern-soft (replace-regexp-in-string "-theme\.el" "" (buffer-name))))) nil t)); lexical-binding: t; -*-
 ;;; Commentary:
 ;;
 ;;; Code:
