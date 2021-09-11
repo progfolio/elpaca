@@ -1199,7 +1199,7 @@ https://www.flycheck.org/en/latest/
     "w" 'flyspell-word
     "r" 'flyspell-region
     "p" 'flyspell-correct-at-point)
-  :hook ((org-mode) . flyspell-mode))
+  :hook ((org-mode mu4e-compose-mode) . flyspell-mode))
 #+end_src
 *** flyspell-correct
 #+begin_quote
