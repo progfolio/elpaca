@@ -879,6 +879,7 @@ https://github.com/seagle0128/doom-modeline
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package doom-modeline
+  :straight (:fork t)
   :config
   (column-number-mode 1)
   :custom
