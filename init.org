@@ -1685,14 +1685,13 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package mu4e
-  :straight ( :host github :files ("mu4e/*") :repo "djcb/mu" :branch "master"
-              :pre-build (("make" "clean")
-                          ("./autogen.sh")
-                          ("make")))
+  :straight ( :host github :files ("build/mu4e/*" "mu4e/*") :repo "djcb/mu" :branch "master"
+              :pre-build (("./autogen.sh")
+                          ("ninja" "-C" "build")))
   :commands (mu4e mu4e-update-index)
   :custom
   (mail-user-agent 'mu4e-user-agent)
-  (mu4e-mu-binary (expand-file-name "mu/mu" (straight--repos-dir "mu")))
+  (mu4e-mu-binary (expand-file-name "build/mu/mu" (straight--repos-dir "mu")))
   (mu4e-org-support t)
   (message-mail-user-agent 'mu4e-user-agent "Use mu4e as default email program.")
   (mu4e-maildir (expand-file-name "~/Documents/emails/"))
