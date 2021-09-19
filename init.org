@@ -2885,8 +2885,6 @@ https://github.com/alphapapa/org-make-toc
 #+begin_src emacs-lisp :lexical t
 (use-package org-region-link
   :straight (org-region-link :host github :repo "progfolio/org-region-link")
-  :disabled t
-  :defer 10
   :after (org))
 #+end_src
 ** org-superstar
