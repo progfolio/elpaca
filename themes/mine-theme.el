@@ -14,7 +14,7 @@
 (defvar mine-palette
   ;;                COLOR       TTY-COLOR
   '((blue        "#6698A7"      "#6098A7")
-    (gray        "#525254"      "#525254")
+    (gray        "#A2A2A4"      "#A2A2A4")
     (green       "#34B53F"      "#6EBF5B")
     (lavender    "#744A89"      "#905CAA")
     (orange      "#DD845A"      "#FF9868")
