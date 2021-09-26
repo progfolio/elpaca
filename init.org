@@ -1687,7 +1687,7 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package mu4e
-  :straight ( :host github :files ("build/mu4e/*" "mu4e/*") :repo "djcb/mu" :branch "master"
+  :straight ( :host github :files ("build/mu4e/*.el" "mu4e/*") :repo "djcb/mu" :branch "master"
               :pre-build (("./autogen.sh")
                           ("ninja" "-C" "build")))
   :commands (mu4e mu4e-update-index)
