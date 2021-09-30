@@ -96,7 +96,7 @@ table of values from popular Emacs configurations.
 #+begin_src emacs-lisp :lexical t
 (defun +reset-init-values ()
   (run-with-idle-timer
-   5 nil
+   1 nil
    (lambda ()
      (setq file-name-handler-alist default-file-name-handler-alist
            gc-cons-threshold 100000000)
