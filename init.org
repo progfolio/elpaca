@@ -2061,6 +2061,18 @@ https://github.com/rnkn/olivetti
   ;;           (lambda ()
   ;;             (add-hook 'before-save-hook '+org-update-cookies nil 'local)))
 
+  ;; Offered a patch to fix this upstream. Too much bikeshedding for such a simple fix.
+  (defun +org-tags-crm (fn &rest args)
+    "Workaround for bug which excludes \",\" when reading tags via `completing-read-multiple'.
+I offered a patch to fix this, but it was met with too much resistance to be
+worth pursuing."
+    (let ((crm-separator "\\(?:[[:space:]]*[,:][[:space:]]*\\)"))
+      (unwind-protect (apply fn args)
+        (advice-remove #'completing-read-multiple #'+org-tags-crm))))
+
+  (define-advice org-set-tags-command (:around (fn &rest args) comma-for-crm)
+    (advice-add #'completing-read-multiple :around #'+org-tags-crm)
+    (apply fn args))
   :custom
   ;;default:
   ;;(org-w3m org-bbdb org-bibtex org-docview org-gnus org-info org-irc org-mhe org-rmail)
@@ -2406,6 +2418,9 @@ Purely cosmetic. I may ditch this at some point.
 #+begin_src emacs-lisp :lexical t
 (use-package org-capture
   :config
+  (define-advice org-capture-fill-template (:around (fn &rest args) comma-for-crm)
+    (advice-add #'completing-read-multiple :around #'+org-tags-crm)
+    (apply fn args))
   (add-hook 'org-capture-mode-hook #'evil-insert-state)
 #+end_src
 
