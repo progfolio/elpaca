@@ -3109,11 +3109,9 @@ https://depp.brause.cc/shackle/
              "W" '((lambda () (interactive) (stardict-define))
                    :which-key "define word"))
   (+general-global-application
-    "D" '((lambda () (interactive) (stardict-define t))
-          :which-key "dictionary"))
+    "D" '(stardict-define :which-key "dictionary"))
   (+general-global-text
-    "d" '((lambda () (interactive) (stardict-define))
-          :which-key "dictionary")))
+    "d" '(stardict-define :which-key "dictionary")))
 #+end_src
 ** tab-bar
 #+begin_src emacs-lisp :lexical t
