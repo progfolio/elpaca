@@ -1177,6 +1177,12 @@ https://www.flycheck.org/en/latest/
 #+begin_src emacs-lisp :lexical t
 (use-feature flymake
   :init (add-hook 'flymake-mode-hook #'+flymake-toggle-diagnostics-buffer 100)
+  :general
+  (global-leader
+    :major-modes '(emacs-lisp-mode lisp-interaction-mode t)
+    :keymaps     '(emacs-lisp-mode-map lisp-interaction-mode-map)
+    "f" '(:ignore t :which-key "flymake")
+    "ff" '((lambda () (interactive) (flymake-mode 'toggle)) :which-key "toggle flymake-mode"))
   :config
   (defun +flymake-toggle-diagnostics-buffer ()
     "Toggle the diagnostics buffer when entering/exiting `flymake-mode'."
