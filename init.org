@@ -2738,10 +2738,30 @@ https://github.com/harrybournis/org-fancy-priorities
   :diminish ""
   :config
   ;;"Eisenhower Matrix of Importance and Urgency"
-  (setq org-fancy-priorities-list '("I∧U (i)"
-                                    "I¬U  (s)"
-                                    "¬IU  (d)"
-                                    "¬I¬U (e)")))
+  (defvar +org-fancy-priorities-eisenhower-matrix
+    "↑ |-----------+-----------|
+I |   Eisenhower Matrix   |
+M |-----------+-----------|
+P |           |           |
+O | Schedule  | Immediate |
+R |           |           |
+T |-----------+-----------|
+A |           |           |
+N | Eliminate | Delegate  |
+C |           |           |
+E |-----------+-----------|
+          URGENCY →"
+    "Eisenhower Matrix help text.")
+  (setq org-fancy-priorities-list
+        (mapcar
+         (lambda (cell) (format (car cell)
+                                (propertize
+                                 (cdr cell)
+                                 'help-echo +org-fancy-priorities-eisenhower-matrix)))
+         '(("I∧U (%s)" . "I")
+           ("I¬U  (%s)" . "S")
+           ("¬IU  (%s)" . "D")
+           ("¬I¬U (%s)" . "E")))))
 #+end_src
 ** org-habit
 #+begin_src emacs-lisp :lexical t
