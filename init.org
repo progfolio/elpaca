@@ -2096,7 +2096,7 @@ worth pursuing."
                             :background "#202020"
                             :box (:line-width 3 :width -2 :style released-button)))))
   (org-ellipsis (nth 5 '("↴" "˅" "…" " ⬙" " ▽" "▿")))
-  (org-lowest-priority ?D)
+  (org-priority-lowest ?D)
   (org-fontify-done-headline t)
   (org-M-RET-may-split-line nil "Don't split current line when creating new heading"))
 #+end_src
