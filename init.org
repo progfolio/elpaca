@@ -3146,11 +3146,11 @@ https://depp.brause.cc/shackle/
   :straight (stardict-utils :host github :repo "progfolio/stardict-utils")
   :after (general helm)
   :commands (stardict-define)
-  :general (global-definer
-             "W" '((lambda () (interactive) (stardict-define))
-                   :which-key "define word"))
+  :general
+  (global-definer
+    "W" '(stardict-define :which-key "define word"))
   (+general-global-application
-    "D" '(stardict-define :which-key "dictionary"))
+    "D" '((lambda () (interactive) (stardict-define nil)) :which-key "dictionary"))
   (+general-global-text
     "d" '(stardict-define :which-key "dictionary")))
 #+end_src
