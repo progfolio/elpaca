@@ -63,7 +63,7 @@
 
 (mine-add-faces nil
   (cursor  :background ,green :foreground ,dark-purple :weight bold)
-  (default :background ,purple :foreground ,yellow :weight normal :height 97)
+  (default :background ,purple :foreground ,yellow :weight normal :height 130)
   (fringe :inherit default)
   (header-line :inherit default :underline t)
   (highlight :inherit org-block)
