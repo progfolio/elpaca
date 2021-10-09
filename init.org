@@ -936,10 +936,9 @@ I may move it from its default location (=~/.elfeed=), in =elfeed-db-directory=.
 (use-package elfeed
   :commands (elfeed)
   :config
-  (defun +elfeed-play-in-mpv (&optional separate)
-    "Play selected videos in a shared mpv instance in chronological order.
-If SEPARATE is non-nil, launch a separate instance of mpv."
-    (interactive "P")
+  (defun +elfeed-play-in-mpv ()
+    "Play selected videos in a shared mpv instance in chronological order."
+    (interactive)
     (mapc (lambda (entry)
             (emp-open-url (elfeed-entry-link entry))
             (message "Playing %S in MPV" (elfeed-entry-title entry)))
