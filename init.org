@@ -3471,7 +3471,7 @@ Space for packages which I'm developing but are not part of my usual configurati
 ** speedo
 #+begin_src emacs-lisp :lexical t
 (use-package speedo
-  :straight (:type git :host github :repo "progfolio/speedo" :files ("speedo.el"))
+  :straight (:type git :host github :repo "progfolio/speedo")
   :commands (speedo speedo-load-file)
   :custom
   (speedo-directory "~/.emacs.d/straight/repos/speedo/test/")
