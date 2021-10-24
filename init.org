@@ -1798,10 +1798,9 @@ https://github.com/iqbalansari/mu4e-alert
   (setq mu4e-alert-set-window-urgency nil)
   (mu4e-alert-enable-mode-line-display)
   (mu4e-alert-enable-notifications)
-  :config
-  (lambda ()
-    (mu4e-alert-enable-mode-line-display)
-    (mu4e-alert-enable-notifications)))
+  (mu4e-alert-enable-mode-line-display)
+  (mu4e-alert-enable-notifications)
+  (advice-add #'mu4e-quit :after #'mu4e-alert-update-mail-count-modeline))
 #+end_src
 ** nov (epub)
 #+begin_quote
