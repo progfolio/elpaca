@@ -12,16 +12,17 @@
 (defvar mine-faces nil "Face specs for mine theme.")
 
 (defvar mine-palette
-  ;;                COLOR       TTY-COLOR
-  '((blue        "#6698A7"      "#6098A7")
-    (gray        "#A2A2A4"      "#A2A2A4")
-    (green       "#34B53F"      "#6EBF5B")
-    (lavender    "#744A89"      "#905CAA")
-    (orange      "#DD845A"      "#FF9868")
-    (purple      "#0F0E16"      "#202020")
-    (red         "#dd5668"      "#d64249")
-    (yellow      "#AFA27C"      "#C6B78D")
-    (dark-purple "#0E0D14"      "#101010"))
+  ;;                 COLOR          TTY-COLOR
+  '((blue            "#6698A7"      "#6098A7")
+    (gray            "#A2A2A4"      "#A2A2A4")
+    (green           "#34B53F"      "#6EBF5B")
+    (lavender        "#744A89"      "#905CAA")
+    (orange          "#DD845A"      "#FF9868")
+    (purple          "#0F0E16"      "#202020")
+    (light-purple    "#29263D"      "#202020")
+    (dark-purple     "#0E0D14"      "#101010")
+    (red             "#dd5668"      "#d64249")
+    (yellow          "#AFA27C"      "#C6B78D"))
   "Color palette for mine them.")
 
 (defvar mine-font-sizes '(1.10 1.15 1.25 1.5) "Font sizes for mine theme.")
@@ -176,7 +177,7 @@
   (key-binding :weight bold :inherit defualt :foreground ,green))
 
 (mine-add-faces hl
-  (line :background ,blue :foreground ,purple :weight bold :extend t))
+  (line :background ,light-purple :weight bold :extend t))
 
 (mine-add-faces info
   (string :foreground ,green))
