@@ -194,12 +194,6 @@ This package gets the correct environment variables so straight can use the ssh 
 (setq straight-vc-git-default-protocol 'ssh)
 #+end_src
 
-*** Install org-contrib
-Installing it this early *should* prevent mixed Org installations.
-#+begin_src emacs-lisp :lexical t
-(straight-use-package 'org-contrib)
-#+end_src
-
 ** profiling
 This function displays how long Emacs took to start.
 It's a rough way of knowing when/if I need to optimize my init file.
@@ -2723,6 +2717,10 @@ emacsclient --create-frame \
   (global-leader
     :keymaps 'org-mode-map
     "sr" 'org-clean-refile))
+#+end_src
+** org-contrib
+#+begin_src emacs-lisp :lexical t
+(straight-use-package 'org-contrib)
 #+end_src
 ** org-fancy-priorities
 #+begin_quote
