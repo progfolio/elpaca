@@ -3366,7 +3366,7 @@ https://github.com/abo-abo/ace-window
 ** tongle
 #+begin_src emacs-lisp :lexical t
 (use-package tongle
-  :straight (tongle :host "github" :repo "progfolio/tongle")
+  :straight (tongle :host github :repo "progfolio/tongle")
   :commands (tongle-mode)
   :init (setq tongle-disabled-string ""))
 #+end_src
