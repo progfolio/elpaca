@@ -3469,7 +3469,7 @@ Space for packages which I'm developing but are not part of my usual configurati
 ** speedo
 #+begin_src emacs-lisp :lexical t
 (use-package speedo
-  :straight (:type git :host github :repo "progfolio/speedo")
+  :straight (:type git :host github :repo "progfolio/speedo" :includes (speedo-review))
   :commands (speedo speedo-load-file)
   :custom
   (speedo-directory "~/.emacs.d/straight/repos/speedo/test/")
@@ -3504,6 +3504,18 @@ as fast as possible without recording multiple mistakes."
        :command '("antimicrox" "--tray"))))
 
   (add-hook 'speedo-mode-hook #'+speedo-ensure-controller-support))
+
+(use-package speedo-review
+  :straight nil
+  :defer t
+  :general
+  (+general-global-application
+    "sr"   '(:ignore t :which-key "review")
+    "srl"  '(:ignore t :which-key "review-last")
+    "srlr" 'speedo-review-last-runs
+    "srla" 'speedo-review-last-attempts)
+  :config
+  (evil-make-intercept-map speedo-review-mode-map))
 #+end_src
 
 ** joymacs
