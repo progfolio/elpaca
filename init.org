@@ -875,7 +875,6 @@ https://github.com/seagle0128/doom-modeline
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package doom-modeline
-  :straight (:fork t)
   :config
   (column-number-mode 1)
   :custom
@@ -1251,7 +1250,6 @@ https://github.com/emacs-helm/helm
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package helm
-  :straight (:fork t)
   :init (require 'helm-config)
   :defer 1
   :custom
@@ -1688,8 +1686,7 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package mu4e
-  :straight ( :host github :files ("build/mu4e/*.el" "mu4e/*") :repo "djcb/mu" :branch "master"
-              :fork t
+  :straight ( :host github :files ("build/mu4e/*.el") :repo "djcb/mu"
               :pre-build (("./autogen.sh")
                           ("ninja" "-C" "build")))
   :commands (mu4e mu4e-update-index)
@@ -1795,6 +1792,7 @@ https://github.com/iqbalansari/mu4e-alert
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package mu4e-alert
+  :straight (:fork t)
   :defer 20
   :after (org)
   :config
@@ -2919,7 +2917,6 @@ https://github.com/alphapapa/org-make-toc
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package org-make-toc
-  :straight (:fork t)
   :commands (org-make-toc))
 #+end_src
 ** org-region-link
@@ -2937,8 +2934,7 @@ https://github.com/integral-dw/org-superstar-mode
 #+begin_src emacs-lisp :lexical t
 (use-package org-superstar
   :after (org)
-  :straight ( :type git :host github :repo "integral-dw/org-superstar-mode"
-              :fork t))
+  :straight (:type git :host github :repo "integral-dw/org-superstar-mode"))
 #+end_src
 ** ox-twbs
 #+begin_quote
@@ -3441,8 +3437,9 @@ Space for packages which I'm developing but are not part of my usual configurati
 ** emacs-director
 #+begin_src emacs-lisp :lexical t
 (use-package emacs-director
+  :disabled t
   :defer t
-  :straight (:host github :repo "bard/emacs-director" :fork t))
+  :straight (:host github :repo "bard/emacs-director"))
 #+end_src
 ** org-chronicle
 #+begin_src emacs-lisp :lexical t
@@ -3461,7 +3458,8 @@ Space for packages which I'm developing but are not part of my usual configurati
 ** org-roam
 #+begin_src emacs-lisp :lexical t
 (use-package org-roam
-  :straight (:type git :host github :repo "org-roam/org-roam" :fork t)
+  :disabled t
+  :straight (:type git :host github :repo "org-roam/org-roam")
   :general
   (+general-global-application
     "or" '(:ignore t :which-key "org-roam-setup"))
