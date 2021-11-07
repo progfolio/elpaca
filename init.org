@@ -3221,6 +3221,13 @@ I use doom-modeline for the rest of my mode line configuration.
   :config
   (display-time))
 #+end_src
+** tramp
+#+begin_src emacs-lisp :lexical t
+(use-package tramp
+  :defer t
+  :custom (tramp-terminal-type "tramp")
+  :config (setq debug-ignored-errors (cons 'remote-file-error debug-ignored-errors)))
+#+end_src
 ** vc-hooks
 You probably want this 99% of the time and it will skip an annoying prompt.
 #+begin_src emacs-lisp :lexical t
