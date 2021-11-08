@@ -1030,7 +1030,6 @@ MPV integration
 #+begin_src emacs-lisp :lexical t
 (use-package emp
   :straight (:host github :repo "progfolio/emp")
-  :commands (emp-play)
   :config
   :general
   (+general-global-application
