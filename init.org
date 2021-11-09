@@ -1335,17 +1335,6 @@ https://github.com/emacs-helm/helm-descbinds
   (global-definer
     "?"   'helm-descbinds))
 #+end_src
-*** helm-flx
-Supposedly better fuzzy finding for helm. Trying it out.
-#+begin_src emacs-lisp :lexical t
-(use-package helm-flx
-  :after (helm)
-  :custom
-  (helm-flx-for-helm-find-files t)
-  (helm-flx-for-helm-locate t)
-  :config
-  (helm-flx-mode))
-#+end_src
 *** helm-flyspell
 #+begin_quote
 Helm extension for correcting words with Flyspell.
