@@ -1544,6 +1544,23 @@ https://github.com/mooz/js2-mode
 #+end_src
 *** TODO May not need this on Emacs 27+
 Need to investigate, but js-mode might have been fixed/updated.
+** lilypond
+Major mode for Lilypond music engraver.
+Installing Lilypond puts these in =/usr/share/Emacs/site-lisp=, but I plan on editing these.
+#+begin_src emacs-lisp :lexical t
+(use-package lilypond-mode
+  :straight (lilypond-mode :host gitlab :repo "lilypond/lilypond" :files ("elisp/*.el"))
+  :commands (LilyPond-mode)
+  :general
+  (global-leader
+    :major-modes '(LilyPond-mode t)
+    :keymaps     '(LilyPond-mode-map)
+    "m"  '(LilyPond-command-formatmidi :which-key "format midi")
+    "l"  '(LilyPond-command-lilypond :which-key "compile w lilypond")
+    "p"  '(LilyPond-command-current-midi :which-key "play midi"))
+  :init
+  (add-to-list 'auto-mode-alist '("\\.ly\\'" . LilyPond-mode)))
+#+end_src
 ** link-hint
 #+begin_quote
 link-hint.el is inspired by the link hinting functionality in vim-like browsers and browser plugins such as pentadactyl.
