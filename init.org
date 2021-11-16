@@ -1549,17 +1549,23 @@ Major mode for Lilypond music engraver.
 Installing Lilypond puts these in =/usr/share/Emacs/site-lisp=, but I plan on editing these.
 #+begin_src emacs-lisp :lexical t
 (use-package lilypond-mode
-  :straight (lilypond-mode :host gitlab :repo "lilypond/lilypond" :files ("elisp/*.el"))
-  :commands (LilyPond-mode)
+  :straight (lilypond-mode :host gitlab :repo "lilypond/lilypond"
+                           :fork (:host github)
+                           :branch "fix/lilypond-mode"
+                           :files ("elisp/*.el" "elisp/out/lilypond-words.el")
+                           :pre-build (("./autogen.sh")
+                                       ("bash" "-c"
+                                        "cd elisp && make && \
+                                       echo ';; Local Variables:\n;; no-byte-compile: t\n;; End:' \
+                                       >> out/lilypond-words.el")))
   :general
   (global-leader
-    :major-modes '(LilyPond-mode t)
-    :keymaps     '(LilyPond-mode-map)
-    "m"  '(LilyPond-command-formatmidi :which-key "format midi")
-    "l"  '(LilyPond-command-lilypond :which-key "compile w lilypond")
-    "p"  '(LilyPond-command-current-midi :which-key "play midi"))
+    :major-modes '(lilypond-mode t)
+    :keymaps     '(lilypond-mode-map)
+    "l"  'lilypond-compile-file
+    "p"  'lilypond-play)
   :init
-  (add-to-list 'auto-mode-alist '("\\.ly\\'" . LilyPond-mode)))
+  (add-to-list 'auto-mode-alist '("\\.ly\\'" . lilypond-mode)))
 #+end_src
 ** link-hint
 #+begin_quote
