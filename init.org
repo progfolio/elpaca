@@ -767,18 +767,6 @@ http://company-mode.github.io/
     (general-def company-active-map "RET"    'company-complete-selection))
   (global-company-mode))
 #+end_src
-*** company-tern
-#+begin_src emacs-lisp :lexical t
-(use-package company-tern
-  :disabled t
-  :after (company)
-  :commands (tern-mode)
-  :config
-  (add-hook 'js-mode-hook #'(lambda ()
-                              (company-mode t)
-                              (tern-mode t)
-                              (add-to-list 'company-backends 'company-tern))))
-#+end_src
 ** compile
 #+begin_src emacs-lisp :lexical t
 (use-feature compile
