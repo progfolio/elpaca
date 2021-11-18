@@ -1531,16 +1531,13 @@ https://github.com/mooz/js2-mode
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package js2-mode
-  :commands
-  (js2-mode)
-  :config
-  (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
-  (add-to-list 'interpreter-mode-alist '("nodejs" . js2-mode))
-  (add-to-list 'interpreter-mode-alist '("node" . js2-mode))
-  (add-hook 'js2-mode-hook #'(lambda ()
-                               (company-mode t)
-                               (tern-mode t)
-                               (add-to-list 'company-backends 'company-tern))))
+  :commands (js2-mode)
+  :mode "\\.js\\'"
+  :interpreter (("nodejs" . js2-mode) ("node" . js2-mode))
+  :hook (js2-mode . (lambda ()
+                      (company-mode t)
+                      (tern-mode t)
+                      (add-to-list 'company-backends 'company-tern))))
 #+end_src
 *** TODO May not need this on Emacs 27+
 Need to investigate, but js-mode might have been fixed/updated.
