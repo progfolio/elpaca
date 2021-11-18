@@ -1555,14 +1555,13 @@ Installing Lilypond puts these in =/usr/share/Emacs/site-lisp=, but I plan on ed
                                         "cd elisp && make && \
                                        echo ';; Local Variables:\n;; no-byte-compile: t\n;; End:' \
                                        >> out/lilypond-words.el")))
+  :mode "\\.ly\\'"
   :general
   (global-leader
     :major-modes '(lilypond-mode t)
     :keymaps     '(lilypond-mode-map)
     "l"  'lilypond-compile-file
-    "p"  'lilypond-play)
-  :init
-  (add-to-list 'auto-mode-alist '("\\.ly\\'" . lilypond-mode)))
+    "p"  'lilypond-play))
 #+end_src
 ** link-hint
 #+begin_quote
