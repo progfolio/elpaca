@@ -1206,7 +1206,7 @@ https://d12frosted.io/posts/2016-05-09-flyspell-correct-intro.html
   :after (flyspell)
   :general
   (+general-global-spelling
-    "b" 'flyspell-buffer
+    "B" 'flyspell-correct-wrapper
     "c" 'flyspell-correct-previous-word-generic))
 #+end_src
 ** fontify-face
