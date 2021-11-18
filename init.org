@@ -1323,19 +1323,6 @@ https://github.com/emacs-helm/helm-descbinds
   (global-definer
     "?"   'helm-descbinds))
 #+end_src
-*** helm-flyspell
-#+begin_quote
-Helm extension for correcting words with Flyspell.
-
-https://github.com/pronobis/helm-flyspell
-#+end_quote
-#+begin_src emacs-lisp :lexical t
-(use-package helm-flyspell
-  :after (helm flyspell)
-  :general
-  (+general-global-spelling
-    "c" 'helm-flyspell-correct))
-#+end_src
 *** helm-org
 #+begin_quote
 Helm integration for org headlines and keywords.
