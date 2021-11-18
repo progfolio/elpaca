@@ -770,6 +770,7 @@ http://company-mode.github.io/
 ** compile
 #+begin_src emacs-lisp :lexical t
 (use-feature compile
+  :commands (compile recompile)
   :custom (compilation-scroll-output 'first-error)
   :config
   (defun +compilation-colorize ()
