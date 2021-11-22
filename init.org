@@ -1186,19 +1186,13 @@ https://www.flycheck.org/en/latest/
     "n" 'flyspell-goto-next-error
     "b" 'flyspell-buffer
     "w" 'flyspell-word
-    "r" 'flyspell-region
-    "p" 'flyspell-correct-at-point)
+    "r" 'flyspell-region)
   :hook ((org-mode mu4e-compose-mode git-commit-mode) . flyspell-mode))
 #+end_src
 *** flyspell-correct
 #+begin_quote
-"This package provides functionality for correcting words via custom interfaces.
-There are two functions for this: flyspell-correct-word-generic to correct word
-at point, flyspell-correct-previous-word-generic to correct any visible word
-before point and flyspell-correct-next-word-generic to correct any visible word
-after point. In most cases second function is more convenient (at least in my
-opinion), so don’t forget to bind it." --
-
+"This package provides functionality for correcting words via custom interfaces."
+--
 https://d12frosted.io/posts/2016-05-09-flyspell-correct-intro.html
 #+end_quote
 #+begin_src emacs-lisp :lexical t
@@ -1207,7 +1201,7 @@ https://d12frosted.io/posts/2016-05-09-flyspell-correct-intro.html
   :general
   (+general-global-spelling
     "B" 'flyspell-correct-wrapper
-    "c" 'flyspell-correct-previous-word-generic))
+    "p" 'flyspell-correct-at-point))
 #+end_src
 ** fontify-face
 #+begin_quote
