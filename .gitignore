@@ -1,7 +1,7 @@
 #ignore everything unless we add it here
 *
 #whitelist
-!*/
+#!*/
 !/images/**
 !init.org
 !init-dev.el
