@@ -3342,7 +3342,11 @@ GNU Emacs package for selecting windows with single a single key.
 https://github.com/abo-abo/ace-window
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(use-package ace-window :straight t :commands (ace-window))
+(use-package ace-window
+  :commands (ace-window)
+  :general
+  (+general-global-window
+    "a" 'ace-window))
 #+end_src
 ** tongle
 #+begin_src emacs-lisp :lexical t
