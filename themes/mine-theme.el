@@ -190,11 +190,11 @@
 
 (mine-add-faces mode-line
   ("mode-line" :foreground ,green :background ,purple :box ,blue)
-  (active :foreground ,purple :background ,green)
+  (active :inherit mode-line :box ,green)
   (buffer-id :background ,red :foreground ,purple :weight bold)
   (directory :background ,blue :foreground ,purple :weight bold)
   (emphasis :foreground ,purple :background ,green)
-  (inactive :foreground ,gray :box ,blue))
+  (inactive :foreground ,gray :box ,gray))
 
 (mine-add-faces mu4e
   (contact-face :inherit font-lock-comment-face)
