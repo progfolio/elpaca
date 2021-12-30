@@ -3500,6 +3500,7 @@ as fast as possible without recording multiple mistakes."
   :general
   (+general-global-application
     "sr"   '(:ignore t :which-key "review")
+    "srr"  'speedo-review
     "srt"  'speedo-review-top-runs
     "srl"  '(:ignore t :which-key "review-last")
     "srlr" 'speedo-review-last-runs
