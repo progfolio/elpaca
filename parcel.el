@@ -25,6 +25,10 @@
 ;;; Code:
 (require 'cl-lib)
 
+(defgroup parcel nil
+  "An elisp package manager."
+  :group 'parcel
+  :prefix "parcel-")
 (defun parcel-merge-plists (&rest plists)
   "Merge PLISTS. Keys on later lists override keys on earlier lists."
   (cl-reduce (lambda (parent child)
