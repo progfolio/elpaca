@@ -36,6 +36,33 @@
                           keys))
               (cdr plists))))
 
+(defun parcel-test-menu (request)
+  "A test menu. REQUEST RECIPE."
+  (let ((recipes '((:package "a" :host gitlab :repo "a/a")
+                   ( :package "parcel" :host github :repo "progfolio/parcel"
+                     :pre-build ("./pre-build")))))
+    (pcase request
+      ('index  (mapcar (lambda (recipe) (cons
+                                         (intern-soft (plist-get recipe :package))
+                                         (list :source "test-menu"
+                                               :recipe recipe)))
+                       recipes))
+      (_ (user-error "Unimplmented request method: %S" request)))))
+
+(ert-deftest parcel-plist-p ()
+  "Return t if passed a (:key val...) plist."
+  (should (parcel-plist-p '(:key val)))
+  (should (parcel-plist-p '(:key val :another val)))
+  (should-not (parcel-plist-p nil))
+  (should-not (parcel-plist-p 1))
+  (should-not (parcel-plist-p '(:key)))
+  (should-not (parcel-plist-p '(:key val val))))
+
+(ert-deftest parcel-clean-plist ()
+  "Remove unrecognized keywords."
+  (should (parcel-test--plist-equal-p '(:host github)
+                                      (parcel-clean-plist '(:fetcher t :host github)))))
+
 (ert-deftest parcel-merge-plists ()
   "Merges PLISTS."
   (let ((foo '(:foo 1))
@@ -51,7 +78,42 @@
                                          nobaz)))
     (should (parcel-test--plist-equal-p '(:foo 1) (parcel-merge-plists '(:foo 1))))))
 
+(ert-deftest parcel-menu-item ()
+  "Return menu item from MENUS."
+  (let ((parcel-menu-functions '(parcel-test-menu)))
+    (should (parcel-test--plist-equal-p '( :package "parcel" :repo "progfolio/parcel"
+                                           :host github
+                                           :pre-build ("./pre-build"))
+                                        (parcel-menu-item nil 'parcel)))
+    (should-not (parcel-menu-item nil 'parcel '(ignore)))))
 
+(ert-deftest parcel-recipe ()
+  "Compute recipe from ORDER."
+  ;; no inheritance, full spec
+  (should (parcel-test--plist-equal-p
+           (parcel-recipe '(parcel :host github :repo "progfolio/parcel" :inherit nil))
+           '(:package "parcel" :host github :repo "progfolio/parcel" :inherit nil)))
+  ;; basic default inheritance
+  (let ((parcel-order-functions '((lambda (order) '(:inherit nil)))))
+    (should (parcel-test--plist-equal-p
+             (parcel-recipe '(parcel :host github :repo "progfolio/parcel"))
+             '(:package "parcel" :host github :repo "progfolio/parcel" :inherit nil))))
+  ;; basic menu lookup
+  (let ((parcel-order-functions '((lambda (order) '(:inherit nil))))
+        (parcel-menu-functions '(parcel-test-menu)))
+    (should (parcel-test--plist-equal-p
+             '( :package "parcel"
+                :host github
+                :repo "progfolio/parcel"
+                :inherit nil)
+             (parcel-recipe '(parcel :repo "progfolio/parcel" :host github))))
+    (should (parcel-test--plist-equal-p
+             '( :package "parcel"
+                :host github
+                :repo "progfolio/parcel"
+                :inherit t
+                :pre-build ("./pre-build"))
+             (parcel-recipe '(parcel :inherit t))))))
 
 (provide 'parcel-test)
 ;;; parcel-test.el ends here
