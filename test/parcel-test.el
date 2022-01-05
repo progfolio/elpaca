@@ -1,8 +1,8 @@
 ;;; parcel-test.el --- test suite for parcel.el      -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2022  No Wayman
+;; Copyright (C) 2022 Nicholas Vollmer
 
-;; Author: No Wayman <iarchivedmywholelife@gmail.com>
+;; Author: Nicholas Vollmer
 ;; Keywords:
 
 ;; This program is free software; you can redistribute it and/or modify

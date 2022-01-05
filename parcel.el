@@ -1,9 +1,15 @@
 ;;; parcel.el --- An elisp package manager           -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2022  No Wayman
+;; Copyright (C) 2022  Nicholas Vollmer
 
-;; Author: No Wayman <iarchivedmywholelife@gmail.com>
+;; Author: Nicholas Vollmer
+;; URL: https://github.com/progfolio/parcel
+;; Created: Jan 1, 2022
 ;; Keywords: tools, convenience, lisp
+;; Package-Requires: ((emacs "25.1"))
+;; Version: 0.0.0
+
+;; This file is not part of GNU Emacs.
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
