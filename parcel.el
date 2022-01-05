@@ -90,10 +90,11 @@ Values for each key are that of the right-most plist containing that key."
 
 (defun parcel-menu--candidates ()
   "Return alist of `parcel-menu-functions' candidates."
-  (apply #'append
-         (cl-loop for fn in parcel-menu-functions
-                  for index = (funcall fn 'index)
-                  when index collect index)))
+  (sort (apply #'append
+               (cl-loop for fn in parcel-menu-functions
+                        for index = (funcall fn 'index)
+                        when index collect index))
+        (lambda (a b) (string-lessp (car a) (car b)))))
 
 (defvar parcel-overriding-prompt nil "Overriding prompt for interactive functions.")
 
