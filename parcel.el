@@ -116,8 +116,8 @@ If INTERACTIVE is equivalent to \\[universal-argument] prompt for MENUS."
          (candidates (parcel-menu--candidates))
          (symbol (or symbol
                      (intern-soft
-                      (completing-read (or parcel-overriding-prompt "Menu recipe: ")
-                                       candidates nil 'require-match))))
+                      (completing-read (or parcel-overriding-prompt "Package: ")
+                                       candidates nil t))))
          (candidate (alist-get symbol candidates))
          (recipe (plist-get candidate :recipe)))
     (if (called-interactively-p 'interactive)
@@ -140,6 +140,7 @@ ORDER is any of the following values:
   - an order list."
   (interactive)
   (let ((parcel-overriding-prompt "Recipe: ")
+        (interactive (called-interactively-p 'interactive))
         package
         ingredients)
     (cond
@@ -157,13 +158,16 @@ ORDER is any of the following values:
             (push (parcel-menu-item nil package) ingredients))))
       (setq ingredients (append ingredients (list order))))
      (t (signal 'wrong-type-error `((null symbolp listp) . ,order))))
-    (let ((recipe (apply #'parcel-merge-plists ingredients)))
-      (unless (plist-get recipe :package)
-        (setq recipe (plist-put recipe :package (format "%S" package))))
-      (setq recipe (parcel-merge-plists
-                    recipe
-                    (run-hook-with-args-until-success 'parcel-recipe-functions recipe)))
-      (if (called-interactively-p 'interactive) (message "%S" recipe)) recipe)))
+    (if-let ((recipe (apply #'parcel-merge-plists ingredients)))
+        (progn
+          (unless (plist-get recipe :package)
+            (setq recipe (plist-put recipe :package (format "%S" package))))
+          (setq recipe
+                (parcel-merge-plists
+                 recipe
+                 (run-hook-with-args-until-success 'parcel-recipe-functions recipe)))
+          (if interactive (message "%S" recipe)) recipe)
+      (when interactive (user-error "No recipe for %S" package)))))
 
 (provide 'parcel)
 ;;; parcel.el ends here
