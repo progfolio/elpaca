@@ -45,7 +45,7 @@
   (message "MELPA recipes downloaded."))
 
 (defun parcel-menu-melpa--update ()
-  "Update recipes in MELPA menu."
+ "Update recipes in MELPA menu."
   (message "Checking Melpa for updates...")
   (condition-case _
       (progn
