@@ -48,6 +48,17 @@ The function may return nil or a plist to be merged with the recipe.
 This hook is run via `run-hook-with-args-until-success'."
   :type 'hook)
 
+(defcustom parcel-menu-functions '(parcel-menu-org parcel-menu-melpa)
+  "Abnormal hook to lookup packages in menus.
+Each function is passed a request, which may be any of the follwoing symbols:
+  - `index`
+     Must return a alist of the menu's package candidates.
+     Each candidate is an cell of form:
+     (PACKAGE-NAME . (:source SOURCE-NAME :recipe RECIPE-PLIST))
+  - `update`
+     Updates the menu's package candidate list."
+  :type 'hook)
+
 (defvar parcel-recipe-keywords (list :pre-build :branch :depth :fork :host
                                      :nonrecursive :package :protocol :remote :repo)
   "Recognized parcel recipe keywords.")
@@ -72,17 +83,6 @@ This hook is run via `run-hook-with-args-until-success'."
                            for member = (plist-member plist key)
                            collect (when member
                                      (cl-subseq (plist-member plist key) 0 2)))))
-
-(defcustom parcel-menu-functions nil
-  "Abnormal hook to lookup packages in menus.
-Each function is passed a request, which may be any of the follwoing symbols:
-  - `index`
-     Must return a alist of the menu's package candidates.
-     Each candidate is an cell of form:
-     (PACKAGE-NAME . (:source SOURCE-NAME :recipe RECIPE-PLIST))
-  - `update`
-     Updates the menu's package candidate list."
-  :type 'hook)
 
 (defun parcel-menu--candidates ()
   "Return alist of `parcel-menu-functions' candidates."
