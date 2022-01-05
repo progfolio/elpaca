@@ -30,6 +30,10 @@
   :group 'parcel
   :prefix "parcel-")
 
+(defcustom parcel-directory (expand-file-name "parcel" user-emacs-directory)
+  "Location of the parcel package store."
+  :type 'directory)
+
 (defcustom parcel-order-functions nil
   "Abnormal hook run to alter orders.
 Each element must be a unary function which accepts an order plist.
