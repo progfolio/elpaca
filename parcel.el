@@ -86,13 +86,10 @@ Each function is passed a request, which may be any of the follwoing symbols:
 
 (defun parcel-menu--candidates ()
   "Return alist of `parcel-menu-functions' candidates."
-  (or (cl-remove-duplicates
-       (apply #'append
-              (cl-loop for fn in parcel-menu-functions
-                       for index = (funcall fn 'index)
-                       when index collect index))
-       :test #'equal
-       :key #'car)))
+  (apply #'append
+         (cl-loop for fn in parcel-menu-functions
+                  for index = (funcall fn 'index)
+                  when index collect index)))
 
 (defvar parcel-overriding-prompt nil "Overriding prompt for interactive functions.")
 
