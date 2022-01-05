@@ -26,7 +26,9 @@
 (require 'parcel)
 (require 'parcel-process)
 
-(defun parcel-mneu-org--build ()
+(defvar parcel-menu-org--index-cache nil "Cache of Org menu index.")
+
+(defun parcel-menu-org--build ()
   "Generate `org-version.el`."
   (let* ((default-directory (expand-file-name "./org/lisp" parcel-directory))
          (orgversion
@@ -64,25 +66,28 @@
 (defun parcel-menu-org (request)
   "If REQUEST is `index`, return Org recipe candidate list."
   (when (eq request 'index)
-    (list
-     (cons 'org
-           (list  :source "Org"
-                  :recipe
-                  (list
-                   :package "org"
-                   :type 'git
-                   :repo "https://git.savannah.gnu.org/git/emacs/org-mode.git"
-                   :depth 'full ; `org-version' depends on repository tags.
-                   :pre-build '(parcel-menu-org--build)
-                   :build '(:not autoloads)
-                   :files '(:defaults "lisp/*.el" ("etc/styles/" "etc/styles/*")))))
-     (cons 'org-contrib
-           (list :source "Org"
-                 :recipe
-                 (list
-                  :package "org-contrib"
-                  :type 'git
-                  :includes '(ob-arduino ; Intentionally short for indentation
+    (or parcel-menu-org--index-cache
+        (setq parcel-menu-org--index-cache
+              (list
+               (cons 'org
+                     (list  :source "Org"
+                            :recipe
+                            (list
+                             :package "org"
+                             :type 'git
+                             :repo "https://git.savannah.gnu.org/git/emacs/org-mode.git"
+                             :depth 'full ; `org-version' depends on repository tags.
+                             :pre-build '(parcel-menu-org--build)
+                             :build '(:not autoloads)
+                             :files '(:defaults "lisp/*.el" ("etc/styles/" "etc/styles/*")))))
+               (cons 'org-contrib
+                     (list :source "Org"
+                           :recipe
+                           (list
+                            :package "org-contrib"
+                            :type 'git
+                            :includes
+                            '(ob-arduino ; Intentionally short for indentation
                               ob-clojure-literate ob-csharp ob-eukleides
                               ob-fomus ob-julia ob-mathematica ob-mathomatic ob-oz
                               ob-php ob-redis ob-sclang ob-smiles ob-spice ob-stata
@@ -100,8 +105,8 @@
                               org-velocity org-wikinodes ox-bibtex ox-confluence
                               ox-deck ox-extra ox-freemind ox-groff ox-koma-letter
                               ox-rss ox-s5 ox-taskjuggler)
-                  :repo "https://git.sr.ht/~bzg/org-contrib"
-                  :files '(:defaults "lisp/*.el")))))))
+                            :repo "https://git.sr.ht/~bzg/org-contrib"
+                            :files '(:defaults "lisp/*.el")))))))))
 
 (provide 'parcel-menu-org)
 ;;; parcel-menu-org.el ends here

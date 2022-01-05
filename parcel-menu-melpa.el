@@ -31,6 +31,8 @@
   :type 'directory
   :group 'parcel)
 
+(defvar parcel-menu-melpa--index-cache nil "Cache of index.")
+
 ;;@TODO: needs to be more robust if processes error
 (defun parcel-menu-melpa--clone (path)
   "Clone MELPA recipes repo to PATH."
@@ -45,7 +47,7 @@
   (message "MELPA recipes downloaded."))
 
 (defun parcel-menu-melpa--update ()
- "Update recipes in MELPA menu."
+  "Update recipes in MELPA menu."
   (message "Checking Melpa for updates...")
   (condition-case _
       (progn
@@ -55,20 +57,22 @@
 
 (defun parcel-menu-melpa--index ()
   "Return candidate list of available MELPA recipes."
-  (mapcar (lambda (file)
-            (with-temp-buffer
-              (insert-file-contents file)
-              (condition-case-unless-debug _
-                  (let ((recipe (read (buffer-string))))
-                    (when (member (plist-get (cdr recipe) :fetcher)
-                                  '(git github gitlab))
-                      (setq recipe (append
-                                    (list :package (symbol-name (pop recipe)))
-                                    recipe))
-                      (cons (intern-soft (file-name-nondirectory file))
-                            (list :source "MELPA" :recipe recipe))))
-                ((error) nil))))
-          (directory-files "./recipes/" 'full "^[^.][^z-a]+")))
+  (or parcel-menu-melpa--index-cache
+      (setq parcel-menu-melpa--index-cache
+            (mapcar (lambda (file)
+                      (with-temp-buffer
+                        (insert-file-contents file)
+                        (condition-case-unless-debug _
+                            (let ((recipe (read (buffer-string))))
+                              (when (member (plist-get (cdr recipe) :fetcher)
+                                            '(git github gitlab))
+                                (setq recipe (append
+                                              (list :package (symbol-name (pop recipe)))
+                                              recipe))
+                                (cons (intern-soft (file-name-nondirectory file))
+                                      (list :source "MELPA" :recipe recipe))))
+                          ((error) nil))))
+                    (directory-files "./recipes/" 'full "^[^.][^z-a]+")))))
 
 (defvar parcel-menu-melpa--use-cache nil "Force recipe update when non-nil.")
 
@@ -82,7 +86,8 @@ If REQUEST is `update`, update the MELPA recipe cache."
     (unless (file-exists-p repo) (parcel-menu-melpa--clone repo))
     (pcase request
       ('index  (parcel-menu-melpa--index))
-      ('update (parcel-menu-melpa--update)))))
+      ('update (setq parcel-menu-melpa--index-cache nil)
+               (parcel-menu-melpa--update)))))
 
 (provide 'parcel-menu-melpa)
 ;;; parcel-menu-melpa.el ends here
