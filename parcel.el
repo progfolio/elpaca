@@ -71,11 +71,15 @@ Each function is passed a request, which may be any of the follwoing symbols:
        (cl-every #'keywordp (cl-loop for (key _) on obj by #'cddr collect key))))
 
 (defun parcel-merge-plists (&rest plists)
-  "Merge PLISTS. Keys on later lists override keys on earlier lists."
-  (cl-reduce (lambda (parent child)
-               (dolist (key (cl-remove-if-not #'keywordp child) parent)
-                 (setq parent (plist-put parent key (plist-get child key)))))
-             plists))
+  "Return plist with set of unique keys from PLISTS.
+Values for each key are that of the right-most plist containing that key."
+  (let (key value current plist)
+    (while (setq current (pop plists))
+      (while current
+        (setq key   (pop current)
+              value (pop current)
+              plist (plist-put plist key value))))
+    plist))
 
 (defun parcel-clean-plist (plist)
   "Return PLIST copy sans keys which are not members of `parcel-recipe-keywords'."
