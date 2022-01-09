@@ -3459,7 +3459,7 @@ Space for packages which I'm developing but are not part of my usual configurati
 #+begin_src emacs-lisp :lexical t
 (use-package speedo
   :straight (:type git :host github :repo "progfolio/speedo" :includes (speedo-review speedo-edit))
-  :commands (speedo speedo-load-file)
+  :commands (speedo speedo-load-file akogare)
   :custom
   (speedo-directory "~/.emacs.d/straight/repos/speedo/test/")
   (speedo-default-splits-file "./Akogare-Mario-World.spd")
@@ -3470,6 +3470,12 @@ Space for packages which I'm developing but are not part of my usual configurati
     "ss" 'speedo
     "sl" 'speedo-load-file)
   :config
+  (defun akogare ()
+    (interactive)
+    (speedo)
+    (tab-bar-mode -1)
+    (padscape))
+
   (evil-make-intercept-map speedo-mode-map)
   (let ((interval 0.5)
         timer)
