@@ -3548,7 +3548,9 @@ as fast as possible without recording multiple mistakes."
 ** wordel
 #+begin_src emacs-lisp :lexical t
 (use-package wordel
-  :straight '(:host github :repo "progfolio/wordel")
+  :straight '(:host github :repo "progfolio/wordel" :files (:defaults "words.txt"))
   :defer t
-  :config (evil-make-intercept-map wordel-mode-map))
+  :config
+  (evil-make-intercept-map wordel-mode-map)
+  (evil-set-initial-state 'wordel-mode 'emacs))
 #+end_src
