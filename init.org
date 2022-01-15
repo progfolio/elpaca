@@ -3544,3 +3544,11 @@ as fast as possible without recording multiple mistakes."
   :straight '(:host github :repo "progfolio/yodel")
   :defer t)
 #+end_src
+
+** wordel
+#+begin_src emacs-lisp :lexical t
+(use-package wordel
+  :straight '(:host github :repo "progfolio/wordel")
+  :defer t
+  :config (evil-make-intercept-map wordel-mode-map))
+#+end_src
