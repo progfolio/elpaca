@@ -987,6 +987,7 @@ These settings defined in C code, so we use the ~emacs~ pseudo-package to set th
 (indent-tabs-mode nil "Use spaces, not tabs")
 (inhibit-startup-screen t)
 (history-delete-duplicates t "Don't clutter history")
+(pgtk-use-im-context-on-new-connection nil "Prevent GTK from stealing Shift + Space")
 (ring-bell-function 'ignore "Don't need an alarm for incorrect inputs.")
 (sentence-end-double-space nil "Double space sentence demarcation breaks sentence navigation in Evil")
 (tab-stop-list (number-sequence 2 120 2))
