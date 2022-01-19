@@ -372,7 +372,7 @@ The global definer allows me to use a leader key in most states.
 #+begin_src emacs-lisp :lexical t
 (general-create-definer global-definer
   :keymaps 'override
-  :states '(insert normal hybrid motion visual operator)
+  :states '(insert normal hybrid motion visual operator emacs)
   :prefix "SPC"
   :non-normal-prefix "S-SPC")
 #+end_src
