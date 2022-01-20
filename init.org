@@ -3552,5 +3552,6 @@ as fast as possible without recording multiple mistakes."
   :straight '(:host github :repo "progfolio/wordel" :files (:defaults "words"))
   :defer t
   :config
-  (evil-set-initial-state 'wordel-mode 'emacs))
+  (evil-set-initial-state 'wordel-mode        'insert)
+  (evil-set-initial-state 'wordel-select-mode 'insert))
 #+end_src
