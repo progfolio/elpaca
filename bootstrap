@@ -5,7 +5,8 @@
 ;;@TEST: clean repo
 (when t
   (when (file-exists-p parcel-directory)
-    (delete-directory parcel-directory 'recursive)))
+    (delete-directory parcel-directory 'recursive))
+  (when (featurep 'parcel) (unload-feature 'parcel t)))
 
 (let ((parcel-repo (expand-file-name "parcel/" parcel-directory)))
   (add-to-list 'load-path parcel-repo)
