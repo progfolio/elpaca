@@ -1,5 +1,12 @@
 ;; -*- mode: emacs-lisp; lexical-binding: t; -*-
+(declare-function parcel-generate-autoloads "parcel")
 (defvar parcel-directory (expand-file-name "parcel/" user-emacs-directory))
+
+;;@TEST: clean repo
+(when t
+  (when (file-exists-p parcel-directory)
+    (delete-directory parcel-directory 'recursive)))
+
 (let ((parcel-repo (expand-file-name "parcel/" parcel-directory)))
   (add-to-list 'load-path parcel-repo)
   (unless (file-exists-p parcel-repo)
@@ -14,6 +21,7 @@
             ;;@TODO: checkout parcel using parcel?
             ;;@TODO: build parcel using parcel?
             (byte-recompile-directory parcel-repo 0 'force)
+            (require 'parcel)
             (parcel-generate-autoloads "parcel" parcel-repo))
         ((error)
          (when (file-exists-p parcel-directory)
@@ -21,11 +29,9 @@
          (with-current-buffer buffer
            (goto-char (point-max))
            (insert (format "\n%S" err))
-           (display-buffer buffer))))
-      (kill-buffer buffer))))
+           (display-buffer buffer)
+           (kill-buffer buffer))))))
+  (let ((default-directory parcel-repo))
+    (load "parcel-autoloads.el")))
 
 
-;;@TEST: clean repo
-(when nil
-  (when (file-exists-p parcel-directory)
-    (delete-directory parcel-directory 'recursive)))
