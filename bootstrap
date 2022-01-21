@@ -13,7 +13,8 @@
               (error "%s" (list (with-current-buffer buffer (buffer-string)))))
             ;;@TODO: checkout parcel using parcel?
             ;;@TODO: build parcel using parcel?
-            (byte-recompile-directory parcel-repo 0 'force))
+            (byte-recompile-directory parcel-repo 0 'force)
+            (parcel-generate-autoloads "parcel" parcel-repo))
         ((error)
          (when (file-exists-p parcel-directory)
            (delete-directory parcel-directory 'recursive))

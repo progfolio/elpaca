@@ -178,5 +178,22 @@ ORDER is any of the following values:
           (if interactive (message "%S" recipe)) recipe)
       (when interactive (user-error "No recipe for %S" package)))))
 
+(declare-function autoload-rubric "autoload")
+(defvar autoload-timestamps)
+(defun parcel-generate-autoloads (package dir)
+  "Generate autoloads in DIR for PACKAGE."
+  (let* ((auto-name (format "%s-autoloads.el" package))
+         (output    (expand-file-name auto-name dir))
+         (autoload-timestamps nil)
+         (backup-inhibited t)
+         (version-control 'never))
+    (unless (file-exists-p output)
+      (require 'autoload)
+      (write-region (autoload-rubric output "package" nil) nil output nil 'silent))
+    (make-directory-autoloads dir output)
+    (when-let ((buf (find-buffer-visiting output)))
+      (kill-buffer buf))
+    auto-name))
+
 (provide 'parcel)
 ;;; parcel.el ends here
