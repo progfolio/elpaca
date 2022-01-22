@@ -243,24 +243,27 @@ ORDER is any of the following values:
               ((:repo recipe-repo)) &allow-other-keys)
         recipe
       (pcase remotes
-        ((and (pred stringp) (guard (not (equal remotes "origin"))) remote)
+        ("origin" nil)
+        ((and (pred stringp) remote)
          (parcel-process-call "git" "remote" "rename" "origin" remote))
         ((pred listp)
          (dolist (spec remotes)
-           (pcase-let ((`(,remote . ,props) spec))
-             (if props
-                 (cl-destructuring-bind
-                     (&key (host     recipe-host)
-                           (protocol recipe-protocol)
-                           (repo     recipe-repo)
-                           &allow-other-keys
-                           &aux
-                           (recipe (list :host host :protocol protocol :repo repo)))
-                     props
-                   (parcel-process-call
-                    "git" "remote" "add" remote (parcel--repo-uri recipe)))
-               (unless (equal remote "origin")
-                 (parcel-process-call "git" "remote" "rename" "origin" remote))))))
+           (if (stringp spec)
+               (parcel--add-remotes (plist-put recipe :remotes spec))
+             (pcase-let ((`(,remote . ,props) spec))
+               (if props
+                   (cl-destructuring-bind
+                       (&key (host     recipe-host)
+                             (protocol recipe-protocol)
+                             (repo     recipe-repo)
+                             &allow-other-keys
+                             &aux
+                             (recipe (list :host host :protocol protocol :repo repo)))
+                       props
+                     (parcel-process-call
+                      "git" "remote" "add" remote (parcel--repo-uri recipe)))
+                 (unless (equal remote "origin")
+                   (parcel-process-call "git" "remote" "rename" "origin" remote)))))))
         (_ (signal 'wrong-type-argument `((stringp listp) ,remotes ,recipe)))))))
 
 (defun parcel--checkout-ref (recipe)
