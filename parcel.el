@@ -166,7 +166,7 @@ ORDER is any of the following values:
           (when (or (plist-get order :inherit) (plist-get mods :inherit))
             (push (parcel-menu-item nil package) ingredients))))
       (setq ingredients (append ingredients (list order))))
-     (t (signal 'wrong-type-error `((null symbolp listp) . ,order))))
+     (t (signal 'wrong-type-argument `((null symbolp listp) . ,order))))
     (if-let ((recipe (apply #'parcel-merge-plists ingredients)))
         (progn
           (unless (plist-get recipe :package)
@@ -225,7 +225,7 @@ ORDER is any of the following values:
                       ('github       "github.com")
                       ('gitlab       "gitlab.com")
                       ((pred stringp) host)
-                      (_              (signal 'wrong-type-error
+                      (_              (signal 'wrong-type-argument
                                               `((github gitlab stringp) ,host))))))
       (format "%s%s/%s.git" protocol host repo))))
 
@@ -241,7 +241,7 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
          ((and ref branch) (warn "Recipe :ref overriding :branch %S" recipe))
          ((and ref tag)    (warn "Recipe :ref overriding :tag %S" recipe))
          ((and tag branch) (error "Recipe ambiguous :tag and :branch %S" recipe)))
-        (unless remotes    (signal 'wrong-type-argunent
+        (unless remotes    (signal 'wrong-type-argument
                                    `((stringp listp) ,remotes ,recipe)))
         (parcel-process-call "git" "fetch" "--all")
         (let* ((_remote (if (stringp remotes) remotes (caar remotes))))
