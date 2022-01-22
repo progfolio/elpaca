@@ -57,7 +57,7 @@ Anaphroic bindings provided:
   failure: t if process did not invoke or exited with a nonzero code
   stdout: output of stdout
   stderr: output of stderr"
-  (declare (indent 1))
+  (declare (indent 1) (debug t))
   `(let* ((result ,result)
           (exit (car result))
           (invoked (numberp exit))
