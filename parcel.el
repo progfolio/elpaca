@@ -81,12 +81,10 @@ Each function is passed a request, which may be any of the follwoing symbols:
 (defun parcel-merge-plists (&rest plists)
   "Return plist with set of unique keys from PLISTS.
 Values for each key are that of the right-most plist containing that key."
-  (let (key value current plist)
+  (let ((plists (delq nil plists))
+        current plist)
     (while (setq current (pop plists))
-      (while current
-        (setq key   (pop current)
-              value (pop current)
-              plist (plist-put plist key value))))
+      (while current (setq plist (plist-put plist (pop current) (pop current)))))
     plist))
 
 (defun parcel-clean-plist (plist)
