@@ -273,9 +273,8 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
 
 (defun parcel--initialize-repo (recipe)
   "Using RECIPE, Clone repo, add remotes, check out :ref."
-  (thread-first recipe
-                (parcel-clone)
-                (parcel--checkout-ref)))
+  (parcel-clone recipe)
+  (parcel--checkout-ref recipe))
 
 ;;;###autoload
 (defun parcel (order)
