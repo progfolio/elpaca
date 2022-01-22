@@ -30,6 +30,7 @@
 
 ;;; Code:
 (require 'cl-lib)
+(require 'parcel-process)
 
 (defgroup parcel nil
   "An elisp package manager."
@@ -178,6 +179,68 @@ ORDER is any of the following values:
                  (run-hook-with-args-until-success 'parcel-recipe-functions recipe)))
           (if interactive (message "%S" recipe)) recipe)
       (when interactive (user-error "No recipe for %S" package)))))
+
+(defun parcel--repo-name (string)
+  "Return repo name portion of STRING."
+  (substring string (1+ (string-match-p "/" string))))
+
+(defun parcel--repo-user (string)
+  "Return user name portion of STRING."
+  (substring string 0 (string-match-p "/" string)))
+
+;;@FIX: not robust
+(defun parcel-repo-protocol-specified-p (string)
+  "Return t if repo STRING has the full protocol embedded in it."
+  (string-match-p ":" string))
+
+(defun parcel-repo-dir (recipe)
+  "Return path to repo given RECIPE."
+  (cl-destructuring-bind (&key local-repo repo &allow-other-keys) recipe
+    (when repo
+      (expand-file-name
+       (or local-repo
+           (let* ((short (parcel--repo-name repo))
+                  (user  (parcel--repo-user repo))
+                  (possible (expand-file-name short parcel-directory)))
+             ;;check remote to see if it belongs to us
+             (if (file-exists-p possible)
+                 (let* ((default-directory possible)
+                        (remotes (parcel-process-output "git" "remote" "-v")))
+                   (if (string-match-p (parcel--repo-uri recipe) remotes)
+                       short
+                     (format "%s-%s" short user)))
+               short)))
+       parcel-directory))))
+
+(defun parcel--repo-uri (recipe)
+  "Return repo URI from RECIPE."
+  (cl-destructuring-bind (&key (protocol 'https)
+                               fetcher
+                               (host fetcher)
+                               repo &allow-other-keys)
+      recipe
+    (let ((protocol (pcase protocol
+                      ('https "https://")
+                      ('ssh   "git@")
+                      (_      (signal 'wrong-type-error `((http ssh) ,protocol)))))
+          (host     (pcase host
+                      ('github       "github.com")
+                      ('gitlab       "gitlab.com")
+                      ((pred stringp) host)
+                      (_              (signal 'wrong-type-error
+                                              `((github gitlab stringp) ,host))))))
+      (format "%s%s/%s.git" protocol host repo))))
+
+(defun parcel-clone (recipe)
+  "Clone package repository to `parcel-directory' using RECIPE."
+  (cl-destructuring-bind (&key fetcher (host fetcher) &allow-other-keys)
+      recipe
+    (unless host (user-error "No :host in recipe %S" recipe))
+    (let* ((default-directory parcel-directory))
+      ;;@TODO: handle errors
+      (apply #'parcel-process-call
+             (delq nil (list "git" "clone" (parcel--repo-uri recipe)
+                             (parcel-repo-dir recipe)))))))
 
 (declare-function autoload-rubric "autoload")
 (defvar autoload-timestamps)
