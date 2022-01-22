@@ -233,7 +233,35 @@ ORDER is any of the following values:
                                               `((github gitlab stringp) ,host))))))
       (format "%s%s%s%s.git" (car protocol) host (cdr protocol) repo))))
 
-(defalias 'parcel--add-remotes #'ignore)
+(defun parcel--add-remotes (recipe)
+  "Given RECIPE, add repo remotes."
+  (let ((default-directory (parcel-repo-dir recipe)))
+    (cl-destructuring-bind
+        (&key remotes
+              ((:host recipe-host))
+              ((:protocol recipe-protocol))
+              ((:repo recipe-repo)) &allow-other-keys)
+        recipe
+      (pcase remotes
+        ((and (pred stringp) (guard (not (equal remotes "origin"))) remote)
+         (parcel-process-call "git" "remote" "rename" "origin" remote))
+        ((pred listp)
+         (dolist (spec remotes)
+           (pcase-let ((`(,remote . ,props) spec))
+             (if props
+                 (cl-destructuring-bind
+                     (&key (host     recipe-host)
+                           (protocol recipe-protocol)
+                           (repo     recipe-repo)
+                           &allow-other-keys
+                           &aux
+                           (recipe (list :host host :protocol protocol :repo repo)))
+                     props
+                   (parcel-process-call
+                    "git" "remote" "add" remote (parcel--repo-uri recipe)))
+               (parcel-process-call "git" "remote" "rename" "origin" remote)))))
+        (_ (signal 'wrong-type-argument `((stringp listp) ,remotes ,recipe)))))))
+
 (defun parcel--checkout-ref (recipe)
   "Checkout RECIPE's :ref.
 The :branch and :tag keywords are syntatic sugar and are handled here, too."
@@ -275,6 +303,7 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
 (defun parcel--initialize-repo (recipe)
   "Using RECIPE, Clone repo, add remotes, check out :ref."
   (parcel-clone recipe)
+  (parcel--add-remotes recipe)
   (parcel--checkout-ref recipe))
 
 ;;;###autoload
