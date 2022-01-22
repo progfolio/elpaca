@@ -248,7 +248,7 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
         (unless remotes    (signal 'wrong-type-argument
                                    `((stringp listp) ,remotes ,recipe)))
         (parcel-process-call "git" "fetch" "--all")
-        (let* ((_remote (if (stringp remotes) remotes (caar remotes))))
+        (let* ((remote (if (stringp remotes) remotes (caar remotes))))
           (parcel-with-process
               (apply #'parcel-process-call
                      `("git"
@@ -256,7 +256,8 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
                                (cond
                                 (ref    (list "checkout" ref))
                                 (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
-                                (branch (list "switch" "-C" branch))))))
+                                (branch (list "switch" "-C" branch
+                                              (format "%s/%s" remote branch)))))))
             (if success t
               (error "Unable to check out ref: %S %S" stderr recipe))))))))
 
