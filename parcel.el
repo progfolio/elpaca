@@ -141,6 +141,7 @@ If INTERACTIVE is equivalent to \\[universal-argument] prompt for MENUS."
   (when-let ((member (plist-member plist :inherit)))
     (not (cadr member))))
 
+;;;###autoload
 (defun parcel-recipe (&optional order)
   "Return recipe computed from ORDER.
 ORDER is any of the following values:
