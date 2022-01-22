@@ -259,7 +259,8 @@ ORDER is any of the following values:
                      props
                    (parcel-process-call
                     "git" "remote" "add" remote (parcel--repo-uri recipe)))
-               (parcel-process-call "git" "remote" "rename" "origin" remote)))))
+               (unless (equal remote "origin")
+                 (parcel-process-call "git" "remote" "rename" "origin" remote))))))
         (_ (signal 'wrong-type-argument `((stringp listp) ,remotes ,recipe)))))))
 
 (defun parcel--checkout-ref (recipe)
