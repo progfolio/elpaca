@@ -229,6 +229,30 @@ ORDER is any of the following values:
                                               `((github gitlab stringp) ,host))))))
       (format "%s%s/%s.git" protocol host repo))))
 
+(defalias 'parcel--add-remotes #'ignore)
+(defun parcel--checkout-ref (recipe)
+  "Checkout RECIPE's :ref.
+The :branch and :tag keywords are syntatic sugar for :refs and are handled here, too."
+  (let ((default-directory (parcel-repo-dir recipe)))
+    (cl-destructuring-bind (&key ref branch tag remotes &allow-other-keys)
+        recipe
+      (when (or ref branch tag)
+        (cond
+         ((and ref branch) (warn "Recipe :ref overriding :branch %S" recipe))
+         ((and ref tag)    (warn "Recipe :ref overriding :tag %S" recipe))
+         ((and tag branch) (error "Recipe ambiguous :tag and :branch %S" recipe)))
+        (unless remotes    (signal 'wrong-type-argunent
+                                   `((stringp listp) ,remotes ,recipe)))
+        (parcel-process-call "git" "fetch" "--all")
+        (let* ((_remote (if (stringp remotes) remotes (caar remotes))))
+          (apply #'parcel-process-call
+                 `("git"
+                   ,@(delq nil
+                           (cond
+                            (ref    (list "checkout" ref))
+                            (tag    (list "checkout" ".git/refs/tags" tag))
+                            (branch (list "switch" "-C" branch)))))))))))
+
 (defun parcel-clone (recipe)
   "Clone package repository to `parcel-directory' using RECIPE."
   (cl-destructuring-bind (&key fetcher (host fetcher) &allow-other-keys)
@@ -239,6 +263,17 @@ ORDER is any of the following values:
       (apply #'parcel-process-call
              (delq nil (list "git" "clone" (parcel--repo-uri recipe)
                              (parcel-repo-dir recipe)))))))
+
+(defun parcel--initialize-repo (recipe)
+  "Clone repo, add remotes, check out :ref."
+  (thread-first recipe
+                (parcel-clone)
+                (parcel--checkout-ref)))
+
+;;;###autoload
+(defun parcel (order)
+  "ORDER."
+  (parcel--initialize-repo (parcel-recipe order)))
 
 (declare-function autoload-rubric "autoload")
 (defvar autoload-timestamps)
