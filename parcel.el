@@ -324,9 +324,11 @@ If package's repo is not on disk, error."
               (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))
 
 (defvar parcel--queued-orders nil "List of queued orders.")
+
 (defun parcel--emacs-path ()
   "Return path to running Emacs."
   (concat invocation-directory invocation-name))
+
 ;;;###autoload
 (defun parcel (order &optional callback)
   "ORDER CALLBACK."
