@@ -224,7 +224,7 @@ ORDER is any of the following values:
     (let ((protocol (pcase protocol
                       ('https '("https://" . "/"))
                       ('ssh   '("git@" . ":"))
-                      (_      (signal 'wrong-type-argument `((http ssh) ,protocol)))))
+                      (_      (signal 'wrong-type-argument `((https ssh) ,protocol)))))
           (host     (pcase host
                       ('github       "github.com")
                       ('gitlab       "gitlab.com")
