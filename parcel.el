@@ -335,10 +335,52 @@ If package's repo is not on disk, error."
                 (read (match-string 1))
               (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))
 
+(defvar parcel--queued-orders nil "List of queued orders.")
+(defun parcel--emacs-path ()
+  "Return path to running Emacs."
+  (concat invocation-directory invocation-name))
 ;;;###autoload
-(defun parcel (order)
-  "ORDER."
-  (parcel--initialize-repo (parcel-recipe order)))
+(defun parcel (order &optional callback)
+  "ORDER CALLBACK."
+  (let* ((recipe  (parcel-recipe order))
+         (package (plist-get recipe :package)))
+    (unless (member package parcel--queued-orders)
+      (push package parcel--queued-orders)
+      (let ((proc-name (format "parcel-%s" package)))
+        (make-process
+         :name proc-name
+         :buffer proc-name
+         :command (list (parcel--emacs-path)
+                        "-L" parcel-directory
+                        "-L" (expand-file-name "parcel" parcel-directory)
+                        "-l" (expand-file-name "parcel/parcel.el" parcel-directory)
+                        "--batch"
+                        "--eval" (format "(parcel--initialize-repo '%S)" recipe))
+         :sentinel (lambda (proc event)
+                     (when (equal event "finished\n")
+                       (setq parcel--queued-orders
+                             (cl-remove
+                              (replace-regexp-in-string "^parcel-" "" (process-name proc))
+                              parcel--queued-orders
+                              :test #'equal))
+                       (funcall callback recipe)))
+         :noquery t)))))
+
+(defvar parcel-ignored-dependencies '(cl-lib org)
+  "Built in packages.
+Ignore these unless the user explicitly requests they be installed.")
+
+(defun parcel--process-dependencies (recipe)
+  "Using RECIPE, compute dependencies and kick off their subprocesses."
+  (dolist (dependency (parcel--dependencies recipe))
+    (pcase-let ((`(,package ,version) dependency))
+      (if (equal package 'emacs)
+          (when (version< emacs-version version)
+            (error "Emacs version too low for %S: %S"
+                   (plist-get recipe :package)
+                   recipe))
+        (unless (member package parcel-ignored-dependencies)
+          (parcel package #'parcel--process-dependencies))))))
 
 (declare-function autoload-rubric "autoload")
 (defvar autoload-timestamps)
