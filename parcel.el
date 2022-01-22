@@ -316,7 +316,7 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
   "Regexp matching the Package-Requires metadata in an elisp source file.")
 
 (defun parcel--dependencies (recipe)
-  "Using RECIPE comput package's dependencies.
+  "Using RECIPE, compute package's dependencies.
 If package's repo is not on disk, error."
   (let* ((default-directory (parcel-repo-dir recipe))
          (pkg (expand-file-name (format "%s-pkg.el" (plist-get recipe :package))))
