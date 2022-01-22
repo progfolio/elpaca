@@ -191,11 +191,6 @@ ORDER is any of the following values:
   "Return user name portion of STRING."
   (substring string 0 (string-match-p "/" string)))
 
-;;@FIX: not robust
-(defun parcel-repo-protocol-specified-p (string)
-  "Return t if repo STRING has the full protocol embedded in it."
-  (string-match-p ":" string))
-
 (defun parcel-repo-dir (recipe)
   "Return path to repo given RECIPE."
   (cl-destructuring-bind (&key local-repo repo &allow-other-keys) recipe
