@@ -139,7 +139,7 @@ If INTERACTIVE is equivalent to \\[universal-argument] prompt for MENUS."
                    (plist-get candidate :source) symbol recipe))
       recipe)))
 
-(defun parcel--inheritance-disabled-p (plist)
+(defsubst parcel--inheritance-disabled-p (plist)
   "Return t if PLIST explicitly has :inherit nil key val, nil otherwise."
   (when-let ((member (plist-member plist :inherit)))
     (not (cadr member))))
@@ -183,11 +183,11 @@ ORDER is any of the following values:
           (if interactive (message "%S" recipe)) recipe)
       (when interactive (user-error "No recipe for %S" package)))))
 
-(defun parcel--repo-name (string)
+(defsubst parcel--repo-name (string)
   "Return repo name portion of STRING."
   (substring string (1+ (string-match-p "/" string))))
 
-(defun parcel--repo-user (string)
+(defsubst parcel--repo-user (string)
   "Return user name portion of STRING."
   (substring string 0 (string-match-p "/" string)))
 
