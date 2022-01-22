@@ -159,6 +159,7 @@ ORDER is any of the following values:
     (cond
      ((or (null order) (symbolp order))
       (let ((menu-item (parcel-menu-item nil order)))
+        (unless menu-item (user-error "No menu-item for %S" order))
         (push (run-hook-with-args-until-success 'parcel-order-functions order)
               ingredients)
         (push menu-item ingredients)))
