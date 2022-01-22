@@ -6,33 +6,35 @@
 (when t
   (when (file-exists-p parcel-directory)
     (delete-directory parcel-directory 'recursive))
-  (when (featurep 'parcel) (unload-feature 'parcel t)))
+  (when (featurep 'parcel) (unload-feature 'parcel t)
+        (defvar parcel-directory (expand-file-name "parcel/" user-emacs-directory))))
 
-(let ((parcel-repo (expand-file-name "parcel/" parcel-directory)))
-  (add-to-list 'load-path parcel-repo)
-  (unless (file-exists-p parcel-repo)
-    (let ((buffer (get-buffer-create "*parcel-bootstrap*")))
-      (condition-case-unless-debug err
-          (progn
-            ;;clone parcel
-            (unless (zerop (call-process "git" nil (list buffer t) t
-                                         "clone" "git@github.com:progfolio/parcel.git"
-                                         parcel-repo))
-              (error "%s" (list (with-current-buffer buffer (buffer-string)))))
-            ;;@TODO: checkout parcel using parcel?
-            ;;@TODO: build parcel using parcel?
-            (byte-recompile-directory parcel-repo 0 'force)
-            (require 'parcel)
-            (parcel-generate-autoloads "parcel" parcel-repo))
-        ((error)
-         (when (file-exists-p parcel-directory)
-           (delete-directory parcel-directory 'recursive))
-         (with-current-buffer buffer
-           (goto-char (point-max))
-           (insert (format "\n%S" err))
-           (display-buffer buffer)
-           (kill-buffer buffer))))))
-  (let ((default-directory parcel-repo))
-    (load "parcel-autoloads.el")))
+(defun parcel--bootstrap ()
+  (let ((parcel-repo (expand-file-name "parcel/" parcel-directory)))
+    (add-to-list 'load-path parcel-repo)
+    (unless (file-exists-p parcel-repo)
+      (let ((buffer (get-buffer-create "*parcel-bootstrap*")))
+        (condition-case-unless-debug err
+            (progn
+              ;;clone parcel
+              (unless (zerop (call-process "git" nil (list buffer t) t
+                                           "clone" "git@github.com:progfolio/parcel.git"
+                                           parcel-repo))
+                (error "%s" (list (with-current-buffer buffer (buffer-string)))))
+              ;;@TODO: checkout parcel using parcel?
+              ;;@TODO: build parcel using parcel?
+              (byte-recompile-directory parcel-repo 0 'force)
+              (require 'parcel)
+              (parcel-generate-autoloads "parcel" parcel-repo))
+          ((error)
+           (when (file-exists-p parcel-directory)
+             (delete-directory parcel-directory 'recursive))
+           (with-current-buffer buffer
+             (goto-char (point-max))
+             (insert (format "\n%S" err))
+             (display-buffer buffer)
+             (kill-buffer buffer))))))
+    (let ((default-directory parcel-repo))
+      (load "parcel-autoloads.el"))))
 
-
+(parcel--bootstrap)
