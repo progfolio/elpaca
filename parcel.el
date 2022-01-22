@@ -249,7 +249,7 @@ ORDER is any of the following values:
         ((pred listp)
          (dolist (spec remotes)
            (if (stringp spec)
-               (parcel--add-remotes (plist-put recipe :remotes spec))
+               (parcel--add-remotes (plist-put (copy-tree recipe) :remotes spec))
              (pcase-let ((`(,remote . ,props) spec))
                (if props
                    (cl-destructuring-bind
