@@ -193,22 +193,15 @@ ORDER is any of the following values:
 
 (defun parcel-repo-dir (recipe)
   "Return path to repo given RECIPE."
-  (cl-destructuring-bind (&key local-repo repo &allow-other-keys) recipe
-    (when repo
-      (expand-file-name
-       (or local-repo
-           (let* ((short (parcel--repo-name repo))
-                  (user  (parcel--repo-user repo))
-                  (possible (expand-file-name short parcel-directory)))
-             ;;check remote to see if it belongs to us
-             (if (file-exists-p possible)
-                 (let* ((default-directory possible)
-                        (remotes (parcel-process-output "git" "remote" "-v")))
-                   (if (string-match-p (parcel--repo-uri recipe) remotes)
-                       short
-                     (format "%s-%s" short user)))
-               short)))
-       parcel-directory))))
+  (cl-destructuring-bind (&key local-repo repo fetcher (host fetcher) &allow-other-keys)
+      recipe
+    (expand-file-name
+     ;;repo-or-local-repo.user.host
+     (string-join (list (or local-repo (parcel--repo-name repo))
+                        (parcel--repo-user repo)
+                        (symbol-name host))
+                  ".")
+     parcel-directory)))
 
 (defun parcel--repo-uri (recipe)
   "Return repo URI from RECIPE."
