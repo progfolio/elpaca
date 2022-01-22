@@ -41,7 +41,11 @@
   "Location of the parcel package store."
   :type 'directory)
 
-(defcustom parcel-order-functions nil
+(defun parcel-order-defaults (_order)
+  "Default order modifications. Matches any order."
+  (list :protocol 'ssh :remotes "origin"))
+
+(defcustom parcel-order-functions (list #'parcel-order-defaults)
   "Abnormal hook run to alter orders.
 Each element must be a unary function which accepts an order.
 An order may be nil, a symbol naming a package, or a plist.
