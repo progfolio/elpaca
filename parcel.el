@@ -222,16 +222,16 @@ ORDER is any of the following values:
                                repo &allow-other-keys)
       recipe
     (let ((protocol (pcase protocol
-                      ('https "https://")
-                      ('ssh   "git@")
-                      (_      (signal 'wrong-type-error `((http ssh) ,protocol)))))
+                      ('https '("https://" . "/"))
+                      ('ssh   '("git@" . ":"))
+                      (_      (signal 'wrong-type-argument `((http ssh) ,protocol)))))
           (host     (pcase host
                       ('github       "github.com")
                       ('gitlab       "gitlab.com")
                       ((pred stringp) host)
                       (_              (signal 'wrong-type-argument
                                               `((github gitlab stringp) ,host))))))
-      (format "%s%s/%s.git" protocol host repo))))
+      (format "%s%s%s%s.git" (car protocol) host (cdr protocol) repo))))
 
 (defalias 'parcel--add-remotes #'ignore)
 (defun parcel--checkout-ref (recipe)
