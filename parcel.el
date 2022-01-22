@@ -249,13 +249,16 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
                                    `((stringp listp) ,remotes ,recipe)))
         (parcel-process-call "git" "fetch" "--all")
         (let* ((_remote (if (stringp remotes) remotes (caar remotes))))
-          (apply #'parcel-process-call
-                 `("git"
-                   ,@(delq nil
-                           (cond
-                            (ref    (list "checkout" ref))
-                            (tag    (list "checkout" ".git/refs/tags" tag))
-                            (branch (list "switch" "-C" branch)))))))))))
+          (parcel-with-process
+              (apply #'parcel-process-call
+                     `("git"
+                       ,@(delq nil
+                               (cond
+                                (ref    (list "checkout" ref))
+                                (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
+                                (branch (list "switch" "-C" branch))))))
+            (if success t
+              (error "Unable to check out ref: %S %S" stderr recipe))))))))
 
 (defun parcel-clone (recipe)
   "Clone package repository to `parcel-directory' using RECIPE."
