@@ -311,6 +311,30 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
   (parcel--add-remotes recipe)
   (parcel--checkout-ref recipe))
 
+(defvar parcel--package-requires-regexp
+  "\\(?:^;+[[:space:]]*Package-Requires[[:space:]]*:[[:space:]]*\\([^z-a]*?$\\)\\)"
+  "Regexp matching the Package-Requires metadata in an elisp source file.")
+
+(defun parcel--dependencies (recipe)
+  "Using RECIPE comput package's dependencies.
+If package's repo is not on disk, error."
+  (let* ((default-directory (parcel-repo-dir recipe))
+         (pkg (expand-file-name (format "%s-pkg.el" (plist-get recipe :package))))
+         (defined (file-exists-p pkg))
+         (main (format "%s.el" (plist-get recipe :package))))
+    (unless (file-exists-p default-directory)
+      (error "Package repository not on disk: %S" recipe))
+    (with-temp-buffer
+      (insert-file-contents-literally (if defined pkg main))
+      (goto-char (point-min))
+      (if defined
+          (eval (nth 4 (read (current-buffer))))
+        (let ((case-fold-search t))
+          (when (re-search-forward parcel--package-requires-regexp)
+            (condition-case err
+                (read (match-string 1))
+              (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))
+
 ;;;###autoload
 (defun parcel (order)
   "ORDER."
