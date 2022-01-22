@@ -232,7 +232,7 @@ ORDER is any of the following values:
 (defalias 'parcel--add-remotes #'ignore)
 (defun parcel--checkout-ref (recipe)
   "Checkout RECIPE's :ref.
-The :branch and :tag keywords are syntatic sugar for :refs and are handled here, too."
+The :branch and :tag keywords are syntatic sugar and are handled here, too."
   (let ((default-directory (parcel-repo-dir recipe)))
     (cl-destructuring-bind (&key ref branch tag remotes &allow-other-keys)
         recipe
@@ -265,7 +265,7 @@ The :branch and :tag keywords are syntatic sugar for :refs and are handled here,
                              (parcel-repo-dir recipe)))))))
 
 (defun parcel--initialize-repo (recipe)
-  "Clone repo, add remotes, check out :ref."
+  "Using RECIPE, Clone repo, add remotes, check out :ref."
   (thread-first recipe
                 (parcel-clone)
                 (parcel--checkout-ref)))
