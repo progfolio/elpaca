@@ -65,7 +65,7 @@ This hook is run via `run-hook-with-args-until-success'."
 Each function is passed a request, which may be any of the follwoing symbols:
   - `index`
      Must return a alist of the menu's package candidates.
-     Each candidate is an cell of form:
+     Each candidate is a cell of form:
      (PACKAGE-NAME . (:source SOURCE-NAME :recipe RECIPE-PLIST))
   - `update`
      Updates the menu's package candidate list."
