@@ -43,7 +43,7 @@
 
 (defun parcel-order-defaults (_order)
   "Default order modifications. Matches any order."
-  (list :protocol 'https :remotes "origin"))
+  (list :protocol 'https :remotes "origin" :inherit t))
 
 (defcustom parcel-order-functions (list #'parcel-order-defaults)
   "Abnormal hook run to alter orders.
