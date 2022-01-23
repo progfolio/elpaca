@@ -23,6 +23,8 @@
 ;; Functions for calling processes.
 
 ;;; Code:
+(eval-when-compile (require 'subr-x))
+
 (defconst parcel-process--stderr
   (expand-file-name (format "parcel-stderr-%s" (emacs-pid))
                     temporary-file-directory)
@@ -68,6 +70,25 @@ Anaphroic bindings provided:
      ;; Stop the byte-compiler from complaining about unused bindings.
      (ignore result exit invoked success failure stdout stderr)
      ,@body))
+
+(defmacro parcel-with-async-process (process &rest body)
+  "Execute BODY after PROCESS is run asynchronously."
+  (declare (indent 1) (debug t))
+  `(let ((result))
+     (make-process
+      :name "parcel-async"
+      :filter (lambda (proc output) (setq result (cons result output)))
+      :sentinel (lambda (proc event)
+                  (when (equal event "finished\n")
+                    (eval `(parcel-with-process ',(read (cdr result))
+                             ,@',body)
+                          t)))
+      :command (list (concat invocation-directory invocation-name)
+                     "-L" parcel-directory
+                     "-l" (expand-file-name "parcel/parcel-process.el" parcel-directory)
+                     "--batch"
+                     "--eval"
+                     ,(format "(message \"%%S\" (apply #'parcel-process-call '%S))" process)))))
 
 (defun parcel-process-output (program &rest args)
   "Return result of running PROGRAM with ARGS.
