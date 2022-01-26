@@ -239,6 +239,15 @@ Packages that I'm developing or aren't part of any online repositories go in =~/
 #+begin_src emacs-lisp :lexical t
 (setq literate-file (concat user-emacs-directory "init.org"))
 #+end_src
+**  terminal utf-8
+#+begin_src emacs-lisp :lexical t
+(defun +terminal ()
+  "Set the terimnal coding system."
+  (unless (display-graphic-p)
+    (set-terminal-coding-system 'utf-8)))
+
+(add-hook 'server-after-make-frame-hook #'+terminal)
+#+end_src
 * Secrets
 I keep my sensitive, personal information in a separate file so I can publish this configuration publicly.
 #+begin_src emacs-lisp :lexical t
