@@ -389,5 +389,74 @@ Ignore these unless the user explicitly requests they be installed.")
       (kill-buffer buf))
     auto-name))
 
+
+;;;ASYNC
+(eval-and-compile
+  (defun parcel--ensure-list (obj)
+    "Ensure OBJ is a list."
+    (if (listp obj) obj (list obj))))
+
+(defmacro parcel-thread-callbacks (&rest fns)
+  "Place each FN in FNS in callback position of previous FN."
+  (declare (debug t))
+  (let* ((reversed (reverse fns))
+         (last `((lambda () ,(parcel--ensure-list (pop reversed))))))
+    (mapc (lambda (fn)
+            (setq last `((lambda () ,(append (parcel--ensure-list fn) last)))))
+          reversed)
+    ;; Ditch wrapping lambda of first call
+    (nth 2 (pop last))))
+
+(defun parcel-clone-async (recipe callback)
+  "Clone package repository to `parcel-directory' Asynchronously.
+RECIPE is used to determine package details.
+Execute CALLBACK when finished."
+  (cl-destructuring-bind (&key package fetcher (host fetcher) &allow-other-keys)
+      recipe
+    (unless host (user-error "No :host in recipe %S" recipe))
+    (let* ((default-directory parcel-directory)
+           (proc (delq nil (list "git" "clone" (parcel--repo-uri recipe)
+                                 (parcel-repo-dir recipe)))))
+      (eval `(parcel-with-async-process ,proc
+               (if success
+                   (funcall (function ,callback))
+                 (error "Failed to clone %S: %S" ,package result)))
+            t))))
+
+(defun parcel-clone-deps-aysnc (recipe &optional _callback)
+  "Clone RECIPE's dependencies, then CALLBACK."
+  (dolist (spec (parcel--dependencies recipe))
+    (pcase-let ((`(,dependency ,version) spec))
+      (if (equal dependency 'emacs)
+          (when (version< emacs-version version)
+            (error "Emacs version too low for %S: %S"
+                   (plist-get recipe :package)
+                   recipe))
+        (unless (member dependency parcel-ignored-dependencies)
+          (message "recipe: %S callback: %S"
+           recipe
+           (lambda () (message "dependency %S cloned" dependency))))))))
+
+;; (let ((recipe (parcel-recipe 'doct)))
+;;   (parcel-test-clean-repos)
+;;   (parcel-thread-callbacks
+;;    (parcel-clone-async recipe)
+;;    (parcel-clone-deps-async recipe)))
+
+
+;; (let ((queued-orders
+;;        (list '(doct
+;;                :recipe (parcel-recipe 'doct)
+;;                :subs nil
+;;                :pubs nil)
+;;              '(wikinforg
+;;                :recipe (parcel-recipe 'wikinforg)
+;;                :subs nil
+;;                :pubs nil))))
+;;   queued-orders)
+
+
+
+
 (provide 'parcel)
 ;;; parcel.el ends here
