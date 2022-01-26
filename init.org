@@ -27,7 +27,7 @@ Running this form will launch the debugger after loading a package.
 This is useful for finding out when a dependency is requiring a package (perhaps earlier than you want).
 Use by tangling this block and launching Emacs with =emacs --debug-init=.
 
-#+begin_src emacs-lisp :var file="" :results silent
+#+begin_src emacs-lisp :var file="" :results silent :tangle no
 (unless (string-empty-p file)
   (eval-after-load file
     '(debug)))
