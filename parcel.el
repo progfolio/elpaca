@@ -318,7 +318,7 @@ If package's repo is not on disk, error."
       (if defined
           (eval (nth 4 (read (current-buffer))))
         (let ((case-fold-search t))
-          (when (re-search-forward parcel--package-requires-regexp)
+          (when (re-search-forward parcel--package-requires-regexp nil 'noerror)
             (condition-case err
                 (read (match-string 1))
               (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))
