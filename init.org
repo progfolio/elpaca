@@ -18,15 +18,6 @@ Emacs 27.0 introduced an early-init file. It allows customization before package
 ;;; Code:
 #+end_src
 
-We want the latest version of Org mode.
-Removing the Emacs bundled version from the load-path *should* prevent loading mixed Org versions.
-e.g. After updating Org mode.
-#+begin_src emacs-lisp :lexical t
-(when-let (orglib (locate-library "org" nil load-path))
-  (setq-default load-path (delete (substring (file-name-directory orglib) 0 -1)
-                                  load-path)))
-#+end_src
-
 #+begin_src emacs-lisp :lexical t
 (setq package-enable-at-startup nil)
 #+end_src
