@@ -71,8 +71,8 @@
                                               recipe))
                                 (cons (intern-soft (file-name-nondirectory file))
                                       (list :source "MELPA" :recipe recipe))))
-                          ((error) nil))))
-                    (directory-files "./recipes/" 'full "^[^.][^z-a]+")))))
+                          ((error) (message "parcel-menu-melpa couldn't process %S" file) nil))))
+                    (directory-files "./recipes/" 'full "\\(?:^[^.]\\)")))))
 
 (defvar parcel-menu-melpa--use-cache nil "Force recipe update when non-nil.")
 
