@@ -3516,6 +3516,7 @@ as fast as possible without recording multiple mistakes."
 ** joymacs
 #+begin_src emacs-lisp :lexical t
 (use-package joymacs
+  :defer t
   :straight '(joymacs :host github :repo "skeeto/joymacs"
                       :pre-build ("make")
                       :files (:defaults "joymacs.c"
