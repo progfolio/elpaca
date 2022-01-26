@@ -3543,6 +3543,8 @@ as fast as possible without recording multiple mistakes."
   :straight '(:host github :repo "progfolio/wordel" :files (:defaults "words"))
   :defer t
   :config
-  (evil-set-initial-state 'wordel-mode        'insert)
-  (evil-set-initial-state 'wordel-select-mode 'insert))
+  (evil-make-intercept-map wordel-mode-map)
+  (evil-set-initial-state  'wordel-mode 'insert)
+  (evil-make-intercept-map wordel-select-mode-map)
+  (evil-set-initial-state  'wordel-select-mode 'insert))
 #+end_src
