@@ -26,6 +26,15 @@
 (require 'ert)
 (require 'parcel)
 
+;;;###autoload
+(defun parcel-test-clean-repos ()
+  "Remove everything except parcel from `parcel-directory'."
+  (interactive)
+  (mapc (lambda (file)
+          (unless (member (file-name-nondirectory file) '("." ".." "parcel"))
+            (delete-directory file 'recursive)))
+        (directory-files parcel-directory 'full)))
+
 (defun parcel-test--plist-equal-p (&rest plists)
   "Return t if PLISTS have same keys and values (order independent)."
   (let* ((basis (car plists))
