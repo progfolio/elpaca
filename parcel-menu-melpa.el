@@ -63,14 +63,13 @@
                       (with-temp-buffer
                         (insert-file-contents file)
                         (condition-case-unless-debug _
-                            (let ((recipe (read (buffer-string))))
-                              (when (member (plist-get (cdr recipe) :fetcher)
-                                            '(git github gitlab))
-                                (setq recipe (append
-                                              (list :package (symbol-name (pop recipe)))
-                                              recipe))
-                                (cons (intern-soft (file-name-nondirectory file))
-                                      (list :source "MELPA" :recipe recipe))))
+                            (when-let ((recipe (read (buffer-string)))
+                                       (package (pop recipe))
+                                       ((member (plist-get recipe :fetcher) '(git github gitlab))))
+                              (setq recipe
+                                    (append (list :package (symbol-name package)) recipe))
+                              (cons (intern-soft (file-name-nondirectory file))
+                                    (list :source "MELPA" :recipe recipe)))
                           ((error) (message "parcel-menu-melpa couldn't process %S" file) nil))))
                     (directory-files "./recipes/" 'full "\\(?:^[^.]\\)")))))
 
