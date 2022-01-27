@@ -356,7 +356,7 @@ If package's repo is not on disk, error."
                        (funcall callback recipe)))
          :noquery t)))))
 
-(defvar parcel-ignored-dependencies '(cl-lib org)
+(defvar parcel-ignored-dependencies '(cl-lib org map)
   "Built in packages.
 Ignore these unless the user explicitly requests they be installed.")
 
