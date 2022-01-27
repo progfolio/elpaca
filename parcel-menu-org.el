@@ -23,11 +23,10 @@
 ;; A parcel menu for Org packages
 
 ;;; Code:
-(require 'parcel)
+(defvar parcel-menu-org--index-cache nil "Cache of Org menu index.")
 (require 'parcel-process)
 
-(defvar parcel-menu-org--index-cache nil "Cache of Org menu index.")
-
+(defvar parcel-directory)
 (defun parcel-menu-org--build ()
   "Generate `org-version.el`."
   (let* ((default-directory (expand-file-name "./org/lisp" parcel-directory))
