@@ -2970,6 +2970,16 @@ can make sure they're balanced easily.
   :defer 1
   :config (show-paren-mode))
 #+end_src
+** parcel
+#+begin_quote
+TBA
+#+end_quote
+
+#+begin_src emacs-lisp :lexical t
+(use-package parcel
+  :straight '(parcel :host github :repo "progfolio/parcel"))
+#+end_src
+
 ** pdf-tools
 #+begin_quote
 PDF Tools is, among other things, a replacement of DocView for PDF files.
