@@ -52,7 +52,6 @@
 
 (defun parcel-menu-gnu-elpa-mirror--update ()
   "Update recipes in GNU ELPA menu."
-  (setq parcel-menu-gnu-elpa-mirror--index-cache nil)
   (message "Checking GNU ELPA for updates...")
   (condition-case _
       (progn
@@ -72,8 +71,6 @@
                                                   :host 'github
                                                   :repo (concat "emacs-straight/" file))))))
                     (directory-files default-directory nil "\\(?:^[^.]\\)")))))
-
-(defvar parcel-menu-gnu-elpa-mirror--use-cache nil "Force recipe update when non-nil.")
 
 ;;;###autoload
 (defun parcel-menu-gnu-elpa-mirror (request)

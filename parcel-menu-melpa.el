@@ -73,8 +73,6 @@
                           ((error) (message "parcel-menu-melpa couldn't process %S" file) nil))))
                     (directory-files "./recipes/" 'full "\\(?:^[^.]\\)")))))
 
-(defvar parcel-menu-melpa--use-cache nil "Force recipe update when non-nil.")
-
 ;;;###autoload
 (defun parcel-menu-melpa (request)
   "Delegate REQUEST.
