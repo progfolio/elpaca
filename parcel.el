@@ -75,6 +75,17 @@ Each function is passed a request, which may be any of the follwoing symbols:
                                      :nonrecursive :package :protocol :remote :repo)
   "Recognized parcel recipe keywords.")
 
+;;;###autoload
+(defun parcel-delete-repos (&optional force)
+  "Remove everything except parcel from `parcel-directory'.
+If FORCE is non-nil, do not ask for confirmation."
+  (interactive "P")
+  (when (or force (yes-or-no-p "Remove all parcel repos?"))
+    (mapc (lambda (file)
+            (unless (member (file-name-nondirectory file) '("." ".." "parcel"))
+              (delete-directory file 'recursive)))
+          (directory-files parcel-directory 'full))))
+
 (defun parcel-plist-p (obj)
   "Return t if OBJ is a plist of form (:key val...)."
   (and obj
