@@ -60,7 +60,7 @@ The function may return nil or a plist to be merged with the recipe.
 This hook is run via `run-hook-with-args-until-success'."
   :type 'hook)
 
-(defcustom parcel-menu-functions '(parcel-menu-org parcel-menu-melpa)
+(defcustom parcel-menu-functions '(parcel-menu-org parcel-menu-melpa parcel-menu-gnu-elpa-mirror)
   "Abnormal hook to lookup packages in menus.
 Each function is passed a request, which may be any of the follwoing symbols:
   - `index`
