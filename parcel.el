@@ -398,7 +398,6 @@ Ignore these unless the user explicitly requests they be installed.")
 
 (defmacro parcel-thread-callbacks (&rest fns)
   "Place each FN in FNS in callback position of previous FN."
-  (declare (debug t))
   (let* ((reversed (reverse fns))
          (last `((lambda () ,(parcel--ensure-list (pop reversed))))))
     (mapc (lambda (fn)
