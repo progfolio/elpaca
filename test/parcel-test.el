@@ -80,11 +80,13 @@
 
 (ert-deftest parcel-menu-item ()
   "Return menu item from MENUS."
-  (let ((parcel-menu-functions '(parcel-test-menu)))
+  (let ((parcel-menu-functions '(parcel-test-menu))
+        parcel-menu--candidates-cache)
     (should (parcel-test--plist-equal-p '( :package "parcel" :repo "progfolio/parcel"
                                            :host github
                                            :pre-build ("./pre-build"))
                                         (parcel-menu-item nil 'parcel)))
+    (setq parcel-menu--candidates-cache nil)
     (should-not (parcel-menu-item nil 'parcel '(ignore)))))
 
 (ert-deftest parcel-recipe ()
@@ -100,7 +102,8 @@
              '(:package "parcel" :host github :repo "progfolio/parcel" :inherit nil))))
   ;; basic menu lookup
   (let ((parcel-order-functions '((lambda (order) '(:inherit nil))))
-        (parcel-menu-functions '(parcel-test-menu)))
+        (parcel-menu-functions '(parcel-test-menu))
+        parcel-menu--candidates-cache)
     (should (parcel-test--plist-equal-p
              '( :package "parcel"
                 :host github
