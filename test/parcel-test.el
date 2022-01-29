@@ -49,15 +49,6 @@
                        recipes))
       (_ (user-error "Unimplmented request method: %S" request)))))
 
-(ert-deftest parcel-plist-p ()
-  "Return t if passed a (:key val...) plist."
-  (should (parcel-plist-p '(:key val)))
-  (should (parcel-plist-p '(:key val :another val)))
-  (should-not (parcel-plist-p nil))
-  (should-not (parcel-plist-p 1))
-  (should-not (parcel-plist-p '(:key)))
-  (should-not (parcel-plist-p '(:key val val))))
-
 (ert-deftest parcel-clean-plist ()
   "Remove unrecognized keywords."
   (should (parcel-test--plist-equal-p '(:host github)

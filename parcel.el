@@ -32,6 +32,11 @@
 (require 'cl-lib)
 (require 'parcel-process)
 
+(declare-function autoload-rubric "autoload")
+(declare-function url-filename    "url-parse")
+(declare-function url-host        "url-parse")
+(defvar autoload-timestamps)
+
 (defgroup parcel nil
   "An elisp package manager."
   :group 'parcel
@@ -71,27 +76,20 @@ Each function is passed a request, which may be any of the follwoing symbols:
      Updates the menu's package candidate list."
   :type 'hook)
 
+(defvar parcel-ignored-dependencies '(cl-lib org map)
+  "Built in packages.
+Ignore these unless the user explicitly requests they be installed.")
+(defvar parcel-overriding-prompt nil "Overriding prompt for interactive functions.")
+(defvar parcel-menu--candidates-cache nil "Cache for menu candidates.")
+(defvar parcel--package-requires-regexp
+  "\\(?:^;+[[:space:]]*Package-Requires[[:space:]]*:[[:space:]]*\\([^z-a]*?$\\)\\)"
+  "Regexp matching the Package-Requires metadata in an elisp source file.")
 (defvar parcel-recipe-keywords (list :pre-build :branch :depth :fork :host
                                      :nonrecursive :package :protocol :remote :repo)
   "Recognized parcel recipe keywords.")
-
-;;;###autoload
-(defun parcel-delete-repos (&optional force)
-  "Remove everything except parcel from `parcel-directory'.
-If FORCE is non-nil, do not ask for confirmation."
-  (interactive "P")
-  (when (or force (yes-or-no-p "Remove all parcel repos?"))
-    (mapc (lambda (file)
-            (unless (member (file-name-nondirectory file) '("." ".." "parcel"))
-              (delete-directory file 'recursive)))
-          (directory-files parcel-directory 'full))))
-
-(defun parcel-plist-p (obj)
-  "Return t if OBJ is a plist of form (:key val...)."
-  (and obj
-       (listp obj)
-       (zerop (mod (length obj) 2))
-       (cl-every #'keywordp (cl-loop for (key _) on obj by #'cddr collect key))))
+(defvar parcel--queued-orders nil "List of queued orders.")
+(defconst parcel-status-buffer "*Parcel*")
+(define-minor-mode parcel-dev-mode "Just a way to toggle a variable for dev code.")
 
 (defun parcel-merge-plists (&rest plists)
   "Return plist with set of unique keys from PLISTS.
@@ -116,8 +114,6 @@ Values for each key are that of the right-most plist containing that key."
                         for index = (funcall fn 'index)
                         when index collect index))
         (lambda (a b) (string-lessp (car a) (car b)))))
-
-(defvar parcel-overriding-prompt nil "Overriding prompt for interactive functions.")
 
 ;;@TODO: clean up interface.
 ;;;###autoload
@@ -202,16 +198,35 @@ ORDER is any of the following values:
   "Return user name portion of STRING."
   (substring string 0 (string-match-p "/" string)))
 
+(defun parcel--full-repo-protocol-p (string)
+  "Return t if STRING specifies a protocol."
+  ;;@TODO: this needs to be more robust.
+  (and (string-match-p ":" string) t))
+
 (defun parcel-repo-dir (recipe)
   "Return path to repo given RECIPE."
   (cl-destructuring-bind (&key local-repo repo fetcher (host fetcher) &allow-other-keys)
       recipe
     (expand-file-name
-     ;;repo-or-local-repo.user.host
-     (string-join (list (or local-repo (parcel--repo-name repo))
-                        (parcel--repo-user repo)
-                        (symbol-name host))
-                  ".")
+     (if (parcel--full-repo-protocol-p repo)
+         (let ((url (url-generic-parse-url repo)))
+           (require 'url-parse)
+           (string-join
+            (list
+             (or local-repo
+                 (file-name-sans-extension
+                  (replace-regexp-in-string
+                   ".*/" ""
+                   (url-filename
+                    (url-generic-parse-url (plist-get (parcel-recipe 'org) :repo))))))
+             "_"
+             (url-host url))
+            "."))
+       ;;repo-or-local-repo.user.host
+       (string-join (list (or local-repo (parcel--repo-name repo))
+                          (parcel--repo-user repo)
+                          (symbol-name host))
+                    "."))
      parcel-directory)))
 
 (defun parcel--repo-uri (recipe)
@@ -221,17 +236,19 @@ ORDER is any of the following values:
                                (host fetcher)
                                repo &allow-other-keys)
       recipe
-    (let ((protocol (pcase protocol
-                      ('https '("https://" . "/"))
-                      ('ssh   '("git@" . ":"))
-                      (_      (signal 'wrong-type-argument `((https ssh) ,protocol)))))
-          (host     (pcase host
-                      ('github       "github.com")
-                      ('gitlab       "gitlab.com")
-                      ((pred stringp) host)
-                      (_              (signal 'wrong-type-argument
-                                              `((github gitlab stringp) ,host))))))
-      (format "%s%s%s%s.git" (car protocol) host (cdr protocol) repo))))
+    (if (parcel--full-repo-protocol-p repo)
+        repo
+      (let ((protocol (pcase protocol
+                        ('https '("https://" . "/"))
+                        ('ssh   '("git@" . ":"))
+                        (_      (signal 'wrong-type-argument `((https ssh) ,protocol)))))
+            (host     (pcase host
+                        ('github       "github.com")
+                        ('gitlab       "gitlab.com")
+                        ((pred stringp) host)
+                        (_              (signal 'wrong-type-argument
+                                                `((github gitlab stringp) ,host))))))
+        (format "%s%s%s%s.git" (car protocol) host (cdr protocol) repo)))))
 
 (defun parcel--add-remotes (recipe)
   "Given RECIPE, add repo remotes."
@@ -293,26 +310,11 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
             (if success t
               (error "Unable to check out ref: %S %S" stderr recipe))))))))
 
-(defun parcel-clone (recipe)
-  "Clone package repository to `parcel-directory' using RECIPE."
-  (cl-destructuring-bind (&key fetcher (host fetcher) &allow-other-keys)
-      recipe
-    (unless host (user-error "No :host in recipe %S" recipe))
-    (let* ((default-directory parcel-directory))
-      ;;@TODO: handle errors
-      (apply #'parcel-process-call
-             (delq nil (list "git" "clone" (parcel--repo-uri recipe)
-                             (parcel-repo-dir recipe)))))))
-
 (defun parcel--initialize-repo (recipe)
   "Using RECIPE, Clone repo, add remotes, check out :ref."
   (parcel-clone recipe)
   (parcel--add-remotes recipe)
   (parcel--checkout-ref recipe))
-
-(defvar parcel--package-requires-regexp
-  "\\(?:^;+[[:space:]]*Package-Requires[[:space:]]*:[[:space:]]*\\([^z-a]*?$\\)\\)"
-  "Regexp matching the Package-Requires metadata in an elisp source file.")
 
 (defun parcel--dependencies (recipe)
   "Using RECIPE, compute package's dependencies.
@@ -340,51 +342,6 @@ If package's repo is not on disk, error."
   "Return path to running Emacs."
   (concat invocation-directory invocation-name))
 
-;;;###autoload
-(defun parcel (order &optional callback)
-  "ORDER CALLBACK."
-  (let* ((recipe  (parcel-recipe order))
-         (package (plist-get recipe :package)))
-    (unless (member package parcel--queued-orders)
-      (push package parcel--queued-orders)
-      (let ((proc-name (format "parcel-%s" package)))
-        (make-process
-         :name proc-name
-         :buffer proc-name
-         :command (list (parcel--emacs-path)
-                        "-L" parcel-directory
-                        "-L" (expand-file-name "parcel" parcel-directory)
-                        "-l" (expand-file-name "parcel/parcel.el" parcel-directory)
-                        "--batch"
-                        "--eval" (format "(parcel--initialize-repo '%S)" recipe))
-         :sentinel (lambda (proc event)
-                     (when (equal event "finished\n")
-                       (setq parcel--queued-orders
-                             (cl-remove
-                              (replace-regexp-in-string "^parcel-" "" (process-name proc))
-                              parcel--queued-orders
-                              :test #'equal))
-                       (funcall callback recipe)))
-         :noquery t)))))
-
-(defvar parcel-ignored-dependencies '(cl-lib org map)
-  "Built in packages.
-Ignore these unless the user explicitly requests they be installed.")
-
-(defun parcel--process-dependencies (recipe)
-  "Using RECIPE, compute dependencies and kick off their subprocesses."
-  (dolist (dependency (parcel--dependencies recipe))
-    (pcase-let ((`(,package ,version) dependency))
-      (if (equal package 'emacs)
-          (when (version< emacs-version version)
-            (error "Emacs version too low for %S: %S"
-                   (plist-get recipe :package)
-                   recipe))
-        (unless (member package parcel-ignored-dependencies)
-          (parcel package #'parcel--process-dependencies))))))
-
-(declare-function autoload-rubric "autoload")
-(defvar autoload-timestamps)
 (defun parcel-generate-autoloads (package dir)
   "Generate autoloads in DIR for PACKAGE."
   (let* ((auto-name (format "%s-autoloads.el" package))
@@ -400,8 +357,6 @@ Ignore these unless the user explicitly requests they be installed.")
       (kill-buffer buf))
     auto-name))
 
-
-;;;ASYNC
 (eval-and-compile
   (defun parcel--ensure-list (obj)
     "Ensure OBJ is a list."
@@ -417,21 +372,116 @@ Ignore these unless the user explicitly requests they be installed.")
     ;; Ditch wrapping lambda of first call
     (nth 2 (pop last))))
 
-(defun parcel-clone-async (recipe callback)
-  "Clone package repository to `parcel-directory' Asynchronously.
-RECIPE is used to determine package details.
-Execute CALLBACK when finished."
-  (cl-destructuring-bind (&key package fetcher (host fetcher) &allow-other-keys)
+(cl-defstruct parcel-order
+  "Order object for queued processing."
+  (package      nil :type string)
+  (recipe       nil :type list)
+  (status       nil :type string)
+  (dependencies nil :type list)
+  (dependents   nil :type list)
+  (info         nil))
+
+(defun parcel--queue-order (item &optional status)
+  "Queue (ITEM . ORDER) in `parcel--queued-orders'.
+If STATUS is non-nil, the order is given that initial status.
+RETURNS order structure."
+  (let* ((status  (or status 'queued))
+         (info    "Package queued")
+         (package (if (listp item) (car item) item))
+         (recipe  (condition-case err
+                      (parcel-recipe item)
+                    ((error)
+                     (setq status 'failed
+                           info (format "No recipe: %S" err)))))
+         (order (make-parcel-order
+                 :package (format "%S" package) :recipe recipe :status status :info info)))
+    (prog1 order
+      (push (cons package order) parcel--queued-orders)
+      (parcel--update-order-status package status info))))
+
+(defun parcel--initialize-process-buffer ()
+  "Initialize the parcel process buffer."
+  (with-current-buffer (get-buffer-create parcel-status-buffer)
+    (with-silent-modifications (erase-buffer))
+    (unless (derived-mode-p 'parcel-status-mode)
+      (parcel-status-mode))
+    (display-buffer (current-buffer))))
+
+(defun parcel-status-buffer-line (package status output &rest props)
+  "Return STATUS string for PACKAGE with OUTPUT.
+The package name is propertized with PROPS."
+  (let ((name (format "%-15s"
+                      (propertize package 'face
+                                  (pcase status
+                                    ('blocked '(:foreground "pink" :weight bold))
+                                    ('failed  '(:foreground "red"  :weight bold))
+                                    (_        '(:weight bold)))))))
+    (concat (apply #'propertize
+                   `(,(format "%s %s" name (or output ""))
+                     read-only t
+                     cursor-intangible t
+                     front-sticky t
+                     package ,package
+                     ,@props))
+            " ")))
+
+(defun parcel--update-order-status (package status line &rest props)
+  "Replace or append PACKAGE STATUS LINE to `parcel-status-buffer'.
+PROPS are added to package string.
+PACKAGE STATUS is also updated in `parcel--queued-orders'."
+  (unless (stringp package) (setq package (format "%S" package))) ;ensure string
+  (with-current-buffer (get-buffer-create parcel-status-buffer)
+    (goto-char (point-min))
+    (if-let ((anchor (text-property-search-forward 'package package t)))
+        (goto-char (prop-match-end anchor))
+      (goto-char (point-max))
+      (unless (bobp) ; Don't want a newline before first process.
+        (insert (propertize "\n" 'cursor-intangible t 'read-only t))))
+    (with-silent-modifications
+      (delete-region (line-beginning-position) (line-end-position))
+      (insert (apply #'parcel-status-buffer-line
+                     `(,package ,status ,line ,@props))))))
+
+(defun parcel--clone-process-filter (process output)
+  "Filter PROCESS OUTPUT of async clone operation."
+  (process-put process :result (concat (process-get process :result) output))
+  (with-current-buffer parcel-status-buffer
+    (let ((result  (process-get process :result)))
+      (parcel--update-order-status
+       (parcel-order-package (process-get process :order))
+       (when (string-match-p "Username" result)
+         ;;@TODO: update dependents status to blocked
+         'blocked)
+       (parcel-process-tail output)
+       'process process))))
+
+(defun parcel-clone (recipe &optional force)
+  "Clone repo to `parcel-directory' from RECIPE.
+If FORCE is non-nil, ignore order queue."
+  (cl-destructuring-bind
+      ( &key package depth &allow-other-keys
+        &aux
+        (item              (intern package))
+        (order             (alist-get item parcel--queued-orders))
+        (repodir           (parcel-repo-dir recipe))
+        (URI               (parcel--repo-uri recipe))
+        (default-directory parcel-directory))
       recipe
-    (unless host (user-error "No :host in recipe %S" recipe))
-    (let* ((default-directory parcel-directory)
-           (proc (delq nil (list "git" "clone" (parcel--repo-uri recipe)
-                                 (parcel-repo-dir recipe)))))
-      (eval `(parcel-with-async-process ,proc
-               (if success
-                   (funcall (function ,callback))
-                 (error "Failed to clone %S: %S" ,package result)))
-            t))))
+    (when (or force (not order))
+      (when (not order) (setq order (parcel--queue-order item)))
+      (setf (parcel-order-status order) 'cloning)
+      (let ((process (make-process
+                      :name    (format "parcel-clone-%s" package)
+                      :command `("git" "clone"
+                                 ;;@TODO: certain refs will necessitate full clone
+                                 ;; or specific branch...
+                                 ,@(when depth (list "--depth" (number-to-string depth)))
+                                 ,URI ,repodir)
+                      :filter #'parcel--clone-process-filter
+                      :sentinel (lambda (_proc event)
+                                  (cond
+                                   ((equal event "finished\n")))))))
+        (process-put process :order order)))))
 
 (defun parcel-clone-deps-aysnc (recipe &optional _callback)
   "Clone RECIPE's dependencies, then CALLBACK."
@@ -443,30 +493,67 @@ Execute CALLBACK when finished."
                    (plist-get recipe :package)
                    recipe))
         (unless (member dependency parcel-ignored-dependencies)
-          (message "recipe: %S callback: %S"
-           recipe
-           (lambda () (message "dependency %S cloned" dependency))))))))
+          (let ((recipe (parcel-recipe dependency)))
+            (parcel-clone recipe)))))))
 
-;; (let ((recipe (parcel-recipe 'doct)))
-;;   (parcel-test-clean-repos)
-;;   (parcel-thread-callbacks
-;;    (parcel-clone-async recipe)
-;;    (parcel-clone-deps-async recipe)))
+;; (defun parcel--process-dependencies (recipe)
+;;   "Using RECIPE, compute dependencies and kick off their subprocesses."
+;;   (dolist (dependency (parcel--dependencies recipe))
+;;     (pcase-let ((`(,package ,version) dependency))
+;;       (if (equal package 'emacs)
+;;           (when (version< emacs-version version)
+;;             (error "Emacs version too low for %S: %S"
+;;                    (plist-get recipe :package)
+;;                    recipe))
+;;         (unless (member package parcel-ignored-dependencies)
+;;           (parcel package #'parcel--process-dependencies))))))
 
+;;;###autoload
+(defun parcel-delete-repos (&optional force)
+  "Remove everything except parcel from `parcel-directory'.
+If FORCE is non-nil, do not ask for confirmation."
+  (interactive "P")
+  (when (or force (yes-or-no-p "Remove all parcel repos?"))
+    (mapc (lambda (file)
+            (unless (member (file-name-nondirectory file) '("." ".." "parcel"))
+              (delete-directory file 'recursive)))
+          (directory-files parcel-directory 'full))))
 
-;; (let ((queued-orders
-;;        (list '(doct
-;;                :recipe (parcel-recipe 'doct)
-;;                :subs nil
-;;                :pubs nil)
-;;              '(wikinforg
-;;                :recipe (parcel-recipe 'wikinforg)
-;;                :subs nil
-;;                :pubs nil))))
-;;   queued-orders)
+;;;; STATUS BUFFER
+(define-derived-mode parcel-status-mode text-mode "Parcel Status Mode"
+  "Mode for interacting with the parcel status buffer."
+  (cursor-intangible-mode))
 
+(defun parcel-status-mode-send-input ()
+  "Send input string to current process."
+  (interactive)
+  (when-let ((process (get-text-property (line-beginning-position) 'process)))
+    (unless (eq (process-status process) 'run)
+      (user-error "Process is no longer running: %S" (process-name process)))
+    (let ((input (save-excursion
+                   (beginning-of-line)
+                   (while (get-text-property (point) 'read-only)
+                     (forward-char))
+                   (string-trim (buffer-substring (point) (line-end-position))))))
+      (process-send-string process (concat input "\n"))
+      (end-of-line))))
 
+(defun parcel-status-mode-visit-repo ()
+  "Visit repo associated with current process."
+  (interactive)
+  (save-excursion)
+  (beginning-of-line)
+  (if-let ((process  (get-text-property (point) 'process))
+           (recipe   (parcel-order-recipe (process-get process :order)))
+           (dir      (parcel-repo-dir recipe))
+           ((file-exists-p dir)))
+      (dired (parcel-repo-dir recipe))
+    (user-error "No repo dir associated with current line")))
 
+(defvar parcel-status-mode-map (let ((map (make-sparse-keymap)))
+                                 (define-key map (kbd "<return>")   'parcel-status-mode-send-input)
+                                 (define-key map (kbd "S-<return>") 'parcel-status-mode-visit-repo)
+                                 map))
 
 (provide 'parcel)
 ;;; parcel.el ends here
