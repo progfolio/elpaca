@@ -6,7 +6,7 @@
 ;; URL: https://github.com/progfolio/parcel
 ;; Created: Jan 1, 2022
 ;; Keywords: tools, convenience, lisp
-;; Package-Requires: ((emacs "26.1"))
+;; Package-Requires: ((emacs "27.1"))
 ;; Version: 0.0.0
 
 ;; This file is not part of GNU Emacs.
