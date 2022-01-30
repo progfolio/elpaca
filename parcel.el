@@ -76,7 +76,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
      Updates the menu's package candidate list."
   :type 'hook)
 
-(defvar parcel-ignored-dependencies '(cl-lib org map)
+(defvar parcel-ignored-dependencies '(emacs cl-lib org map)
   "Built in packages.
 Ignore these unless the user explicitly requests they be installed.")
 (defvar parcel-overriding-prompt nil "Overriding prompt for interactive functions.")
