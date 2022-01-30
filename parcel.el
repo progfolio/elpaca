@@ -252,15 +252,59 @@ ORDER is any of the following values:
                                                 `((github gitlab stringp) ,host))))))
         (format "%s%s%s%s.git" (car protocol) host (cdr protocol) repo)))))
 
+(defvar parcel--order-index -1 "Index used to track queued orders.")
+(cl-defstruct parcel-order
+  "Order object for queued processing."
+  (package      nil :type string)
+  (recipe       nil :type list)
+  (steps        nil :type list)
+  (status       nil :type string)
+  (dependencies nil :type list)
+  (dependents   nil :type list)
+  (index        (cl-incf parcel--order-index))
+  (info         nil)
+  (process      nil))
+
+(defun parcel--update-order-status (order &optional status info)
+  "Update ORDER STATUS.
+Print the order status line in `parcel-status-buffer'.
+If STATUS is non-nil and differs from ORDER's current STATUS,
+signal ORDER's depedentents to check (and possibly change) their status.
+If INFO is non-nil, ORDER's info is updated as well."
+  (when-let (status
+             (current-status (parcel-order-status order))
+             ((not (eq current-status status))))
+    (setf (parcel-order-status order) status)
+    (mapc #'parcel--order-check-status (parcel-order-dependents order)))
+  (when info (setf (parcel-order-info order) info))
+  (with-current-buffer (get-buffer-create parcel-status-buffer)
+    (cursor-intangible-mode -1)
+    (goto-char (point-min))
+    (let* ((inhibit-read-only t)
+           (index (parcel-order-index order))
+           (found (and
+                   (zerop (forward-line index))
+                   (not (and (eobp) (= index (1- (length parcel--queued-orders))))))))
+      (unless found (goto-char (point-max)))
+      (unless (or (bobp) found) ; Don't want a newline before first process.
+        (insert (propertize "\n" 'cursor-intangible t 'read-only t)))
+      (delete-region (line-beginning-position) (line-end-position))
+      (insert (parcel-status-buffer-line order)))
+    (cursor-intangible-mode)))
+
 (defun parcel--add-remotes (recipe)
   "Given RECIPE, add repo remotes."
   (let ((default-directory (parcel-repo-dir recipe)))
     (cl-destructuring-bind
-        (&key remotes
-              ((:host recipe-host))
-              ((:protocol recipe-protocol))
-              ((:repo recipe-repo)) &allow-other-keys)
+        ( &key remotes package
+          ((:host recipe-host))
+          ((:protocol recipe-protocol))
+          ((:repo recipe-repo))
+          &allow-other-keys
+          &aux
+          (order (alist-get (intern package) parcel--queued-orders)))
         recipe
+      (parcel--update-order-status order 'adding-remotes "Adding Remotes")
       (pcase remotes
         ("origin" nil)
         ((and (pred stringp) remote)
@@ -280,43 +324,21 @@ ORDER is any of the following values:
                              (recipe (list :host host :protocol protocol :repo repo)))
                        props
                      (parcel-process-call
-                      "git" "remote" "add" remote (parcel--repo-uri recipe)))
-                 (unless (equal remote "origin")
-                   (parcel-process-call "git" "remote" "rename" "origin" remote)))))))
-        (_ (signal 'wrong-type-argument `((stringp listp) ,remotes ,recipe)))))))
+                      "git" "remote" "add" remote (parcel--repo-uri recipe))
+                     (unless (equal remote "origin")
+                       (parcel-process-call "git" "remote" "rename" "origin" remote))))))))
+        (_ (parcel--update-order-status
+            order 'failed
+            (format "(wrong-type-argument ((stringp listp)) %S" remotes)))))))
 
-(defun parcel--checkout-ref (recipe)
-  "Checkout RECIPE's :ref.
-The :branch and :tag keywords are syntatic sugar and are handled here, too."
-  (let ((default-directory (parcel-repo-dir recipe)))
-    (cl-destructuring-bind (&key ref branch tag remotes &allow-other-keys)
-        recipe
-      (when (or ref branch tag)
-        (cond
-         ((and ref branch) (warn "Recipe :ref overriding :branch %S" recipe))
-         ((and ref tag)    (warn "Recipe :ref overriding :tag %S" recipe))
-         ((and tag branch) (error "Recipe ambiguous :tag and :branch %S" recipe)))
-        (unless remotes    (signal 'wrong-type-argument
-                                   `((stringp listp) ,remotes ,recipe)))
-        (parcel-process-call "git" "fetch" "--all")
-        (let* ((remote (if (stringp remotes) remotes (caar remotes))))
-          (parcel-with-process
-              (apply #'parcel-process-call
-                     `("git"
-                       ,@(delq nil
-                               (cond
-                                (ref    (list "checkout" ref))
-                                (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
-                                (branch (list "switch" "-C" branch
-                                              (format "%s/%s" remote branch)))))))
-            (if success t
-              (error "Unable to check out ref: %S %S" stderr recipe))))))))
-
-(defun parcel--initialize-repo (recipe)
-  "Using RECIPE, Clone repo, add remotes, check out :ref."
-  (parcel-clone recipe)
-  (parcel--add-remotes recipe)
-  (parcel--checkout-ref recipe))
+(defun parcel--checkout-ref-process-filter (process output)
+  "Filter PROCESS OUTPUT of async checkout-ref operation."
+  (process-put process :result (concat (process-get process :result) output))
+  (let ((order  (process-get process :order))
+        (result (process-get process :result)))
+    (parcel--update-order-status order
+                                 (when (string-match-p "fatal" result) 'failed)
+                                 (parcel-process-tail output))))
 
 (defun parcel--dependencies (recipe)
   "Using RECIPE, compute package's dependencies.
@@ -324,7 +346,9 @@ If package's repo is not on disk, error."
   (let* ((default-directory (parcel-repo-dir recipe))
          (pkg (expand-file-name (format "%s-pkg.el" (plist-get recipe :package))))
          (defined (file-exists-p pkg))
-         (main (format "%s.el" (plist-get recipe :package))))
+         (name (format "%s.el" (plist-get recipe :package)))
+         (main
+          (car (directory-files-recursively default-directory (format "^%s$" name)))))
     (unless (file-exists-p default-directory)
       (error "Package repository not on disk: %S" recipe))
     (with-temp-buffer
@@ -337,6 +361,81 @@ If package's repo is not on disk, error."
             (condition-case err
                 (read (match-string 1))
               (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))
+
+(defun parcel--clone-dependencies (recipe)
+  "Clone RECIPE's dependencies."
+  (let* ((package      (plist-get recipe :package))
+         (order        (alist-get (intern package) parcel--queued-orders))
+         (dependencies (parcel--dependencies recipe))
+         (emacs        (assoc 'emacs dependencies))
+         (externals    (cl-remove-if
+                        (lambda (dependency)
+                          (member dependency parcel-ignored-dependencies))
+                        dependencies :key #'car)))
+    (if (and emacs (version< emacs-version (cadr emacs)))
+        (parcel--update-order-status
+         order 'failed (format "Requires %S; running %S" emacs emacs-version))
+      (if externals
+          ;;@TODO: Major Version conflict checks?
+          (dolist (spec externals)
+            (let* ((dependency (car spec))
+                   (queued     (alist-get dependency parcel--queued-orders))
+                   (dep-order  (or queued (parcel--queue-order dependency))))
+              (setf (parcel-order-dependencies order)
+                    (append (parcel-order-dependencies order) (list dependency)))
+              (push order (parcel-order-dependents dep-order))
+              (parcel-clone (parcel-order-recipe dep-order) (unless queued 'force))))
+        (parcel--update-order-status order 'building "Ready for build")))))
+
+(defun parcel--checkout-ref-process-sentinel (process event)
+  "PROCESS EVENT."
+  (when (equal event "finished\n")
+    (let* ((order  (process-get process :order))
+           (recipe (parcel-order-recipe order))
+           (default-directory (parcel-repo-dir recipe)))
+      (cl-destructuring-bind ( &key remotes ref tag branch &allow-other-keys
+                               &aux (remote (if (stringp remotes) remotes (caar remotes))))
+          recipe
+        (catch 'quit
+          (if (or ref tag branch)
+              (parcel-with-process
+                  (apply #'parcel-process-call
+                         `("git"
+                           ,@(delq nil
+                                   (cond
+                                    (ref    (list "checkout" ref))
+                                    (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
+                                    (branch (list "switch" "-C" branch
+                                                  (format "%s/%s" remote branch)))))))
+                (if success
+                    (parcel--clone-dependencies recipe) ;process dependencies
+                  (parcel--update-order-status
+                   order 'failed
+                   (format "Unable to check out ref: %S " (string-trim stderr)))
+                  (throw 'quit nil)))
+            (parcel--clone-dependencies recipe)))))))
+
+(defun parcel--checkout-ref (recipe)
+  "Checkout RECIPE's :ref.
+The :branch and :tag keywords are syntatic sugar and are handled here, too."
+  (cl-destructuring-bind (&key package ref branch tag remotes &allow-other-keys)
+      recipe
+    (when (or ref branch tag)
+      (cond
+       ((and ref branch) (warn "Recipe :ref overriding :branch %S" recipe))
+       ((and ref tag)    (warn "Recipe :ref overriding :tag %S" recipe))
+       ((and tag branch) (error "Recipe :ref ambiguous :tag and :branch %S" recipe))))
+    (unless remotes (signal 'wrong-type-argument `((stringp listp) ,remotes ,recipe)))
+    (let ((default-directory (parcel-repo-dir recipe))
+          (order (or (alist-get (intern package) parcel--queued-orders)
+                     (parcel--queue-order recipe 'checking-out-ref))))
+      (let ((process (make-process
+                      :name     (format "parcel-fetch-%s" package)
+                      :command  (list "git" "fetch" "--all")
+                      :filter   #'parcel--checkout-ref-process-filter
+                      :sentinel #'parcel--checkout-ref-process-sentinel)))
+        (process-put process :order order)
+        (setf (parcel-order-process order) process)))))
 
 (defvar parcel--queued-orders nil "List of queued orders.")
 
@@ -374,14 +473,32 @@ If package's repo is not on disk, error."
     ;; Ditch wrapping lambda of first call
     (nth 2 (pop last))))
 
-(cl-defstruct parcel-order
-  "Order object for queued processing."
-  (package      nil :type string)
-  (recipe       nil :type list)
-  (status       nil :type string)
-  (dependencies nil :type list)
-  (dependents   nil :type list)
-  (info         nil))
+(defun parcel--initialize-process-buffer ()
+  "Initialize the parcel process buffer."
+  (with-current-buffer (get-buffer-create parcel-status-buffer)
+    (with-silent-modifications (erase-buffer))
+    (unless (derived-mode-p 'parcel-status-mode)
+      (parcel-status-mode))
+    (display-buffer (current-buffer))))
+
+(defun parcel-status-buffer-line (order)
+  "Return status string for ORDER."
+  (let* ((package (parcel-order-package order))
+         (status  (parcel-order-status  order))
+         (name (format "%-20s"
+                       (propertize package 'face
+                                   (pcase status
+                                     ('blocked '(:foreground "pink" :weight bold))
+                                     ('failed  '(:foreground "red"  :weight bold))
+                                     (_        '(:weight bold)))))))
+    (concat (propertize
+             (format "%s %s" name (or (parcel-order-info order) ""))
+             'read-only         t
+             'cursor-intangible t
+             'front-sticky      t
+             'package           package
+             'order             order)
+            " ")))
 
 (defun parcel--queue-order (item &optional status)
   "Queue (ITEM . ORDER) in `parcel--queued-orders'.
@@ -394,68 +511,62 @@ RETURNS order structure."
                       (parcel-recipe item)
                     ((error)
                      (setq status 'failed
-                           info (format "No recipe: %S" err)))))
+                           info (format "No recipe: %S" err))
+                     nil)))
          (order (make-parcel-order
                  :package (format "%S" package) :recipe recipe :status status :info info)))
     (prog1 order
       (push (cons package order) parcel--queued-orders)
-      (parcel--update-order-status package status info))))
-
-(defun parcel--initialize-process-buffer ()
-  "Initialize the parcel process buffer."
-  (with-current-buffer (get-buffer-create parcel-status-buffer)
-    (with-silent-modifications (erase-buffer))
-    (unless (derived-mode-p 'parcel-status-mode)
-      (parcel-status-mode))
-    (display-buffer (current-buffer))))
-
-(defun parcel-status-buffer-line (package status output &rest props)
-  "Return STATUS string for PACKAGE with OUTPUT.
-The package name is propertized with PROPS."
-  (let ((name (format "%-15s"
-                      (propertize package 'face
-                                  (pcase status
-                                    ('blocked '(:foreground "pink" :weight bold))
-                                    ('failed  '(:foreground "red"  :weight bold))
-                                    (_        '(:weight bold)))))))
-    (concat (apply #'propertize
-                   `(,(format "%s %s" name (or output ""))
-                     read-only t
-                     cursor-intangible t
-                     front-sticky t
-                     package ,package
-                     ,@props))
-            " ")))
-
-(defun parcel--update-order-status (package status line &rest props)
-  "Replace or append PACKAGE STATUS LINE to `parcel-status-buffer'.
-PROPS are added to package string.
-PACKAGE STATUS is also updated in `parcel--queued-orders'."
-  (unless (stringp package) (setq package (format "%S" package))) ;ensure string
-  (with-current-buffer (get-buffer-create parcel-status-buffer)
-    (goto-char (point-min))
-    (if-let ((anchor (text-property-search-forward 'package package t)))
-        (goto-char (prop-match-end anchor))
-      (goto-char (point-max))
-      (unless (bobp) ; Don't want a newline before first process.
-        (insert (propertize "\n" 'cursor-intangible t 'read-only t))))
-    (with-silent-modifications
-      (delete-region (line-beginning-position) (line-end-position))
-      (insert (apply #'parcel-status-buffer-line
-                     `(,package ,status ,line ,@props))))))
+      (parcel--update-order-status order))))
 
 (defun parcel--clone-process-filter (process output)
   "Filter PROCESS OUTPUT of async clone operation."
   (process-put process :result (concat (process-get process :result) output))
-  (with-current-buffer parcel-status-buffer
-    (let ((result  (process-get process :result)))
+  (let ((order  (process-get process :order))
+        (result (process-get process :result)))
+    (parcel--update-order-status order (when (string-match-p "Username" result)
+                                         'blocked)
+                                 (parcel-process-tail output))))
+
+(defun parcel--clone-process-sentinel (process event)
+  "Sentinel for clone PROCESS.
+EVENT determines outcome of order."
+  (cond
+   ((equal event "finished\n")
+    (let ((order  (process-get process :order))
+          (result (process-get process :result)))
+      (if (string-match-p result "fatal")
+          (parcel--update-order-status order 'failed)
+        (let ((recipe (parcel-order-recipe order)))
+          (parcel--add-remotes recipe)
+          (parcel--update-order-status order 'checking-out-ref "Checking out repo ref")
+          (parcel--checkout-ref recipe)))))))
+
+(defun parcel--order-check-status (order)
+  "Called when one of an ORDER's dependencies have changed status.
+Possibly kicks off next build step, or changes order status."
+  (let* ((statuses
+          (mapcar (lambda (dependency)
+                    (let ((order (alist-get dependency parcel--queued-orders)))
+                      (cons (parcel-order-package order)
+                            (parcel-order-status  order))))
+                  (parcel-order-dependencies order)))
+         (blocked (cl-remove-if (lambda (status) (eq status 'ready))
+                                statuses :key #'cdr))
+         (failed  (cl-remove-if-not (lambda (status) (eq status 'failed))
+                                    statuses :key #'cdr)))
+    (cond
+     (failed
       (parcel--update-order-status
-       (parcel-order-package (process-get process :order))
-       (when (string-match-p "Username" result)
-         ;;@TODO: update dependents status to blocked
-         'blocked)
-       (parcel-process-tail output)
-       'process process))))
+       order 'failed (format "Failed dependencies: %S" (mapcar #'cdr failed))))
+     (blocked
+      (parcel--update-order-status
+       order 'blocked (format "Blocked by dependencies: %S" (mapcar #'car blocked))))
+     ((cl-every (lambda (status) (eq (cdr status) 'ready)) statuses)
+      (if-let ((step (pop (parcel-order-steps order))))
+          (funcall step (parcel-order-recipe order))
+        ;;update status to 'finished
+        (ignore))))))
 
 (defun parcel-clone (recipe &optional force)
   "Clone repo to `parcel-directory' from RECIPE.
@@ -473,42 +584,16 @@ If FORCE is non-nil, ignore order queue."
       (when (not order) (setq order (parcel--queue-order item)))
       (setf (parcel-order-status order) 'cloning)
       (let ((process (make-process
-                      :name    (format "parcel-clone-%s" package)
-                      :command `("git" "clone"
-                                 ;;@TODO: certain refs will necessitate full clone
-                                 ;; or specific branch...
-                                 ,@(when depth (list "--depth" (number-to-string depth)))
-                                 ,URI ,repodir)
-                      :filter #'parcel--clone-process-filter
-                      :sentinel (lambda (_proc event)
-                                  (cond
-                                   ((equal event "finished\n")))))))
-        (process-put process :order order)))))
-
-(defun parcel-clone-deps-aysnc (recipe &optional _callback)
-  "Clone RECIPE's dependencies, then CALLBACK."
-  (dolist (spec (parcel--dependencies recipe))
-    (pcase-let ((`(,dependency ,version) spec))
-      (if (equal dependency 'emacs)
-          (when (version< emacs-version version)
-            (error "Emacs version too low for %S: %S"
-                   (plist-get recipe :package)
-                   recipe))
-        (unless (member dependency parcel-ignored-dependencies)
-          (let ((recipe (parcel-recipe dependency)))
-            (parcel-clone recipe)))))))
-
-;; (defun parcel--process-dependencies (recipe)
-;;   "Using RECIPE, compute dependencies and kick off their subprocesses."
-;;   (dolist (dependency (parcel--dependencies recipe))
-;;     (pcase-let ((`(,package ,version) dependency))
-;;       (if (equal package 'emacs)
-;;           (when (version< emacs-version version)
-;;             (error "Emacs version too low for %S: %S"
-;;                    (plist-get recipe :package)
-;;                    recipe))
-;;         (unless (member package parcel-ignored-dependencies)
-;;           (parcel package #'parcel--process-dependencies))))))
+                      :name     (format "parcel-clone-%s" package)
+                      :command  `("git" "clone"
+                                  ;;@TODO: certain refs will necessitate full clone
+                                  ;; or specific branch...
+                                  ,@(when depth (list "--depth" (number-to-string depth)))
+                                  ,URI ,repodir)
+                      :filter   #'parcel--clone-process-filter
+                      :sentinel #'parcel--clone-process-sentinel)))
+        (process-put process :order order)
+        (setf (parcel-order-process order) process)))))
 
 ;;;###autoload
 (defun parcel-delete-repos (&optional force)
