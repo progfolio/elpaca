@@ -668,6 +668,21 @@ Async wrapper for `parcel-generate-autoloads'."
                    :sentinel #'parcel--generate-autoloads-async-process-sentinel)))
     (process-put process :order order)))
 
+(defun parcel--activate-package (order)
+  "Activate ORDER's package."
+  (setf (parcel-order-steps order)
+        (cl-remove 'parcel--activate-package (parcel-order-steps order)))
+  (let* ((recipe            (parcel-order-recipe order))
+         (default-directory (parcel-repo-dir recipe))
+         (package (plist-get recipe :package))
+         (autoloads (format "%s-autoloads.el" package)))
+    (add-to-list 'load-path default-directory)
+    (condition-case err
+        (load autoloads)
+      (warn "Failed to load %S: %S" autoloads err)))
+  (unless (parcel-order-steps order)
+    (parcel--update-order-status 'finished "✓")))
+
 (defun parcel--byte-compile-process-filter (process output)
   "Filter async byte-compilation PROCESS OUTPUT."
   (process-put process :result (concat (process-get process :result) output))
