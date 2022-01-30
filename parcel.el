@@ -607,8 +607,15 @@ If FORCE is non-nil, do not ask for confirmation."
           (directory-files parcel-directory 'full))))
 
 ;;;; STATUS BUFFER
+(defvar parcel-status-mode-map (let ((map (make-sparse-keymap)))
+                                 (define-key map (kbd "<return>") 'parcel-status-mode-send-input)
+                                 (define-key map (kbd "C-c C-c")  'parcel-status-mode-visit-repo)
+                                 map))
+
 (define-derived-mode parcel-status-mode text-mode "Parcel Status Mode"
-  "Mode for interacting with the parcel status buffer."
+  "Mode for interacting with the parcel status buffer.
+
+\\{parcel-status-mode-map}"
   (cursor-intangible-mode))
 
 (defun parcel-status-mode-send-input ()
@@ -637,10 +644,7 @@ If FORCE is non-nil, do not ask for confirmation."
       (dired (parcel-repo-dir recipe))
     (user-error "No repo dir associated with current line")))
 
-(defvar parcel-status-mode-map (let ((map (make-sparse-keymap)))
-                                 (define-key map (kbd "<return>")   'parcel-status-mode-send-input)
-                                 (define-key map (kbd "S-<return>") 'parcel-status-mode-visit-repo)
-                                 map))
+
 
 (provide 'parcel)
 ;;; parcel.el ends here
