@@ -621,7 +621,8 @@ If FORCE is non-nil, do not ask for confirmation."
 (defun parcel-status-mode-send-input ()
   "Send input string to current process."
   (interactive)
-  (when-let ((process (get-text-property (line-beginning-position) 'process)))
+  (when-let ((order (get-text-property (line-beginning-position) 'order))
+             (process (parcel-order-process order)))
     (unless (eq (process-status process) 'run)
       (user-error "Process is no longer running: %S" (process-name process)))
     (let ((input (save-excursion
@@ -637,8 +638,9 @@ If FORCE is non-nil, do not ask for confirmation."
   (interactive)
   (save-excursion)
   (beginning-of-line)
-  (if-let ((process  (get-text-property (point) 'process))
-           (recipe   (parcel-order-recipe (process-get process :order)))
+  (if-let ((order    (get-text-property (point) 'order))
+           (process  (parcel-order-process order))
+           (recipe   (parcel-order-recipe order))
            (dir      (parcel-repo-dir recipe))
            ((file-exists-p dir)))
       (dired (parcel-repo-dir recipe))
