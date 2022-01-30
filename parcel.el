@@ -49,7 +49,8 @@
 (defun parcel-order-defaults (_order)
   "Default order modifications. Matches any order."
   (list :protocol 'https :remotes "origin" :inherit t :depth 1
-        :build (list #'parcel--byte-compile #'parcel--generate-autoloads-async)))
+        :ignore (list "*.elc" ".cask" "*~" "*#" "*-autoloads.el")
+        :build (list #'parcel--byte-compile #'parcel--generate-autoloads-async #'parcel--activate-package)))
 
 (defcustom parcel-order-functions (list #'parcel-order-defaults)
   "Abnormal hook run to alter orders.
@@ -560,6 +561,16 @@ RETURNS order structure."
                                         ((string-match-p "Username" result) 'blocked))
                                  (parcel-process-tail output))))
 
+(defun parcel--add-excludes (recipe)
+  "Add RECIPE's :ignore to .git/info/exclude file."
+  (when-let ((ignored           (plist-get recipe :ignore))
+             (repo-dir          (parcel-repo-dir recipe))
+             (default-directory repo-dir))
+    (with-temp-buffer
+      (insert (string-join ignored "\n"))
+      (write-region (point-min) (point-max)
+                    (expand-file-name ".git/info/exclude")))))
+
 (defun parcel--clone-process-sentinel (process event)
   "Sentinel for clone PROCESS.
 EVENT determines outcome of order."
@@ -571,6 +582,7 @@ EVENT determines outcome of order."
           (parcel--update-order-status order 'failed)
         (let ((recipe (parcel-order-recipe order)))
           (parcel--add-remotes recipe)
+          (parcel--add-excludes recipe)
           (parcel--update-order-status order 'checking-out-ref "Checking out repo ref")
           (parcel--checkout-ref recipe)))))))
 
