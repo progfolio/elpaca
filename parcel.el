@@ -109,11 +109,13 @@ Values for each key are that of the right-most plist containing that key."
 
 (defun parcel-menu--candidates ()
   "Return alist of `parcel-menu-functions' candidates."
-  (sort (apply #'append
-               (cl-loop for fn in parcel-menu-functions
-                        for index = (funcall fn 'index)
-                        when index collect index))
-        (lambda (a b) (string-lessp (car a) (car b)))))
+  (or parcel-menu--candidates-cache
+      (setq parcel-menu--candidates-cache
+            (sort (apply #'append
+                         (cl-loop for fn in parcel-menu-functions
+                                  for index = (funcall fn 'index)
+                                  when index collect index))
+                  (lambda (a b) (string-lessp (car a) (car b)))))))
 
 ;;@TODO: clean up interface.
 ;;;###autoload
