@@ -48,7 +48,8 @@
 
 (defun parcel-order-defaults (_order)
   "Default order modifications. Matches any order."
-  (list :protocol 'https :remotes "origin" :inherit t :depth 1))
+  (list :protocol 'https :remotes "origin" :inherit t :depth 1
+        :build (list #'parcel--byte-compile #'parcel--generate-autoloads-async)))
 
 (defcustom parcel-order-functions (list #'parcel-order-defaults)
   "Abnormal hook run to alter orders.
@@ -290,7 +291,8 @@ If INFO is non-nil, ORDER's info is updated as well."
         (insert (propertize "\n" 'cursor-intangible t 'read-only t)))
       (delete-region (line-beginning-position) (line-end-position))
       (insert (parcel-status-buffer-line order)))
-    (cursor-intangible-mode)))
+    (cursor-intangible-mode)
+    (setq header-line-format '(:eval (parcel--header-line)))))
 
 (defun parcel--add-remotes (recipe)
   "Given RECIPE, add repo remotes."
@@ -385,7 +387,8 @@ If package's repo is not on disk, error."
                     (append (parcel-order-dependencies order) (list dependency)))
               (push order (parcel-order-dependents dep-order))
               (parcel-clone (parcel-order-recipe dep-order) (unless queued 'force))))
-        (parcel--update-order-status order 'building "Ready for build")))))
+        (mapc (lambda (step) (funcall step order))
+              (plist-get recipe :build))))))
 
 (defun parcel--checkout-ref-process-sentinel (process event)
   "PROCESS EVENT."
@@ -473,12 +476,38 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
     ;; Ditch wrapping lambda of first call
     (nth 2 (pop last))))
 
+(defun parcel--header-line ()
+  "Return header line format for `parcel-buffer'."
+  (let ((counts nil)
+        (queue-len (length parcel--queued-orders)))
+    (dolist (queued parcel--queued-orders)
+      (let ((status (parcel-order-status (cdr queued))))
+        (if (alist-get status counts)
+            (cl-incf (alist-get status counts))
+          (push (cons status 1) counts))))
+    (concat
+     (propertize " Parcel " 'face '(:weight bold))
+     " "
+     ;;@FIX: shouldn't have to use the quadruple %
+     (format "Queued: %d | %s(%.2f%%%%): %d | %s: %d | %s: %d"
+             queue-len
+             (propertize "Finished" 'face '(:weight bold :foreground "green"))
+             (if-let ((finished (alist-get 'finished counts)))
+                 (* (/ (float finished) queue-len) 100)
+               0.00)
+             (or (alist-get 'finished counts) 0)
+             (propertize "Blocked" 'face '(:weight bold :foreground "pink"))
+             (or (alist-get 'blocked  counts) 0)
+             (propertize "Failed" 'face '(:weight bold :foreground "red"))
+             (or (alist-get 'failed   counts) 0)))))
+
 (defun parcel--initialize-process-buffer ()
   "Initialize the parcel process buffer."
   (with-current-buffer (get-buffer-create parcel-status-buffer)
     (with-silent-modifications (erase-buffer))
     (unless (derived-mode-p 'parcel-status-mode)
       (parcel-status-mode))
+    (setq header-line-format '(:eval (parcel--header-line)))
     (display-buffer (current-buffer))))
 
 (defun parcel-status-buffer-line (order)
@@ -488,9 +517,10 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
          (name (format "%-20s"
                        (propertize package 'face
                                    (pcase status
-                                     ('blocked '(:foreground "pink" :weight bold))
-                                     ('failed  '(:foreground "red"  :weight bold))
-                                     (_        '(:weight bold)))))))
+                                     ('blocked  '(:foreground "pink"  :weight bold))
+                                     ('failed   '(:foreground "red"   :weight bold))
+                                     ('finished '(:foreground "green" :weight bold))
+                                     (_         '(:weight bold)))))))
     (concat (propertize
              (format "%s %s" name (or (parcel-order-info order) ""))
              'read-only         t
@@ -514,7 +544,8 @@ RETURNS order structure."
                            info (format "No recipe: %S" err))
                      nil)))
          (order (make-parcel-order
-                 :package (format "%S" package) :recipe recipe :status status :info info)))
+                 :package (format "%S" package) :recipe recipe :status status
+                 :steps (plist-get recipe :build) :info info)))
     (prog1 order
       (push (cons package order) parcel--queued-orders)
       (parcel--update-order-status order))))
@@ -524,8 +555,9 @@ RETURNS order structure."
   (process-put process :result (concat (process-get process :result) output))
   (let ((order  (process-get process :order))
         (result (process-get process :result)))
-    (parcel--update-order-status order (when (string-match-p "Username" result)
-                                         'blocked)
+    (parcel--update-order-status order (cond
+                                        ((string-match-p "fatal"    result) 'failed)
+                                        ((string-match-p "Username" result) 'blocked))
                                  (parcel-process-tail output))))
 
 (defun parcel--clone-process-sentinel (process event)
@@ -551,7 +583,7 @@ Possibly kicks off next build step, or changes order status."
                       (cons (parcel-order-package order)
                             (parcel-order-status  order))))
                   (parcel-order-dependencies order)))
-         (blocked (cl-remove-if (lambda (status) (eq status 'ready))
+         (blocked (cl-remove-if (lambda (status) (eq status 'finished))
                                 statuses :key #'cdr))
          (failed  (cl-remove-if-not (lambda (status) (eq status 'failed))
                                     statuses :key #'cdr)))
@@ -562,11 +594,9 @@ Possibly kicks off next build step, or changes order status."
      (blocked
       (parcel--update-order-status
        order 'blocked (format "Blocked by dependencies: %S" (mapcar #'car blocked))))
-     ((cl-every (lambda (status) (eq (cdr status) 'ready)) statuses)
-      (if-let ((step (pop (parcel-order-steps order))))
-          (funcall step (parcel-order-recipe order))
-        ;;update status to 'finished
-        (ignore))))))
+     ((cl-every (lambda (status) (eq (cdr status) 'finished)) statuses)
+      (mapc (lambda (step) (funcall step order))
+            (plist-get (parcel-order-recipe order) :build))))))
 
 (defun parcel-clone (recipe &optional force)
   "Clone repo to `parcel-directory' from RECIPE.
@@ -595,6 +625,97 @@ If FORCE is non-nil, ignore order queue."
         (process-put process :order order)
         (setf (parcel-order-process order) process)))))
 
+(defun parcel--generate-autoloads-async-process-filter (process output)
+  "Filter autoload PROCESS OUTPUT."
+  (process-put process :result (concat (process-get process :result) output))
+  (let ((order  (process-get process :order))
+        (result (process-get process :result)))
+    ;;@TODO: Warn on failure?
+    ;;@FIX: debugger blocks and causes abnormal exit in sentinel
+    (parcel--update-order-status order
+                                 (when (string-match-p "Debugger entered" result) 'blocked)
+                                 (parcel-process-tail output))))
+
+(defun parcel--generate-autoloads-async-process-sentinel (process event)
+  "PROCESS autoload generation EVENT."
+  (when (equal event "finished\n")
+    (let ((order  (process-get process :order)))
+      (setf (parcel-order-steps order) (cl-remove 'parcel--generate-autoloads-async
+                                                  (parcel-order-steps order)))
+      (unless (eq (parcel-order-status order) 'failed)
+        (parcel--update-order-status order 'autoloads-generated "Autoloads Generated"))
+      (if (null (parcel-order-steps order))
+          (parcel--update-order-status order 'finished "✓")))))
+
+(defun parcel--generate-autoloads-async (order)
+  "Generate ORDER's autoloads.
+Async wrapper for `parcel-generate-autoloads'."
+  (let* ((emacs    (parcel--emacs-path))
+         (recipe   (parcel-order-recipe order))
+         (package  (plist-get recipe :package))
+         (repo-dir (parcel-repo-dir recipe))
+         (parcel   (expand-file-name "parcel/" parcel-directory))
+         (command  (list emacs "-Q"
+                         "-L" parcel
+                         "-L" repo-dir ; Is this necessary?
+                         "-l" (expand-file-name "parcel.el" parcel)
+                         "--batch" "--eval"
+                         (format "(parcel-generate-autoloads %S %S)" package repo-dir)))
+         (process (make-process
+                   :name     (format "parcel-autoloads-%s" package)
+                   :command  command
+                   :filter   #'parcel--generate-autoloads-async-process-filter
+                   :sentinel #'parcel--generate-autoloads-async-process-sentinel)))
+    (process-put process :order order)))
+
+(defun parcel--byte-compile-process-filter (process output)
+  "Filter async byte-compilation PROCESS OUTPUT."
+  (process-put process :result (concat (process-get process :result) output))
+  (let ((order  (process-get process :order))
+        (result (process-get process :result)))
+    ;;@TODO: Should this fail? Does debugger hang process? Clean up if so.
+    (parcel--update-order-status order
+                                 (when (string-match-p "Debugger entered" result) 'blocked)
+                                 (parcel-process-tail output))))
+
+(defun parcel--byte-compile-process-sentinel (process event)
+  "PROCESS byte-compilation EVENT."
+  (when (equal event "finished\n")
+    (let ((order  (process-get process :order)))
+      (setf (parcel-order-steps order) (cl-remove 'parcel--byte-compile
+                                                  (parcel-order-steps order)))
+      (unless (eq (parcel-order-status order) 'failed)
+        (parcel--update-order-status order 'byte-compiled "Successfully byte compiled")
+        (if (null (parcel-order-steps order))
+            (parcel--update-order-status order 'finished "✓"))))))
+
+(defun parcel--byte-compile (order)
+  "Byte compile package from ORDER."
+  ;; Assumes all dependencies are 'built
+  (let* ((recipe            (parcel-order-recipe order))
+         (repo-dir          (parcel-repo-dir recipe))
+         (emacs             (parcel--emacs-path))
+         (default-directory repo-dir)
+         ;;@MAYBE: fix if we decide to store order objects in order :dependencies
+         (dependency-dirs
+          (apply #'append (mapcar (lambda (item)
+                                    (list "-L" (parcel-repo-dir
+                                                (parcel-order-recipe
+                                                 (alist-get item parcel--queued-orders)))))
+                                  (parcel-order-dependencies order))))
+         (process
+          (make-process
+           :name     (format "parcel-byte-compile-%s" (plist-get recipe :package))
+           :command  `(,emacs
+                       "-Q" ,@dependency-dirs "-L" ,repo-dir
+                       "--batch"
+                       "--eval" ,(format "(byte-recompile-directory %S 0 'force)"
+                                         repo-dir))
+           :filter   #'parcel--byte-compile-process-filter
+           :sentinel #'parcel--byte-compile-process-sentinel)))
+    (process-put process :order order)))
+
+;;;; COMMANDS
 ;;;###autoload
 (defun parcel-delete-repos (&optional force)
   "Remove everything except parcel from `parcel-directory'.
@@ -645,8 +766,6 @@ If FORCE is non-nil, do not ask for confirmation."
            ((file-exists-p dir)))
       (dired (parcel-repo-dir recipe))
     (user-error "No repo dir associated with current line")))
-
-
 
 (provide 'parcel)
 ;;; parcel.el ends here
