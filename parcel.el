@@ -602,7 +602,7 @@ Possibly kicks off next build step, or changes order status."
     (cond
      (failed
       (parcel--update-order-status
-       order 'failed (format "Failed dependencies: %S" (mapcar #'cdr failed))))
+       order 'failed (format "Failed dependencies: %S" (mapcar #'car failed))))
      (blocked
       (parcel--update-order-status
        order 'blocked (format "Blocked by dependencies: %S" (mapcar #'car blocked))))
