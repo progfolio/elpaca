@@ -283,20 +283,21 @@ If INFO is non-nil, ORDER's info is updated as well."
     (mapc #'parcel--order-check-status (parcel-order-dependents order)))
   (when info (setf (parcel-order-info order) info))
   (with-current-buffer (get-buffer-create parcel-status-buffer)
-    (cursor-intangible-mode -1)
-    (goto-char (point-min))
-    (let* ((inhibit-read-only t)
-           (index (parcel-order-index order))
-           (found (and
-                   (zerop (forward-line index))
-                   (not (and (eobp) (= index (1- (length parcel--queued-orders))))))))
-      (unless found (goto-char (point-max)))
-      (unless (or (bobp) found) ; Don't want a newline before first process.
-        (insert (propertize "\n" 'cursor-intangible t 'read-only t)))
-      (delete-region (line-beginning-position) (line-end-position))
-      (insert (parcel-status-buffer-line order)))
-    (cursor-intangible-mode)
-    (setq header-line-format '(:eval (parcel--header-line)))))
+    (save-excursion
+      (cursor-intangible-mode -1)
+      (goto-char (point-min))
+      (let* ((inhibit-read-only t)
+             (index (parcel-order-index order))
+             (found (and
+                     (zerop (forward-line index))
+                     (not (and (eobp) (= index (1- (length parcel--queued-orders))))))))
+        (unless found (goto-char (point-max)))
+        (unless (or (bobp) found) ; Don't want a newline before first process.
+          (insert (propertize "\n" 'cursor-intangible t 'read-only t)))
+        (delete-region (line-beginning-position) (line-end-position))
+        (insert (parcel-status-buffer-line order)))
+      (cursor-intangible-mode)
+      (setq header-line-format '(:eval (parcel--header-line))))))
 
 (defun parcel--add-remotes (recipe)
   "Given RECIPE, add repo remotes."
