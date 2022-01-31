@@ -519,7 +519,7 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
   "Return status string for ORDER."
   (let* ((package (parcel-order-package order))
          (status  (parcel-order-status  order))
-         (name (format "%-20s"
+         (name (format "%-30s"
                        (propertize package 'face
                                    (pcase status
                                      ('blocked  '(:foreground "pink"  :weight bold))
