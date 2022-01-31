@@ -527,7 +527,7 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
                                      ('finished '(:foreground "green" :weight bold))
                                      (_         '(:weight bold)))))))
     (concat (propertize
-             (format "%s %s" name (or (parcel-order-info order) ""))
+             (format "%s (%s) %s" name (or status "?") (or (parcel-order-info order) ""))
              'read-only         t
              'cursor-intangible t
              'front-sticky      t
