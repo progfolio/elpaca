@@ -381,27 +381,35 @@ If package's repo is not on disk, error."
   "Clone RECIPE's dependencies."
   (let* ((package      (plist-get recipe :package))
          (order        (alist-get (intern package) parcel--queued-orders))
+         (build        (plist-get recipe :build))
          (dependencies (parcel--dependencies recipe))
          (emacs        (assoc 'emacs dependencies))
          (externals    (cl-remove-if
                         (lambda (dependency)
                           (member dependency parcel-ignored-dependencies))
-                        dependencies :key #'car)))
+                        dependencies :key #'car))
+         (parcel--build-functions build))
+    (parcel--update-order-status order 'cloning-dependencies "Cloning Dependencies")
     (if (and emacs (version< emacs-version (cadr emacs)))
         (parcel--update-order-status
          order 'failed (format "Requires %S; running %S" emacs emacs-version))
       (if externals
           ;;@TODO: Major Version conflict checks?
-          (dolist (spec externals)
-            (let* ((dependency (car spec))
-                   (queued     (alist-get dependency parcel--queued-orders))
-                   (dep-order  (or queued (parcel--queue-order dependency))))
-              (setf (parcel-order-dependencies order)
-                    (append (parcel-order-dependencies order) (list dependency)))
-              (push order (parcel-order-dependents dep-order))
-              (parcel-clone (parcel-order-recipe dep-order) (unless queued 'force))))
-        (mapc (lambda (step) (funcall step order))
-              (plist-get recipe :build))))))
+          (let ((finished 0))
+            (dolist (spec externals)
+              (let* ((dependency (car spec))
+                     (queued     (alist-get dependency parcel--queued-orders))
+                     (dep-order  (or queued (parcel--queue-order dependency))))
+                (setf (parcel-order-dependencies order)
+                      (append (parcel-order-dependencies order) (list dependency)))
+                (push order (parcel-order-dependents dep-order))
+                (if queued
+                    (when (eq (parcel-order-status queued) 'finished) (cl-incf finished))
+                  (parcel-clone (parcel-order-recipe dep-order) 'force))))
+            (when (= (length externals) finished) ; Our dependencies beat us to the punch
+              (parcel--update-order-status order 'buildling "Building...")
+              (run-hook-with-args 'parcel--build-functions order)))
+        (run-hook-with-args 'parcel--build-functions order)))))
 
 (defun parcel--checkout-ref-process-sentinel (process event)
   "PROCESS EVENT."
