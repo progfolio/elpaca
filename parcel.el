@@ -574,7 +574,7 @@ RETURNS order structure."
     (with-temp-buffer
       (insert (string-join ignored "\n"))
       (write-region (point-min) (point-max)
-                    (expand-file-name ".git/info/exclude")))))
+                    (expand-file-name ".git/info/exclude" repo-dir)))))
 
 (defun parcel--clone-process-sentinel (process _event)
   "Sentinel for clone PROCESS."
