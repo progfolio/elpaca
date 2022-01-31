@@ -357,7 +357,12 @@ If package's repo is not on disk, error."
          (defined (file-exists-p pkg))
          (name (format "%s.el" (plist-get recipe :package)))
          (main
-          (car (directory-files-recursively default-directory (format "^%s$" name)))))
+          (or
+           ;;@TODO: Should we have a recipe keyword to explicitly declare this?
+           ;; e.g. :main, or something special in :files?
+           (car (directory-files-recursively default-directory (format "^%s$" name)))
+           ;; Best guess if there is no file matching the package name...
+           (car (directory-files default-directory nil "\\.el$" 'nosort)))))
     (unless (file-exists-p default-directory)
       (error "Package repository not on disk: %S" recipe))
     (with-temp-buffer
