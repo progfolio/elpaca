@@ -576,21 +576,18 @@ RETURNS order structure."
       (write-region (point-min) (point-max)
                     (expand-file-name ".git/info/exclude")))))
 
-(defun parcel--clone-process-sentinel (process event)
-  "Sentinel for clone PROCESS.
-EVENT determines outcome of order."
-  (cond
-   ((equal event "finished\n")
-    (let ((order  (process-get process :order))
-          (result (process-get process :result)))
-      (if (and (string-match-p "fatal" result)
-               (not (string-match-p "already exists" result)))
-          (parcel--update-order-status order 'failed)
-        (let ((recipe (parcel-order-recipe order)))
-          (parcel--add-remotes recipe)
-          (parcel--add-excludes recipe)
-          (parcel--update-order-status order 'checking-out-ref "Checking out repo ref")
-          (parcel--checkout-ref recipe)))))))
+(defun parcel--clone-process-sentinel (process _event)
+  "Sentinel for clone PROCESS."
+  (let ((order  (process-get process :order))
+        (result (process-get process :result)))
+    (if (and (string-match-p "fatal" result)
+             (not (string-match-p "already exists" result)))
+        (parcel--update-order-status order 'failed)
+      (let ((recipe (parcel-order-recipe order)))
+        (parcel--add-remotes recipe)
+        (parcel--add-excludes recipe)
+        (parcel--update-order-status order 'checking-out-ref "Checking out repo ref")
+        (parcel--checkout-ref recipe)))))
 
 (defun parcel--order-check-status (order)
   "Called when one of an ORDER's dependencies have changed status.
