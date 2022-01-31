@@ -238,9 +238,10 @@ ORDER is any of the following values:
 (defun parcel--repo-uri (recipe)
   "Return repo URI from RECIPE."
   (cl-destructuring-bind (&key (protocol 'https)
+                               url
                                fetcher
                                (host fetcher)
-                               repo &allow-other-keys)
+                               (repo url) &allow-other-keys)
       recipe
     (if (parcel--full-repo-protocol-p repo)
         repo
