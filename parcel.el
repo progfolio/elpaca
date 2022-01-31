@@ -50,7 +50,7 @@
   "Default order modifications. Matches any order."
   (list :protocol 'https :remotes "origin" :inherit t :depth 1
         :ignore (list "*.elc" ".cask" "*~" "*#" "*-autoloads.el")
-        :build (list #'parcel--byte-compile #'parcel--generate-autoloads-async #'parcel--activate-package)))
+        :build (list #'parcel--byte-compile #'parcel--generate-autoloads-async)))
 
 (defcustom parcel-order-functions (list #'parcel-order-defaults)
   "Abnormal hook run to alter orders.
