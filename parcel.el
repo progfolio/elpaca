@@ -654,6 +654,16 @@ If FORCE is non-nil, ignore order queue."
                                  (when (string-match-p "Debugger entered" result) 'blocked)
                                  (parcel-process-tail output))))
 
+(defun parcel--finish-order-maybe (order)
+  "If ORDER has is finished, declare it finished.
+Clean up process reference.
+Retrun t if process has finished, nil otherwise."
+  (when (null (parcel-order-steps order))
+    (parcel--update-order-status order 'finished "✓")
+    ;; Remove stale reference so object can be deleted.
+    (setf (parcel-order-process order) nil)
+    t))
+
 (defun parcel--generate-autoloads-async-process-sentinel (process event)
   "PROCESS autoload generation EVENT."
   (when (equal event "finished\n")
@@ -661,9 +671,9 @@ If FORCE is non-nil, ignore order queue."
       (setf (parcel-order-steps order) (cl-remove 'parcel--generate-autoloads-async
                                                   (parcel-order-steps order)))
       (unless (eq (parcel-order-status order) 'failed)
-        (parcel--update-order-status order 'autoloads-generated "Autoloads Generated"))
-      (if (null (parcel-order-steps order))
-          (parcel--update-order-status order 'finished "✓")))))
+        (parcel--update-order-status order 'autoloads-generated "Autoloads Generated")
+        (parcel--activate-package order)
+        (parcel--finish-order-maybe order)))))
 
 (defun parcel--generate-autoloads-async (order)
   "Generate ORDER's autoloads.
@@ -697,9 +707,8 @@ Async wrapper for `parcel-generate-autoloads'."
     (add-to-list 'load-path default-directory)
     (condition-case err
         (load autoloads)
-      (warn "Failed to load %S: %S" autoloads err)))
-  (unless (parcel-order-steps order)
-    (parcel--update-order-status 'finished "✓")))
+      ((error) (warn "Failed to load %S: %S" autoloads err))))
+  (parcel--finish-order-maybe order))
 
 (defun parcel--byte-compile-process-filter (process output)
   "Filter async byte-compilation PROCESS OUTPUT."
@@ -719,8 +728,7 @@ Async wrapper for `parcel-generate-autoloads'."
                                                   (parcel-order-steps order)))
       (unless (eq (parcel-order-status order) 'failed)
         (parcel--update-order-status order 'byte-compiled "Successfully byte compiled")
-        (if (null (parcel-order-steps order))
-            (parcel--update-order-status order 'finished "✓"))))))
+        (parcel--finish-order-maybe order)))))
 
 (defun parcel--byte-compile (order)
   "Byte compile package from ORDER."
