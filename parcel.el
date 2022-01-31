@@ -539,21 +539,23 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
   "Queue (ITEM . ORDER) in `parcel--queued-orders'.
 If STATUS is non-nil, the order is given that initial status.
 RETURNS order structure."
-  (let* ((status  (or status 'queued))
-         (info    "Package queued")
-         (package (if (listp item) (car item) item))
-         (recipe  (condition-case err
-                      (parcel-recipe item)
-                    ((error)
-                     (setq status 'failed
-                           info (format "No recipe: %S" err))
-                     nil)))
-         (order (make-parcel-order
-                 :package (format "%S" package) :recipe recipe :status status
-                 :steps (plist-get recipe :build) :info info)))
-    (prog1 order
-      (push (cons package order) parcel--queued-orders)
-      (parcel--update-order-status order))))
+  (if (alist-get item parcel--queued-orders)
+      (warn "%S already queued. Duplicate?" item)
+    (let* ((status  (or status 'queued))
+           (info    "Package queued")
+           (package (if (listp item) (car item) item))
+           (recipe  (condition-case err
+                        (parcel-recipe item)
+                      ((error)
+                       (setq status 'failed
+                             info (format "No recipe: %S" err))
+                       nil)))
+           (order (make-parcel-order
+                   :package (format "%S" package) :recipe recipe :status status
+                   :steps (plist-get recipe :build) :info info)))
+      (prog1 order
+        (push (cons package order) parcel--queued-orders)
+        (parcel--update-order-status order)))))
 
 (defun parcel--clone-process-filter (process output)
   "Filter PROCESS OUTPUT of async clone operation."
