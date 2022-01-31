@@ -353,9 +353,10 @@ If INFO is non-nil, ORDER's info is updated as well."
   "Using RECIPE, compute package's dependencies.
 If package's repo is not on disk, error."
   (let* ((default-directory (parcel-repo-dir recipe))
-         (pkg (expand-file-name (format "%s-pkg.el" (plist-get recipe :package))))
+         (package (plist-get recipe :package))
+         (pkg (expand-file-name (format "%s-pkg.el" package)))
          (defined (file-exists-p pkg))
-         (name (format "%s.el" (plist-get recipe :package)))
+         (name (format "%s.el" package))
          (main
           (or
            ;;@TODO: Should we have a recipe keyword to explicitly declare this?
