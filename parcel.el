@@ -254,7 +254,7 @@ ORDER is any of the following values:
                         ('gitlab       "gitlab.com")
                         ((pred stringp) host)
                         (_              (signal 'wrong-type-argument
-                                                `((github gitlab stringp) ,host))))))
+                                                `(:host (github gitlab stringp) ,host ,recipe))))))
         (format "%s%s%s%s.git" (car protocol) host (cdr protocol) repo)))))
 
 (defvar parcel--order-index -1 "Index used to track queued orders.")
