@@ -557,7 +557,6 @@ RETURNS order structure."
   (let ((order  (process-get process :order))
         (result (process-get process :result)))
     (parcel--update-order-status order (cond
-                                        ((string-match-p "fatal"    result) 'failed)
                                         ((string-match-p "Username" result) 'blocked))
                                  (parcel-process-tail output))))
 
@@ -578,7 +577,8 @@ EVENT determines outcome of order."
    ((equal event "finished\n")
     (let ((order  (process-get process :order))
           (result (process-get process :result)))
-      (if (string-match-p result "fatal")
+      (if (and (string-match-p "fatal" result)
+               (not (string-match-p "already exists" result)))
           (parcel--update-order-status order 'failed)
         (let ((recipe (parcel-order-recipe order)))
           (parcel--add-remotes recipe)
