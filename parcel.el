@@ -790,15 +790,14 @@ If FORCE is non-nil, do not ask for confirmation."
 (defun parcel-status-mode-visit-repo ()
   "Visit repo associated with current process."
   (interactive)
-  (save-excursion)
-  (beginning-of-line)
-  (if-let ((order    (get-text-property (point) 'order))
-           (process  (parcel-order-process order))
-           (recipe   (parcel-order-recipe order))
-           (dir      (parcel-repo-dir recipe))
-           ((file-exists-p dir)))
-      (dired (parcel-repo-dir recipe))
-    (user-error "No repo dir associated with current line")))
+  (save-excursion
+    (beginning-of-line)
+    (if-let ((order    (get-text-property (point) 'order))
+             (recipe   (parcel-order-recipe order))
+             (dir      (parcel-repo-dir recipe))
+             ((file-exists-p dir)))
+        (dired (parcel-repo-dir recipe))
+      (user-error "No repo dir associated with current line"))))
 
 (provide 'parcel)
 ;;; parcel.el ends here
