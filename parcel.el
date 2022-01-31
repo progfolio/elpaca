@@ -78,6 +78,8 @@ Each function is passed a request, which may be any of the follwoing symbols:
      Updates the menu's package candidate list."
   :type 'hook)
 
+(defvar parcel--build-functions nil
+  "Abnormal hook run with recipes :build functions.")
 (defvar parcel-ignored-dependencies
   (list 'emacs 'cl-lib 'cl-generic 'esxml 'nadvice 'org 'org-mode 'map 'seq)
   "Built in packages.
@@ -610,8 +612,8 @@ Possibly kicks off next build step, or changes order status."
       (parcel--update-order-status
        order 'blocked (format "Blocked by dependencies: %S" (mapcar #'car blocked))))
      ((cl-every (lambda (status) (eq (cdr status) 'finished)) statuses)
-      (mapc (lambda (step) (funcall step order))
-            (plist-get (parcel-order-recipe order) :build))))))
+      (let ((parcel--build-functions (plist-get (parcel-order-recipe order) :build)))
+        (run-hook-with-args 'parcel--build-functions order))))))
 
 (defun parcel-clone (recipe &optional force)
   "Clone repo to `parcel-directory' from RECIPE.
