@@ -775,17 +775,16 @@ If FORCE is non-nil, do not ask for confirmation."
 (defun parcel-status-mode-send-input ()
   "Send input string to current process."
   (interactive)
-  (when-let ((order (get-text-property (line-beginning-position) 'order))
-             (process (parcel-order-process order)))
-    (unless (eq (process-status process) 'run)
-      (user-error "Process is no longer running: %S" (process-name process)))
-    (let ((input (save-excursion
-                   (beginning-of-line)
-                   (while (get-text-property (point) 'read-only)
-                     (forward-char))
-                   (string-trim (buffer-substring (point) (line-end-position))))))
-      (process-send-string process (concat input "\n"))
-      (end-of-line))))
+  (if-let ((order (get-text-property (line-beginning-position) 'order))
+           (process (parcel-order-process order)))
+      (let ((input (save-excursion
+                     (beginning-of-line)
+                     (while (get-text-property (point) 'read-only)
+                       (forward-char))
+                     (string-trim (buffer-substring (point) (line-end-position))))))
+        (process-send-string process (concat input "\n"))
+        (end-of-line))
+    (user-error "No process associated with current package")))
 
 (defun parcel-status-mode-visit-repo ()
   "Visit repo associated with current process."
