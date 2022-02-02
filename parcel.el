@@ -800,19 +800,22 @@ Async wrapper for `parcel-generate-autoloads'."
          (default-directory repo-dir)
          ;;@MAYBE: fix if we decide to store order objects in order :dependencies
          (dependency-dirs
-          (apply #'append (mapcar (lambda (item)
-                                    (list "-L" (parcel-repo-dir
-                                                (parcel-order-recipe
-                                                 (alist-get item parcel--queued-orders)))))
-                                  (parcel-order-dependencies order))))
+          (mapcar (lambda (item) (parcel-repo-dir
+                                  (parcel-order-recipe
+                                   (alist-get item parcel--queued-orders))))
+                  (parcel-order-dependencies order)))
+         (program `(progn
+                     (mapc (lambda (dir) (let ((default-directory dir))
+                                           (add-to-list 'load-path dir)
+                                           (normal-top-level-add-subdirs-to-load-path)))
+                           ',(append dependency-dirs (list repo-dir)))
+                     (byte-recompile-directory ,repo-dir 0 'force)))
+         (print-level nil)
+         (print-circle nil)
          (process
           (make-process
            :name     (format "parcel-byte-compile-%s" (plist-get recipe :package))
-           :command  `(,emacs
-                       "-Q" ,@dependency-dirs "-L" ,repo-dir
-                       "--batch"
-                       "--eval" ,(format "(byte-recompile-directory %S 0 'force)"
-                                         repo-dir))
+           :command  `(,emacs "-Q" "--batch" "--eval" ,(format "%S" program))
            :filter   #'parcel--byte-compile-process-filter
            :sentinel #'parcel--byte-compile-process-sentinel)))
     (process-put process :order order)))
