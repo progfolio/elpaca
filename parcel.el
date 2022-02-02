@@ -260,6 +260,8 @@ ORDER is any of the following values:
         (format "%s%s%s%s.git" (car protocol) host (cdr protocol) repo)))))
 
 (defvar parcel--order-index -1 "Index used to track queued orders.")
+(defvar parcel--order-queue-start-time nil
+  "Time used to keep order logs relative to start of queue.")
 (cl-defstruct parcel-order
   "Order object for queued processing."
   (package      nil :type string)
@@ -270,7 +272,48 @@ ORDER is any of the following values:
   (dependents   nil :type list)
   (index        (cl-incf parcel--order-index))
   (info         nil)
-  (process      nil))
+  (process      nil)
+  (log          nil))
+
+(defun parcel--log-event (order text)
+  "Store TEXT in ORDER's log."
+  (let ((log (parcel-order-log order)))
+    (setf (parcel-order-log order)
+          (append log
+                  (list (list
+                         (parcel-order-package order)
+                         (time-subtract (current-time) parcel--order-queue-start-time)
+                         text))))))
+
+(defun parcel--events (&rest packages)
+  "Return sorted event log string for PACKAGES.
+If PACKAGES is nil, use all available orders."
+  (let* ((orders
+          (delete-dups
+           (if packages
+               (mapcar (lambda (package)
+                         (alist-get (intern package)
+                                    parcel--queued-orders))
+                       packages)
+             (mapcar #'cdr parcel--queued-orders))))
+         (logs (apply #'append (mapcar #'parcel-order-log orders))))
+    (mapconcat (lambda (event)
+                 (pcase-let ((`(,package ,time ,text) event))
+                   (format "[%s]%s %s"
+                           (format-time-string "%02s.%3N" time)
+                           (format "%-20s" (concat "("package"):"))
+                           text)))
+               (cl-sort (copy-tree logs) #'time-less-p :key #'cadr)
+               "\n")))
+
+(defun parcel-print-log (&rest packages)
+  "Print log for PACKAGES."
+  (interactive (completing-read-multiple "Log for Packages: "
+                                         (mapcar #'car parcel--queued-orders)))
+  (with-current-buffer (get-buffer-create "*Parcel Log*")
+    (erase-buffer)
+    (insert (apply #'parcel--events packages))
+    (display-buffer (current-buffer))))
 
 (defun parcel--update-order-status (order &optional status info)
   "Update ORDER STATUS.
@@ -282,8 +325,11 @@ If INFO is non-nil, ORDER's info is updated as well."
              (current-status (parcel-order-status order))
              ((not (eq current-status status))))
     (setf (parcel-order-status order) status)
-    (mapc #'parcel--order-check-status (parcel-order-dependents order)))
-  (when info (setf (parcel-order-info order) info))
+    (when (member status '(finished failed blocked))
+      (mapc #'parcel--order-check-status (parcel-order-dependents order))))
+  (when info
+    (setf (parcel-order-info order) info)
+    (parcel--log-event order info))
   (with-current-buffer (get-buffer-create parcel-status-buffer)
     (save-excursion
       (cursor-intangible-mode -1)
