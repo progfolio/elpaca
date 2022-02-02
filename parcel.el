@@ -777,9 +777,8 @@ Async wrapper for `parcel-generate-autoloads'."
   (process-put process :result (concat (process-get process :result) output))
   (let ((order  (process-get process :order))
         (result (process-get process :result)))
-    ;;@TODO: Should this fail? Does debugger hang process? Clean up if so.
     (parcel--update-order-status order
-                                 (when (string-match-p "Debugger entered" result) 'blocked)
+                                 (when (string-match-p "Debugger entered" result) 'failed)
                                  (parcel-process-tail output))))
 
 (defun parcel--byte-compile-process-sentinel (process event)
