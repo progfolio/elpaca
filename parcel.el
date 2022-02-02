@@ -235,7 +235,7 @@ ORDER is any of the following values:
                           (parcel--repo-user repo)
                           (symbol-name host))
                     "."))
-     parcel-directory)))
+     (expand-file-name "repos/" parcel-directory))))
 
 (defun parcel--repo-uri (recipe)
   "Return repo URI from RECIPE."
