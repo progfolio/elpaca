@@ -478,11 +478,14 @@ If package's repo is not on disk, error."
                                     (branch (list "switch" "-C" branch
                                                   (format "%s/%s" remote branch)))))))
                 (if success
-                    (parcel--clone-dependencies recipe) ;process dependencies
+                    (progn
+                      (parcel--update-order-status order 'ref-checked-out "Ref checked out")
+                      (parcel--clone-dependencies recipe)) ;process dependencies
                   (parcel--update-order-status
                    order 'failed
                    (format "Unable to check out ref: %S " (string-trim stderr)))
                   (throw 'quit nil)))
+            (parcel--update-order-status order 'ref-checked-out "Ref checked out")
             (parcel--clone-dependencies recipe)))))))
 
 (defun parcel--checkout-ref (recipe)
