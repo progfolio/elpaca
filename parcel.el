@@ -328,12 +328,9 @@ If INFO is non-nil, ORDER's info is updated as well."
              ((not (eq current-status status))))
     (setf (parcel-order-status order) status)
     (when (member status '(finished failed blocked))
-      (mapc #'parcel--order-check-status
-            (append (parcel-order-dependents order) (parcel-order-includes order))))
-    (when-let  (((eq status 'ref-checked-out))
-                (includes (parcel-order-includes order)))
-      (dolist (include includes)
-        (parcel--clone-dependencies (parcel-order-recipe include)))))
+      (mapc #'parcel--order-check-status (parcel-order-dependents order)))
+    (when (eq status 'ref-checked-out)
+      (mapc #'parcel--clone-dependencies (parcel-order-includes order))))
   (when info
     (setf (parcel-order-info order) info)
     (parcel--log-event order info))
@@ -434,13 +431,17 @@ If package's repo is not on disk, error."
   "Clone RECIPE's dependencies."
   (let* ((package      (plist-get recipe :package))
          (order        (alist-get (intern package) parcel--queued-orders))
+(defun parcel--clone-dependencies (order)
+  "Clone ORDER's dependencies."
+  (let* ((recipe       (parcel-order-recipe order))
          (build        (plist-get recipe :build))
          (dependencies (parcel--dependencies recipe))
          (emacs        (assoc 'emacs dependencies))
-         (externals    (cl-remove-if
-                        (lambda (dependency)
-                          (member dependency parcel-ignored-dependencies))
-                        dependencies :key #'car))
+         (externals    (cl-remove-duplicates
+                        (cl-remove-if
+                         (lambda (dependency)
+                           (member dependency parcel-ignored-dependencies))
+                         dependencies :key #'car)))
          (parcel--build-functions build))
     (parcel--update-order-status order 'cloning-dependencies "Cloning Dependencies")
     (if (and emacs (version< emacs-version (cadr emacs)))
@@ -459,7 +460,10 @@ If package's repo is not on disk, error."
                 (if queued
                     (when (eq (parcel-order-status queued) 'finished) (cl-incf finished))
                   (unless (eq (parcel-order-status dep-order) 'blocked)
-                    (parcel-clone (parcel-order-recipe dep-order) 'force)))))
+                    (parcel-clone (parcel-order-recipe dep-order) 'force))
+                  (when (member dep-order (parcel-order-includes order))
+                    ;; Dependency is published in same repo...
+                    (parcel--clone-dependencies dep-order)))))
             (when (= (length externals) finished) ; Our dependencies beat us to the punch
               (parcel--update-order-status order 'buildling "Building...")
               (run-hook-with-args 'parcel--build-functions order)))
@@ -488,13 +492,14 @@ If package's repo is not on disk, error."
                 (if success
                     (progn
                       (parcel--update-order-status order 'ref-checked-out "Ref checked out")
-                      (parcel--clone-dependencies recipe)) ;process dependencies
+                      ;;(parcel--link-build-files order)
+                      (parcel--clone-dependencies order)) ;process dependencies
                   (parcel--update-order-status
                    order 'failed
                    (format "Unable to check out ref: %S " (string-trim stderr)))
                   (throw 'quit nil)))
             (parcel--update-order-status order 'ref-checked-out "Ref checked out")
-            (parcel--clone-dependencies recipe)))))))
+            (parcel--clone-dependencies order)))))))
 
 (defun parcel--checkout-ref (recipe)
   "Checkout RECIPE's :ref.
