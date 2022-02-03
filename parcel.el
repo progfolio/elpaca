@@ -272,6 +272,7 @@ ORDER is any of the following values:
   (dependents   nil :type list)
   (index        (cl-incf parcel--order-index))
   (includes     nil)
+  (repo-dir     nil)
   (info         nil)
   (process      nil)
   (log          nil))
@@ -467,9 +468,9 @@ If package's repo is not on disk, error."
 (defun parcel--checkout-ref-process-sentinel (process event)
   "PROCESS EVENT."
   (when (equal event "finished\n")
-    (let* ((order  (process-get process :order))
-           (recipe (parcel-order-recipe order))
-           (default-directory (parcel-repo-dir recipe)))
+    (let* ((order             (process-get process :order))
+           (recipe            (parcel-order-recipe order))
+           (default-directory (parcel-order-repo-dir order)))
       (cl-destructuring-bind ( &key remotes ref tag branch &allow-other-keys
                                &aux (remote (if (stringp remotes) remotes (caar remotes))))
           recipe
@@ -506,16 +507,16 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
        ((and ref tag)    (warn "Recipe :ref overriding :tag %S" recipe))
        ((and tag branch) (error "Recipe :ref ambiguous :tag and :branch %S" recipe))))
     (unless remotes (signal 'wrong-type-argument `((stringp listp) ,remotes ,recipe)))
-    (let ((default-directory (parcel-repo-dir recipe))
-          (order (or (alist-get (intern package) parcel--queued-orders)
-                     (parcel--queue-order recipe 'checking-out-ref))))
-      (let ((process (make-process
-                      :name     (format "parcel-fetch-%s" package)
-                      :command  (list "git" "fetch" "--all")
-                      :filter   #'parcel--checkout-ref-process-filter
-                      :sentinel #'parcel--checkout-ref-process-sentinel)))
-        (process-put process :order order)
-        (setf (parcel-order-process order) process)))))
+    (let* ((order (or (alist-get (intern package) parcel--queued-orders)
+                      (parcel--queue-order recipe 'checking-out-ref)))
+           (default-directory (parcel-order-repo-dir order))
+           (process (make-process
+                     :name     (format "parcel-fetch-%s" package)
+                     :command  (list "git" "fetch" "--all")
+                     :filter   #'parcel--checkout-ref-process-filter
+                     :sentinel #'parcel--checkout-ref-process-sentinel)))
+      (process-put process :order order)
+      (setf (parcel-order-process order) process))))
 
 (defvar parcel--queued-orders nil "List of queued orders.")
 
@@ -709,7 +710,9 @@ If FORCE is non-nil, ignore order queue."
         &aux
         (item              (intern package))
         (order             (alist-get item parcel--queued-orders))
-        (repodir           (parcel-repo-dir recipe))
+        (repodir           (if order
+                               (parcel-order-repo-dir order)
+                             (parcel-repo-dir recipe)))
         (URI               (parcel--repo-uri recipe))
         (default-directory parcel-directory))
       recipe
@@ -764,9 +767,8 @@ Retrun t if process has finished, nil otherwise."
   "Generate ORDER's autoloads.
 Async wrapper for `parcel-generate-autoloads'."
   (let* ((emacs    (parcel--emacs-path))
-         (recipe   (parcel-order-recipe order))
-         (package  (plist-get recipe :package))
-         (repo-dir (parcel-repo-dir recipe))
+         (package  (parcel-order-package  order))
+         (repo-dir (parcel-order-repo-dir order))
          (parcel   (expand-file-name "parcel/" parcel-directory))
          (command  (list emacs "-Q"
                          "-L" parcel
@@ -785,10 +787,9 @@ Async wrapper for `parcel-generate-autoloads'."
   "Activate ORDER's package."
   (setf (parcel-order-steps order)
         (cl-remove 'parcel--activate-package (parcel-order-steps order)))
-  (let* ((recipe            (parcel-order-recipe order))
-         (default-directory (parcel-repo-dir recipe))
-         (package (plist-get recipe :package))
-         (autoloads (format "%s-autoloads.el" package)))
+  (let* ((default-directory (parcel-order-repo-dir order))
+         (package           (parcel-order-package order))
+         (autoloads         (format "%s-autoloads.el" package)))
     (add-to-list 'load-path default-directory)
     (condition-case err
         (load autoloads)
@@ -817,15 +818,13 @@ Async wrapper for `parcel-generate-autoloads'."
 (defun parcel--byte-compile (order)
   "Byte compile package from ORDER."
   ;; Assumes all dependencies are 'built
-  (let* ((recipe            (parcel-order-recipe order))
-         (repo-dir          (parcel-repo-dir recipe))
+  (let* ((repo-dir          (parcel-order-repo-dir order))
          (emacs             (parcel--emacs-path))
          (default-directory repo-dir)
          ;;@MAYBE: fix if we decide to store order objects in order :dependencies
          (dependency-dirs
-          (mapcar (lambda (item) (parcel-repo-dir
-                                  (parcel-order-recipe
-                                   (alist-get item parcel--queued-orders))))
+          (mapcar (lambda (item) (parcel-order-repo-dir
+                                  (alist-get item parcel--queued-orders)))
                   (parcel-order-dependencies order)))
          (program `(progn
                      (mapc (lambda (dir) (let ((default-directory dir))
@@ -837,7 +836,7 @@ Async wrapper for `parcel-generate-autoloads'."
          (print-circle nil)
          (process
           (make-process
-           :name     (format "parcel-byte-compile-%s" (plist-get recipe :package))
+           :name     (format "parcel-byte-compile-%s" (parcel-order-recipe order))
            :command  `(,emacs "-Q" "--batch" "--eval" ,(format "%S" program))
            :filter   #'parcel--byte-compile-process-filter
            :sentinel #'parcel--byte-compile-process-sentinel)))
