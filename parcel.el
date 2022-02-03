@@ -112,6 +112,7 @@ Ignore these unless the user explicitly requests they be installed.")
   (recipe       nil :type list)
   (steps        nil :type list)
   (status       nil :type string)
+  (statuses     nil :type list)
   (dependencies nil :type list)
   (dependents   nil :type list)
   (index        (cl-incf parcel--order-index))
@@ -341,6 +342,7 @@ If INFO is non-nil, ORDER's info is updated as well."
              (current-status (parcel-order-status order))
              ((not (eq current-status status))))
     (setf (parcel-order-status order) status)
+    (cl-pushnew status (parcel-order-statuses order))
     (when (member status '(finished failed blocked))
       (mapc #'parcel--order-check-status (parcel-order-dependents order)))
     (when (eq status 'ref-checked-out)
@@ -668,8 +670,10 @@ RETURNS order structure."
         (if (not mono-repo)
             (parcel--update-order-status order)
           (cl-pushnew order (parcel-order-includes mono-repo))
-          (parcel--update-order-status order 'blocked
-                                       (format "Waiting for monorepo %S" repo-dir)))))))
+          (if (memq 'ref-checked-out (parcel-order-statuses mono-repo))
+              (parcel--clone-dependencies order)
+            (parcel--update-order-status order 'blocked
+                                         (format "Waiting for monorepo %S" repo-dir))))))))
 
 (defun parcel--clone-process-filter (process output)
   "Filter PROCESS OUTPUT of async clone operation."
