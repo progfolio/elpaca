@@ -786,6 +786,7 @@ Retrun t if process has finished, nil otherwise."
 (defun parcel--generate-autoloads-async (order)
   "Generate ORDER's autoloads.
 Async wrapper for `parcel-generate-autoloads'."
+  (parcel--log-event order "Generating autoloads")
   (let* ((emacs    (parcel--emacs-path))
          (package  (parcel-order-package  order))
          (repo-dir (parcel-order-repo-dir order))
@@ -838,6 +839,7 @@ Async wrapper for `parcel-generate-autoloads'."
 (defun parcel--byte-compile (order)
   "Byte compile package from ORDER."
   ;; Assumes all dependencies are 'built
+  (parcel--log-event order "Byte compiling")
   (let* ((repo-dir          (parcel-order-repo-dir order))
          (emacs             (parcel--emacs-path))
          (default-directory repo-dir)
