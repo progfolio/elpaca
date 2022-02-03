@@ -638,11 +638,12 @@ RETURNS order structure."
             (make-parcel-order
              :package (format "%S" package) :recipe recipe :status status
              :steps (plist-get recipe :build) :info info :repo-dir repo-dir))
-           (mono-repo (cl-some (lambda (cell)
-                                 (when (equal (parcel-order-repo-dir (cdr cell))
-                                              repo-dir)
-                                   (cdr cell)))
-                               parcel--queued-orders)))
+           (mono-repo
+            (cl-some (lambda (cell)
+                       (when-let ((queued (cdr cell))
+                                  ((equal repo-dir (parcel-order-repo-dir queued))))
+                         queued))
+                     parcel--queued-orders)))
       (prog1 order
         (push (cons package order) parcel--queued-orders)
         (if (not mono-repo)
