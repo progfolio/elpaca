@@ -102,6 +102,25 @@ Ignore these unless the user explicitly requests they be installed.")
   "Recognized parcel recipe keywords.")
 (defvar parcel--queued-orders nil "List of queued orders.")
 (defconst parcel-status-buffer "*Parcel*")
+
+(defvar parcel--order-index -1 "Index used to track queued orders.")
+(defvar parcel--order-queue-start-time nil
+  "Time used to keep order logs relative to start of queue.")
+(cl-defstruct parcel-order
+  "Order object for queued processing."
+  (package      nil :type string)
+  (recipe       nil :type list)
+  (steps        nil :type list)
+  (status       nil :type string)
+  (dependencies nil :type list)
+  (dependents   nil :type list)
+  (index        (cl-incf parcel--order-index))
+  (includes     nil)
+  (repo-dir     nil)
+  (info         nil)
+  (process      nil)
+  (log          nil))
+
 (define-minor-mode parcel-dev-mode "Just a way to toggle a variable for dev code.")
 
 (defun parcel-merge-plists (&rest plists)
@@ -271,24 +290,6 @@ ORDER is any of the following values:
                         (_              (signal 'wrong-type-argument
                                                 `(:host (github gitlab stringp) ,host ,recipe))))))
         (format "%s%s%s%s.git" (car protocol) host (cdr protocol) repo)))))
-
-(defvar parcel--order-index -1 "Index used to track queued orders.")
-(defvar parcel--order-queue-start-time nil
-  "Time used to keep order logs relative to start of queue.")
-(cl-defstruct parcel-order
-  "Order object for queued processing."
-  (package      nil :type string)
-  (recipe       nil :type list)
-  (steps        nil :type list)
-  (status       nil :type string)
-  (dependencies nil :type list)
-  (dependents   nil :type list)
-  (index        (cl-incf parcel--order-index))
-  (includes     nil)
-  (repo-dir     nil)
-  (info         nil)
-  (process      nil)
-  (log          nil))
 
 (defun parcel--log-event (order text)
   "Store TEXT in ORDER's log."
