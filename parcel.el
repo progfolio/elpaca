@@ -237,6 +237,11 @@ ORDER is any of the following values:
                     "."))
      (expand-file-name "repos/" parcel-directory))))
 
+(defun parcel-build-dir (recipe)
+  "Return RECIPE's build dir."
+  (expand-file-name (plist-get recipe :package)
+                    (expand-file-name "builds/" parcel-directory)))
+
 (defun parcel--repo-uri (recipe)
   "Return repo URI from RECIPE."
   (cl-destructuring-bind (&key (protocol 'https)
