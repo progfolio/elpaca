@@ -80,6 +80,14 @@ Each function is passed a request, which may be any of the follwoing symbols:
 
 (defvar parcel--build-functions nil
   "Abnormal hook run with recipes :build functions.")
+(defvar parcel-default-files-directive
+  '("*.el" "*.el.in" "dir"
+    "*.info" "*.texi" "*.texinfo"
+    "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+    (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"))
+  "Default value for the `:files' directive in recipes.
+It is also spliced in at any point where the `:defaults' keyword
+is used in a `:files' directive.")
 (defvar parcel-ignored-dependencies
   (list 'emacs 'cl-lib 'cl-generic 'esxml 'nadvice 'org 'org-mode 'map 'seq)
   "Built in packages.
