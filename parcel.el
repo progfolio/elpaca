@@ -271,6 +271,7 @@ ORDER is any of the following values:
   (dependencies nil :type list)
   (dependents   nil :type list)
   (index        (cl-incf parcel--order-index))
+  (includes     nil)
   (info         nil)
   (process      nil)
   (log          nil))
@@ -326,7 +327,12 @@ If INFO is non-nil, ORDER's info is updated as well."
              ((not (eq current-status status))))
     (setf (parcel-order-status order) status)
     (when (member status '(finished failed blocked))
-      (mapc #'parcel--order-check-status (parcel-order-dependents order))))
+      (mapc #'parcel--order-check-status
+            (append (parcel-order-dependents order) (parcel-order-includes order))))
+    (when-let  (((eq status 'ref-checked-out))
+                (includes (parcel-order-includes order)))
+      (dolist (include includes)
+        (parcel--clone-dependencies (parcel-order-recipe include)))))
   (when info
     (setf (parcel-order-info order) info)
     (parcel--log-event order info))
@@ -451,7 +457,8 @@ If package's repo is not on disk, error."
                 (push order (parcel-order-dependents dep-order))
                 (if queued
                     (when (eq (parcel-order-status queued) 'finished) (cl-incf finished))
-                  (parcel-clone (parcel-order-recipe dep-order) 'force))))
+                  (unless (eq (parcel-order-status dep-order) 'blocked)
+                    (parcel-clone (parcel-order-recipe dep-order) 'force)))))
             (when (= (length externals) finished) ; Our dependencies beat us to the punch
               (parcel--update-order-status order 'buildling "Building...")
               (run-hook-with-args 'parcel--build-functions order)))
@@ -615,12 +622,28 @@ RETURNS order structure."
                        (setq status 'failed
                              info (format "No recipe: %S" err))
                        nil)))
-           (order (make-parcel-order
-                   :package (format "%S" package) :recipe recipe :status status
-                   :steps (plist-get recipe :build) :info info)))
+           (repo-dir (when recipe
+                       (condition-case err
+                           (parcel-repo-dir recipe)
+                         ((error)
+                          (setq status 'failed
+                                info (format "Unable to determine repo dir: %S" err))))))
+           (order
+            (make-parcel-order
+             :package (format "%S" package) :recipe recipe :status status
+             :steps (plist-get recipe :build) :info info :repo-dir repo-dir))
+           (mono-repo (cl-some (lambda (cell)
+                                 (when (equal (parcel-order-repo-dir (cdr cell))
+                                              repo-dir)
+                                   (cdr cell)))
+                               parcel--queued-orders)))
       (prog1 order
         (push (cons package order) parcel--queued-orders)
-        (parcel--update-order-status order)))))
+        (if (not mono-repo)
+            (parcel--update-order-status order)
+          (cl-pushnew order (parcel-order-includes mono-repo))
+          (parcel--update-order-status order 'blocked
+                                       (format "Waiting for monorepo %S" repo-dir)))))))
 
 (defun parcel--clone-process-filter (process output)
   "Filter PROCESS OUTPUT of async clone operation."
