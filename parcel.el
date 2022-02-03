@@ -441,10 +441,15 @@ If package's repo is not on disk, error."
                 (read (match-string 1))
               (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))
 
-(defun parcel--clone-dependencies (recipe)
-  "Clone RECIPE's dependencies."
-  (let* ((package      (plist-get recipe :package))
-         (order        (alist-get (intern package) parcel--queued-orders))
+(defun parcel--link-build-files (order)
+  "Link ORDER's :files into it's builds subdirectory."
+  (let* ((recipe    (parcel-order-recipe order))
+         (build-dir (parcel-build-dir recipe)))
+    (parcel--update-order-status 'linking-build "Linking build files")
+    (make-directory build-dir 'parents)
+    ;;symlink :files....
+    ))
+
 (defun parcel--clone-dependencies (order)
   "Clone ORDER's dependencies."
   (let* ((recipe       (parcel-order-recipe order))
@@ -694,7 +699,7 @@ RETURNS order structure."
         (parcel--update-order-status order 'failed)
       (let ((recipe (parcel-order-recipe order)))
         (parcel--add-remotes recipe)
-        (parcel--add-excludes recipe)
+        ;;(parcel--add-excludes recipe)
         (parcel--update-order-status order 'checking-out-ref "Checking out repo ref")
         (parcel--checkout-ref recipe)))))
 
