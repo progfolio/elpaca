@@ -473,34 +473,32 @@ If package's repo is not on disk, error."
                 (read (match-string 1))
               (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))
 
-(defun parcel--files (order &optional files)
+(defun parcel--files (order &optional files nocons)
   "Return alist of ORDER :files to be symlinked: (PATH . TARGET PATH).
-FILES is used recursively."
+FILES and NOCONS are used recursively."
   (let* ((default-directory (parcel-order-repo-dir order))
          (build-dir         (parcel-order-build-dir order))
          (recipe            (parcel-order-recipe order))
          (files             (or files (plist-get recipe :files)))
          (exclusions        nil)
-         (targets
-          (cl-remove-if-not
-           (lambda (path) (file-exists-p
-                           (expand-file-name (if (stringp path) path (car path)))))
-           (cl-set-difference
-            (flatten-tree
-             (mapcar (lambda (el)
-                       (pcase el
-                         ((pred stringp) (or (file-expand-wildcards el) (list el)))
-                         (`(:exclude  . ,excluded)
-                          (push (parcel--files order excluded) exclusions)
-                          nil)
-                         (:defaults
-                          (parcel--files order parcel-default-files-directive))))
-                     files))
-            (flatten-tree exclusions)))))
-    (mapcar (lambda (target)
-              (cons (expand-file-name target)
-                    (expand-file-name (file-name-nondirectory target) build-dir)))
-            targets)))
+         (targets           nil))
+    (dolist (el files)
+      (pcase el
+        ((pred stringp) (push (or (file-expand-wildcards el) el) targets))
+        (`(:exclude  . ,excluded)
+         (push (parcel--files order excluded 'nocons) exclusions)
+         nil)
+        (:defaults
+         (push (parcel--files order parcel-default-files-directive 'nocons) targets))))
+    (if nocons
+        targets
+      (mapcar (lambda (target)
+                (cons (expand-file-name target)
+                      (expand-file-name (file-name-nondirectory target) build-dir)))
+              (cl-remove-if (lambda (target)
+                              (or (not (file-exists-p (expand-file-name target)))
+                                  (member target (flatten-tree exclusions))))
+                            (flatten-tree targets))))))
 
 (defun parcel--link-build-files (order)
   "Link ORDER's :files into it's builds subdirectory."
