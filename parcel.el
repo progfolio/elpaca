@@ -352,9 +352,11 @@ If PACKAGES is nil, use all available orders."
   (interactive (completing-read-multiple "Log for Packages: "
                                          (mapcar #'car parcel--queued-orders)))
   (with-current-buffer (get-buffer-create "*Parcel Log*")
-    (erase-buffer)
-    (insert (apply #'parcel--events packages))
-    (display-buffer (current-buffer))))
+    (with-silent-modifications
+      (erase-buffer)
+      (insert (apply #'parcel--events packages))
+      (display-buffer (current-buffer)))
+    (special-mode)))
 
 (defun parcel--update-order-status (order &optional status info)
   "Update ORDER STATUS.
