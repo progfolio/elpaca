@@ -580,21 +580,24 @@ FILES is used recursively."
           (parcel--link-build-files order)
           (parcel--clone-dependencies order))))))
 
-(defun parcel--checkout-ref (recipe)
-  "Checkout RECIPE's :ref.
+(defun parcel--checkout-ref (order)
+  "Checkout ORDER's :ref.
 The :branch and :tag keywords are syntatic sugar and are handled here, too."
-  (cl-destructuring-bind (&key package ref branch tag remotes &allow-other-keys)
-      recipe
+  (parcel--update-order-status order 'checking-out-ref "Checking out repo ref")
+  (let* ((default-directory (parcel-order-repo-dir order))
+         (package           (parcel-order-package order))
+         (recipe            (parcel-order-recipe order))
+         (ref               (plist-get recipe :ref))
+         (branch            (plist-get recipe :branch))
+         (tag               (plist-get recipe :tag))
+         (remotes           (plist-get recipe :remotes)))
+    (unless remotes (signal 'wrong-type-argument `((stringp listp) ,remotes ,recipe)))
     (when (or ref branch tag)
       (cond
        ((and ref branch) (warn "Recipe :ref overriding :branch %S" recipe))
        ((and ref tag)    (warn "Recipe :ref overriding :tag %S" recipe))
        ((and tag branch) (error "Recipe :ref ambiguous :tag and :branch %S" recipe))))
-    (unless remotes (signal 'wrong-type-argument `((stringp listp) ,remotes ,recipe)))
-    (let* ((order (or (alist-get (intern package) parcel--queued-orders)
-                      (parcel--queue-order recipe 'checking-out-ref)))
-           (default-directory (parcel-order-repo-dir order))
-           (process (make-process
+    (let* ((process (make-process
                      :name     (format "parcel-fetch-%s" package)
                      :command  (list "git" "fetch" "--all")
                      :filter   #'parcel--checkout-ref-process-filter
@@ -755,9 +758,7 @@ RETURNS order structure."
         (parcel--update-order-status order 'failed)
       (let ((recipe (parcel-order-recipe order)))
         (parcel--add-remotes recipe)
-        ;;(parcel--add-excludes recipe)
-        (parcel--update-order-status order 'checking-out-ref "Checking out repo ref")
-        (parcel--checkout-ref recipe)))))
+        (parcel--checkout-ref order)))))
 
 (defun parcel--order-check-status (order)
   "Called when one of an ORDER's dependencies have changed status.
