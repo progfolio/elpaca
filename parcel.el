@@ -824,7 +824,8 @@ If FORCE is non-nil, ignore order queue."
   "If ORDER has is finished, declare it finished.
 Clean up process reference.
 Retrun t if process has finished, nil otherwise."
-  (when (null (parcel-order-steps order))
+  (unless (or (eq (parcel-order-status order) 'finished)
+              (parcel-order-steps order))
     (parcel--update-order-status order 'finished "✓")
     ;; Remove stale reference so object can be deleted.
     (setf (parcel-order-process order) nil)
