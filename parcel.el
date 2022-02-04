@@ -80,7 +80,12 @@ The function may return nil or a plist to be merged with the order.
 This hook is run via `run-hook-with-args-until-success'."
   :type 'hook)
 
-(defcustom parcel-recipe-functions nil
+(defun parcel-recipe-defaults (order)
+  "Default order modifications. Matches any order."
+  (unless (plist-get order :files)
+    (list :files (list :defaults))))
+
+(defcustom parcel-recipe-functions (list #'parcel-recipe-defaults)
   "Abnormal hook run to alter recipes.
 Each element must be a unary function which accepts an recipe plist.
 The function may return nil or a plist to be merged with the recipe.
