@@ -504,7 +504,7 @@ FILES is used recursively."
       (let ((file   (car spec))
             (link   (cdr spec)))
         (make-directory (file-name-directory link) 'parents)
-        (make-symbolic-link file link)))))
+        (make-symbolic-link file link 'overwrite)))))
 
 (defun parcel--clone-dependencies (order)
   "Clone ORDER's dependencies."
