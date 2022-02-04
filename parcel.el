@@ -511,10 +511,12 @@ FILES is used recursively."
       (let ((file   (car spec))
             (link   (cdr spec)))
         (make-directory (file-name-directory link) 'parents)
-        (make-symbolic-link file link 'overwrite)))))
+        (make-symbolic-link file link 'overwrite))))
+  (parcel--update-order-status order 'build-linked "Build files linked"))
 
 (defun parcel--clone-dependencies (order)
   "Clone ORDER's dependencies."
+  (parcel--update-order-status order 'cloning-dependencies "Cloning Dependencies")
   (let* ((recipe       (parcel-order-recipe order))
          (build        (plist-get recipe :build))
          (dependencies (parcel--dependencies recipe))
@@ -525,7 +527,6 @@ FILES is used recursively."
                            (member dependency parcel-ignored-dependencies))
                          dependencies :key #'car)))
          (parcel--build-functions build))
-    (parcel--update-order-status order 'cloning-dependencies "Cloning Dependencies")
     (if (and emacs (version< emacs-version (cadr emacs)))
         (parcel--update-order-status
          order 'failed (format "Requires %S; running %S" emacs emacs-version))
@@ -549,6 +550,7 @@ FILES is used recursively."
             (when (= (length externals) finished) ; Our dependencies beat us to the punch
               (parcel--update-order-status order 'buildling "Building...")
               (run-hook-with-args 'parcel--build-functions order)))
+        (parcel--update-order-status order 'buildling "Building...")
         (run-hook-with-args 'parcel--build-functions order)))))
 
 (defun parcel--checkout-ref-process-sentinel (process event)
@@ -867,16 +869,21 @@ Async wrapper for `parcel-generate-autoloads'."
 
 (defun parcel--activate-package (order)
   "Activate ORDER's package."
+  (parcel--update-order-status order 'activating "Activating package")
   (setf (parcel-order-steps order)
         (cl-remove 'parcel--activate-package (parcel-order-steps order)))
   (let* ((default-directory (parcel-order-build-dir order))
          (package           (parcel-order-package order))
          (autoloads         (format "%s-autoloads.el" package)))
     (add-to-list 'load-path default-directory)
+    (parcel--update-order-status order nil "Package build dir added to load-path")
     (condition-case err
-        (load autoloads)
-      ((error) (warn "Failed to load %S: %S" autoloads err))))
-  (parcel--finish-order-maybe order))
+        (progn
+          (load autoloads nil 'nomessage)
+          (parcel--update-order-status order 'activated "Package activated"))
+      ((error) (parcel--update-order-status order 'failed-to-activate
+                                            (format "Failed to load %S: %S" autoloads err))))
+    (parcel--finish-order-maybe order)))
 
 (defun parcel--byte-compile-process-filter (process output)
   "Filter async byte-compilation PROCESS OUTPUT."
@@ -900,7 +907,7 @@ Async wrapper for `parcel-generate-autoloads'."
 (defun parcel--byte-compile (order)
   "Byte compile package from ORDER."
   ;; Assumes all dependencies are 'built
-  (parcel--log-event order "Byte compiling")
+  (parcel--update-order-status order 'byte-compiling "Byte compiling")
   (let* ((build-dir         (parcel-order-build-dir order))
          (default-directory build-dir)
          (emacs             (parcel--emacs-path))
