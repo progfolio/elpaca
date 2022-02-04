@@ -81,7 +81,7 @@ This hook is run via `run-hook-with-args-until-success'."
   :type 'hook)
 
 (defun parcel-recipe-defaults (order)
-  "Default order modifications. Matches any order."
+  "Default ORDER modifications. Matches any ORDER."
   (unless (plist-get order :files)
     (list :files (list :defaults))))
 
