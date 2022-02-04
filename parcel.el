@@ -42,6 +42,18 @@
   :group 'parcel
   :prefix "parcel-")
 
+(defface parcel-finished
+  '((t (:weight bold :foreground "#00FF00")))
+  "Indicates an order is finished.")
+
+(defface parcel-blocked
+  '((t (:weight bold :foreground "#EA00CC")))
+  "Indicates an order is blocked.")
+
+(defface parcel-failed
+  '((t (:weight bold :foreground "#FF0000")))
+  "Indicates an order has failed.")
+
 (defcustom parcel-directory (expand-file-name "parcel" user-emacs-directory)
   "Location of the parcel package store."
   :type 'directory)
@@ -300,7 +312,12 @@ ORDER is any of the following values:
     (setf (parcel-order-log order)
           (append log
                   (list (list
-                         (parcel-order-package order)
+                         (propertize (parcel-order-package order) 'face
+                                     (pcase (parcel-order-status order)
+                                       ('finished 'parcel-finished)
+                                       ('blocked  'parcel-blocked)
+                                       ('failed   'parcel-failed)
+                                       (_         '(:weight bold))))
                          (time-subtract (current-time) parcel--order-queue-start-time)
                          text))))))
 
@@ -633,14 +650,14 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
      ;;@FIX: shouldn't have to use the quadruple %
      (format "Queued: %d | %s(%.2f%%%%): %d | %s: %d | %s: %d"
              queue-len
-             (propertize "Finished" 'face '(:weight bold :foreground "green"))
+             (propertize "Finished" 'face 'parcel-finished)
              (if-let ((finished (alist-get 'finished counts)))
                  (* (/ (float finished) queue-len) 100)
                0.00)
              (or (alist-get 'finished counts) 0)
-             (propertize "Blocked" 'face '(:weight bold :foreground "pink"))
+             (propertize "Blocked" 'face 'parcel-blocked)
              (or (alist-get 'blocked  counts) 0)
-             (propertize "Failed" 'face '(:weight bold :foreground "red"))
+             (propertize "Failed" 'face 'parcel-failed)
              (or (alist-get 'failed   counts) 0)))))
 
 (defun parcel--initialize-process-buffer ()
@@ -659,9 +676,9 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
          (name (format "%-30s"
                        (propertize package 'face
                                    (pcase status
-                                     ('blocked  '(:foreground "pink"  :weight bold))
-                                     ('failed   '(:foreground "red"   :weight bold))
-                                     ('finished '(:foreground "green" :weight bold))
+                                     ('blocked  'parcel-blocked)
+                                     ('failed   'parcel-failed)
+                                     ('finished 'parcel-finished)
                                      (_         '(:weight bold)))))))
     (concat (propertize
              (format "%s (%s) %s" name (or status "?") (or (parcel-order-info order) ""))
