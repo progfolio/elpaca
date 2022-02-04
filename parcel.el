@@ -46,10 +46,20 @@
   "Location of the parcel package store."
   :type 'directory)
 
+(defvar parcel-default-files-directive
+  '("*.el" "*.el.in" "dir"
+    "*.info" "*.texi" "*.texinfo"
+    "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+    (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"))
+  "Default value for the `:files' directive in recipes.
+It is also spliced in at any point where the `:defaults' keyword
+is used in a `:files' directive.")
+
 (defun parcel-order-defaults (_order)
   "Default order modifications. Matches any order."
   (list :protocol 'https :remotes "origin" :inherit t :depth 1
         :ignore (list "*.elc" ".cask" "*~" "*#" "*-autoloads.el")
+        :files parcel-default-files-directive
         :build (list #'parcel--byte-compile #'parcel--generate-autoloads-async)))
 
 (defcustom parcel-order-functions (list #'parcel-order-defaults)
@@ -80,14 +90,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
 
 (defvar parcel--build-functions nil
   "Abnormal hook run with recipes :build functions.")
-(defvar parcel-default-files-directive
-  '("*.el" "*.el.in" "dir"
-    "*.info" "*.texi" "*.texinfo"
-    "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
-    (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"))
-  "Default value for the `:files' directive in recipes.
-It is also spliced in at any point where the `:defaults' keyword
-is used in a `:files' directive.")
+
 (defvar parcel-ignored-dependencies
   (list 'emacs 'cl-lib 'cl-generic 'esxml 'nadvice 'org 'org-mode 'map 'seq)
   "Built in packages.
@@ -118,6 +121,7 @@ Ignore these unless the user explicitly requests they be installed.")
   (index        (cl-incf parcel--order-index))
   (includes     nil)
   (repo-dir     nil)
+  (build-dir    nil)
   (info         nil)
   (process      nil)
   (log          nil))
@@ -443,14 +447,45 @@ If package's repo is not on disk, error."
                 (read (match-string 1))
               (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))
 
+(defun parcel--files (order &optional files)
+  "Return alist of ORDER :files to be symlinked: (PATH . TARGET PATH).
+FILES is used recursively."
+  (let* ((default-directory (parcel-order-repo-dir order))
+         (build-dir         (parcel-order-build-dir order))
+         (recipe            (parcel-order-recipe order))
+         (files             (or files (plist-get recipe :files)))
+         (exclusions        nil)
+         (targets
+          (cl-remove-if-not
+           (lambda (path) (file-exists-p (expand-file-name path)))
+           (cl-set-difference
+            (apply #'append
+                   (mapcar (lambda (el)
+                             (pcase el
+                               ((pred stringp) (or (file-expand-wildcards el) (list el)))
+                               (`(:exclude  . ,excluded)
+                                (push (parcel--files order excluded) exclusions)
+                                nil)
+                               (:defaults
+                                (parcel--files order parcel-default-files-directive))))
+                           files))
+            exclusions))))
+    (mapcar (lambda (target)
+              (cons (expand-file-name target)
+                    (expand-file-name (file-name-nondirectory target) build-dir)))
+            targets)))
+
 (defun parcel--link-build-files (order)
   "Link ORDER's :files into it's builds subdirectory."
-  (let* ((recipe    (parcel-order-recipe order))
-         (build-dir (parcel-build-dir recipe)))
-    (parcel--update-order-status 'linking-build "Linking build files")
+  (let* ((build-dir (parcel-order-build-dir order)))
+    (parcel--update-order-status order 'linking-build "Linking build files")
+    (when (file-exists-p build-dir) (delete-directory build-dir 'recusrive))
     (make-directory build-dir 'parents)
-    ;;symlink :files....
-    ))
+    (dolist (spec (parcel--files order))
+      (let ((file   (car spec))
+            (link   (cdr spec)))
+        (make-directory (file-name-directory link) 'parents)
+        (make-symbolic-link file link)))))
 
 (defun parcel--clone-dependencies (order)
   "Clone ORDER's dependencies."
@@ -513,13 +548,14 @@ If package's repo is not on disk, error."
                 (if success
                     (progn
                       (parcel--update-order-status order 'ref-checked-out "Ref checked out")
-                      ;;(parcel--link-build-files order)
+                      (parcel--link-build-files order)
                       (parcel--clone-dependencies order)) ;process dependencies
                   (parcel--update-order-status
                    order 'failed
                    (format "Unable to check out ref: %S " (string-trim stderr)))
                   (throw 'quit nil)))
             (parcel--update-order-status order 'ref-checked-out "Ref checked out")
+            (parcel--link-build-files order)
             (parcel--clone-dependencies order)))))))
 
 (defun parcel--checkout-ref (recipe)
@@ -658,7 +694,8 @@ RETURNS order structure."
            (order
             (make-parcel-order
              :package (format "%S" package) :recipe recipe :status status
-             :steps (plist-get recipe :build) :info info :repo-dir repo-dir))
+             :steps (plist-get recipe :build) :info info :repo-dir repo-dir
+             :build-dir (when recipe (parcel-build-dir recipe))))
            (mono-repo
             (cl-some (lambda (cell)
                        (when-let ((queued (cdr cell))
@@ -796,28 +833,28 @@ Retrun t if process has finished, nil otherwise."
   "Generate ORDER's autoloads.
 Async wrapper for `parcel-generate-autoloads'."
   (parcel--log-event order "Generating autoloads")
-  (let* ((emacs    (parcel--emacs-path))
-         (package  (parcel-order-package  order))
-         (repo-dir (parcel-order-repo-dir order))
-         (parcel   (expand-file-name "parcel/" parcel-directory))
-         (command  (list emacs "-Q"
-                         "-L" parcel
-                         "-L" repo-dir ; Is this necessary?
-                         "-l" (expand-file-name "parcel.el" parcel)
-                         "--batch" "--eval"
-                         (format "(parcel-generate-autoloads %S %S)" package repo-dir)))
-         (process (make-process
-                   :name     (format "parcel-autoloads-%s" package)
-                   :command  command
-                   :filter   #'parcel--generate-autoloads-async-process-filter
-                   :sentinel #'parcel--generate-autoloads-async-process-sentinel)))
+  (let* ((emacs     (parcel--emacs-path))
+         (package   (parcel-order-package  order))
+         (build-dir (parcel-order-build-dir order))
+         (parcel    (expand-file-name "parcel/" parcel-directory))
+         (command   (list emacs "-Q"
+                          "-L" parcel
+                          "-L" build-dir ; Is this necessary?
+                          "-l" (expand-file-name "parcel.el" parcel)
+                          "--batch" "--eval"
+                          (format "(parcel-generate-autoloads %S %S)" package build-dir)))
+         (process   (make-process
+                     :name     (format "parcel-autoloads-%s" package)
+                     :command  command
+                     :filter   #'parcel--generate-autoloads-async-process-filter
+                     :sentinel #'parcel--generate-autoloads-async-process-sentinel)))
     (process-put process :order order)))
 
 (defun parcel--activate-package (order)
   "Activate ORDER's package."
   (setf (parcel-order-steps order)
         (cl-remove 'parcel--activate-package (parcel-order-steps order)))
-  (let* ((default-directory (parcel-order-repo-dir order))
+  (let* ((default-directory (parcel-order-build-dir order))
          (package           (parcel-order-package order))
          (autoloads         (format "%s-autoloads.el" package)))
     (add-to-list 'load-path default-directory)
@@ -849,20 +886,20 @@ Async wrapper for `parcel-generate-autoloads'."
   "Byte compile package from ORDER."
   ;; Assumes all dependencies are 'built
   (parcel--log-event order "Byte compiling")
-  (let* ((repo-dir          (parcel-order-repo-dir order))
+  (let* ((build-dir         (parcel-order-build-dir order))
+         (default-directory build-dir)
          (emacs             (parcel--emacs-path))
-         (default-directory repo-dir)
          ;;@MAYBE: fix if we decide to store order objects in order :dependencies
          (dependency-dirs
-          (mapcar (lambda (item) (parcel-order-repo-dir
+          (mapcar (lambda (item) (parcel-order-build-dir
                                   (alist-get item parcel--queued-orders)))
                   (parcel-order-dependencies order)))
          (program `(progn
                      (mapc (lambda (dir) (let ((default-directory dir))
                                            (add-to-list 'load-path dir)
                                            (normal-top-level-add-subdirs-to-load-path)))
-                           ',(append dependency-dirs (list repo-dir)))
-                     (byte-recompile-directory ,repo-dir 0 'force)))
+                           ',(append dependency-dirs (list build-dir)))
+                     (byte-recompile-directory ,build-dir 0 'force)))
          (print-level nil)
          (print-circle nil)
          (process
