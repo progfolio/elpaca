@@ -373,8 +373,9 @@ If INFO is non-nil, ORDER's info is updated as well."
       (mapc #'parcel--order-check-status (parcel-order-dependents order)))
     (when (eq status 'ref-checked-out)
       (mapc (lambda (o)
-              (parcel--link-build-files o)
-              (parcel--clone-dependencies o))
+              (unless (member (parcel-order-statuses o) '(finished build-linked))
+                (parcel--link-build-files o)
+                (parcel--clone-dependencies o)))
             (parcel-order-includes order))))
   (when info
     (setf (parcel-order-info order) info)
@@ -535,17 +536,19 @@ FILES is used recursively."
             (dolist (spec externals)
               (let* ((dependency (car spec))
                      (queued     (alist-get dependency parcel--queued-orders))
-                     (dep-order  (or queued (parcel--queue-order dependency))))
+                     (dep-order  (or queued (parcel--queue-order dependency)))
+                     (included   (member dep-order (parcel-order-includes order)))
+                     (blocked    (eq (parcel-order-status dep-order) 'blocked)))
                 (setf (parcel-order-dependencies order)
                       (append (parcel-order-dependencies order) (list dependency)))
                 (push order (parcel-order-dependents dep-order))
                 (if queued
                     (when (eq (parcel-order-status queued) 'finished) (cl-incf finished))
-                  (unless (eq (parcel-order-status dep-order) 'blocked)
-                    (parcel-clone (parcel-order-recipe dep-order) 'force))
-                  (when (member dep-order (parcel-order-includes order))
-                    ;; Dependency is published in same repo...
-                    (parcel--clone-dependencies dep-order)))))
+                  (if included
+                      ;; Unblock dependency published in same repo...
+                      (when blocked (parcel--clone-dependencies dep-order))
+                    (unless blocked
+                      (parcel-clone (parcel-order-recipe dep-order) 'force))))))
             (when (= (length externals) finished) ; Our dependencies beat us to the punch
               (parcel--update-order-status order 'buildling "Building...")
               (run-hook-with-args 'parcel--build-functions order)))
