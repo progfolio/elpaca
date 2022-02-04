@@ -58,8 +58,6 @@ is used in a `:files' directive.")
 (defun parcel-order-defaults (_order)
   "Default order modifications. Matches any order."
   (list :protocol 'https :remotes "origin" :inherit t :depth 1
-        :ignore (list "*.elc" ".cask" "*~" "*#" "*-autoloads.el")
-        :files parcel-default-files-directive
         :build (list #'parcel--byte-compile #'parcel--generate-autoloads-async)))
 
 (defcustom parcel-order-functions (list #'parcel-order-defaults)
@@ -726,16 +724,6 @@ RETURNS order structure."
     (parcel--update-order-status order (cond
                                         ((string-match-p "Username" result) 'blocked))
                                  (parcel-process-tail output))))
-
-(defun parcel--add-excludes (recipe)
-  "Add RECIPE's :ignore to .git/info/exclude file."
-  (when-let ((ignored           (plist-get recipe :ignore))
-             (repo-dir          (parcel-repo-dir recipe))
-             (default-directory repo-dir))
-    (with-temp-buffer
-      (insert (string-join ignored "\n"))
-      (write-region (point-min) (point-max)
-                    (expand-file-name ".git/info/exclude" repo-dir)))))
 
 (defun parcel--clone-process-sentinel (process _event)
   "Sentinel for clone PROCESS."
