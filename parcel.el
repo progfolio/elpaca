@@ -552,35 +552,30 @@ FILES is used recursively."
 (defun parcel--checkout-ref-process-sentinel (process event)
   "PROCESS EVENT."
   (when (equal event "finished\n")
-    (let* ((order             (process-get process :order))
-           (recipe            (parcel-order-recipe order))
+    (let* ((order             (process-get process   :order))
+           (recipe            (parcel-order-recipe   order))
            (default-directory (parcel-order-repo-dir order)))
       (cl-destructuring-bind ( &key remotes ref tag branch &allow-other-keys
                                &aux (remote (if (stringp remotes) remotes (caar remotes))))
           recipe
-        (catch 'quit
-          (if (or ref tag branch)
-              (parcel-with-process
-                  (apply #'parcel-process-call
-                         `("git"
-                           ,@(delq nil
-                                   (cond
-                                    (ref    (list "checkout" ref))
-                                    (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
-                                    (branch (list "switch" "-C" branch
-                                                  (format "%s/%s" remote branch)))))))
-                (if success
-                    (progn
-                      (parcel--update-order-status order 'ref-checked-out "Ref checked out")
-                      (parcel--link-build-files order)
-                      (parcel--clone-dependencies order)) ;process dependencies
-                  (parcel--update-order-status
-                   order 'failed
-                   (format "Unable to check out ref: %S " (string-trim stderr)))
-                  (throw 'quit nil)))
-            (parcel--update-order-status order 'ref-checked-out "Ref checked out")
-            (parcel--link-build-files order)
-            (parcel--clone-dependencies order)))))))
+        (when (or ref tag branch)
+          (parcel-with-process
+              (apply #'parcel-process-call
+                     `("git"
+                       ,@(delq nil
+                               (cond
+                                (ref    (list "checkout" ref))
+                                (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
+                                (branch (list "switch" "-C" branch
+                                              (format "%s/%s" remote branch)))))))
+            (unless success
+              (parcel--update-order-status
+               order 'failed
+               (format "Unable to check out ref: %S " (string-trim stderr))))))
+        (unless (eq (parcel-order-status order) 'failed)
+          (parcel--update-order-status order 'ref-checked-out "Ref checked out")
+          (parcel--link-build-files order)
+          (parcel--clone-dependencies order))))))
 
 (defun parcel--checkout-ref (recipe)
   "Checkout RECIPE's :ref.
