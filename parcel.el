@@ -206,9 +206,9 @@ If INTERACTIVE is equivalent to \\[universal-argument] prompt for MENUS."
     (not (cadr member))))
 
 ;;;###autoload
-(defun parcel-recipe (&optional order)
-  "Return recipe computed from ORDER.
-ORDER is any of the following values:
+(defun parcel-recipe (&optional item)
+  "Return recipe computed from ITEM.
+ITEM is any of the following values:
   - nil. The order is prompted for.
   - a symbol which will be looked up via `parcel-menu-functions'
   - an order list."
@@ -218,21 +218,21 @@ ORDER is any of the following values:
         package
         ingredients)
     (cond
-     ((or (null order) (symbolp order))
-      (let ((menu-item (parcel-menu-item nil order)))
-        (unless menu-item (user-error "No menu-item for %S" order))
-        (push (run-hook-with-args-until-success 'parcel-order-functions order)
+     ((or (null item) (symbolp item))
+      (let ((menu-item (parcel-menu-item nil item)))
+        (unless menu-item (user-error "No menu-item for %S" item))
+        (push (run-hook-with-args-until-success 'parcel-order-functions item)
               ingredients)
         (push menu-item ingredients)))
-     ((listp order)
-      (setq package (pop order))
-      (unless (parcel--inheritance-disabled-p order)
-        (let ((mods (run-hook-with-args-until-success 'parcel-order-functions order)))
+     ((listp item)
+      (setq package (pop item))
+      (unless (parcel--inheritance-disabled-p item)
+        (let ((mods (run-hook-with-args-until-success 'parcel-order-functions item)))
           (push mods ingredients)
-          (when (or (plist-get order :inherit) (plist-get mods :inherit))
+          (when (or (plist-get item :inherit) (plist-get mods :inherit))
             (push (parcel-menu-item nil package) ingredients))))
-      (setq ingredients (append ingredients (list order))))
-     (t (signal 'wrong-type-argument `((null symbolp listp) . ,order))))
+      (setq ingredients (append ingredients (list item))))
+     (t (signal 'wrong-type-argument `((null symbolp listp) . ,item))))
     (if-let ((recipe (apply #'parcel-merge-plists ingredients)))
         (progn
           (unless (plist-get recipe :package)
