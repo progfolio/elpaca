@@ -82,32 +82,33 @@
 
 (ert-deftest parcel-recipe ()
   "Compute recipe from ORDER."
-  ;; no inheritance, full spec
-  (should (parcel-test--plist-equal-p
-           (parcel-recipe '(parcel :host github :repo "progfolio/parcel" :inherit nil))
-           '(:package "parcel" :host github :repo "progfolio/parcel" :inherit nil)))
-  ;; basic default inheritance
-  (let ((parcel-order-functions '((lambda (order) '(:inherit nil)))))
+  (let ((parcel-recipe-functions nil))
+    ;; no inheritance, full spec
     (should (parcel-test--plist-equal-p
-             (parcel-recipe '(parcel :host github :repo "progfolio/parcel"))
-             '(:package "parcel" :host github :repo "progfolio/parcel" :inherit nil))))
-  ;; basic menu lookup
-  (let ((parcel-order-functions '((lambda (order) '(:inherit nil))))
-        (parcel-menu-functions '(parcel-test-menu))
-        parcel-menu--candidates-cache)
-    (should (parcel-test--plist-equal-p
-             '( :package "parcel"
-                :host github
-                :repo "progfolio/parcel"
-                :inherit nil)
-             (parcel-recipe '(parcel :repo "progfolio/parcel" :host github))))
-    (should (parcel-test--plist-equal-p
-             '( :package "parcel"
-                :host github
-                :repo "progfolio/parcel"
-                :inherit t
-                :pre-build ("./pre-build"))
-             (parcel-recipe '(parcel :inherit t))))))
+             (parcel-recipe '(parcel :host github :repo "progfolio/parcel" :inherit nil))
+             '(:package "parcel" :host github :repo "progfolio/parcel" :inherit nil)))
+    ;; basic default inheritance
+    (let ((parcel-order-functions '((lambda (order) '(:inherit nil)))))
+      (should (parcel-test--plist-equal-p
+               (parcel-recipe '(parcel :host github :repo "progfolio/parcel"))
+               '(:package "parcel" :host github :repo "progfolio/parcel" :inherit nil))))
+    ;; basic menu lookup
+    (let ((parcel-order-functions '((lambda (order) '(:inherit nil))))
+          (parcel-menu-functions '(parcel-test-menu))
+          parcel-menu--candidates-cache)
+      (should (parcel-test--plist-equal-p
+               '( :package "parcel"
+                  :host github
+                  :repo "progfolio/parcel"
+                  :inherit nil)
+               (parcel-recipe '(parcel :repo "progfolio/parcel" :host github))))
+      (should (parcel-test--plist-equal-p
+               '( :package "parcel"
+                  :host github
+                  :repo "progfolio/parcel"
+                  :inherit t
+                  :pre-build ("./pre-build"))
+               (parcel-recipe '(parcel :inherit t)))))))
 
 (provide 'parcel-test)
 ;;; parcel-test.el ends here
