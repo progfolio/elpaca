@@ -718,7 +718,8 @@ RETURNS order structure."
            (mono-repo
             (cl-some (lambda (cell)
                        (when-let ((queued (cdr cell))
-                                  ((equal repo-dir (parcel-order-repo-dir queued))))
+                                  ((and repo-dir
+                                        (equal repo-dir (parcel-order-repo-dir queued)))))
                          queued))
                      parcel--queued-orders)))
       (prog1 order
