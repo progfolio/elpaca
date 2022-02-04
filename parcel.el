@@ -350,7 +350,10 @@ If INFO is non-nil, ORDER's info is updated as well."
     (when (member status '(finished failed blocked))
       (mapc #'parcel--order-check-status (parcel-order-dependents order)))
     (when (eq status 'ref-checked-out)
-      (mapc #'parcel--clone-dependencies (parcel-order-includes order))))
+      (mapc (lambda (o)
+              (parcel--link-build-files o)
+              (parcel--clone-dependencies o))
+            (parcel-order-includes order))))
   (when info
     (setf (parcel-order-info order) info)
     (parcel--log-event order info))
@@ -457,19 +460,20 @@ FILES is used recursively."
          (exclusions        nil)
          (targets
           (cl-remove-if-not
-           (lambda (path) (file-exists-p (expand-file-name path)))
+           (lambda (path) (file-exists-p
+                           (expand-file-name (if (stringp path) path (car path)))))
            (cl-set-difference
-            (apply #'append
-                   (mapcar (lambda (el)
-                             (pcase el
-                               ((pred stringp) (or (file-expand-wildcards el) (list el)))
-                               (`(:exclude  . ,excluded)
-                                (push (parcel--files order excluded) exclusions)
-                                nil)
-                               (:defaults
-                                (parcel--files order parcel-default-files-directive))))
-                           files))
-            exclusions))))
+            (flatten-tree
+             (mapcar (lambda (el)
+                       (pcase el
+                         ((pred stringp) (or (file-expand-wildcards el) (list el)))
+                         (`(:exclude  . ,excluded)
+                          (push (parcel--files order excluded) exclusions)
+                          nil)
+                         (:defaults
+                          (parcel--files order parcel-default-files-directive))))
+                     files))
+            (flatten-tree exclusions)))))
     (mapcar (lambda (target)
               (cons (expand-file-name target)
                     (expand-file-name (file-name-nondirectory target) build-dir)))
@@ -708,7 +712,9 @@ RETURNS order structure."
             (parcel--update-order-status order)
           (cl-pushnew order (parcel-order-includes mono-repo))
           (if (memq 'ref-checked-out (parcel-order-statuses mono-repo))
-              (parcel--clone-dependencies order)
+              (progn
+                (parcel--link-build-files order)
+                (parcel--clone-dependencies order))
             (parcel--update-order-status order 'blocked
                                          (format "Waiting for monorepo %S" repo-dir))))))))
 
