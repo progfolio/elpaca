@@ -522,10 +522,9 @@ FILES is used recursively."
          (dependencies (parcel--dependencies recipe))
          (emacs        (assoc 'emacs dependencies))
          (externals    (cl-remove-duplicates
-                        (cl-remove-if
-                         (lambda (dependency)
-                           (member dependency parcel-ignored-dependencies))
-                         dependencies :key #'car)))
+                        (cl-remove-if (lambda (dependency)
+                                        (member dependency parcel-ignored-dependencies))
+                                      dependencies :key #'car)))
          (parcel--build-functions build))
     (if (and emacs (version< emacs-version (cadr emacs)))
         (parcel--update-order-status
