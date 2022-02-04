@@ -937,7 +937,8 @@ If FORCE is non-nil, do not ask for confirmation."
 ;;;; STATUS BUFFER
 (defvar parcel-status-mode-map (let ((map (make-sparse-keymap)))
                                  (define-key map (kbd "<return>") 'parcel-status-mode-send-input)
-                                 (define-key map (kbd "C-c C-c")  'parcel-status-mode-visit-repo)
+                                 (define-key map (kbd "C-c C-r")  'parcel-status-mode-visit-repo)
+                                 (define-key map (kbd "C-c C-b")  'parcel-status-mode-visit-build)
                                  map))
 
 (define-derived-mode parcel-status-mode text-mode "Parcel Status Mode"
@@ -965,12 +966,23 @@ If FORCE is non-nil, do not ask for confirmation."
   (interactive)
   (save-excursion
     (beginning-of-line)
-    (if-let ((order    (get-text-property (point) 'order))
-             (recipe   (parcel-order-recipe order))
-             (dir      (parcel-repo-dir recipe))
+    (if-let ((order (get-text-property (point) 'order))
+             (dir   (parcel-order-repo-dir order))
              ((file-exists-p dir)))
-        (dired (parcel-repo-dir recipe))
+        (dired dir)
       (user-error "No repo dir associated with current line"))))
+
+;;@TODO: consolidate with above
+(defun parcel-status-mode-visit-build ()
+  "Visit builds dir associated with current process."
+  (interactive)
+  (save-excursion
+    (beginning-of-line)
+    (if-let ((order (get-text-property (point) 'order))
+             (dir   (parcel-order-build-dir order))
+             ((file-exists-p dir)))
+        (dired dir)
+      (user-error "No build dir associated with current line"))))
 
 (provide 'parcel)
 ;;; parcel.el ends here
