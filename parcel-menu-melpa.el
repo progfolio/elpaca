@@ -32,6 +32,7 @@
   :group 'parcel)
 
 (defvar parcel-menu-melpa--index-cache nil "Cache of index.")
+(defvar parcel-default-files-directive) ;defined in parcel.el
 
 ;;@TODO: needs to be more robust if processes error
 (defun parcel-menu-melpa--clone (path)
@@ -68,6 +69,8 @@
                                        ((member (plist-get recipe :fetcher) '(git github gitlab))))
                               (setq recipe
                                     (append (list :package (symbol-name package)) recipe))
+                              (unless (plist-member recipe :files)
+                                (setq recipe (plist-put recipe :files parcel-default-files-directive)))
                               (cons (intern-soft (file-name-nondirectory file))
                                     (list :source "MELPA" :recipe recipe)))
                           ((error) (message "parcel-menu-melpa couldn't process %S" file) nil))))
