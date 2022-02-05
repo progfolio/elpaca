@@ -28,8 +28,9 @@
 
 (defvar parcel-directory)
 (defun parcel-menu-org--build ()
-  "Generate `org-version.el`."
-  (let* ((default-directory (expand-file-name "./org/lisp" parcel-directory))
+  "Generate `org-version.el`.
+`default-directory' is assumed to be org's repo dir."
+  (let* ((default-directory (expand-file-name "lisp/"))
          (orgversion
           (parcel-with-process
               (parcel-process-call "git" "describe" "--match" "release*" "--abbrev=0" "HEAD")
@@ -76,7 +77,8 @@
                              :type 'git
                              :repo "https://git.savannah.gnu.org/git/emacs/org-mode.git"
                              :depth 'full ; `org-version' depends on repository tags.
-                             :pre-build '(parcel-menu-org--build)
+                             :pre-build '(progn (require 'parcel-menu-org)
+                                                (parcel-menu-org--build))
                              :build '(:not autoloads)
                              :files '(:defaults "lisp/*.el" ("etc/styles/" "etc/styles/*")))))
                (cons 'org-contrib
