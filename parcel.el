@@ -358,6 +358,94 @@ If PACKAGES is nil, use all available orders."
       (display-buffer (current-buffer)))
     (special-mode)))
 
+(defun parcel--run-build-commands (&rest commands)
+  "Run build COMMANDS."
+  (dolist (command (parcel--ensure-list commands))
+    (if (cl-every #'stringp command)
+        (parcel-with-process (apply #'parcel-process-call command)
+          (if success
+              (message stdout)
+            (message "Build command error: %S" result)
+            (error ":pre-build failed")))
+      (eval command t))))
+
+(defun parcel--pre-build-process-filter (process output)
+  "Filter PROCESS OUTPUT of pre-build process."
+  (process-put process :result (concat (process-get process :result) output))
+  (let ((order  (process-get process :order))
+        (result (process-get process :result)))
+    (parcel--update-order-status order
+                                 (when (string-match-p "Debugger Entered" result) 'failed)
+                                 (parcel-process-tail output))))
+
+(defun parcel--link-build-files (order)
+  "Link ORDER's :files into it's builds subdirectory."
+  (let* ((build-dir (parcel-order-build-dir order)))
+    (parcel--update-order-status order 'linking-build "Linking build files")
+    (when (file-exists-p build-dir) (delete-directory build-dir 'recusrive))
+    (make-directory build-dir 'parents)
+    (dolist (spec (parcel--files order))
+      (let ((file   (car spec))
+            (link   (cdr spec)))
+        (make-directory (file-name-directory link) 'parents)
+        (make-symbolic-link file link 'overwrite))))
+  (parcel--update-order-status order 'build-linked "Build files linked"))
+
+(defun parcel--pre-build-process-sentinel (process event)
+  "PROCESS EVENT."
+  (let ((order (process-get process :order)))
+    (cond
+     ((equal event "finished\n")
+      (progn
+        (parcel--update-order-status order 'pre-built ":pre-build steps finished")
+        (parcel--link-build-files   order)
+        (parcel--clone-dependencies order)))
+     ((string-match-p "abnormally" event)
+      (parcel--update-order-status order 'failed
+                                   ;;@TODO: fix this. Ugly, brittle. depends on log structure
+                                   (car (last (car (last (parcel-order-log order) 2)))))))))
+
+(defun parcel--dispatch-build-commands (order &optional post)
+  "Run ORDER's :pre-build or :post-build commands.
+If POST is non-nil, RECIPE's :post-build commands are run.
+Otherwise, the :pre-build commands are run.
+
+Each command is either an elisp form to be evaluated or a list of
+strings to be executed in a shell context of the form:
+
+  (\"executable\" \"arg\"...)
+
+Commands are exectued in the ORDER's repository directory.
+
+The keyword's value is expected to be one of the following:
+
+  - A single command
+  - A list of commands
+  - nil, in which case no commands are executed.
+    Note if :build is nil, :pre/post-build commands are not executed."
+  (parcel--update-order-status order 'pre-build-commands "Running :pre-build commands")
+  (when-let ((default-directory (parcel-order-repo-dir order))
+             (recipe            (parcel-order-recipe order))
+             (commands          (plist-get recipe (if post :post-build :pre-build)))
+             (emacs             (parcel--emacs-path))
+             (program           `(progn
+                                   (require 'parcel)
+                                   (normal-top-level-add-subdirs-to-load-path)
+                                   (parcel--run-build-commands ',commands)))
+             (process
+              (make-process
+               :name (format "parcel-pre-build-%s" (plist-get recipe :package))
+               :command (list
+                         emacs "-Q"
+                         "-L" "./"
+                         "-L" (expand-file-name "parcel" parcel-directory)
+                         "--batch"
+                         "--eval" (let (print-level print-length)
+                                    (format "%S" program)))
+               :filter   #'parcel--pre-build-process-filter
+               :sentinel #'parcel--pre-build-process-sentinel)))
+    (process-put process :order order)))
+
 (defun parcel--update-order-status (order &optional status info)
   "Update ORDER STATUS.
 Print the order status line in `parcel-status-buffer'.
@@ -374,8 +462,7 @@ If INFO is non-nil, ORDER's info is updated as well."
     (when (eq status 'ref-checked-out)
       (mapc (lambda (o)
               (unless (member (parcel-order-statuses o) '(finished build-linked))
-                (parcel--link-build-files o)
-                (parcel--clone-dependencies o)))
+                (parcel--dispatch-build-commands order)))
             (parcel-order-includes order))))
   (when info
     (setf (parcel-order-info order) info)
@@ -500,19 +587,6 @@ FILES and NOCONS are used recursively."
                                   (member target (flatten-tree exclusions))))
                             (flatten-tree targets))))))
 
-(defun parcel--link-build-files (order)
-  "Link ORDER's :files into it's builds subdirectory."
-  (let* ((build-dir (parcel-order-build-dir order)))
-    (parcel--update-order-status order 'linking-build "Linking build files")
-    (when (file-exists-p build-dir) (delete-directory build-dir 'recusrive))
-    (make-directory build-dir 'parents)
-    (dolist (spec (parcel--files order))
-      (let ((file   (car spec))
-            (link   (cdr spec)))
-        (make-directory (file-name-directory link) 'parents)
-        (make-symbolic-link file link 'overwrite))))
-  (parcel--update-order-status order 'build-linked "Build files linked"))
-
 (defun parcel--clone-dependencies (order)
   "Clone ORDER's dependencies."
   (parcel--update-order-status order 'cloning-dependencies "Cloning Dependencies")
@@ -578,8 +652,7 @@ FILES and NOCONS are used recursively."
                (format "Unable to check out ref: %S " (string-trim stderr))))))
         (unless (eq (parcel-order-status order) 'failed)
           (parcel--update-order-status order 'ref-checked-out "Ref checked out")
-          (parcel--link-build-files order)
-          (parcel--clone-dependencies order))))))
+          (parcel--dispatch-build-commands order))))))
 
 (defun parcel--checkout-ref (order)
   "Checkout ORDER's :ref.
@@ -735,9 +808,7 @@ RETURNS order structure."
             (parcel--update-order-status order)
           (cl-pushnew order (parcel-order-includes mono-repo))
           (if (memq 'ref-checked-out (parcel-order-statuses mono-repo))
-              (progn
-                (parcel--link-build-files order)
-                (parcel--clone-dependencies order))
+              (parcel--dispatch-build-commands order)
             (parcel--update-order-status order 'blocked
                                          (format "Waiting for monorepo %S" repo-dir))))))))
 
