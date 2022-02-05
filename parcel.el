@@ -47,11 +47,11 @@
   "Indicates an order is finished.")
 
 (defface parcel-blocked
-  '((t (:weight bold :foreground "#EA00CC")))
+  '((t (:weight bold :foreground "#FFC1CC")))
   "Indicates an order is blocked.")
 
 (defface parcel-failed
-  '((t (:weight bold :foreground "#FF0000")))
+  '((t (:weight bold :foreground "#FF1818")))
   "Indicates an order has failed.")
 
 (defcustom parcel-directory (expand-file-name "parcel" user-emacs-directory)
