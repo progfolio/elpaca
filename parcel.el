@@ -424,9 +424,9 @@ The keyword's value is expected to be one of the following:
   - nil, in which case no commands are executed.
     Note if :build is nil, :pre/post-build commands are not executed."
   (parcel--update-order-status order 'pre-build-commands "Running :pre-build commands")
-  (when-let ((default-directory (parcel-order-repo-dir order))
-             (recipe            (parcel-order-recipe order))
-             (commands          (plist-get recipe (if post :post-build :pre-build)))
+  (if-let ((recipe (parcel-order-recipe order))
+           (commands          (plist-get recipe (if post :post-build :pre-build))))
+      (let* ((default-directory (parcel-order-repo-dir order))
              (emacs             (parcel--emacs-path))
              (program           `(progn
                                    (require 'parcel)
@@ -444,7 +444,9 @@ The keyword's value is expected to be one of the following:
                                     (format "%S" program)))
                :filter   #'parcel--pre-build-process-filter
                :sentinel #'parcel--pre-build-process-sentinel)))
-    (process-put process :order order)))
+        (process-put process :order order))
+    (parcel--link-build-files   order)
+    (parcel--clone-dependencies order)))
 
 (defun parcel--update-order-status (order &optional status info)
   "Update ORDER STATUS.
