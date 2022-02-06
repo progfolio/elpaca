@@ -687,6 +687,7 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
   "Return path to running Emacs."
   (concat invocation-directory invocation-name))
 
+(defvar generated-autoload-file "autoload")
 (defun parcel-generate-autoloads (package dir)
   "Generate autoloads in DIR for PACKAGE."
   (let* ((auto-name (format "%s-autoloads.el" package))
@@ -696,8 +697,10 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
          (version-control 'never))
     (unless (file-exists-p output)
       (require 'autoload)
-      (write-region (autoload-rubric output "package" nil) nil output nil 'silent))
-    (make-directory-autoloads dir output)
+      (let ((generated-autoload-file output))
+        (write-region (autoload-rubric output) nil output nil 'silent))
+      ;;@TODO: support older Emacs?
+      (make-directory-autoloads dir output))
     (when-let ((buf (find-buffer-visiting output)))
       (kill-buffer buf))
     auto-name))
