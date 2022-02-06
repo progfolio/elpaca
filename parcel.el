@@ -1000,7 +1000,7 @@ Async wrapper for `parcel-generate-autoloads'."
          (print-circle nil)
          (process
           (make-process
-           :name     (format "parcel-byte-compile-%s" (parcel-order-recipe order))
+           :name     (format "parcel-byte-compile-%s" (parcel-order-package order))
            :command  `(,emacs "-Q" "--batch" "--eval" ,(format "%S" program))
            :filter   #'parcel--byte-compile-process-filter
            :sentinel #'parcel--byte-compile-process-sentinel)))
