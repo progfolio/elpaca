@@ -924,21 +924,24 @@ Retrun t if process has finished, nil otherwise."
   "Generate ORDER's autoloads.
 Async wrapper for `parcel-generate-autoloads'."
   (parcel--log-event order "Generating autoloads")
-  (let* ((emacs     (parcel--emacs-path))
-         (package   (parcel-order-package  order))
-         (build-dir (parcel-order-build-dir order))
-         (parcel    (expand-file-name "parcel/" parcel-directory))
-         (command   (list emacs "-Q"
-                          "-L" parcel
-                          "-L" build-dir ; Is this necessary?
-                          "-l" (expand-file-name "parcel.el" parcel)
-                          "--batch" "--eval"
-                          (format "(parcel-generate-autoloads %S %S)" package build-dir)))
-         (process   (make-process
-                     :name     (format "parcel-autoloads-%s" package)
-                     :command  command
-                     :filter   #'parcel--generate-autoloads-async-process-filter
-                     :sentinel #'parcel--generate-autoloads-async-process-sentinel)))
+  (let* ((emacs             (parcel--emacs-path))
+         (package           (parcel-order-package  order))
+         (build-dir         (parcel-order-build-dir order))
+         (default-directory build-dir)
+         (parcel            (expand-file-name "parcel/" parcel-directory))
+         (command
+          (list emacs "-Q"
+                "-L" parcel
+                "-L" build-dir ; Is this necessary?
+                "-l" (expand-file-name "parcel.el" parcel)
+                "--batch" "--eval"
+                (format "(parcel-generate-autoloads %S %S)" package build-dir)))
+         (process
+          (make-process
+           :name     (format "parcel-autoloads-%s" package)
+           :command  command
+           :filter   #'parcel--generate-autoloads-async-process-filter
+           :sentinel #'parcel--generate-autoloads-async-process-sentinel)))
     (process-put process :order order)))
 
 (defun parcel--activate-package (order)
