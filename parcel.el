@@ -423,30 +423,31 @@ The keyword's value is expected to be one of the following:
   - A list of commands
   - nil, in which case no commands are executed.
     Note if :build is nil, :pre/post-build commands are not executed."
-  (parcel--update-order-status order 'pre-build-commands "Running :pre-build commands")
   (if-let ((recipe (parcel-order-recipe order))
            (commands          (plist-get recipe (if post :post-build :pre-build))))
-      (let* ((default-directory (parcel-order-repo-dir order))
-             (emacs             (parcel--emacs-path))
-             (program           `(progn
-                                   (require 'parcel)
-                                   (normal-top-level-add-subdirs-to-load-path)
-                                   (parcel--run-build-commands ',commands)))
-             (process
-              (make-process
-               :name (format "parcel-pre-build-%s" (plist-get recipe :package))
-               :command (list
-                         emacs "-Q"
-                         "-L" "./"
-                         "-L" (expand-file-name "parcel" parcel-directory)
-                         "--batch"
-                         "--eval" (let (print-level print-length)
-                                    (format "%S" program)))
-               :filter   #'parcel--pre-build-process-filter
-               :sentinel #'parcel--pre-build-process-sentinel)))
-        (process-put process :order order))
-    (parcel--link-build-files   order)
-    (parcel--clone-dependencies order)))
+      (progn
+        (parcel--update-order-status order 'pre-build-commands "Running :pre-build commands")
+        (let* ((default-directory (parcel-order-repo-dir order))
+               (emacs             (parcel--emacs-path))
+               (program           `(progn
+                                     (require 'parcel)
+                                     (normal-top-level-add-subdirs-to-load-path)
+                                     (parcel--run-build-commands ',commands)))
+               (process
+                (make-process
+                 :name (format "parcel-pre-build-%s" (plist-get recipe :package))
+                 :command (list
+                           emacs "-Q"
+                           "-L" "./"
+                           "-L" (expand-file-name "parcel" parcel-directory)
+                           "--batch"
+                           "--eval" (let (print-level print-length)
+                                      (format "%S" program)))
+                 :filter   #'parcel--pre-build-process-filter
+                 :sentinel #'parcel--pre-build-process-sentinel)))
+          (process-put process :order order)))
+    (parcel--clone-dependencies order)
+    (parcel--link-build-files   order)))
 
 (defun parcel--update-order-status (order &optional status info)
   "Update ORDER STATUS.
