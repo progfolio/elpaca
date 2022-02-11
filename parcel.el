@@ -137,7 +137,6 @@ Ignore these unless the user explicitly requests they be installed.")
   (includes     nil)
   (repo-dir     nil)
   (build-dir    nil)
-  (info         nil)
   (process      nil)
   (log          nil))
 
@@ -460,8 +459,7 @@ Print the order status line in `parcel-status-buffer'.
 If STATUS is non-nil and differs from ORDER's current STATUS,
 signal ORDER's depedentents to check (and possibly change) their status.
 If INFO is non-nil, ORDER's info is updated as well."
-  (when-let ((current-status (parcel-order-status order))
-             ((not (eq current-status status))))
+  (when status
     (setf (parcel-order-status order) status)
     (cl-pushnew status (parcel-order-statuses order))
     (when (member status '(finished failed blocked))
@@ -471,9 +469,7 @@ If INFO is non-nil, ORDER's info is updated as well."
               (unless (member (parcel-order-statuses o) '(finished build-linked))
                 (parcel--dispatch-build-commands order)))
             (parcel-order-includes order))))
-  (when info
-    (setf (parcel-order-info order) info)
-    (parcel--log-event order info))
+  (when info (parcel--log-event order info))
   ;;@TODO: decompose. Printing status shouldn't be tied to updating it
   (with-current-buffer (get-buffer-create parcel-status-buffer)
     (save-excursion
@@ -761,6 +757,10 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
     (setq header-line-format '(:eval (parcel--header-line)))
     (display-buffer (current-buffer))))
 
+(defsubst parcel-order-info (order)
+  "Return ORDER's most recent log event info."
+  (nth 2 (car (last (parcel-order-log order)))))
+
 (defun parcel-status-buffer-line (order)
   "Return status string for ORDER."
   (let* ((package (parcel-order-package order))
@@ -805,7 +805,7 @@ RETURNS order structure."
            (order
             (make-parcel-order
              :package (format "%S" package) :recipe recipe :status status
-             :steps (plist-get recipe :build) :info info :repo-dir repo-dir
+             :steps (plist-get recipe :build) :repo-dir repo-dir
              :build-dir (when recipe (parcel-build-dir recipe))))
            (mono-repo
             (cl-some (lambda (cell)
@@ -817,7 +817,7 @@ RETURNS order structure."
       (prog1 order
         (push (cons package order) parcel--queued-orders)
         (if (not mono-repo)
-            (parcel--update-order-info order "Package queued")
+            (parcel--update-order-info order info)
           (cl-pushnew order (parcel-order-includes mono-repo))
           (if (memq 'ref-checked-out (parcel-order-statuses mono-repo))
               (parcel--dispatch-build-commands order)
