@@ -129,7 +129,6 @@ Ignore these unless the user explicitly requests they be installed.")
   (package      nil :type string)
   (recipe       nil :type list)
   (steps        nil :type list)
-  (status       nil :type string)
   (statuses     nil :type list)
   (dependencies nil :type list)
   (dependents   nil :type list)
@@ -310,6 +309,10 @@ ITEM is any of the following values:
                                                 `(:host (github gitlab stringp) ,host ,recipe))))))
         (format "%s%s%s%s.git" (car protocol) host (cdr protocol) repo)))))
 
+(defsubst parcel-order-status (order)
+  "Return `car' of ORDER's statuses."
+  (car (parcel-order-statuses order)))
+
 (defun parcel--log-event (order text)
   "Store TEXT in ORDER's log."
   (let ((log (parcel-order-log order)))
@@ -460,8 +463,7 @@ If STATUS is non-nil and differs from ORDER's current STATUS,
 signal ORDER's depedentents to check (and possibly change) their status.
 If INFO is non-nil, ORDER's info is updated as well."
   (when status
-    (setf (parcel-order-status order) status)
-    (cl-pushnew status (parcel-order-statuses order))
+    (push status (parcel-order-statuses order))
     (when (member status '(finished failed blocked))
       (mapc #'parcel--order-check-status (parcel-order-dependents order)))
     (when (eq status 'ref-checked-out)
@@ -804,7 +806,7 @@ RETURNS order structure."
                                 info (format "Unable to determine repo dir: %S" err))))))
            (order
             (make-parcel-order
-             :package (format "%S" package) :recipe recipe :status status
+             :package (format "%S" package) :recipe recipe :statuses (list status)
              :steps (plist-get recipe :build) :repo-dir repo-dir
              :build-dir (when recipe (parcel-build-dir recipe))))
            (mono-repo
@@ -884,7 +886,7 @@ If FORCE is non-nil, ignore order queue."
       recipe
     (when (or force (not order))
       (when (not order) (setq order (parcel--queue-order item)))
-      (setf (parcel-order-status order) 'cloning)
+      (push 'cloning (parcel-order-statuses order))
       (let ((process (make-process
                       :name     (format "parcel-clone-%s" package)
                       :command  `("git" "clone"
