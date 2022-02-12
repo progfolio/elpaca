@@ -544,10 +544,10 @@ The keyword's value is expected to be one of the following:
           (process-put process :order order)))
     (parcel-run-next-build-step order)))
 
-(defun parcel--remove-build-steps (order steps)
-  "Remove STEPS from ORDER."
+(defun parcel--remove-build-steps (order steplist)
+  "Remove each step in STEPLIST from ORDER."
   (setf (parcel-order-build-steps order)
-        (cl-set-difference (parcel-order-build-steps order) steps)))
+        (cl-set-difference (parcel-order-build-steps order) steplist)))
 
 (defun parcel--update-order-info (order info &optional status)
   "Update ORDER STATUS.
