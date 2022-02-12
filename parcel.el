@@ -153,6 +153,7 @@ Ignore these unless the user explicitly requests they be installed.")
   (statuses     nil :type list)
   (dependencies nil :type list)
   (dependents   nil :type list)
+  (callback     nil)
   (index        (cl-incf parcel--order-index))
   (includes     nil)
   (repo-dir     nil)
@@ -894,7 +895,9 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
   "Run ORDER's next build step with ARGS."
   (if-let ((next (pop (parcel-order-build-steps order))))
       (apply next `(,order ,@args))
-    (parcel--update-order-info order "✓" 'finished)))
+    (parcel--update-order-info order "✓" 'finished)
+    (when-let ((callback (parcel-order-callback order)))
+      (funcall callback))))
 
 (defun parcel--queue-order (item &optional status)
   "Queue (ITEM . ORDER) in `parcel--queued-orders'.
@@ -1125,6 +1128,31 @@ Async wrapper for `parcel-generate-autoloads'."
            :filter   #'parcel--byte-compile-process-filter
            :sentinel #'parcel--byte-compile-process-sentinel)))
     (process-put process :order order)))
+
+;;;###autoload
+(defmacro parcel (order &rest body)
+  "Install ORDER, then execute BODY."
+  (declare (indent 1))
+  `(let ((o (parcel--queue-order ,order)))
+     (setf (parcel-order-callback o) (lambda () ,@body))))
+
+;;;###autoload
+(defun parcel-queue-initialize ()
+  "Initialize order queue."
+  (setq parcel--queued-orders nil
+        parcel--order-index -1
+        parcel--order-queue-start-time (current-time)))
+
+;;;###autoload
+(defun parcel-queue-empty ()
+  "Process all orders in `parcel--queued-orders'."
+  (when parcel-display-buffer (parcel--initialize-process-buffer))
+  (mapc (lambda (order)
+          (let ((order (cdr order)))
+            (unless (memq (parcel-order-status order) '(failed blocked))
+              ;; clone
+              (parcel-run-next-build-step order 'force))))
+        (reverse parcel--queued-orders)))
 
 ;;;; COMMANDS
 ;;;###autoload
