@@ -366,7 +366,7 @@ If PACKAGES is nil, use all available orders."
                  (pcase-let ((`(,package ,time ,text) event))
                    (format "[%s]%s %s"
                            (format-time-string "%02s.%3N" time)
-                           (format "%-20s" (concat "("package"):"))
+                           (format "%-30s" (concat "("package"):"))
                            text)))
                (cl-sort (copy-tree logs) #'time-less-p :key #'cadr)
                "\n")))
