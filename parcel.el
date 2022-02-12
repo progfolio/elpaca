@@ -58,6 +58,15 @@
   "Location of the parcel package store."
   :type 'directory)
 
+(defcustom parcel-makeinfo-executable (executable-find "makeinfo")
+  "Path of the makeinfo executable."
+  :type 'string)
+
+(defcustom parcel-install-info-executable
+  (executable-find "install-info")
+  "Path of the install-info executable."
+  :type 'string)
+
 (defcustom parcel-build-steps
   (list #'parcel-clone
         #'parcel--add-remotes
@@ -67,6 +76,8 @@
         #'parcel--link-build-files
         #'parcel--byte-compile
         #'parcel--generate-autoloads-async
+        #'parcel--compile-info
+        #'parcel--install-info
         #'parcel--activate-package)
   "List of steps which are run when installing/building a package."
   :type 'list)
@@ -145,6 +156,7 @@ Ignore these unless the user explicitly requests they be installed.")
   (includes     nil)
   (repo-dir     nil)
   (build-dir    nil)
+  (files        nil)
   (process      nil)
   (log          nil))
 
@@ -390,16 +402,89 @@ If PACKAGES is nil, use all available orders."
 
 (defun parcel--link-build-files (order)
   "Link ORDER's :files into it's builds subdirectory."
-  (let* ((build-dir (parcel-order-build-dir order)))
-    (parcel--update-order-info order "Linking build files")
+  (parcel--update-order-info order "Linking build files")
+  (let* ((build-dir (parcel-order-build-dir order))
+         (files (or (parcel-order-files order)
+                    (setf (parcel-order-files order) (parcel--files order)))))
     (when (file-exists-p build-dir) (delete-directory build-dir 'recusrive))
     (make-directory build-dir 'parents)
-    (dolist (spec (parcel--files order))
+    (dolist (spec files)
       (let ((file   (car spec))
             (link   (cdr spec)))
         (make-directory (file-name-directory link) 'parents)
         (make-symbolic-link file link 'overwrite))))
   (parcel--update-order-info order "Build files linked" 'build-linked)
+  (parcel-run-next-build-step order))
+
+(defun parcel--compile-info-process-filter (process output)
+  "Filter PROCESS OUTPUT of async checkout-ref operation."
+  (process-put process :result (concat (process-get process :result) output))
+  (let ((order  (process-get process :order))
+        (result (process-get process :result)))
+    (parcel--update-order-info order
+                               (parcel-process-tail output)
+                               ;;@FIX: Don't rely on error message text
+                               ;; This is git specific.
+                               (when (string-match-p "fatal" result) 'failed))))
+
+(defun parcel--compile-info-process-sentinel (process event)
+  "Sentinel for info compilation PROCESS EVENT."
+  (let ((order  (process-get process :order)))
+    (parcel--update-order-info
+     order (if (equal event "finished\n")
+               "Info compiled"
+             (format "Failed to compile Info: %S" (string-trim event))))
+    (parcel-run-next-build-step order)))
+
+(defun parcel--compile-info (order)
+  "Compile ORDER's .texi files."
+  (parcel--update-order-info order "Compiling Info files")
+  (if-let
+      ((files
+        (delq
+         nil
+         (mapcar
+          (lambda (spec)
+            (let ((repo-file  (car spec))
+                  (build-file (cdr spec)))
+              (when-let (((string-match-p "\\.texi\\(nfo\\)?$" repo-file))
+                         (info (concat (file-name-sans-extension build-file) ".info"))
+                         ((not (file-exists-p info))))
+                (list repo-file "-o" info))))
+          (or (parcel-order-files order)
+              (setf (parcel-order-files order) (parcel--files order))))))
+       (command `(,parcel-makeinfo-executable ,@(apply #'append files)))
+       (process (make-process
+                 :name (format "parcel-compile-info-%s" (parcel-order-package order))
+                 :command command
+                 :filter   #'parcel--compile-info-process-filter
+                 :sentinel #'parcel--compile-info-process-sentinel)))
+      (process-put process :order order)
+    (parcel--update-order-info order "No .info files found")
+    (parcel--remove-build-steps order '(parcel--install-info parcel--add-info-path))
+    (parcel-run-next-build-step order)))
+
+(defun parcel--install-info (order)
+  "Install ORDER's info files."
+  (when-let ((dir (expand-file-name "dir" (parcel-order-build-dir order)))
+             ((not (file-exists-p dir)))
+             (files
+              (delq nil
+                    (mapcar
+                     (lambda (spec)
+                       (let ((repo-file  (car spec))
+                             (build-file (cdr spec)))
+                         (cond
+                          ((string-match-p "\\.info$" build-file)
+                           build-file)
+                          ((string-match-p "\\.texi\\(nfo\\)?$" repo-file)
+                           (concat (file-name-sans-extension build-file) ".info")))))
+                     (or (parcel-order-files order)
+                         (setf (parcel-order-files order) (parcel--files order)))))))
+    (dolist (file (cl-remove-if-not #'file-exists-p files))
+      (parcel-with-process (parcel-process-call parcel-install-info-executable
+                                                file dir)
+        (unless success (parcel--update-order-info order result)))))
   (parcel-run-next-build-step order))
 
 (defun parcel--pre-build-process-sentinel (process event)
