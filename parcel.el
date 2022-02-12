@@ -58,6 +58,10 @@
   "Location of the parcel package store."
   :type 'directory)
 
+(defcustom parcel-display-buffer t
+  "When non-nil, display `parcel-status-buffer' while processing orders."
+  :type 'boolean)
+
 (defcustom parcel-makeinfo-executable (executable-find "makeinfo")
   "Path of the makeinfo executable."
   :type 'string)
