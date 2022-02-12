@@ -894,10 +894,10 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
              'order             order)
             " ")))
 
-(defun parcel-run-next-build-step (order &rest args)
+(defun parcel-run-next-build-step (order)
   "Run ORDER's next build step with ARGS."
   (if-let ((next (pop (parcel-order-build-steps order))))
-      (apply next `(,order ,@args))
+      (funcall next order)
     (parcel--update-order-info order "✓" 'finished)
     (when-let ((callback (parcel-order-callback order)))
       (funcall callback))))
