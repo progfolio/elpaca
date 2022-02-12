@@ -952,7 +952,7 @@ RETURNS order structure."
         (result (process-get process :result)))
     (parcel--update-order-info order
                                (parcel-process-tail output)
-                               (cond ((string-match-p "Username" result) 'blocked)))))
+                               (when (string-match-p "Username" result) 'blocked))))
 
 (defun parcel--clone-process-sentinel (process _event)
   "Sentinel for clone PROCESS."
