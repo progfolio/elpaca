@@ -706,7 +706,7 @@ FILES and NOCONS are used recursively."
 
 (defun parcel--clone-dependencies (order)
   "Clone ORDER's dependencies."
-  (parcel--update-order-info order "Cloning Dependencies")
+  (parcel--update-order-info order "Cloning Dependencies" 'cloning-deps)
   (let* ((recipe       (parcel-order-recipe order))
          (dependencies (parcel--dependencies recipe))
          (emacs        (assoc 'emacs dependencies))
