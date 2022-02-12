@@ -78,6 +78,7 @@
         #'parcel--generate-autoloads-async
         #'parcel--compile-info
         #'parcel--install-info
+        #'parcel--add-info-path
         #'parcel--activate-package)
   "List of steps which are run when installing/building a package."
   :type 'list)
@@ -414,6 +415,14 @@ If PACKAGES is nil, use all available orders."
         (make-directory (file-name-directory link) 'parents)
         (make-symbolic-link file link 'overwrite))))
   (parcel--update-order-info order "Build files linked" 'build-linked)
+  (parcel-run-next-build-step order))
+
+(defun parcel--add-info-path (order)
+  "Add the ORDER's info to `Info-directory-list'."
+  (parcel--update-order-info order "Adding Info path")
+  (eval-and-compile (require 'info))
+  (info-initialize)
+  (cl-pushnew (parcel-order-build-dir order) Info-directory-list)
   (parcel-run-next-build-step order))
 
 (defun parcel--compile-info-process-filter (process output)
