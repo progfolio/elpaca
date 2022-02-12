@@ -739,8 +739,7 @@ FILES and NOCONS are used recursively."
                   (if included
                       ;; Unblock dependency published in same repo...
                       (when blocked (parcel--clone-dependencies dep-order))
-                    (unless blocked
-                      (parcel-run-next-build-step dep-order 'force))))))
+                    (unless blocked (parcel-run-next-build-step dep-order))))))
             (when (= (length externals) finished) ; Our dependencies beat us to the punch
               (parcel-run-next-build-step order)))
         (parcel--update-order-info order "No external dependencies detected")
@@ -990,30 +989,27 @@ Possibly kicks off next build step, or changes order status."
      ((cl-every (lambda (status) (eq (cdr status) 'finished)) statuses)
       (parcel-run-next-build-step order)))))
 
-(defun parcel-clone (order &optional force)
+(defun parcel-clone (order)
   "Clone repo to `parcel-directory' from ORDER.
 If FORCE is non-nil, ignore order queue."
   (let* ((recipe  (parcel-order-recipe order))
          (package (plist-get recipe :package))
-         (item    (intern package))
          (depth   (plist-get recipe :depth))
          (repodir (parcel-order-repo-dir order))
          (URI     (parcel--repo-uri recipe))
          (default-directory parcel-directory))
-    (when force
-      (when (not order) (setq order (parcel--queue-order item)))
-      (push 'cloning (parcel-order-statuses order))
-      (let ((process (make-process
-                      :name     (format "parcel-clone-%s" package)
-                      :command  `("git" "clone"
-                                  ;;@TODO: certain refs will necessitate full clone
-                                  ;; or specific branch...
-                                  ,@(when depth (list "--depth" (number-to-string depth)))
-                                  ,URI ,repodir)
-                      :filter   #'parcel--clone-process-filter
-                      :sentinel #'parcel--clone-process-sentinel)))
-        (process-put process :order order)
-        (setf (parcel-order-process order) process)))))
+    (push 'cloning (parcel-order-statuses order))
+    (let ((process (make-process
+                    :name     (format "parcel-clone-%s" package)
+                    :command  `("git" "clone"
+                                ;;@TODO: certain refs will necessitate full clone
+                                ;; or specific branch...
+                                ,@(when depth (list "--depth" (number-to-string depth)))
+                                ,URI ,repodir)
+                    :filter   #'parcel--clone-process-filter
+                    :sentinel #'parcel--clone-process-sentinel)))
+      (process-put process :order order)
+      (setf (parcel-order-process order) process))))
 
 (defun parcel--generate-autoloads-async-process-filter (process output)
   "Filter autoload PROCESS OUTPUT."
@@ -1155,7 +1151,7 @@ Async wrapper for `parcel-generate-autoloads'."
           (let ((order (cdr order)))
             (unless (memq (parcel-order-status order) '(failed blocked))
               ;; clone
-              (parcel-run-next-build-step order 'force))))
+              (parcel-run-next-build-step order))))
         (reverse parcel--queued-orders)))
 
 ;;;; COMMANDS
