@@ -1157,6 +1157,7 @@ Async wrapper for `parcel-generate-autoloads'."
 ;;;###autoload
 (defun parcel-queue-empty ()
   "Process all orders in `parcel--queued-orders'."
+  (setq parcel--order-queue-start-time (current-time))
   (mapc (lambda (order)
           (let ((order (cdr order)))
             (unless (memq (parcel-order-status order) '(failed blocked))
