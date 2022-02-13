@@ -1157,11 +1157,12 @@ If FORCE is non-nil, do not ask for confirmation."
           (directory-files parcel-directory 'full))))
 
 ;;;; STATUS BUFFER
-(defvar parcel-status-mode-map (let ((map (make-sparse-keymap)))
-                                 (define-key map (kbd "<return>") 'parcel-status-mode-send-input)
-                                 (define-key map (kbd "C-c C-r")  'parcel-status-mode-visit-repo)
-                                 (define-key map (kbd "C-c C-b")  'parcel-status-mode-visit-build)
-                                 map))
+(defvar parcel-status-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "<return>") 'parcel-status-mode-send-input)
+    (define-key map (kbd "C-c C-r")  'parcel-status-mode-visit-repo)
+    (define-key map (kbd "C-c C-b")  'parcel-status-mode-visit-build)
+    map))
 
 (define-derived-mode parcel-status-mode text-mode "Parcel Status Mode"
   "Mode for interacting with the parcel status buffer.
