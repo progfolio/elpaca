@@ -1032,17 +1032,6 @@ If FORCE is non-nil, ignore order queue."
     (parcel--update-order-info order (parcel-process-tail output)
                                (when (string-match-p "Debugger entered" result) 'blocked))))
 
-(defun parcel--finish-order-maybe (order)
-  "If ORDER has is finished, declare it finished.
-Clean up process reference.
-Retrun t if process has finished, nil otherwise."
-  (unless (or (eq (parcel-order-status order) 'finished)
-              (parcel-order-build-steps order))
-    (parcel--update-order-info order "✓" 'finished)
-    ;; Remove stale reference so object can be deleted.
-    (setf (parcel-order-process order) nil)
-    t))
-
 (defun parcel--generate-autoloads-async-process-sentinel (process event)
   "PROCESS autoload generation EVENT."
   (when (equal event "finished\n")
