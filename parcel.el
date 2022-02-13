@@ -37,6 +37,7 @@
 (declare-function url-filename    "url-parse")
 (declare-function url-host        "url-parse")
 (defvar autoload-timestamps)
+(defvar generated-autoload-file)
 
 (defgroup parcel nil
   "An elisp package manager."
@@ -59,6 +60,7 @@
   "Location of the parcel package store."
   :type 'directory)
 
+;;@MAYBE: remove?
 (defcustom parcel-display-buffer t
   "When non-nil, display `parcel-status-buffer' while processing orders."
   :type 'boolean)
@@ -87,6 +89,8 @@
         #'parcel--activate-package)
   "List of steps which are run when installing/building a package."
   :type 'list)
+
+(defvar parcel--queued-orders nil "List of queued orders.")
 
 (defvar parcel-default-files-directive
   '("*.el" "*.el.in" "dir"
@@ -144,11 +148,14 @@ Ignore these unless the user explicitly requests they be installed.")
 (defvar parcel-recipe-keywords (list :pre-build :branch :depth :fork :host
                                      :nonrecursive :package :protocol :remote :repo)
   "Recognized parcel recipe keywords.")
+
 (defvar parcel--queued-orders nil "List of queued orders.")
-(defconst parcel-status-buffer "*Parcel*")
 
 (defvar parcel--order-queue-start-time nil
   "Time used to keep order logs relative to start of queue.")
+
+(defconst parcel-status-buffer "*Parcel*")
+
 (cl-defstruct parcel-order
   "Order object for queued processing."
   (package      nil :type string)
@@ -165,7 +172,6 @@ Ignore these unless the user explicitly requests they be installed.")
   (process      nil)
   (log          nil))
 
-(define-minor-mode parcel-dev-mode "Just a way to toggle a variable for dev code.")
 
 (defun parcel-merge-plists (&rest plists)
   "Return plist with set of unique keys from PLISTS.
@@ -267,6 +273,10 @@ ITEM is any of the following values:
                  (run-hook-with-args-until-success 'parcel-recipe-functions recipe)))
           (if interactive (message "%S" recipe)) recipe)
       (when interactive (user-error "No recipe for %S" package)))))
+
+(defsubst parcel--emacs-path ()
+  "Return path to running Emacs."
+  (concat invocation-directory invocation-name))
 
 (defsubst parcel--repo-name (string)
   "Return repo name portion of STRING."
@@ -375,18 +385,6 @@ If PACKAGES is nil, use all available orders."
                (cl-sort (copy-tree logs) #'time-less-p :key #'cadr)
                "\n")))
 
-(defun parcel-print-log (&rest packages)
-  "Print log for PACKAGES."
-  (interactive (completing-read-multiple "Log for Packages: "
-                                         (mapcar #'car parcel--queued-orders)))
-  (with-current-buffer (get-buffer-create "*Parcel Log*")
-    (with-silent-modifications
-      (erase-buffer)
-      (insert (apply #'parcel--events packages))
-      (display-buffer (current-buffer)))
-    (goto-char (point-min))
-    (special-mode)))
-
 (defun parcel--run-build-commands (&rest commands)
   "Run build COMMANDS."
   (dolist (command (parcel--ensure-list commands))
@@ -398,13 +396,130 @@ If PACKAGES is nil, use all available orders."
             (error ":pre-build failed")))
       (eval command t))))
 
-(defun parcel--pre-build-process-filter (process output)
-  "Filter PROCESS OUTPUT of pre-build process."
-  (process-put process :result (concat (process-get process :result) output))
-  (let ((order  (process-get process :order))
-        (result (process-get process :result)))
-    (parcel--update-order-info order (parcel-process-tail output)
-                               (when (string-match-p "Debugger Entered" result) 'failed))))
+(defun parcel--print-order-status (order)
+  "Print ORDER's status in `parcel-status-buffer'."
+  (with-current-buffer (get-buffer-create parcel-status-buffer)
+    (with-silent-modifications
+      (save-excursion
+        (cursor-intangible-mode -1)
+        (goto-char (point-min))
+        (let ((anchor (text-property-search-forward 'order order t)))
+          (if anchor
+              (progn
+                (goto-char (prop-match-beginning anchor))
+                (delete-region (prop-match-beginning anchor) (prop-match-end anchor)))
+            (goto-char (point-max)))
+          (unless (or (bobp) anchor)
+            (insert (propertize "\n" 'cursor-intangible t 'read-only t)))
+          (insert (parcel-status-buffer-line order)))
+        (cursor-intangible-mode))
+      (setq header-line-format '(:eval (parcel--header-line))))))
+
+(defun parcel--add-remotes (order &optional recurse)
+  "Add ORDER's repo remotes.
+RECURSE is used to keep track of recursive calls."
+  (let ((default-directory (parcel-order-repo-dir order))
+        (recipe            (parcel-order-recipe   order)))
+    (cl-destructuring-bind
+        ( &key remotes
+          ((:host recipe-host))
+          ((:protocol recipe-protocol))
+          ((:repo recipe-repo))
+          &allow-other-keys)
+        recipe
+      (parcel--update-order-info order "Adding Remotes")
+      (pcase remotes
+        ("origin" nil)
+        ((and (pred stringp) remote)
+         (parcel-process-call "git" "remote" "rename" "origin" remote))
+        ((pred listp)
+         (dolist (spec remotes)
+           (if (stringp spec)
+               (parcel--add-remotes
+                (let ((copy (copy-parcel-order order)))
+                  (setf (parcel-order-recipe copy)
+                        (plist-put (copy-tree recipe) :remotes spec))
+                  copy)
+                'recurse)
+             (pcase-let ((`(,remote . ,props) spec))
+               (if props
+                   (cl-destructuring-bind
+                       (&key (host     recipe-host)
+                             (protocol recipe-protocol)
+                             (repo     recipe-repo)
+                             &allow-other-keys
+                             &aux
+                             (recipe (list :host host :protocol protocol :repo repo)))
+                       props
+                     (parcel-process-call
+                      "git" "remote" "add" remote (parcel--repo-uri recipe))
+                     (unless (equal remote "origin")
+                       (parcel-process-call "git" "remote" "rename" "origin" remote))))))))
+        (_ (parcel--update-order-info
+            order
+            (format "(wrong-type-argument ((stringp listp)) %S" remotes)
+            'failed)))))
+  (unless recurse (parcel-run-next-build-step order)))
+
+(defun parcel--update-order-info (order info &optional status)
+  "Update ORDER STATUS.
+Print the order status line in `parcel-status-buffer'.
+If STATUS is non-nil and differs from ORDER's current STATUS,
+signal ORDER's depedentents to check (and possibly change) their status.
+If INFO is non-nil, ORDER's info is updated as well."
+  (when status
+    (push status (parcel-order-statuses order))
+    (when (member status '(finished failed blocked))
+      (mapc #'parcel--order-check-status (parcel-order-dependents order)))
+    (when (eq status 'ref-checked-out)
+      (mapc (lambda (o)
+              (unless (member (parcel-order-statuses o) '(finished build-linked))
+                (parcel--remove-build-steps
+                 o '(parcel-clone parcel--add-remotes parcel--checkout-ref))
+                (parcel-run-next-build-step o)))
+            (parcel-order-includes order))))
+  (when info (parcel--log-event order info))
+  (parcel--print-order-status order))
+
+(defun parcel-run-next-build-step (order)
+  "Run ORDER's next build step with ARGS."
+  (if-let ((next (pop (parcel-order-build-steps order))))
+      (funcall next order)
+    (parcel--update-order-info order "✓" 'finished)
+    (when-let ((callback (parcel-order-callback order)))
+      (funcall callback))))
+
+(defun parcel--remove-build-steps (order steplist)
+  "Remove each step in STEPLIST from ORDER."
+  (setf (parcel-order-build-steps order)
+        (cl-set-difference (parcel-order-build-steps order) steplist)))
+
+(defun parcel--files (order &optional files nocons)
+  "Return alist of ORDER :files to be symlinked: (PATH . TARGET PATH).
+FILES and NOCONS are used recursively."
+  (let* ((default-directory (parcel-order-repo-dir order))
+         (build-dir         (parcel-order-build-dir order))
+         (recipe            (parcel-order-recipe order))
+         (files             (or files (plist-get recipe :files)))
+         (exclusions        nil)
+         (targets           nil))
+    (dolist (el files)
+      (pcase el
+        ((pred stringp) (push (or (file-expand-wildcards el) el) targets))
+        (`(:exclude  . ,excluded)
+         (push (parcel--files order excluded 'nocons) exclusions)
+         nil)
+        (:defaults
+         (push (parcel--files order parcel-default-files-directive 'nocons) targets))))
+    (if nocons
+        targets
+      (mapcar (lambda (target)
+                (cons (expand-file-name target)
+                      (expand-file-name (file-name-nondirectory target) build-dir)))
+              (cl-remove-if (lambda (target)
+                              (or (not (file-exists-p (expand-file-name target)))
+                                  (member target (flatten-tree exclusions))))
+                            (flatten-tree targets))))))
 
 (defun parcel--link-build-files (order)
   "Link ORDER's :files into it's builds subdirectory."
@@ -515,6 +630,14 @@ If PACKAGES is nil, use all available orders."
        (car (last (car (last (parcel-order-log order) 2))))
        'failed)))))
 
+(defun parcel--pre-build-process-filter (process output)
+  "Filter PROCESS OUTPUT of pre-build process."
+  (process-put process :result (concat (process-get process :result) output))
+  (let ((order  (process-get process :order))
+        (result (process-get process :result)))
+    (parcel--update-order-info order (parcel-process-tail output)
+                               (when (string-match-p "Debugger Entered" result) 'failed))))
+
 (defun parcel--dispatch-build-commands (order &optional post)
   "Run ORDER's :pre-build or :post-build commands.
 If POST is non-nil, RECIPE's :post-build commands are run.
@@ -558,105 +681,6 @@ The keyword's value is expected to be one of the following:
           (process-put process :order order)))
     (parcel-run-next-build-step order)))
 
-(defun parcel--remove-build-steps (order steplist)
-  "Remove each step in STEPLIST from ORDER."
-  (setf (parcel-order-build-steps order)
-        (cl-set-difference (parcel-order-build-steps order) steplist)))
-
-(defun parcel--print-order-status (order)
-  "Print ORDER's status in `parcel-status-buffer'."
-  (with-current-buffer (get-buffer-create parcel-status-buffer)
-    (with-silent-modifications
-      (save-excursion
-        (cursor-intangible-mode -1)
-        (goto-char (point-min))
-        (let ((anchor (text-property-search-forward 'order order t)))
-          (if anchor
-              (progn
-                (goto-char (prop-match-beginning anchor))
-                (delete-region (prop-match-beginning anchor) (prop-match-end anchor)))
-            (goto-char (point-max)))
-          (unless (or (bobp) anchor)
-            (insert (propertize "\n" 'cursor-intangible t 'read-only t)))
-          (insert (parcel-status-buffer-line order)))
-        (cursor-intangible-mode))
-      (setq header-line-format '(:eval (parcel--header-line))))))
-
-(defun parcel--update-order-info (order info &optional status)
-  "Update ORDER STATUS.
-Print the order status line in `parcel-status-buffer'.
-If STATUS is non-nil and differs from ORDER's current STATUS,
-signal ORDER's depedentents to check (and possibly change) their status.
-If INFO is non-nil, ORDER's info is updated as well."
-  (when status
-    (push status (parcel-order-statuses order))
-    (when (member status '(finished failed blocked))
-      (mapc #'parcel--order-check-status (parcel-order-dependents order)))
-    (when (eq status 'ref-checked-out)
-      (mapc (lambda (o)
-              (unless (member (parcel-order-statuses o) '(finished build-linked))
-                (parcel--remove-build-steps
-                 o '(parcel-clone parcel--add-remotes parcel--checkout-ref))
-                (parcel-run-next-build-step o)))
-            (parcel-order-includes order))))
-  (when info (parcel--log-event order info))
-  (parcel--print-order-status order))
-
-(defun parcel--add-remotes (order &optional recurse)
-  "Add ORDER's repo remotes.
-RECURSE is used to keep track of recursive calls."
-  (let ((default-directory (parcel-order-repo-dir order))
-        (recipe            (parcel-order-recipe   order)))
-    (cl-destructuring-bind
-        ( &key remotes
-          ((:host recipe-host))
-          ((:protocol recipe-protocol))
-          ((:repo recipe-repo))
-          &allow-other-keys)
-        recipe
-      (parcel--update-order-info order "Adding Remotes")
-      (pcase remotes
-        ("origin" nil)
-        ((and (pred stringp) remote)
-         (parcel-process-call "git" "remote" "rename" "origin" remote))
-        ((pred listp)
-         (dolist (spec remotes)
-           (if (stringp spec)
-               (parcel--add-remotes
-                (let ((copy (copy-parcel-order order)))
-                  (setf (parcel-order-recipe copy)
-                        (plist-put (copy-tree recipe) :remotes spec))
-                  copy)
-                'recurse)
-             (pcase-let ((`(,remote . ,props) spec))
-               (if props
-                   (cl-destructuring-bind
-                       (&key (host     recipe-host)
-                             (protocol recipe-protocol)
-                             (repo     recipe-repo)
-                             &allow-other-keys
-                             &aux
-                             (recipe (list :host host :protocol protocol :repo repo)))
-                       props
-                     (parcel-process-call
-                      "git" "remote" "add" remote (parcel--repo-uri recipe))
-                     (unless (equal remote "origin")
-                       (parcel-process-call "git" "remote" "rename" "origin" remote))))))))
-        (_ (parcel--update-order-info
-            order
-            (format "(wrong-type-argument ((stringp listp)) %S" remotes)
-            'failed)))))
-  (unless recurse (parcel-run-next-build-step order)))
-
-(defun parcel--checkout-ref-process-filter (process output)
-  "Filter PROCESS OUTPUT of async checkout-ref operation."
-  (process-put process :result (concat (process-get process :result) output))
-  (let ((order  (process-get process :order))
-        (result (process-get process :result)))
-    (parcel--update-order-info order
-                               (parcel-process-tail output)
-                               (when (string-match-p "fatal" result) 'failed))))
-
 (defun parcel--dependencies (recipe)
   "Using RECIPE, compute package's dependencies.
 If package's repo is not on disk, error."
@@ -684,33 +708,6 @@ If package's repo is not on disk, error."
             (condition-case err
                 (read (match-string 1))
               (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))
-
-(defun parcel--files (order &optional files nocons)
-  "Return alist of ORDER :files to be symlinked: (PATH . TARGET PATH).
-FILES and NOCONS are used recursively."
-  (let* ((default-directory (parcel-order-repo-dir order))
-         (build-dir         (parcel-order-build-dir order))
-         (recipe            (parcel-order-recipe order))
-         (files             (or files (plist-get recipe :files)))
-         (exclusions        nil)
-         (targets           nil))
-    (dolist (el files)
-      (pcase el
-        ((pred stringp) (push (or (file-expand-wildcards el) el) targets))
-        (`(:exclude  . ,excluded)
-         (push (parcel--files order excluded 'nocons) exclusions)
-         nil)
-        (:defaults
-         (push (parcel--files order parcel-default-files-directive 'nocons) targets))))
-    (if nocons
-        targets
-      (mapcar (lambda (target)
-                (cons (expand-file-name target)
-                      (expand-file-name (file-name-nondirectory target) build-dir)))
-              (cl-remove-if (lambda (target)
-                              (or (not (file-exists-p (expand-file-name target)))
-                                  (member target (flatten-tree exclusions))))
-                            (flatten-tree targets))))))
 
 (defun parcel--clone-dependencies (order)
   "Clone ORDER's dependencies."
@@ -775,6 +772,15 @@ FILES and NOCONS are used recursively."
           (parcel--update-order-info order "Ref checked out" 'ref-checked-out)
           (parcel-run-next-build-step order))))))
 
+(defun parcel--checkout-ref-process-filter (process output)
+  "Filter PROCESS OUTPUT of async checkout-ref operation."
+  (process-put process :result (concat (process-get process :result) output))
+  (let ((order  (process-get process :order))
+        (result (process-get process :result)))
+    (parcel--update-order-info order
+                               (parcel-process-tail output)
+                               (when (string-match-p "fatal" result) 'failed))))
+
 (defun parcel--checkout-ref (order)
   "Checkout ORDER's :ref.
 The :branch and :tag keywords are syntatic sugar and are handled here, too."
@@ -800,13 +806,6 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
       (process-put process :order order)
       (setf (parcel-order-process order) process))))
 
-(defvar parcel--queued-orders nil "List of queued orders.")
-
-(defun parcel--emacs-path ()
-  "Return path to running Emacs."
-  (concat invocation-directory invocation-name))
-
-(defvar generated-autoload-file)
 (defun parcel-generate-autoloads (package dir)
   "Generate autoloads in DIR for PACKAGE."
   (let* ((auto-name (format "%s-autoloads.el" package))
@@ -864,23 +863,6 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
              (propertize "Failed" 'face 'parcel-failed)
              (or (alist-get 'failed   counts) 0)))))
 
-(defun parcel--initialize-process-buffer ()
-  "Initialize the parcel process buffer."
-  (with-current-buffer (get-buffer-create parcel-status-buffer)
-    (with-silent-modifications (erase-buffer))
-    (unless (derived-mode-p 'parcel-status-mode)
-      (parcel-status-mode))
-    (setq header-line-format '(:eval (parcel--header-line)))
-    (display-buffer (current-buffer))))
-
-;;;###autoload
-(defun parcel-display-status-buffer ()
-  "Diplay `parcel-status-buffer'."
-  (interactive)
-  (if-let ((buffer (get-buffer parcel-status-buffer)))
-      (display-buffer buffer)
-    (parcel--initialize-process-buffer)))
-
 (defsubst parcel-order-info (order)
   "Return ORDER's most recent log event info."
   (nth 2 (car (last (parcel-order-log order)))))
@@ -904,14 +886,6 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
              'package           package
              'order             order)
             " ")))
-
-(defun parcel-run-next-build-step (order)
-  "Run ORDER's next build step with ARGS."
-  (if-let ((next (pop (parcel-order-build-steps order))))
-      (funcall next order)
-    (parcel--update-order-info order "✓" 'finished)
-    (when-let ((callback (parcel-order-callback order)))
-      (funcall callback))))
 
 (defun parcel--queue-order (item &optional status)
   "Queue (ITEM . ORDER) in `parcel--queued-orders'.
@@ -1129,6 +1103,36 @@ Async wrapper for `parcel-generate-autoloads'."
            :sentinel #'parcel--byte-compile-process-sentinel)))
     (process-put process :order order)))
 
+;;;; COMMANDS/MACROS
+(defun parcel-print-log (&rest packages)
+  "Print log for PACKAGES."
+  (interactive (completing-read-multiple "Log for Packages: "
+                                         (mapcar #'car parcel--queued-orders)))
+  (with-current-buffer (get-buffer-create "*Parcel Log*")
+    (with-silent-modifications
+      (erase-buffer)
+      (insert (apply #'parcel--events packages))
+      (display-buffer (current-buffer)))
+    (goto-char (point-min))
+    (special-mode)))
+
+(defun parcel--initialize-process-buffer ()
+  "Initialize the parcel process buffer."
+  (with-current-buffer (get-buffer-create parcel-status-buffer)
+    (with-silent-modifications (erase-buffer))
+    (unless (derived-mode-p 'parcel-status-mode)
+      (parcel-status-mode))
+    (setq header-line-format '(:eval (parcel--header-line)))
+    (display-buffer (current-buffer))))
+
+;;;###autoload
+(defun parcel-display-status-buffer ()
+  "Diplay `parcel-status-buffer'."
+  (interactive)
+  (if-let ((buffer (get-buffer parcel-status-buffer)))
+      (display-buffer buffer)
+    (parcel--initialize-process-buffer)))
+
 ;;;###autoload
 (defmacro parcel (order &rest body)
   "Install ORDER, then execute BODY."
@@ -1162,7 +1166,6 @@ Async wrapper for `parcel-generate-autoloads'."
               (parcel-run-next-build-step order))))
         (reverse parcel--queued-orders)))
 
-;;;; COMMANDS
 ;;;###autoload
 (defun parcel-delete-repos (&optional force)
   "Remove everything except parcel from `parcel-directory'.
