@@ -385,6 +385,7 @@ If PACKAGES is nil, use all available orders."
       (erase-buffer)
       (insert (apply #'parcel--events packages))
       (display-buffer (current-buffer)))
+    (goto-char (point-min))
     (special-mode)))
 
 (defun parcel--run-build-commands (&rest commands)
