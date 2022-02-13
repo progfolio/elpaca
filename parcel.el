@@ -1140,6 +1140,15 @@ Async wrapper for `parcel-generate-autoloads'."
      (setf (parcel-order-callback o) (lambda () ,@body))))
 
 ;;;###autoload
+(defmacro parcel-use-package (order &rest body)
+  "Execute BODY in `use-package' declartion after ORDER is finished."
+  (declare (indent 1))
+  `(parcel ',order
+     (with-eval-after-load 'use-pacakge
+       (use-package ,order
+         ,@body))))
+
+;;;###autoload
 (defun parcel-queue-initialize ()
   "Initialize order queue."
   (setq parcel--queued-orders nil
