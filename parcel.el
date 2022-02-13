@@ -804,7 +804,7 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
   "Return path to running Emacs."
   (concat invocation-directory invocation-name))
 
-(defvar generated-autoload-file "autoload")
+(defvar generated-autoload-file)
 (defun parcel-generate-autoloads (package dir)
   "Generate autoloads in DIR for PACKAGE."
   (let* ((auto-name (format "%s-autoloads.el" package))
