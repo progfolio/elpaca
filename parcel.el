@@ -30,6 +30,7 @@
 
 ;;; Code:
 (require 'cl-lib)
+(require 'text-property-search)
 (require 'parcel-process)
 
 (declare-function autoload-rubric "autoload")
@@ -146,7 +147,6 @@ Ignore these unless the user explicitly requests they be installed.")
 (defvar parcel--queued-orders nil "List of queued orders.")
 (defconst parcel-status-buffer "*Parcel*")
 
-(defvar parcel--order-index -1 "Index used to track queued orders.")
 (defvar parcel--order-queue-start-time nil
   "Time used to keep order logs relative to start of queue.")
 (cl-defstruct parcel-order
@@ -158,7 +158,6 @@ Ignore these unless the user explicitly requests they be installed.")
   (dependencies nil :type list)
   (dependents   nil :type list)
   (callback     nil)
-  (index        (cl-incf parcel--order-index))
   (includes     nil)
   (repo-dir     nil)
   (build-dir    nil)
@@ -564,6 +563,25 @@ The keyword's value is expected to be one of the following:
   (setf (parcel-order-build-steps order)
         (cl-set-difference (parcel-order-build-steps order) steplist)))
 
+(defun parcel--print-order-status (order)
+  "Print ORDER's status in `parcel-status-buffer'."
+  (with-current-buffer (get-buffer-create parcel-status-buffer)
+    (with-silent-modifications
+      (save-excursion
+        (cursor-intangible-mode -1)
+        (goto-char (point-min))
+        (let ((anchor (text-property-search-forward 'order order t)))
+          (if anchor
+              (progn
+                (goto-char (prop-match-beginning anchor))
+                (delete-region (prop-match-beginning anchor) (prop-match-end anchor)))
+            (goto-char (point-max)))
+          (unless (or (bobp) anchor)
+            (insert (propertize "\n" 'cursor-intangible t 'read-only t)))
+          (insert (parcel-status-buffer-line order)))
+        (cursor-intangible-mode))
+      (setq header-line-format '(:eval (parcel--header-line))))))
+
 (defun parcel--update-order-info (order info &optional status)
   "Update ORDER STATUS.
 Print the order status line in `parcel-status-buffer'.
@@ -582,23 +600,7 @@ If INFO is non-nil, ORDER's info is updated as well."
                 (parcel-run-next-build-step o)))
             (parcel-order-includes order))))
   (when info (parcel--log-event order info))
-  ;;@TODO: decompose. Printing status shouldn't be tied to updating it
-  (with-current-buffer (get-buffer-create parcel-status-buffer)
-    (save-excursion
-      (cursor-intangible-mode -1)
-      (goto-char (point-min))
-      (let* ((inhibit-read-only t)
-             (index (parcel-order-index order))
-             (found (and
-                     (zerop (forward-line index))
-                     (not (and (eobp) (= index (1- (length parcel--queued-orders))))))))
-        (unless found (goto-char (point-max)))
-        (unless (or (bobp) found) ; Don't want a newline before first process.
-          (insert (propertize "\n" 'cursor-intangible t 'read-only t)))
-        (delete-region (line-beginning-position) (line-end-position))
-        (insert (parcel-status-buffer-line order)))
-      (cursor-intangible-mode)
-      (setq header-line-format '(:eval (parcel--header-line))))))
+  (parcel--print-order-status order))
 
 (defun parcel--add-remotes (order &optional recurse)
   "Add ORDER's repo remotes.
@@ -1141,7 +1143,6 @@ Async wrapper for `parcel-generate-autoloads'."
 (defun parcel-queue-initialize ()
   "Initialize order queue."
   (setq parcel--queued-orders nil
-        parcel--order-index -1
         parcel--order-queue-start-time (current-time)))
 
 ;;;###autoload
@@ -1184,13 +1185,15 @@ If FORCE is non-nil, do not ask for confirmation."
   (interactive)
   (if-let ((order (get-text-property (line-beginning-position) 'order))
            (process (parcel-order-process order)))
-      (let ((input (save-excursion
-                     (beginning-of-line)
-                     (while (get-text-property (point) 'read-only)
-                       (forward-char))
-                     (string-trim (buffer-substring (point) (line-end-position))))))
-        (process-send-string process (concat input "\n"))
-        (end-of-line))
+      (let* ((input-start nil)
+             (input (save-excursion
+                      (beginning-of-line)
+                      (while (get-text-property (point) 'read-only)
+                        (forward-char))
+                      (setq input-start (point))
+                      (string-trim (buffer-substring input-start (line-end-position))))))
+        (replace-region-contents input-start (line-end-position) (lambda () " "))
+        (process-send-string process (concat input "\n")))
     (user-error "No process associated with current package")))
 
 (defun parcel-status-mode-visit-repo ()
