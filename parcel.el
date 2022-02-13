@@ -181,13 +181,6 @@ Values for each key are that of the right-most plist containing that key."
       (while current (setq plist (plist-put plist (pop current) (pop current)))))
     plist))
 
-(defun parcel-clean-plist (plist)
-  "Return PLIST copy sans keys which are not members of `parcel-recipe-keywords'."
-  (apply #'append (cl-loop for key in parcel-recipe-keywords
-                           for member = (plist-member plist key)
-                           collect (when member
-                                     (cl-subseq (plist-member plist key) 0 2)))))
-
 (defun parcel-menu--candidates ()
   "Return alist of `parcel-menu-functions' candidates."
   (or parcel-menu--candidates-cache
@@ -826,16 +819,6 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
   (defun parcel--ensure-list (obj)
     "Ensure OBJ is a list."
     (if (listp obj) obj (list obj))))
-
-(defmacro parcel-thread-callbacks (&rest fns)
-  "Place each FN in FNS in callback position of previous FN."
-  (let* ((reversed (reverse fns))
-         (last `((lambda () ,(parcel--ensure-list (pop reversed))))))
-    (mapc (lambda (fn)
-            (setq last `((lambda () ,(append (parcel--ensure-list fn) last)))))
-          reversed)
-    ;; Ditch wrapping lambda of first call
-    (nth 2 (pop last))))
 
 (defun parcel--header-line ()
   "Return header line format for `parcel-buffer'."
