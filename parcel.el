@@ -992,9 +992,6 @@ If FORCE is non-nil, ignore order queue."
   "PROCESS autoload generation EVENT."
   (when (equal event "finished\n")
     (let ((order  (process-get process :order)))
-      (setf (parcel-order-build-steps order)
-            (cl-remove 'parcel--generate-autoloads-async
-                       (parcel-order-build-steps order)))
       (unless (eq (parcel-order-status order) 'failed)
         (parcel--update-order-info order "Autoloads Generated" 'autoloads-generated)
         (parcel-run-next-build-step order)))))
