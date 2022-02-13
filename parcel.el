@@ -873,6 +873,14 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
     (setq header-line-format '(:eval (parcel--header-line)))
     (display-buffer (current-buffer))))
 
+;;;###autoload
+(defun parcel-display-status-buffer ()
+  "Diplay `parcel-status-buffer'."
+  (interactive)
+  (if-let ((buffer (get-buffer parcel-status-buffer)))
+      (display-buffer buffer)
+    (parcel--initialize-process-buffer)))
+
 (defsubst parcel-order-info (order)
   "Return ORDER's most recent log event info."
   (nth 2 (car (last (parcel-order-log order)))))
