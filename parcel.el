@@ -1153,7 +1153,7 @@ Async wrapper for `parcel-generate-autoloads'."
   (declare (indent 1))
   `(parcel ',order
      (with-eval-after-load 'use-package
-       (use-package ,order
+       (use-package ,(if (listp order) (car order) order)
          ,@body))))
 
 ;;;###autoload
