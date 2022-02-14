@@ -728,6 +728,7 @@ http://company-mode.github.io/
   (company-idle-delay nil)
   (company-minimum-prefix-length 0)
   (company-echo-delay 0)
+  (company-abort-on-unique-match nil)
   (company-tooltip-limit 14)
   (company-tooltip-align-annotations t)
   (company-tooltip-maximum-width 50)
