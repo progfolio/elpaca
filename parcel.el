@@ -90,6 +90,9 @@
   "List of steps which are run when installing/building a package."
   :type 'list)
 
+(defvar parcel--post-process-forms '(lambda ())
+  "Forms to be executed after orders are processed.")
+
 (defvar parcel-default-files-directive
   '("*.el" "*.el.in" "dir"
     "*.info" "*.texi" "*.texinfo"
@@ -326,7 +329,7 @@ ITEM is any of the following values:
                             (:type list)
                             (:named))
   "Order object for queued processing."
-  package recipe build-steps statuses dependencies dependents callback
+  package recipe build-steps statuses dependencies dependents body
   includes repo-dir build-dir files process log)
 
 (defsubst parcel-order-status (order)
@@ -475,8 +478,13 @@ If INFO is non-nil, ORDER's info is updated as well."
       (funcall next order)
     (parcel--update-order-info order "✓" 'finished)
     (parcel--write-cache)
-    (when-let ((callback (parcel-order-callback order)))
-      (funcall callback))))
+    (let ((count 0))
+      (dolist (queued parcel--queued-orders)
+        (let* ((order (cdr queued))
+               (status (parcel-order-status order)))
+          (when (member status '(finished failed)) (cl-incf count))))
+      (when (= count (length parcel--queued-orders))
+        (funcall parcel--post-process-forms)))))
 
 (defun parcel--queue-order (item &optional status)
   "Queue (ITEM . ORDER) in `parcel--queued-orders'.
@@ -1183,8 +1191,9 @@ Async wrapper for `parcel-generate-autoloads'."
 (defmacro parcel (order &rest body)
   "Install ORDER, then execute BODY."
   (declare (indent 1))
-  `(let ((o (parcel--queue-order ,order)))
-     (setf (parcel-order-callback o) (lambda () ,@body))))
+  `(progn
+     (parcel--queue-order ,order)
+     (setq parcel--post-process-forms (append parcel--post-process-forms ',body))))
 
 ;;;###autoload
 (defmacro parcel-use-package (order &rest body)
