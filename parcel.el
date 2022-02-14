@@ -439,6 +439,15 @@ If PACKAGES is nil, use all available orders."
 
 (defvar parcel--cache (parcel--read-cache) "Built package information cache.")
 
+(defun parcel-run-next-build-step (order)
+  "Run ORDER's next build step with ARGS."
+  (if-let ((next (pop (parcel-order-build-steps order))))
+      (funcall next order)
+    (parcel--update-order-info order "✓" 'finished)
+    ;; cache the recipe and :file hash
+    (when-let ((callback (parcel-order-callback order)))
+      (funcall callback))))
+
 (defun parcel--add-remotes (order &optional recurse)
   "Add ORDER's repo remotes.
 RECURSE is used to keep track of recursive calls."
@@ -504,14 +513,6 @@ If INFO is non-nil, ORDER's info is updated as well."
             (parcel-order-includes order))))
   (when info (parcel--log-event order info))
   (parcel--print-order-status order))
-
-(defun parcel-run-next-build-step (order)
-  "Run ORDER's next build step with ARGS."
-  (if-let ((next (pop (parcel-order-build-steps order))))
-      (funcall next order)
-    (parcel--update-order-info order "✓" 'finished)
-    (when-let ((callback (parcel-order-callback order)))
-      (funcall callback))))
 
 (defun parcel--remove-build-steps (order steplist)
   "Remove each step in STEPLIST from ORDER."
