@@ -335,7 +335,6 @@ ITEM is any of the following values:
 
 (defun parcel--log-event (order text)
   "Store TEXT in ORDER's log."
-  (message "order type in log-event: %S" (type-of order))
   (let ((log (parcel-order-log order)))
     (setf (parcel-order-log order)
           (append log
@@ -449,7 +448,6 @@ If INFO is non-nil, ORDER's info is updated as well."
                 (parcel-run-next-build-step o)))
             (parcel-order-includes order))))
   (when info
-    (message "order type in update-order-event: %S" (type-of order))
     (parcel--log-event order info))
   (parcel--print-order-status order))
 
