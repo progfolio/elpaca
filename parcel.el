@@ -507,7 +507,8 @@ RETURNS order structure."
                  (when-let  ((steps (copy-tree parcel-build-steps)))
                    (when (file-exists-p repo-dir)
                      (setq steps (delq 'parcel-clone steps))
-                     (when-let ((cached-recipe (parcel-order-recipe cached))
+                     (when-let ((cached)
+                                (cached-recipe (parcel-order-recipe cached))
                                 ((eq recipe cached-recipe)))
                        (setq steps (cl-set-difference steps '(parcel--add-remotes
                                                               parcel--checkout-ref
@@ -523,7 +524,7 @@ RETURNS order structure."
                            queued))
                        parcel--queued-orders))))
       (prog1 order
-        (when add-deps-p
+        (when (and add-deps-p cached)
           (setf (parcel-order-dependencies order) (parcel-order-dependencies cached)))
         (push (cons package order) parcel--queued-orders)
         (if (not mono-repo)
