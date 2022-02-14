@@ -400,22 +400,21 @@ If PACKAGES is nil, use all available orders."
 
 (defun parcel--write-cache ()
   "Write order cache to disk."
-  (with-temp-buffer
-    (let ((print-circle nil)
+  (with-temp-file (expand-file-name "cache.el" parcel-directory)
+    (let ((standard-output (current-buffer))
+          (print-circle nil)
+          (print-level  nil)
           (print-length nil)
           (finished (cl-remove-if-not (lambda (queued)
                                         (eq (parcel-order-status (cdr queued))
                                             'finished))
                                       parcel--queued-orders)))
-      (insert
-       (format "%S" (mapcar (lambda (o)
-                              (list (parcel-order-package o)
-                                    :recipe       (parcel-order-recipe o)
-                                    :dependenices (parcel-order-dependencies o)
-                                    :dependents   (parcel-order-dependents o)))
-                            (mapcar #'cdr finished))))
-      (write-region (point-min) (point-max)
-                    (expand-file-name "cache.el" parcel-directory)))))
+      (prin1 (mapcar (lambda (o)
+                       (list (parcel-order-package o)
+                             :recipe       (parcel-order-recipe o)
+                             :dependenices (parcel-order-dependencies o)
+                             :dependents   (parcel-order-dependents o)))
+                     (mapcar #'cdr finished))))))
 
 (defun parcel--read-cache ()
   "Return cache alist or nil if not available."
