@@ -420,7 +420,7 @@ If PACKAGES is nil, use all available orders."
              (finished (cl-remove-if-not (lambda (queued)
                                            (eq (parcel-order-status (cdr queued))
                                                'finished))
-                                        (reverse parcel--queued-orders)))
+                                         (reverse parcel--queued-orders)))
              (plist (mapcar #'parcel--clean-order (mapcar #'cdr finished))))
         (princ "'")
         (prin1 plist)))))
