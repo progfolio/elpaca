@@ -1089,21 +1089,6 @@ Async wrapper for `parcel-generate-autoloads'."
            :sentinel #'parcel--generate-autoloads-async-process-sentinel)))
     (process-put process :order order)))
 
-(defun parcel--activate-dependencies (order)
-  "Activate ORDER's dependencies."
-  (when-let ((dependencies (parcel-order-dependencies order)))
-    (dolist (dependency dependencies)
-      (cl-pushnew (parcel-order-build-dir dependency) load-path)
-      (when-let ((dependencies (parcel-order-dependencies dependency)))
-        (parcel--activate-dependencies dependency)))))
-
-(defun parcel--autoload-dependencies (order)
-  "Load ORDER's dependency autoloads."
-  (when-let ((dependencies (parcel-order-dependencies order)))
-    (dolist (dependency dependencies)
-      (let ((autoloads (format "%-autoloads" (parcel-order-package dependency))))
-        (unless (featurep autoloads) (load autoloads nil 'nomessage))))))
-
 (defun parcel--activate-package (order)
   "Activate ORDER's package."
   (parcel--update-order-info order "Activating package")
@@ -1113,13 +1098,10 @@ Async wrapper for `parcel-generate-autoloads'."
          (package           (parcel-order-package order))
          (autoloads         (format "%s-autoloads.el" package)))
     (cl-pushnew default-directory load-path)
-    ;;@TODO: condition on a slot we set on the order to indicate cached recipe?
-    (parcel--activate-dependencies order)
     (parcel--update-order-info order "Package build dir added to load-path")
     (condition-case err
         (progn
           (load autoloads nil 'nomessage)
-          (parcel--autoload-dependencies order)
           (parcel--update-order-info order "Package activated" 'activated))
       ((error) (parcel--update-order-info
                 order (format "Failed to load %S: %S" autoloads err) 'failed-to-activate)))
