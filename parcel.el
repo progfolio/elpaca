@@ -39,22 +39,6 @@
 (defvar autoload-timestamps)
 (defvar generated-autoload-file)
 
-(cl-defstruct parcel-order
-  "Order object for queued processing."
-  (package      nil :type string)
-  (recipe       nil :type list)
-  (build-steps  nil :type list)
-  (statuses     nil :type list)
-  (dependencies nil :type list)
-  (dependents   nil :type list)
-  (callback     nil :type function)
-  (includes     nil :type list)
-  (repo-dir     nil :type string)
-  (build-dir    nil :type string)
-  (files        nil :type list)
-  (process      nil :type process)
-  (log          nil :type list))
-
 (defgroup parcel nil
   "An elisp package manager."
   :group 'parcel
@@ -338,6 +322,11 @@ ITEM is any of the following values:
                                                 `(:host (github gitlab stringp) ,host ,recipe))))))
         (format "%s%s%s%s.git" (car protocol) host (cdr protocol) repo)))))
 
+(cl-defstruct (parcel-order (:constructor parcel-order-create))
+  "Order object for queued processing."
+  package recipe build-steps statuses dependencies dependents callback
+  includes repo-dir build-dir files process log)
+
 (defsubst parcel-order-status (order)
   "Return `car' of ORDER's statuses."
   (car (parcel-order-statuses order)))
@@ -498,7 +487,7 @@ RETURNS order structure."
            (cached (alist-get name parcel--cache))
            (add-deps-p nil)
            (order
-            (make-parcel-order
+            (parcel-order-create
              :package name :recipe recipe :statuses (list status)
              :build-steps
              (when recipe
