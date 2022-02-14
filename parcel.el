@@ -832,23 +832,6 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
       (process-put process :order order)
       (setf (parcel-order-process order) process))))
 
-(defun parcel-generate-autoloads (package dir)
-  "Generate autoloads in DIR for PACKAGE."
-  (let* ((auto-name (format "%s-autoloads.el" package))
-         (output    (expand-file-name auto-name dir))
-         (autoload-timestamps nil)
-         (backup-inhibited t)
-         (version-control 'never))
-    (unless (file-exists-p output)
-      (require 'autoload)
-      (let ((generated-autoload-file output))
-        (write-region (autoload-rubric output) nil output nil 'silent))
-      ;;@TODO: support older Emacs?
-      (make-directory-autoloads dir output))
-    (when-let ((buf (find-buffer-visiting output)))
-      (kill-buffer buf))
-    auto-name))
-
 (eval-and-compile
   (defun parcel--ensure-list (obj)
     "Ensure OBJ is a list."
@@ -1032,6 +1015,23 @@ If FORCE is non-nil, ignore order queue."
                     :sentinel #'parcel--clone-process-sentinel)))
       (process-put process :order order)
       (setf (parcel-order-process order) process))))
+
+(defun parcel-generate-autoloads (package dir)
+  "Generate autoloads in DIR for PACKAGE."
+  (let* ((auto-name (format "%s-autoloads.el" package))
+         (output    (expand-file-name auto-name dir))
+         (autoload-timestamps nil)
+         (backup-inhibited t)
+         (version-control 'never))
+    (unless (file-exists-p output)
+      (require 'autoload)
+      (let ((generated-autoload-file output))
+        (write-region (autoload-rubric output nil 'feature) nil output nil 'silent))
+      ;;@TODO: support older Emacs?
+      (make-directory-autoloads dir output))
+    (when-let ((buf (find-buffer-visiting output)))
+      (kill-buffer buf))
+    auto-name))
 
 (defun parcel--generate-autoloads-async-process-filter (process output)
   "Filter autoload PROCESS OUTPUT."
