@@ -402,7 +402,7 @@ If PACKAGES is nil, use all available orders."
 (defun parcel--clean-order (order)
   "Return ORDER plist with cache data."
   (list
-   (parcel-order-package order)
+   :package      (parcel-order-package order)
    :recipe       (parcel-order-recipe order)
    :repo-dir     (parcel-order-repo-dir order)
    :build-dir    (parcel-order-build-dir order)
@@ -424,6 +424,13 @@ If PACKAGES is nil, use all available orders."
              (plist (mapcar #'parcel--clean-order (mapcar #'cdr finished))))
         (prin1 plist)))))
 
+(defun parcel--cache-entry-to-order (plist)
+  "Return decoded PLIST as order."
+  (let ((order (apply #'parcel-order-create plist)))
+    (setf (parcel-order-dependencies order)
+          (mapcar #'parcel--cache-entry-to-order (parcel-order-dependencies order)))
+    order))
+
 (defun parcel--read-cache ()
   "Return cache alist or nil if not available."
   (when-let ((cache (expand-file-name "cache.el" parcel-directory))
@@ -431,10 +438,7 @@ If PACKAGES is nil, use all available orders."
     (condition-case err
         (with-temp-buffer
           (insert-file-contents cache)
-          (mapcar (lambda (cached)
-                    (push :package cached)
-                    (apply #'parcel-order-create cached))
-                  (read (current-buffer))))
+          (mapcar #'parcel--cache-entry-to-order (read (current-buffer))))
       ((error) (warn "Error reading parcel cache.el: %S" err)))))
 
 (defvar parcel--cache (parcel--read-cache) "Built package information cache.")
