@@ -383,6 +383,11 @@ If PACKAGES is nil, use all available orders."
 (defun parcel--print-order-status (order)
   "Print ORDER's status in `parcel-status-buffer'."
   (with-current-buffer (get-buffer-create parcel-status-buffer)
+    ;;@OPTIMIZE:
+    ;; Do we always need to check this?
+    ;; We should be able to make it so buffer is initialized prior to this being
+    ;; called.
+    (unless (derived-mode-p 'parcel-status-mode) (parcel-status-mode))
     (with-silent-modifications
       (save-excursion
         (cursor-intangible-mode -1)
