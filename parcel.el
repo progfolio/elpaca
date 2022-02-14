@@ -893,7 +893,12 @@ RETURNS order structure."
            (order
             (make-parcel-order
              :package (format "%S" package) :recipe recipe :statuses (list status)
-             :build-steps parcel-build-steps
+             :build-steps
+             (let ((steps (copy-tree parcel-build-steps)))
+               (when (file-exists-p repo-dir) (setq steps (delq 'parcel-clone steps)))
+               ;; Has recipe changed?
+               ;; Has :files hash changed?
+               steps)
              :repo-dir repo-dir :build-dir (when recipe (parcel-build-dir recipe))))
            (mono-repo
             (cl-some (lambda (cell)
