@@ -498,16 +498,21 @@ RETURNS order structure."
            (build-dir (when recipe (parcel-build-dir recipe)))
            (cached (cl-some (lambda (o) (when (equal (parcel-order-package o) name) o))
                             parcel--cache))
-           (add-deps-p nil)
+           (built-p nil)
            (order
             (parcel-order-create
              :package name :recipe recipe :statuses (list status)
              :build-steps
              (when recipe
                (if (file-exists-p build-dir)
-                   (prog1
-                       (list #'parcel--add-info-path #'parcel--activate-package)
-                     (setq add-deps-p t))
+                   (progn
+                     (setq built-p t)
+                     (dolist (spec (parcel--dependencies recipe))
+                       (let ((item (car spec)))
+                         (unless (or (member item parcel-ignored-dependencies)
+                                     (alist-get item parcel--queued-orders))
+                           (parcel--queue-order item))))
+                     (list #'parcel--add-info-path #'parcel--activate-package))
                  (when-let  ((steps (copy-tree parcel-build-steps)))
                    (when (file-exists-p repo-dir)
                      (setq steps (delq 'parcel-clone steps))
@@ -520,7 +525,7 @@ RETURNS order structure."
                    steps)))
              :repo-dir repo-dir :build-dir build-dir))
            (mono-repo
-            (unless add-deps-p
+            (unless built-p
               (cl-some (lambda (cell)
                          (when-let ((queued (cdr cell))
                                     ((and repo-dir
@@ -528,8 +533,6 @@ RETURNS order structure."
                            queued))
                        parcel--queued-orders))))
       (prog1 order
-        (when (and add-deps-p cached)
-          (setf (parcel-order-dependencies order) (parcel-order-dependencies cached)))
         (push (cons package order) parcel--queued-orders)
         (if (not mono-repo)
             (parcel--update-order-info order info)
