@@ -407,6 +407,38 @@ If PACKAGES is nil, use all available orders."
         (cursor-intangible-mode))
       (setq header-line-format '(:eval (parcel--header-line))))))
 
+(defun parcel--write-cache ()
+  "Write order cache to disk."
+  (with-temp-buffer
+    (let ((print-circle nil)
+          (print-length nil)
+          (finished (cl-remove-if-not (lambda (queued)
+                                        (eq (parcel-order-status (cdr queued))
+                                            'finished))
+                                      parcel--queued-orders)))
+      (insert
+       (format "%S" (mapcar (lambda (o)
+                              (list (parcel-order-package o)
+                                    :recipe       (parcel-order-recipe o)
+                                    :dependenices (parcel-order-dependencies o)
+                                    :dependents   (parcel-order-dependents o)))
+                            (mapcar #'cdr finished))))
+      (write-region (point-min) (point-max)
+                    (expand-file-name "cache.el" parcel-directory)))))
+
+(defun parcel--read-cache ()
+  "Return cache alist or nil if not available."
+  (when-let ((cache (expand-file-name "cache.el" parcel-directory))
+             ((file-exists-p cache)))
+    (condition-case err
+        (with-temp-buffer
+          (insert-file-contents cache)
+          (goto-char (point-min))
+          (read (current-buffer)))
+      ((error) (warn "Error reading parcel cache.el: %S" err)))))
+
+(defvar parcel--cache (parcel--read-cache) "Built package information cache.")
+
 (defun parcel--add-remotes (order &optional recurse)
   "Add ORDER's repo remotes.
 RECURSE is used to keep track of recursive calls."
