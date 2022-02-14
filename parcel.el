@@ -432,7 +432,10 @@ If PACKAGES is nil, use all available orders."
     (condition-case err
         (with-temp-buffer
           (insert-file-contents cache)
-          (read (current-buffer)))
+          (mapcar (lambda (cached)
+                    (push :package cached)
+                    (apply #'parcel-order-create cached))
+                  (read (current-buffer))))
       ((error) (warn "Error reading parcel cache.el: %S" err)))))
 
 (defvar parcel--cache (parcel--read-cache) "Built package information cache.")
