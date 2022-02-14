@@ -759,7 +759,7 @@ If package's repo is not on disk, error."
                      (included   (member dep-order (parcel-order-includes order)))
                      (blocked    (eq (parcel-order-status dep-order) 'blocked)))
                 (setf (parcel-order-dependencies order)
-                      (append (parcel-order-dependencies order) (list dependency)))
+                      (append (parcel-order-dependencies order) (list dep-order)))
                 (push order (parcel-order-dependents dep-order))
                 (if queued
                     (when (eq (parcel-order-status queued) 'finished) (cl-incf finished))
@@ -979,9 +979,8 @@ RETURNS order structure."
 Possibly kicks off next build step, or changes order status."
   (let* ((statuses
           (mapcar (lambda (dependency)
-                    (let ((order (alist-get dependency parcel--queued-orders)))
-                      (cons (parcel-order-package order)
-                            (parcel-order-status  order))))
+                    (cons (parcel-order-package dependency)
+                          (parcel-order-status  dependency)))
                   (parcel-order-dependencies order)))
          (blocked (cl-remove-if (lambda (status) (eq status 'finished))
                                 statuses :key #'cdr))
