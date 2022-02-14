@@ -457,7 +457,7 @@ If INFO is non-nil, ORDER's info is updated as well."
   (if-let ((next (pop (parcel-order-build-steps order))))
       (funcall next order)
     (parcel--update-order-info order "✓" 'finished)
-    ;; cache the recipe and :file hash
+    (parcel--write-cache)
     (when-let ((callback (parcel-order-callback order)))
       (funcall callback))))
 
