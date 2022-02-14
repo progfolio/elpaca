@@ -520,7 +520,8 @@ RETURNS order structure."
                (if (file-exists-p build-dir)
                    (progn
                      (setq built-p t)
-                     (list #'parcel--add-info-path #'parcel--activate-package))
+                     (list #'parcel--add-info-path #'parcel--activate-package
+                           #'parcel--queue-dependencies))
                  (when-let  ((steps (copy-tree parcel-build-steps)))
                    (when (file-exists-p repo-dir)
                      (setq steps (delq 'parcel-clone steps))
@@ -819,6 +820,27 @@ If package's repo is not on disk, error."
                 (read (match-string 1))
               (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))
 
+(defun parcel--queue-dependencies (order)
+  "Queue ORDER's dependencies."
+  (parcel--update-order-info order "Queueing Dependencies" 'queueing-deps)
+  (let* ((recipe       (parcel-order-recipe order))
+         (dependencies (parcel--dependencies recipe))
+         (externals    (cl-remove-duplicates
+                        (cl-remove-if (lambda (dependency)
+                                        (member dependency parcel-ignored-dependencies))
+                                      dependencies :key #'car))))
+    (if externals
+        (dolist (spec externals)
+          (let* ((dependency (car spec))
+                 (queued     (alist-get dependency parcel--queued-orders))
+                 (dep-order  (or queued (parcel--queue-order dependency))))
+            (setf (parcel-order-dependencies order)
+                  (append (parcel-order-dependencies order) (list dep-order)))
+            (push order (parcel-order-dependents dep-order))
+            (parcel-run-next-build-step dep-order)))
+      (parcel--update-order-info order "No external dependencies detected")
+      (parcel-run-next-build-step order))))
+
 (defun parcel--clone-dependencies (order)
   "Clone ORDER's dependencies."
   (parcel--update-order-info order "Cloning Dependencies" 'cloning-deps)
@@ -1101,6 +1123,7 @@ Async wrapper for `parcel-generate-autoloads'."
          (package           (parcel-order-package order))
          (autoloads         (format "%s-autoloads.el" package)))
     (cl-pushnew default-directory load-path)
+    ;;@TODO: condition on a slot we set on the order to indicate cached recipe?
     (parcel--update-order-info order "Package build dir added to load-path")
     (condition-case err
         (progn
