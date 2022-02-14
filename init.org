@@ -2978,7 +2978,7 @@ TBA
 
 #+begin_src emacs-lisp :lexical t
 (use-package parcel
-  :straight '(parcel :host github :repo "progfolio/parcel"))
+  :straight '(parcel :host github :repo "progfolio/parcel" :files (:defaults "test/parcel-test.el")))
 #+end_src
 
 ** pdf-tools
