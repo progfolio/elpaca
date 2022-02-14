@@ -1088,6 +1088,7 @@ Async wrapper for `parcel-generate-autoloads'."
     (cl-pushnew default-directory load-path)
     ;;@TODO: condition on a slot we set on the order to indicate cached recipe?
     (dolist (dependency dependencies)
+      (message "here")
       (cl-pushnew (parcel-order-build-dir dependency) load-path))
     (parcel--update-order-info order "Package build dir added to load-path")
     (condition-case err
