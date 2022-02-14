@@ -422,7 +422,6 @@ If PACKAGES is nil, use all available orders."
                                                'finished))
                                          (reverse parcel--queued-orders)))
              (plist (mapcar #'parcel--clean-order (mapcar #'cdr finished))))
-        (princ "'")
         (prin1 plist)))))
 
 (defun parcel--read-cache ()
