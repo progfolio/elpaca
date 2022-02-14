@@ -1092,6 +1092,9 @@ Async wrapper for `parcel-generate-autoloads'."
     (condition-case err
         (progn
           (load autoloads nil 'nomessage)
+          (dolist (dependency dependencies)
+            (let ((autoloads (format "%-autoloads" dependency)))
+              (unless (featurep autoloads) (load autoloads nil 'nomessage))))
           (parcel--update-order-info order "Package activated" 'activated))
       ((error) (parcel--update-order-info
                 order (format "Failed to load %S: %S" autoloads err) 'failed-to-activate)))
