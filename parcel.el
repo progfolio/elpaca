@@ -396,7 +396,7 @@ If PACKAGES is nil, use all available orders."
             (insert (propertize "\n" 'cursor-intangible t 'read-only t)))
           (insert (parcel-status-buffer-line order)))
         (cursor-intangible-mode))
-      (setq header-line-format '(:eval (parcel--header-line))))))
+      (parcel--set-header-line))))
 
 (defun parcel--write-cache ()
   "Write order cache to disk."
