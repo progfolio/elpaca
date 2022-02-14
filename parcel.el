@@ -838,8 +838,8 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
     "Ensure OBJ is a list."
     (if (listp obj) obj (list obj))))
 
-(defun parcel--header-line ()
-  "Return header line format for `parcel-buffer'."
+(defun parcel--set-header-line ()
+  "Set header line format for `parcel-buffer'."
   (let ((counts nil)
         (queue-len (length parcel--queued-orders)))
     (dolist (queued parcel--queued-orders)
@@ -847,21 +847,22 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
         (if (alist-get status counts)
             (cl-incf (alist-get status counts))
           (push (cons status 1) counts))))
-    (concat
-     (propertize " Parcel " 'face '(:weight bold))
-     " "
-     ;;@FIX: shouldn't have to use the quadruple %
-     (format "Queued: %d | %s(%.2f%%%%): %d | %s: %d | %s: %d"
-             queue-len
-             (propertize "Finished" 'face 'parcel-finished)
-             (if-let ((finished (alist-get 'finished counts)))
-                 (* (/ (float finished) queue-len) 100)
-               0.00)
-             (or (alist-get 'finished counts) 0)
-             (propertize "Blocked" 'face 'parcel-blocked)
-             (or (alist-get 'blocked  counts) 0)
-             (propertize "Failed" 'face 'parcel-failed)
-             (or (alist-get 'failed   counts) 0)))))
+    (with-current-buffer (get-buffer-create parcel-status-buffer)
+      (setq header-line-format
+             (concat
+              (propertize " Parcel " 'face '(:weight bold))
+              " "
+              (format "Queued: %d | %s(%.2f%%%%): %d | %s: %d | %s: %d"
+                      queue-len
+                      (propertize "Finished" 'face 'parcel-finished)
+                      (if-let ((finished (alist-get 'finished counts)))
+                          (* (/ (float finished) queue-len) 100)
+                        0.00)
+                      (or (alist-get 'finished counts) 0)
+                      (propertize "Blocked" 'face 'parcel-blocked)
+                      (or (alist-get 'blocked  counts) 0)
+                      (propertize "Failed" 'face 'parcel-failed)
+                      (or (alist-get 'failed   counts) 0)))))))
 
 (defsubst parcel-order-info (order)
   "Return ORDER's most recent log event info."
@@ -1165,7 +1166,7 @@ Async wrapper for `parcel-generate-autoloads'."
     (with-silent-modifications (erase-buffer))
     (unless (derived-mode-p 'parcel-status-mode)
       (parcel-status-mode))
-    (setq header-line-format '(:eval (parcel--header-line)))
+    (parcel--set-header-line)
     (display-buffer (current-buffer))))
 
 ;;;###autoload
