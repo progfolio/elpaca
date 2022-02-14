@@ -1127,10 +1127,8 @@ Async wrapper for `parcel-generate-autoloads'."
          (default-directory build-dir)
          (emacs             (parcel--emacs-path))
          ;;@MAYBE: fix if we decide to store order objects in order :dependencies
-         (dependency-dirs
-          (mapcar (lambda (item) (parcel-order-build-dir
-                                  (alist-get item parcel--queued-orders)))
-                  (parcel-order-dependencies order)))
+         (dependency-dirs (mapcar (lambda (o) (parcel-order-build-dir o))
+                                  (parcel-order-dependencies order)))
          (program `(progn
                      (mapc (lambda (dir) (let ((default-directory dir))
                                            (add-to-list 'load-path dir)
