@@ -851,20 +851,20 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
           (push (cons status 1) counts))))
     (with-current-buffer (get-buffer-create parcel-status-buffer)
       (setq header-line-format
-             (concat
-              (propertize " Parcel " 'face '(:weight bold))
-              " "
-              (format "Queued: %d | %s(%.2f%%%%): %d | %s: %d | %s: %d"
-                      queue-len
-                      (propertize "Finished" 'face 'parcel-finished)
-                      (if-let ((finished (alist-get 'finished counts)))
-                          (* (/ (float finished) queue-len) 100)
-                        0.00)
-                      (or (alist-get 'finished counts) 0)
-                      (propertize "Blocked" 'face 'parcel-blocked)
-                      (or (alist-get 'blocked  counts) 0)
-                      (propertize "Failed" 'face 'parcel-failed)
-                      (or (alist-get 'failed   counts) 0)))))))
+            (concat
+             (propertize " Parcel " 'face '(:weight bold))
+             " "
+             (format "Queued: %d | %s(%.2f%%%%): %d | %s: %d | %s: %d"
+                     queue-len
+                     (propertize "Finished" 'face 'parcel-finished)
+                     (if-let ((finished (alist-get 'finished counts)))
+                         (* (/ (float finished) queue-len) 100)
+                       0.00)
+                     (or (alist-get 'finished counts) 0)
+                     (propertize "Blocked" 'face 'parcel-blocked)
+                     (or (alist-get 'blocked  counts) 0)
+                     (propertize "Failed" 'face 'parcel-failed)
+                     (or (alist-get 'failed   counts) 0)))))))
 
 (defsubst parcel-order-info (order)
   "Return ORDER's most recent log event info."
