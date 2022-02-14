@@ -322,7 +322,9 @@ ITEM is any of the following values:
                                                 `(:host (github gitlab stringp) ,host ,recipe))))))
         (format "%s%s%s%s.git" (car protocol) host (cdr protocol) repo)))))
 
-(cl-defstruct (parcel-order (:constructor parcel-order-create))
+(cl-defstruct (parcel-order (:constructor parcel-order-create)
+                            (:type list)
+                            (:named))
   "Order object for queued processing."
   package recipe build-steps statuses dependencies dependents callback
   includes repo-dir build-dir files process log)
