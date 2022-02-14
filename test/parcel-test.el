@@ -49,11 +49,6 @@
                        recipes))
       (_ (user-error "Unimplmented request method: %S" request)))))
 
-(ert-deftest parcel-clean-plist ()
-  "Remove unrecognized keywords."
-  (should (parcel-test--plist-equal-p '(:host github)
-                                      (parcel-clean-plist '(:fetcher t :host github)))))
-
 (ert-deftest parcel-merge-plists ()
   "Merges PLISTS."
   (let ((foo '(:foo 1))
