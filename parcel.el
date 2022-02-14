@@ -472,6 +472,73 @@ If INFO is non-nil, ORDER's info is updated as well."
     (when-let ((callback (parcel-order-callback order)))
       (funcall callback))))
 
+(defun parcel--queue-order (item &optional status)
+  "Queue (ITEM . ORDER) in `parcel--queued-orders'.
+If STATUS is non-nil, the order is given that initial status.
+RETURNS order structure."
+  (if (alist-get item parcel--queued-orders)
+      (warn "%S already queued. Duplicate?" item)
+    (let* ((status  (or status 'queued))
+           (info    "Package queued")
+           (package (if (listp item) (car item) item))
+           (name (format "%S" package))
+           (recipe  (condition-case err
+                        (parcel-recipe item)
+                      ((error)
+                       (setq status 'failed
+                             info (format "No recipe: %S" err))
+                       nil)))
+           (repo-dir (when recipe
+                       (condition-case err
+                           (parcel-repo-dir recipe)
+                         ((error)
+                          (setq status 'failed
+                                info (format "Unable to determine repo dir: %S" err))))))
+           (build-dir (when recipe (parcel-build-dir recipe)))
+           (cached (alist-get name parcel--cache))
+           (add-deps-p nil)
+           (order
+            (make-parcel-order
+             :package name :recipe recipe :statuses (list status)
+             :build-steps
+             (when recipe
+               (if (file-exists-p build-dir)
+                   (prog1
+                       (list #'parcel--add-info-path #'parcel--activate-package)
+                     (setq add-deps-p t))
+                 (when-let  ((steps (copy-tree parcel-build-steps)))
+                   (when (file-exists-p repo-dir)
+                     (setq steps (delq 'parcel-clone steps))
+                     (when-let ((cached-recipe (plist-get cached :recipe))
+                                ((eq recipe cached-recipe)))
+                       (setq steps (cl-set-difference steps '(parcel--add-remotes
+                                                              parcel--checkout-ref
+                                                              parcel--dispatch-build-commands)))))
+                   steps)))
+             :repo-dir repo-dir :build-dir build-dir))
+           (mono-repo
+            (unless add-deps-p
+              (cl-some (lambda (cell)
+                         (when-let ((queued (cdr cell))
+                                    ((and repo-dir
+                                          (equal repo-dir (parcel-order-repo-dir queued)))))
+                           queued))
+                       parcel--queued-orders))))
+      (prog1 order
+        (when add-deps-p
+          (setf (parcel-order-dependencies order) (plist-get cached :dependencies)))
+        (push (cons package order) parcel--queued-orders)
+        (if (not mono-repo)
+            (parcel--update-order-info order info)
+          (cl-pushnew order (parcel-order-includes mono-repo))
+          (if (memq 'ref-checked-out (parcel-order-statuses mono-repo))
+              (progn
+                (parcel--remove-build-steps
+                 order '(parcel-clone parcel--add-remotes parcel--checkout-ref))
+                (parcel-run-next-build-step order))
+            (parcel--update-order-info
+             order (format "Waiting for monorepo %S" repo-dir) 'blocked)))))))
+
 (defun parcel--add-remotes (order &optional recurse)
   "Add ORDER's repo remotes.
 RECURSE is used to keep track of recursive calls."
@@ -889,73 +956,6 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
              'package           package
              'order             order)
             " ")))
-
-(defun parcel--queue-order (item &optional status)
-  "Queue (ITEM . ORDER) in `parcel--queued-orders'.
-If STATUS is non-nil, the order is given that initial status.
-RETURNS order structure."
-  (if (alist-get item parcel--queued-orders)
-      (warn "%S already queued. Duplicate?" item)
-    (let* ((status  (or status 'queued))
-           (info    "Package queued")
-           (package (if (listp item) (car item) item))
-           (name (format "%S" package))
-           (recipe  (condition-case err
-                        (parcel-recipe item)
-                      ((error)
-                       (setq status 'failed
-                             info (format "No recipe: %S" err))
-                       nil)))
-           (repo-dir (when recipe
-                       (condition-case err
-                           (parcel-repo-dir recipe)
-                         ((error)
-                          (setq status 'failed
-                                info (format "Unable to determine repo dir: %S" err))))))
-           (build-dir (when recipe (parcel-build-dir recipe)))
-           (cached (alist-get name parcel--cache))
-           (add-deps-p nil)
-           (order
-            (make-parcel-order
-             :package name :recipe recipe :statuses (list status)
-             :build-steps
-             (if (file-exists-p build-dir)
-                 (prog1
-                     (list #'parcel--add-info-path #'parcel--activate-package)
-                   (setq add-deps-p t))
-               (when-let  ((recipe)
-                           (steps (copy-tree parcel-build-steps)))
-                 (when (file-exists-p repo-dir)
-                   (setq steps (delq 'parcel-clone steps))
-                   (when-let ((cached-recipe (plist-get cached :recipe))
-                              ((eq recipe cached-recipe)))
-                     (setq steps (cl-set-difference steps '(parcel--add-remotes
-                                                            parcel--checkout-ref
-                                                            parcel--dispatch-build-commands)))))
-                 steps))
-             :repo-dir repo-dir :build-dir build-dir))
-           (mono-repo
-            (unless add-deps-p
-              (cl-some (lambda (cell)
-                         (when-let ((queued (cdr cell))
-                                    ((and repo-dir
-                                          (equal repo-dir (parcel-order-repo-dir queued)))))
-                           queued))
-                       parcel--queued-orders))))
-      (prog1 order
-        (when add-deps-p
-          (setf (parcel-order-dependencies order) (plist-get cached :dependencies)))
-        (push (cons package order) parcel--queued-orders)
-        (if (not mono-repo)
-            (parcel--update-order-info order info)
-          (cl-pushnew order (parcel-order-includes mono-repo))
-          (if (memq 'ref-checked-out (parcel-order-statuses mono-repo))
-              (progn
-                (parcel--remove-build-steps
-                 order '(parcel-clone parcel--add-remotes parcel--checkout-ref))
-                (parcel-run-next-build-step order))
-            (parcel--update-order-info
-             order (format "Waiting for monorepo %S" repo-dir) 'blocked)))))))
 
 (defun parcel--clone-process-filter (process output)
   "Filter PROCESS OUTPUT of async clone operation."
