@@ -492,7 +492,8 @@ RETURNS order structure."
                           (setq status 'failed
                                 info (format "Unable to determine repo dir: %S" err))))))
            (build-dir (when recipe (parcel-build-dir recipe)))
-           (cached (alist-get name parcel--cache))
+           (cached (cl-some (lambda (o) (when (equal (parcel-order-package o) name) o))
+                            parcel--cache))
            (add-deps-p nil)
            (order
             (parcel-order-create
