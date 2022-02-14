@@ -403,7 +403,10 @@ If PACKAGES is nil, use all available orders."
   "Return ORDER plist with cache data."
   (list
    (parcel-order-package order)
-   :recipe (parcel-order-recipe order)
+   :recipe       (parcel-order-recipe order)
+   :repo-dir     (parcel-order-repo-dir order)
+   :build-dir    (parcel-order-build-dir order)
+   :files        (parcel-order-files order)
    :dependencies (mapcar #'parcel--clean-order (parcel-order-dependencies order))))
 
 (defun parcel--write-cache ()
@@ -417,7 +420,7 @@ If PACKAGES is nil, use all available orders."
              (finished (cl-remove-if-not (lambda (queued)
                                            (eq (parcel-order-status (cdr queued))
                                                'finished))
-                                         parcel--queued-orders))
+                                        (reverse parcel--queued-orders)))
              (plist (mapcar #'parcel--clean-order (mapcar #'cdr finished))))
         (princ "'")
         (prin1 plist)))))
