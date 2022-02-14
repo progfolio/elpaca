@@ -30,6 +30,7 @@
 
 ;;; Code:
 (require 'cl-lib)
+(require 'cl-macs)
 (require 'text-property-search)
 (require 'parcel-process)
 
