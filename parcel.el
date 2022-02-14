@@ -911,6 +911,7 @@ RETURNS order structure."
     (let* ((status  (or status 'queued))
            (info    "Package queued")
            (package (if (listp item) (car item) item))
+           (name (format "%S" package))
            (recipe  (condition-case err
                         (parcel-recipe item)
                       ((error)
@@ -923,16 +924,24 @@ RETURNS order structure."
                          ((error)
                           (setq status 'failed
                                 info (format "Unable to determine repo dir: %S" err))))))
+           (build-dir (when recipe (parcel-build-dir recipe)))
            (order
             (make-parcel-order
-             :package (format "%S" package) :recipe recipe :statuses (list status)
+             :package name :recipe recipe :statuses (list status)
              :build-steps
-             (let ((steps (copy-tree parcel-build-steps)))
-               (when (file-exists-p repo-dir) (setq steps (delq 'parcel-clone steps)))
-               ;; Has recipe changed?
-               ;; Has :files hash changed?
-               steps)
-             :repo-dir repo-dir :build-dir (when recipe (parcel-build-dir recipe))))
+             (if (file-exists-p build-dir)
+                 (list #'parcel--add-info-path #'parcel--activate-package)
+               (when-let  ((recipe)
+                           (steps (copy-tree parcel-build-steps)))
+                 (when (file-exists-p repo-dir)
+                   (setq steps (delq 'parcel-clone steps))
+                   (when-let ((cached (plist-get (alist-get name parcel--cache) :recipe))
+                              ((eq recipe cached)))
+                     (setq steps (cl-set-difference steps '(parcel--add-remotes
+                                                            parcel--checkout-ref
+                                                            parcel--dispatch-build-commands)))))
+                 steps))
+             :repo-dir repo-dir :build-dir build-dir))
            (mono-repo
             (cl-some (lambda (cell)
                        (when-let ((queued (cdr cell))
