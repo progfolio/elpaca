@@ -399,6 +399,13 @@ If PACKAGES is nil, use all available orders."
         (cursor-intangible-mode))
       (parcel--set-header-line))))
 
+(defun parcel--clean-order (order)
+  "Return ORDER plist with cache data."
+  (list
+   (parcel-order-package order)
+   :recipe (parcel-order-recipe order)
+   :dependencies (mapcar #'parcel--clean-order (parcel-order-dependencies order))))
+
 (defun parcel--write-cache ()
   "Write order cache to disk."
   (let ((coding-system-for-write 'utf-8))
@@ -411,13 +418,7 @@ If PACKAGES is nil, use all available orders."
                                            (eq (parcel-order-status (cdr queued))
                                                'finished))
                                          parcel--queued-orders))
-             (plist
-              (mapcar (lambda (o)
-                        (list (parcel-order-package o)
-                              :recipe       (parcel-order-recipe o)
-                              :dependenices (parcel-order-dependencies o)
-                              :dependents   (parcel-order-dependents o)))
-                      (mapcar #'cdr finished))))
+             (plist (mapcar #'parcel--clean-order (mapcar #'cdr finished))))
         (princ "'")
         (prin1 plist)))))
 
@@ -428,7 +429,6 @@ If PACKAGES is nil, use all available orders."
     (condition-case err
         (with-temp-buffer
           (insert-file-contents cache)
-          (goto-char (point-min))
           (read (current-buffer)))
       ((error) (warn "Error reading parcel cache.el: %S" err)))))
 
