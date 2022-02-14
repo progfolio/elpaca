@@ -507,7 +507,7 @@ RETURNS order structure."
                  (when-let  ((steps (copy-tree parcel-build-steps)))
                    (when (file-exists-p repo-dir)
                      (setq steps (delq 'parcel-clone steps))
-                     (when-let ((cached-recipe (plist-get cached :recipe))
+                     (when-let ((cached-recipe (parcel-order-recipe cached))
                                 ((eq recipe cached-recipe)))
                        (setq steps (cl-set-difference steps '(parcel--add-remotes
                                                               parcel--checkout-ref
@@ -524,7 +524,7 @@ RETURNS order structure."
                        parcel--queued-orders))))
       (prog1 order
         (when add-deps-p
-          (setf (parcel-order-dependencies order) (plist-get cached :dependencies)))
+          (setf (parcel-order-dependencies order) (parcel-order-dependencies cached)))
         (push (cons package order) parcel--queued-orders)
         (if (not mono-repo)
             (parcel--update-order-info order info)
@@ -1088,7 +1088,6 @@ Async wrapper for `parcel-generate-autoloads'."
     (cl-pushnew default-directory load-path)
     ;;@TODO: condition on a slot we set on the order to indicate cached recipe?
     (dolist (dependency dependencies)
-      (message "here")
       (cl-pushnew (parcel-order-build-dir dependency) load-path))
     (parcel--update-order-info order "Package build dir added to load-path")
     (condition-case err
