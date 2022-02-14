@@ -39,6 +39,22 @@
 (defvar autoload-timestamps)
 (defvar generated-autoload-file)
 
+(cl-defstruct parcel-order
+  "Order object for queued processing."
+  (package      nil :type string)
+  (recipe       nil :type list)
+  (build-steps  nil :type list)
+  (statuses     nil :type list)
+  (dependencies nil :type list)
+  (dependents   nil :type list)
+  (callback     nil :type function)
+  (includes     nil :type list)
+  (repo-dir     nil :type string)
+  (build-dir    nil :type string)
+  (files        nil :type list)
+  (process      nil :type process)
+  (log          nil :type list))
+
 (defgroup parcel nil
   "An elisp package manager."
   :group 'parcel
@@ -155,22 +171,6 @@ Ignore these unless the user explicitly requests they be installed.")
   "Time used to keep order logs relative to start of queue.")
 
 (defconst parcel-status-buffer "*Parcel*")
-
-(cl-defstruct parcel-order
-  "Order object for queued processing."
-  (package      nil :type string)
-  (recipe       nil :type list)
-  (build-steps  nil :type list)
-  (statuses     nil :type list)
-  (dependencies nil :type list)
-  (dependents   nil :type list)
-  (callback     nil :type function)
-  (includes     nil :type list)
-  (repo-dir     nil :type string)
-  (build-dir    nil :type string)
-  (files        nil :type list)
-  (process      nil :type process)
-  (log          nil :type list))
 
 (defun parcel-merge-plists (&rest plists)
   "Return plist with set of unique keys from PLISTS.
@@ -439,6 +439,26 @@ If PACKAGES is nil, use all available orders."
 
 (defvar parcel--cache (parcel--read-cache) "Built package information cache.")
 
+(defun parcel--update-order-info (order info &optional status)
+  "Update ORDER STATUS.
+Print the order status line in `parcel-status-buffer'.
+If STATUS is non-nil and differs from ORDER's current STATUS,
+signal ORDER's depedentents to check (and possibly change) their status.
+If INFO is non-nil, ORDER's info is updated as well."
+  (when status
+    (push status (parcel-order-statuses order))
+    (when (member status '(finished failed blocked))
+      (mapc #'parcel--order-check-status (parcel-order-dependents order)))
+    (when (eq status 'ref-checked-out)
+      (mapc (lambda (o)
+              (unless (member (parcel-order-statuses o) '(finished build-linked))
+                (parcel--remove-build-steps
+                 o '(parcel-clone parcel--add-remotes parcel--checkout-ref))
+                (parcel-run-next-build-step o)))
+            (parcel-order-includes order))))
+  (when info (parcel--log-event order info))
+  (parcel--print-order-status order))
+
 (defun parcel-run-next-build-step (order)
   "Run ORDER's next build step with ARGS."
   (if-let ((next (pop (parcel-order-build-steps order))))
@@ -493,26 +513,6 @@ RECURSE is used to keep track of recursive calls."
             (format "(wrong-type-argument ((stringp listp)) %S" remotes)
             'failed)))))
   (unless recurse (parcel-run-next-build-step order)))
-
-(defun parcel--update-order-info (order info &optional status)
-  "Update ORDER STATUS.
-Print the order status line in `parcel-status-buffer'.
-If STATUS is non-nil and differs from ORDER's current STATUS,
-signal ORDER's depedentents to check (and possibly change) their status.
-If INFO is non-nil, ORDER's info is updated as well."
-  (when status
-    (push status (parcel-order-statuses order))
-    (when (member status '(finished failed blocked))
-      (mapc #'parcel--order-check-status (parcel-order-dependents order)))
-    (when (eq status 'ref-checked-out)
-      (mapc (lambda (o)
-              (unless (member (parcel-order-statuses o) '(finished build-linked))
-                (parcel--remove-build-steps
-                 o '(parcel-clone parcel--add-remotes parcel--checkout-ref))
-                (parcel-run-next-build-step o)))
-            (parcel-order-includes order))))
-  (when info (parcel--log-event order info))
-  (parcel--print-order-status order))
 
 (defun parcel--remove-build-steps (order steplist)
   "Remove each step in STEPLIST from ORDER."
