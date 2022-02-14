@@ -944,7 +944,9 @@ RETURNS order structure."
           (setf (parcel-order-dependencies order) (plist-get cached :dependencies)))
         (push (cons package order) parcel--queued-orders)
         (if (not mono-repo)
-            (parcel--update-order-info order info)
+            (progn
+              (message "order type: %S" (type-of order))
+              (parcel--update-order-info order info))
           (cl-pushnew order (parcel-order-includes mono-repo))
           (if (memq 'ref-checked-out (parcel-order-statuses mono-repo))
               (progn
