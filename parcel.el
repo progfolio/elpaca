@@ -106,8 +106,6 @@
   "List of steps which are run when installing/building a package."
   :type 'list)
 
-(defvar parcel--queued-orders nil "List of queued orders.")
-
 (defvar parcel-default-files-directive
   '("*.el" "*.el.in" "dir"
     "*.info" "*.texi" "*.texinfo"
@@ -156,8 +154,11 @@ Each function is passed a request, which may be any of the follwoing symbols:
   (list 'emacs 'cl-lib 'cl-generic 'esxml 'nadvice 'org 'org-mode 'map 'seq)
   "Built in packages.
 Ignore these unless the user explicitly requests they be installed.")
+
 (defvar parcel-overriding-prompt nil "Overriding prompt for interactive functions.")
+
 (defvar parcel-menu--candidates-cache nil "Cache for menu candidates.")
+
 (defvar parcel--package-requires-regexp
   "\\(?:^;+[[:space:]]*Package-Requires[[:space:]]*:[[:space:]]*\\([^z-a]*?$\\)\\)"
   "Regexp matching the Package-Requires metadata in an elisp source file.")
@@ -925,31 +926,38 @@ RETURNS order structure."
                           (setq status 'failed
                                 info (format "Unable to determine repo dir: %S" err))))))
            (build-dir (when recipe (parcel-build-dir recipe)))
+           (cached (alist-get name parcel--cache))
+           (add-deps-p nil)
            (order
             (make-parcel-order
              :package name :recipe recipe :statuses (list status)
              :build-steps
              (if (file-exists-p build-dir)
-                 (list #'parcel--add-info-path #'parcel--activate-package)
+                 (prog1
+                     (list #'parcel--add-info-path #'parcel--activate-package)
+                   (setq add-deps-p t))
                (when-let  ((recipe)
                            (steps (copy-tree parcel-build-steps)))
                  (when (file-exists-p repo-dir)
                    (setq steps (delq 'parcel-clone steps))
-                   (when-let ((cached (plist-get (alist-get name parcel--cache) :recipe))
-                              ((eq recipe cached)))
+                   (when-let ((cached-recipe (plist-get cached :recipe))
+                              ((eq recipe cached-recipe)))
                      (setq steps (cl-set-difference steps '(parcel--add-remotes
                                                             parcel--checkout-ref
                                                             parcel--dispatch-build-commands)))))
                  steps))
              :repo-dir repo-dir :build-dir build-dir))
            (mono-repo
-            (cl-some (lambda (cell)
-                       (when-let ((queued (cdr cell))
-                                  ((and repo-dir
-                                        (equal repo-dir (parcel-order-repo-dir queued)))))
-                         queued))
-                     parcel--queued-orders)))
+            (unless add-deps-p
+              (cl-some (lambda (cell)
+                         (when-let ((queued (cdr cell))
+                                    ((and repo-dir
+                                          (equal repo-dir (parcel-order-repo-dir queued)))))
+                           queued))
+                       parcel--queued-orders))))
       (prog1 order
+        (when add-deps-p
+          (setf (parcel-order-dependencies order) (plist-get cached :dependencies)))
         (push (cons package order) parcel--queued-orders)
         (if (not mono-repo)
             (parcel--update-order-info order info)
@@ -1074,8 +1082,12 @@ Async wrapper for `parcel-generate-autoloads'."
         (cl-remove 'parcel--activate-package (parcel-order-build-steps order)))
   (let* ((default-directory (parcel-order-build-dir order))
          (package           (parcel-order-package order))
+         (dependencies      (parcel-order-dependencies order))
          (autoloads         (format "%s-autoloads.el" package)))
-    (add-to-list 'load-path default-directory)
+    (cl-pushnew default-directory load-path)
+    ;;@TODO: condition on a slot we set on the order to indicate cached recipe?
+    (dolist (dependency dependencies)
+      (cl-pushnew (parcel-order-build-dir dependency) load-path))
     (parcel--update-order-info order "Package build dir added to load-path")
     (condition-case err
         (progn
