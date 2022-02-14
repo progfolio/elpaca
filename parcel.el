@@ -344,6 +344,7 @@ ITEM is any of the following values:
 
 (defun parcel--log-event (order text)
   "Store TEXT in ORDER's log."
+  (message "order type in log-event: %S" (type-of order))
   (let ((log (parcel-order-log order)))
     (setf (parcel-order-log order)
           (append log
@@ -457,7 +458,9 @@ If INFO is non-nil, ORDER's info is updated as well."
                  o '(parcel-clone parcel--add-remotes parcel--checkout-ref))
                 (parcel-run-next-build-step o)))
             (parcel-order-includes order))))
-  (when info (parcel--log-event order info))
+  (when info
+    (message "order type in update-order-event: %S" (type-of order))
+    (parcel--log-event order info))
   (parcel--print-order-status order))
 
 (defun parcel-run-next-build-step (order)
@@ -944,9 +947,7 @@ RETURNS order structure."
           (setf (parcel-order-dependencies order) (plist-get cached :dependencies)))
         (push (cons package order) parcel--queued-orders)
         (if (not mono-repo)
-            (progn
-              (message "order type: %S" (type-of order))
-              (parcel--update-order-info order info))
+            (parcel--update-order-info order info)
           (cl-pushnew order (parcel-order-includes mono-repo))
           (if (memq 'ref-checked-out (parcel-order-statuses mono-repo))
               (progn
