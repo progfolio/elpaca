@@ -1200,29 +1200,9 @@ Async wrapper for `parcel-generate-autoloads'."
          ,@body))))
 
 ;;;###autoload
-(defun parcel-queue-initialize ()
-  "Initialize order queue."
-  (setq parcel--queued-orders nil
-        parcel--order-queue-start-time (current-time)))
-
-;;;###autoload
 (defun parcel-queue-empty ()
   "Process all orders in `parcel--queued-orders'."
   (setq parcel--order-queue-start-time (current-time))
-  ;; Queue dependencies when order has already been built.
-  ;; We do this here because we want top-level delcarations to take
-  ;; precedence over undeclared dependencies.
-  (mapc (lambda (cell)
-          (let ((order (cdr cell)))
-            (unless (memq (parcel-order-status order) '(failed blocked))
-              (let ((recipe (parcel-order-recipe order)))
-                (dolist (spec (parcel--dependencies recipe))
-                  (let ((item (car spec)))
-                    (unless (or (member item parcel-ignored-dependencies)
-                                (alist-get item parcel--queued-orders))
-                      (parcel--queue-order item))))))))
-        (reverse parcel--queued-orders))
-  ;; Now we have everything queued. Kick off build for each.
   (mapc (lambda (cell)
           (let ((order (cdr cell)))
             (unless (memq (parcel-order-status order) '(failed blocked))
