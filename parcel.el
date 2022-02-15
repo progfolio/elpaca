@@ -1254,6 +1254,7 @@ If FORCE is non-nil, do not ask for confirmation."
     (define-key map (kbd "<return>") 'parcel-status-mode-send-input)
     (define-key map (kbd "C-c C-r")  'parcel-status-mode-visit-repo)
     (define-key map (kbd "C-c C-b")  'parcel-status-mode-visit-build)
+    (define-key map (kbd "C-c C-q")  'quit-window)
     map))
 
 (define-derived-mode parcel-status-mode text-mode "Parcel Status Mode"
