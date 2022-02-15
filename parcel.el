@@ -1207,10 +1207,11 @@ Async wrapper for `parcel-generate-autoloads'."
 
 ;;;###autoload
 (defmacro parcel (order &rest body)
-  "Install ORDER, then execute BODY."
+  "Install ORDER, then execute BODY.
+If ORDER is `nil`, defer BODY until orders have been processed."
   (declare (indent 1))
   `(progn
-     (parcel--queue-order ,order)
+     ,@(unless (null order) (list `(parcel--queue-order ,order)))
      (setq parcel--post-process-forms (append parcel--post-process-forms ',body))))
 
 ;;;###autoload
