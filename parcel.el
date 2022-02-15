@@ -1218,9 +1218,8 @@ Async wrapper for `parcel-generate-autoloads'."
   "Execute BODY in `use-package' declartion after ORDER is finished."
   (declare (indent 1))
   `(parcel ',order
-     (with-eval-after-load 'use-package
        (use-package ,(if (listp order) (car order) order)
-         ,@body))))
+         ,@body)))
 
 ;;;###autoload
 (defun parcel-queue-empty ()
