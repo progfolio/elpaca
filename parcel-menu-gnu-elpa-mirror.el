@@ -65,7 +65,7 @@
       (setq parcel-menu-gnu-elpa-mirror--index-cache
             (mapcar (lambda (file)
                       (when (file-exists-p (expand-file-name file default-directory))
-                        (cons (intern-soft file)
+                        (cons (intern file)
                               (list :source "GNU ELPA Mirror"
                                     :recipe (list :package file
                                                   :host 'github
