@@ -1216,11 +1216,16 @@ If ORDER is `nil`, defer BODY until orders have been processed."
 
 ;;;###autoload
 (defmacro parcel-use-package (order &rest body)
-  "Execute BODY in `use-package' declartion after ORDER is finished."
+  "Execute BODY in `use-package' declartion after ORDER is finished.
+If the :disabled keyword is present in body, the package is completely ignored.
+This happens regardless of the value associated with :disabled.
+The expansion is a string indicating the package has been disabled."
   (declare (indent 1))
+  (if (member :disabled body)
+      (format "%S :disabled by parcel-use-package" order)
   `(parcel ',order
        (use-package ,(if (listp order) (car order) order)
-         ,@body)))
+         ,@body))))
 
 ;;;###autoload
 (defun parcel-queue-empty ()
