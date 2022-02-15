@@ -151,50 +151,76 @@ The following line turns on lexical binding for performance reasons.
 #+begin_src emacs-lisp :lexical t
 ;; -*- lexical-binding: t; -*-
 #+end_src
-
-** Straight package manager
-#+begin_quote
-straight.el: next-generation, purely functional package manager for the Emacs hacker.
-
-https://github.com/raxod502/straight.el
-#+end_quote
-
+** theme
+I prefer to keep my themes in a sub-folder of =~/.emacs.d=
 #+begin_src emacs-lisp :lexical t
-(setq straight-repository-branch "develop"
-      straight-check-for-modifications '(watch-files)
-      straight-use-package-by-default t
-      straight-vc-git-default-protocol 'https
-      straight-vc-git-force-protocol nil
-      straight-host-usernames '((github . "progfolio")
-                                (gitlab . "iarchivedmywholelife")))
-(defvar bootstrap-version)
-(let ((bootstrap-file
-       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-      (bootstrap-version 5))
-  (unless (file-exists-p bootstrap-file)
-    (with-current-buffer
-        (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-         'silent 'inhibit-cookies)
-      (goto-char (point-max))
-      (eval-print-last-sexp)))
-  (load bootstrap-file nil 'nomessage))
+(setq custom-theme-directory "~/.emacs.d/themes/")
 #+end_src
 
-[[https://www.funtoo.org/Keychain][Keychain]] is a gpg/ssh agent that allows me to cache my credentials.
-This package gets the correct environment variables so straight can use the ssh protocol.
+I'm working on a theme that is readable and attractive.
 
 #+begin_src emacs-lisp :lexical t
-(straight-use-package 'keychain-environment)
+(setq +theme 'mine)
+;; remove synthetic use-package theme
+(require 'cl-lib)
+(require 'custom)
+(unless (remq 'use-package custom-enabled-themes) (load-theme +theme t))
+#+end_src
+
+** Parcel
+#+begin_quote
+An elisp package manager
+
+https://github.com/progfolio/parcel
+#+end_quote
+
+*** Bootstrap snippet
+#+begin_src emacs-lisp :lexical t
+(declare-function parcel-generate-autoloads "parcel")
+(defvar parcel-directory (expand-file-name "parcel/" user-emacs-directory))
+(defun parcel--bootstrap ()
+  (let ((parcel-repo (expand-file-name "parcel/" parcel-directory)))
+    (add-to-list 'load-path parcel-repo)
+    (unless (file-exists-p parcel-repo)
+      (let ((buffer (get-buffer-create "*parcel-bootstrap*")))
+        (condition-case-unless-debug err
+            (progn
+              (unless (zerop (call-process "git" nil (list buffer t) t
+                                           "clone" "git@github.com:progfolio/parcel.git"
+                                           parcel-repo))
+                (error "%s" (list (with-current-buffer buffer (buffer-string)))))
+              ;;@FIX: this breaks our defstruct somehow?
+              ;;(byte-recompile-directory parcel-repo 0 'force)
+              (require 'parcel)
+              (parcel-generate-autoloads "parcel" parcel-repo))
+          ((error)
+           (when (file-exists-p parcel-directory)
+             (delete-directory parcel-directory 'recursive))
+           (with-current-buffer buffer
+             (goto-char (point-max))
+             (insert (format "\n%S" err))
+             (display-buffer buffer)
+             (kill-buffer buffer))))))
+    (require 'parcel-autoloads)))
+(parcel--bootstrap)
+(add-hook 'after-init-hook #'parcel-display-status-buffer)
+(add-hook 'after-init-hook #'parcel-queue-empty)
+#+end_src
+[[https://www.funtoo.org/Keychain][Keychain]] is a gpg/ssh agent that allows me to cache my credentials.
+This package gets the correct environment variables so parcel can use the ssh protocol.
+
+#+begin_src emacs-lisp :lexical t :tangle no
 (require 'keychain-environment)
 (keychain-refresh-environment)
-(setq straight-vc-git-default-protocol 'ssh)
 #+end_src
 
 ** profiling
 This function displays how long Emacs took to start.
 It's a rough way of knowing when/if I need to optimize my init file.
 #+begin_src emacs-lisp :lexical t
+(setq debug-on-error t)
+;;(require 'edebug)
+;;(edebug-instrument-function #'parcel--log-event)
 (add-hook 'emacs-startup-hook
           (lambda ()
             (message "Emacs loaded in %s with %d garbage collecitons."
