@@ -731,10 +731,13 @@ FILES and NOCONS are used recursively."
 
 (defun parcel--dispatch-build-commands-process-sentinel (process event)
   "PROCESS EVENT."
-  (let ((order (process-get process :order)))
+  (let ((order (process-get process :order))
+        (type  (process-get process :build-type)))
     (cond
      ((equal event "finished\n")
-      (parcel--update-order-info order ":pre-build steps finished" 'pre-built)
+      (parcel--update-order-info order
+                                 (format "%s steps finished" type)
+                                 (intern (substring (symbol-name type) 1)))
       (parcel-run-next-build-step order))
      ((string-match-p "abnormally" event)
       (parcel--update-order-info
@@ -788,7 +791,8 @@ The keyword's value is expected to be one of the following:
                                       (format "%S" program)))
                  :filter   #'parcel--dispatch-build-commands-process-filter
                  :sentinel #'parcel--dispatch-build-commands-process-sentinel)))
-          (process-put process :order order)))
+          (process-put process :order order)
+          (process-put process :build-type type)))
     (parcel-run-next-build-step order)))
 
 (defun parcel--run-pre-build-commands (order)
