@@ -150,9 +150,10 @@ Ignore these unless the user explicitly requests they be installed.")
 (defvar parcel--package-requires-regexp
   "\\(?:^;+[[:space:]]*Package-Requires[[:space:]]*:[[:space:]]*\\([^z-a]*?$\\)\\)"
   "Regexp matching the Package-Requires metadata in an elisp source file.")
-(defvar parcel-recipe-keywords (list :pre-build :branch :depth :fork :host
-                                     :post-build
-                                     :nonrecursive :package :protocol :remote :repo)
+
+(defvar parcel-recipe-keywords (list :branch :depth :fork :host :nonrecursive
+                                     :package :post-build :pre-build :protocol
+                                     :remote :repo)
   "Recognized parcel recipe keywords.")
 
 (defvar parcel--queued-orders nil "List of queued orders.")
@@ -1234,7 +1235,7 @@ The expansion is a string indicating the package has been disabled."
   (declare (indent 1))
   (if (member :disabled body)
       (format "%S :disabled by parcel-use-package" order)
-  `(parcel ',order
+    `(parcel ',order
        (use-package ,(if (listp order) (car order) order)
          ,@body))))
 
