@@ -374,9 +374,9 @@ If PACKAGES is nil, use all available orders."
                (cl-sort (copy-tree logs) #'time-less-p :key #'cadr)
                "\n")))
 
-(defun parcel--run-build-commands (&rest commands)
+(defun parcel--run-build-commands (commands)
   "Run build COMMANDS."
-  (dolist (command (parcel--ensure-list commands))
+  (dolist (command (if (listp (car commands)) commands (list commands)))
     (if (cl-every #'stringp command)
         (parcel-with-process (apply #'parcel-process-call command)
           (if success
