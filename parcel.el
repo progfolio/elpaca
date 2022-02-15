@@ -543,7 +543,7 @@ RETURNS order structure."
                                     ((and repo-dir
                                           (equal repo-dir (parcel-order-repo-dir queued)))))
                            queued))
-                       parcel--queued-orders))))
+                       (reverse parcel--queued-orders)))))
       (prog1 order
         (push (cons package order) parcel--queued-orders)
         (if (not mono-repo)
