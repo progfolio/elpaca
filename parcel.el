@@ -520,11 +520,6 @@ RETURNS order structure."
                (if (file-exists-p build-dir)
                    (progn
                      (setq built-p t)
-                     (dolist (spec (parcel--dependencies recipe))
-                       (let ((item (car spec)))
-                         (unless (or (member item parcel-ignored-dependencies)
-                                     (alist-get item parcel--queued-orders))
-                           (parcel--queue-order item))))
                      (list #'parcel--add-info-path #'parcel--activate-package))
                  (when-let  ((steps (copy-tree parcel-build-steps)))
                    (when (file-exists-p repo-dir)
@@ -1214,10 +1209,23 @@ Async wrapper for `parcel-generate-autoloads'."
 (defun parcel-queue-empty ()
   "Process all orders in `parcel--queued-orders'."
   (setq parcel--order-queue-start-time (current-time))
-  (mapc (lambda (order)
-          (let ((order (cdr order)))
+  ;; Queue dependencies when order has already been built.
+  ;; We do this here because we want top-level delcarations to take
+  ;; precedence over undeclared dependencies.
+  (mapc (lambda (cell)
+          (let ((order (cdr cell)))
             (unless (memq (parcel-order-status order) '(failed blocked))
-              ;; clone
+              (let ((recipe (parcel-order-recipe order)))
+                (dolist (spec (parcel--dependencies recipe))
+                  (let ((item (car spec)))
+                    (unless (or (member item parcel-ignored-dependencies)
+                                (alist-get item parcel--queued-orders))
+                      (parcel--queue-order item))))))))
+        (reverse parcel--queued-orders))
+  ;; Now we have everything queued. Kick off build for each.
+  (mapc (lambda (cell)
+          (let ((order (cdr cell)))
+            (unless (memq (parcel-order-status order) '(failed blocked))
               (parcel-run-next-build-step order))))
         (reverse parcel--queued-orders)))
 
