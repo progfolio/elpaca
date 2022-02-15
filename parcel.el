@@ -78,7 +78,7 @@
   (list #'parcel-clone
         #'parcel--add-remotes
         #'parcel--checkout-ref
-        #'parcel--dispatch-build-commands
+        #'parcel--run-pre-build-commands
         #'parcel--clone-dependencies
         #'parcel--link-build-files
         #'parcel--byte-compile
@@ -86,6 +86,7 @@
         #'parcel--compile-info
         #'parcel--install-info
         #'parcel--add-info-path
+        #'parcel--run-post-build-commands
         #'parcel--activate-package)
   "List of steps which are run when installing/building a package."
   :type 'list)
@@ -150,6 +151,7 @@ Ignore these unless the user explicitly requests they be installed.")
   "\\(?:^;+[[:space:]]*Package-Requires[[:space:]]*:[[:space:]]*\\([^z-a]*?$\\)\\)"
   "Regexp matching the Package-Requires metadata in an elisp source file.")
 (defvar parcel-recipe-keywords (list :pre-build :branch :depth :fork :host
+                                     :post-build
                                      :nonrecursive :package :protocol :remote :repo)
   "Recognized parcel recipe keywords.")
 
@@ -380,7 +382,7 @@ If PACKAGES is nil, use all available orders."
           (if success
               (message stdout)
             (message "Build command error: %S" result)
-            (error ":pre-build failed")))
+            (error "Build command failed")))
       (eval command t))))
 
 (defun parcel--print-order-status (order)
@@ -727,7 +729,7 @@ FILES and NOCONS are used recursively."
         (unless success (parcel--update-order-info order result)))))
   (parcel-run-next-build-step order))
 
-(defun parcel--pre-build-process-sentinel (process event)
+(defun parcel--dispatch-build-commands-process-sentinel (process event)
   "PROCESS EVENT."
   (let ((order (process-get process :order)))
     (cond
@@ -741,7 +743,7 @@ FILES and NOCONS are used recursively."
        (car (last (car (last (parcel-order-log order) 2))))
        'failed)))))
 
-(defun parcel--pre-build-process-filter (process output)
+(defun parcel--dispatch-build-commands-process-filter (process output)
   "Filter PROCESS OUTPUT of pre-build process."
   (process-put process :result (concat (process-get process :result) output))
   (let ((order  (process-get process :order))
@@ -749,18 +751,15 @@ FILES and NOCONS are used recursively."
     (parcel--update-order-info order (parcel-process-tail output)
                                (when (string-match-p "Debugger Entered" result) 'failed))))
 
-(defun parcel--dispatch-build-commands (order &optional post)
-  "Run ORDER's :pre-build or :post-build commands.
-If POST is non-nil, RECIPE's :post-build commands are run.
-Otherwise, the :pre-build commands are run.
-
+(defun parcel--dispatch-build-commands (order type)
+  "Run ORDER's TYPE commands for.
+TYPE is either the keyword :pre-build, or :post-build.
 Each command is either an elisp form to be evaluated or a list of
 strings to be executed in a shell context of the form:
 
   (\"executable\" \"arg\"...)
 
 Commands are exectued in the ORDER's repository directory.
-
 The keyword's value is expected to be one of the following:
 
   - A single command
@@ -768,9 +767,9 @@ The keyword's value is expected to be one of the following:
   - nil, in which case no commands are executed.
     Note if :build is nil, :pre/post-build commands are not executed."
   (if-let ((recipe   (parcel-order-recipe order))
-           (commands (plist-get recipe (if post :post-build :pre-build))))
+           (commands (plist-get recipe type)))
       (progn
-        (parcel--update-order-info order "Running :pre-build commands")
+        (parcel--update-order-info order (format "Running %S commands" type))
         (let* ((default-directory (parcel-order-repo-dir order))
                (emacs             (parcel--emacs-path))
                (program           `(progn
@@ -779,7 +778,7 @@ The keyword's value is expected to be one of the following:
                                      (parcel--run-build-commands ',commands)))
                (process
                 (make-process
-                 :name (format "parcel-pre-build-%s" (plist-get recipe :package))
+                 :name (format "parcel-%s-%s" type (plist-get recipe :package))
                  :command (list
                            emacs "-Q"
                            "-L" "./"
@@ -787,10 +786,18 @@ The keyword's value is expected to be one of the following:
                            "--batch"
                            "--eval" (let (print-level print-length)
                                       (format "%S" program)))
-                 :filter   #'parcel--pre-build-process-filter
-                 :sentinel #'parcel--pre-build-process-sentinel)))
+                 :filter   #'parcel--dispatch-build-commands-process-filter
+                 :sentinel #'parcel--dispatch-build-commands-process-sentinel)))
           (process-put process :order order)))
     (parcel-run-next-build-step order)))
+
+(defun parcel--run-pre-build-commands (order)
+  "Run ORDER's :pre-build commands."
+  (parcel--dispatch-build-commands order :pre-build))
+
+(defun parcel--run-post-build-commands (order)
+  "Run ORDER's :post-build commands."
+  (parcel--dispatch-build-commands order :post-build))
 
 (defun parcel--dependencies (recipe)
   "Using RECIPE, compute package's dependencies.
