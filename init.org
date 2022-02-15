@@ -134,6 +134,12 @@ This helps with a bug I was hitting when using =desktop-save-mode='s =desktop-re
 (setq desktop-restore-forces-onscreen nil)
 #+end_src
 
+Silence the bell function
+#+begin_src emacs-lisp :lexical t
+(setq ring-bell-function #'ignore
+      inhibit-startup-screen t)
+#+end_src
+
 *** provide early-init
 #+begin_src emacs-lisp :lexical t
 (provide 'early-init)
