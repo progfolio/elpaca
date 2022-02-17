@@ -106,4 +106,8 @@
                (parcel-recipe '(parcel :inherit t)))))))
 
 (provide 'parcel-test)
+;; Local Variables:
+;; no-byte-compile: t
+;; no-update-autoloads: t
+;; End:
 ;;; parcel-test.el ends here
