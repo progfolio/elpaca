@@ -562,7 +562,7 @@ If INFO is non-nil, ORDER's info is updated as well."
   "Queue (ITEM . ORDER) in `parcel--queued-orders'.
 If STATUS is non-nil, the order is given that initial status.
 RETURNS order structure."
-  (if (alist-get item parcel--queued-orders)
+  (if (and (not after-init-time) (alist-get item parcel--queued-orders))
       (warn "%S already queued. Duplicate?" item)
     (let* ((status  (or status 'queued))
            (info    "Package queued")
