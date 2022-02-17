@@ -348,40 +348,46 @@ ITEM is any of the following values:
   (car (parcel-order-statuses order)))
 
 (defun parcel--log-event (order text)
-  "Store TEXT in ORDER's log."
-  (let ((log (parcel-order-log order)))
-    (setf (parcel-order-log order)
-          (append log
-                  (list (list
-                         (propertize (parcel-order-package order) 'face
-                                     (pcase (parcel-order-status order)
-                                       ('finished 'parcel-finished)
-                                       ('blocked  'parcel-blocked)
-                                       ('failed   'parcel-failed)
-                                       (_         '(:weight bold))))
-                         (time-subtract (current-time) parcel--order-queue-start-time)
-                         text))))))
+  "Store TEXT in ORDER's log.
+Each event is of the form: (STATUS TIME TEXT)"
+  (push (list (parcel-order-status order)
+              (time-subtract (current-time) parcel--order-queue-start-time)
+              text)
+        (parcel-order-log order)))
 
 (defun parcel--events (&rest packages)
   "Return sorted event log string for PACKAGES.
 If PACKAGES is nil, use all available orders."
-  (let* ((orders
-          (delete-dups
-           (if packages
-               (mapcar (lambda (package)
-                         (alist-get (intern package)
-                                    parcel--queued-orders))
-                       packages)
-             (mapcar #'cdr parcel--queued-orders))))
-         (logs (apply #'append (mapcar #'parcel-order-log orders))))
-    (mapconcat (lambda (event)
-                 (pcase-let ((`(,package ,time ,text) event))
-                   (format "[%s]%s %s"
-                           (format-time-string "%02s.%3N" time)
-                           (format "%-30s" (concat "("package"):"))
-                           text)))
-               (cl-sort (copy-tree logs) #'time-less-p :key #'cadr)
-               "\n")))
+  (let* ((packages (delete-dups (if packages (mapcar #'intern packages))))
+         (queued (if packages
+                     (cl-remove-if-not (lambda (cell) (member (car cell) packages))
+                                       parcel--queued-orders)
+                   parcel--queued-orders))
+         (logs
+          (mapcar (lambda (cell)
+                    (let* ((package (car cell))
+                           (order   (cdr cell))
+                           (events (parcel-order-log order))
+                           (log nil))
+                      (dolist (event events log)
+                        (let* ((status (nth 0 event))
+                               (time   (nth 1 event))
+                               (text   (nth 2 event))
+                               (name   (propertize (symbol-name package)
+                                                   'face
+                                                   (pcase status
+                                                     ('blocked  'parcel-blocked)
+                                                     ('failed   'parcel-failed)
+                                                     ('finished 'parcel-finished)
+                                                     (_         '(:weight bold))))))
+                          (push (cons time
+                                      (format "[%s]%s %s"
+                                              (format-time-string "%02s.%3N" time)
+                                              (format "%-30s" (concat "(" name "):"))
+                                              text))
+                                log)))))
+                  queued)))
+    (mapconcat #'cdr (cl-sort (apply #'append logs) #'time-less-p :key #'car) "\n")))
 
 (defun parcel--run-build-commands (commands)
   "Run build COMMANDS."
@@ -487,19 +493,35 @@ If INFO is non-nil, ORDER's info is updated as well."
   "Load `parcel--autoloads-cache'."
   (eval `(progn ,@parcel--autoloads-cache) t))
 
+(defun parcel--log-duration (order)
+  "Return ORDER's log duration."
+  ;;most recent event is car of log
+  (let* ((log (parcel-order-log order))
+         (end (nth 1 (car log)))
+         (start (nth 1 (car (last log))))
+         (diff (time-subtract end start)))
+    diff))
+
 (defun parcel-run-next-build-step (order)
   "Run ORDER's next build step with ARGS."
   (if-let ((next (pop (parcel-order-build-steps order))))
       (funcall next order)
-    (parcel--update-order-info order "✓" 'finished)
-    (parcel--write-cache)
-    (let ((count 0))
-      (dolist (queued parcel--queued-orders)
-        (let* ((order (cdr queued))
-               (status (parcel-order-status order)))
-          (when (member status '(finished failed)) (cl-incf count))))
-      (when (= count (length parcel--queued-orders))
-        (funcall parcel--post-process-forms)))))
+    (if (eq (parcel-order-status order) 'finished)
+        (mapc #'parcel--order-check-status (parcel-order-dependents order))
+      (parcel--update-order-info
+       order
+       (format "✓ (%s)" (format-time-string "%02s.%3N" (parcel--log-duration order)))
+       'finished)
+      (let ((count 0))
+        (dolist (queued parcel--queued-orders)
+          (let* ((order (cdr queued))
+                 (status (parcel-order-status order)))
+            (when (member status '(finished failed)) (cl-incf count))))
+        (when (= count (length parcel--queued-orders))
+          (when parcel--autoloads-cache (parcel--load-cached-autoloads))
+          (funcall parcel--post-process-forms))
+          (parcel--write-cache)))))
+
 
 (defun parcel--queue-order (item &optional status)
   "Queue (ITEM . ORDER) in `parcel--queued-orders'.
@@ -999,7 +1021,7 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
 
 (defsubst parcel-order-info (order)
   "Return ORDER's most recent log event info."
-  (nth 2 (car (last (parcel-order-log order)))))
+  (nth 2 (car (parcel-order-log order))))
 
 (defun parcel-status-buffer-line (order)
   "Return status string for ORDER."
