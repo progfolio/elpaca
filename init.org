@@ -145,6 +145,25 @@ The following line turns on lexical binding for performance reasons.
 #+begin_src emacs-lisp :lexical t
 ;; -*- lexical-binding: t; -*-
 #+end_src
+
+** profiling
+This function displays how long Emacs took to start.
+It's a rough way of knowing when/if I need to optimize my init file.
+#+begin_src emacs-lisp :lexical t
+(setq debug-on-error t)
+(add-hook 'parcel-after-init-hook
+          (lambda ()
+            (message "Emacs loaded in %s with %d garbage collecitons."
+                     (format "%.2f seconds"
+                             (float-time
+                              (time-subtract (current-time) before-init-time)))
+                     gcs-done)))
+#+end_src
+We can also enable the profiler to view a report after init.
+#+begin_src emacs-lisp :lexical t :tangle no
+(profiler-start 'cpu+mem)
+(add-hook 'parcel-after-init-hook (lambda () (profiler-stop) (profiler-report)))
+#+end_src
 ** initial-buffer-choice
 #+begin_src emacs-lisp :lexical t
 (setq initial-buffer-choice t) ;;*scratch*
@@ -213,21 +232,6 @@ This package gets the correct environment variables so parcel can use the ssh pr
 (keychain-refresh-environment)
 #+end_src
 
-** profiling
-This function displays how long Emacs took to start.
-It's a rough way of knowing when/if I need to optimize my init file.
-#+begin_src emacs-lisp :lexical t
-(setq debug-on-error t)
-;;(require 'edebug)
-;;(edebug-instrument-function #'parcel--log-event)
-(add-hook 'emacs-startup-hook
-          (lambda ()
-            (message "Emacs loaded in %s with %d garbage collecitons."
-                     (format "%.2f seconds"
-                             (float-time
-                              (time-subtract after-init-time before-init-time)))
-                     gcs-done)))
-#+end_src
 ** packaging
 *** use-package
 #+begin_src emacs-lisp :lexical t
