@@ -46,12 +46,6 @@ Adding a variable watcher can be a useful way to track down initialization and m
                         (message "%s set to %s" symbol newval)))
 #+end_src
 
-*** initial-major-mode
-Prevent the \*scratch* buffer from loading a mode.
-#+begin_src emacs-lisp :tangle no
-(setq initial-major-mode 'fundamental-mode)
-#+end_src
-
 *** file-name-handler-alist
 Skipping a bunch of regular expression searching in the =file-name-handler-alist= should improve start time.
 #+begin_src emacs-lisp :lexical t
@@ -150,6 +144,10 @@ Silence the bell function
 The following line turns on lexical binding for performance reasons.
 #+begin_src emacs-lisp :lexical t
 ;; -*- lexical-binding: t; -*-
+#+end_src
+** initial-buffer-choice
+#+begin_src emacs-lisp :lexical t
+(setq initial-buffer-choice t) ;;*scratch*
 #+end_src
 ** theme
 I prefer to keep my themes in a sub-folder of =~/.emacs.d=
