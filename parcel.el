@@ -502,6 +502,13 @@ If PACKAGES is nil, use all available orders."
 (defvar parcel--cache (when parcel-cache-orders (parcel--read-cache))
   "Built package information cache.")
 
+(defun parcel--continue-mono-repo-dependency (order)
+  "Continue processing ORDER after it's mono-repo is in the proper state."
+  (unless (member (parcel-order-statuses order) '(finished build-linked))
+    (parcel--remove-build-steps
+     order '(parcel-clone parcel--add-remotes parcel--checkout-ref))
+    (parcel-run-next-build-step order)))
+
 (defun parcel--update-order-info (order info &optional status)
   "Update ORDER STATUS.
 Print the order status line in `parcel-status-buffer'.
@@ -513,14 +520,8 @@ If INFO is non-nil, ORDER's info is updated as well."
     (when (member status '(finished failed blocked))
       (mapc #'parcel--order-check-status (parcel-order-dependents order)))
     (when (eq status 'ref-checked-out)
-      (mapc (lambda (o)
-              (unless (member (parcel-order-statuses o) '(finished build-linked))
-                (parcel--remove-build-steps
-                 o '(parcel-clone parcel--add-remotes parcel--checkout-ref))
-                (parcel-run-next-build-step o)))
-            (parcel-order-includes order))))
-  (when info
-    (parcel--log-event order info))
+      (mapc #'parcel--continue-mono-repo-dependency (parcel-order-includes order))))
+  (when info (parcel--log-event order info))
   (parcel--print-order-status order))
 
 (defun parcel--load-cached-autoloads ()
