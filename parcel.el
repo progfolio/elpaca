@@ -431,6 +431,7 @@ If PACKAGES is nil, use all available orders."
    :files        (parcel-order-files order)
    :dependencies (mapcar #'parcel--clean-order (parcel-order-dependencies order))))
 
+;;@TODO: decompose general file writing utility, use in other cache files.
 (defun parcel--write-cache ()
   "Write order cache to disk."
   (let ((coding-system-for-write 'utf-8))
@@ -554,7 +555,8 @@ RETURNS order structure."
                (if (file-exists-p build-dir)
                    (progn
                      (setq built-p t)
-                     (list #'parcel--add-info-path #'parcel--activate-package
+                     (list #'parcel--add-info-path
+                           #'parcel--activate-package
                            #'parcel--queue-dependencies))
                  (when-let  ((steps (copy-tree parcel-build-steps)))
                    (when (file-exists-p repo-dir)
