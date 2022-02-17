@@ -56,6 +56,12 @@
   '((t (:weight bold :foreground "#FF1818")))
   "Indicates an order has failed.")
 
+(defcustom parcel-after-init-hook nil
+  "Parcel's analogue to `after-init-hook'.
+This is run after all queued orders have finished processing.
+Note a blocked process will prevent this hook from being run."
+  :type 'hook)
+
 (defcustom parcel-cache-autoloads t
   "If non-nil, cache package autoloads and load all at once.
 Results in faster start-up time.
@@ -549,8 +555,9 @@ If INFO is non-nil, ORDER's info is updated as well."
             (when (member status '(finished failed)) (cl-incf count))))
         (when (= count (length parcel--queued-orders))
           (when parcel--autoloads-cache (parcel--load-cached-autoloads))
-          (funcall parcel--post-process-forms))
-          (parcel--write-cache)))))
+          (funcall parcel--post-process-forms)
+          (run-hooks 'parcel-after-init-hook)
+          (when parcel-cache-orders (parcel--write-cache)))))))
 
 
 (defun parcel--queue-order (item &optional status)
