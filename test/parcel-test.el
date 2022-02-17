@@ -26,6 +26,11 @@
 (require 'ert)
 (require 'parcel)
 
+;;prevent user cache corruption
+(setq-local parcel-cache-menu-items nil)
+(setq-local parcel-cache-orders nil)
+(setq-local parcel-cache-autoloads nil)
+
 (defun parcel-test--plist-equal-p (&rest plists)
   "Return t if PLISTS have same keys and values (order independent)."
   (let* ((basis (car plists))
