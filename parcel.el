@@ -62,6 +62,10 @@ Results in faster start-up time.
 However, loading errors will prevent later package autoloads from loading."
   :type 'boolean)
 
+(defcustom parcel-cache-menu-items t
+  "When non-nil, menu-items ares cached. Speeds up init load."
+  :type 'boolean)
+
 (defcustom parcel-directory (expand-file-name "parcel" user-emacs-directory)
   "Location of the parcel package store."
   :type 'directory)
@@ -153,7 +157,19 @@ Ignore these unless the user explicitly requests they be installed.")
 
 (defvar parcel-overriding-prompt nil "Overriding prompt for interactive functions.")
 
-(defvar parcel-menu--candidates-cache nil "Cache for menu candidates.")
+(defun parcel--read-menu-cache ()
+  "Read the menu-cache."
+  (when-let ((cache (expand-file-name "menu-cache.el" parcel-directory))
+             ((file-exists-p cache)))
+    (with-temp-buffer
+      (insert-file-contents cache)
+      (condition-case err
+          (read (buffer-string))
+        ((error) (message "Parcel could not read menu-cache.el: %S" err))))))
+
+(defvar parcel-menu--candidates-cache
+  (when parcel-cache-menu-items (parcel--read-menu-cache))
+  "Cache for menu candidates.")
 
 (defvar parcel--package-requires-regexp
   "\\(?:^;+[[:space:]]*Package-Requires[[:space:]]*:[[:space:]]*\\([^z-a]*?$\\)\\)"
@@ -180,15 +196,26 @@ Values for each key are that of the right-most plist containing that key."
       (while current (setq plist (plist-put plist (pop current) (pop current)))))
     plist))
 
+(defun parcel--write-menu-cache ()
+  "Write menu item cache to disk."
+  (let ((coding-system-for-write 'utf-8))
+    (with-temp-file (expand-file-name "menu-cache.el" parcel-directory)
+      (let* ((standard-output (current-buffer))
+             (print-circle nil)
+             (print-level  nil)
+             (print-length nil))
+        (prin1 parcel-menu--candidates-cache)))))
+
 (defun parcel-menu--candidates ()
   "Return alist of `parcel-menu-functions' candidates."
   (or parcel-menu--candidates-cache
-      (setq parcel-menu--candidates-cache
-            (sort (apply #'append
-                         (cl-loop for fn in parcel-menu-functions
-                                  for index = (funcall fn 'index)
-                                  when index collect index))
-                  (lambda (a b) (string-lessp (car a) (car b)))))))
+      (prog1 (setq parcel-menu--candidates-cache
+                   (sort (apply #'append
+                                (cl-loop for fn in parcel-menu-functions
+                                         for index = (funcall fn 'index)
+                                         when index collect index))
+                         (lambda (a b) (string-lessp (car a) (car b)))))
+        (when parcel-cache-menu-items (parcel--write-menu-cache)))))
 
 ;;@TODO: clean up interface.
 ;;;###autoload
