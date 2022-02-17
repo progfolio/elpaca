@@ -1146,10 +1146,12 @@ If FORCE is non-nil, ignore order queue."
          (version-control 'never))
     (unless (file-exists-p output)
       (require 'autoload)
-      (let ((generated-autoload-file output))
-        (write-region (autoload-rubric output nil 'feature) nil output nil 'silent))
-      ;;@TODO: support older Emacs?
-      (make-directory-autoloads dir output))
+      (let ((generated-autoload-file output)
+            (find-file-hook nil) ;; Don't clobber recentf
+            (write-file-functions nil))
+        (write-region (autoload-rubric output nil 'feature) nil output nil 'silent)
+        ;;@TODO: support older Emacs?
+        (make-directory-autoloads dir output)))
     (when-let ((buf (find-buffer-visiting output)))
       (kill-buffer buf))
     auto-name))
