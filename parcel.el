@@ -56,6 +56,12 @@
   '((t (:weight bold :foreground "#FF1818")))
   "Indicates an order has failed.")
 
+(defcustom parcel-cache-autoloads t
+  "If non-nil, cache package autoloads and load all at once.
+Results in faster start-up time.
+However, loading errors will prevent later package autoloads from loading."
+  :type 'boolean)
+
 (defcustom parcel-directory (expand-file-name "parcel" user-emacs-directory)
   "Location of the parcel package store."
   :type 'directory)
@@ -90,6 +96,8 @@
         #'parcel--activate-package)
   "List of steps which are run when installing/building a package."
   :type 'list)
+
+(defvar parcel--autoloads-cache nil "Cache for autoload forms.")
 
 (defvar parcel--post-process-forms '(lambda ())
   "Forms to be executed after orders are processed.")
@@ -474,6 +482,10 @@ If INFO is non-nil, ORDER's info is updated as well."
   (when info
     (parcel--log-event order info))
   (parcel--print-order-status order))
+
+(defun parcel--load-cached-autoloads ()
+  "Load `parcel--autoloads-cache'."
+  (eval `(progn ,@parcel--autoloads-cache) t))
 
 (defun parcel-run-next-build-step (order)
   "Run ORDER's next build step with ARGS."
@@ -1133,20 +1145,35 @@ Async wrapper for `parcel-generate-autoloads'."
 (defun parcel--activate-package (order)
   "Activate ORDER's package."
   (parcel--update-order-info order "Activating package")
-  (setf (parcel-order-build-steps order)
-        (cl-remove 'parcel--activate-package (parcel-order-build-steps order)))
   (let* ((default-directory (parcel-order-build-dir order))
          (package           (parcel-order-package order))
          (autoloads         (format "%s-autoloads.el" package)))
     (cl-pushnew default-directory load-path)
     ;;@TODO: condition on a slot we set on the order to indicate cached recipe?
     (parcel--update-order-info order "Package build dir added to load-path")
-    (condition-case err
-        (progn
-          (load autoloads nil 'nomessage)
-          (parcel--update-order-info order "Package activated" 'activated))
-      ((error) (parcel--update-order-info
-                order (format "Failed to load %S: %S" autoloads err) 'failed-to-activate)))
+    (if (and parcel-cache-autoloads (file-exists-p (expand-file-name autoloads)))
+        (let ((forms nil))
+          (parcel--update-order-info order "Caching autoloads")
+          (with-temp-buffer
+            (insert-file-contents (expand-file-name autoloads))
+            (goto-char (point-min))
+            (condition-case _
+                (while t (push (read (current-buffer)) forms))
+              ((end-of-file)))
+            (push `(let ((load-file-name ,(expand-file-name autoloads))
+                         (load-in-progress t)
+                         (package ,package))
+                     (condition-case err
+                         (eval '(progn ,@(nreverse forms)) t)
+                       ((error) (warn "Error loading %S autoloads: %S" package err))))
+                  parcel--autoloads-cache))
+          (parcel--update-order-info order "Autoloads cached"))
+      (condition-case err
+          (progn
+            (load autoloads nil 'nomessage)
+            (parcel--update-order-info order "Package activated" 'activated))
+        ((error) (parcel--update-order-info
+                  order (format "Failed to load %S: %S" autoloads err) 'failed-to-activate))))
     (parcel-run-next-build-step order)))
 
 (defun parcel--byte-compile-process-filter (process output)
