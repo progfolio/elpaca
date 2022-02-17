@@ -410,7 +410,6 @@ If PACKAGES is nil, use all available orders."
     (unless (derived-mode-p 'parcel-status-mode) (parcel-status-mode))
     (with-silent-modifications
       (save-excursion
-        (cursor-intangible-mode -1)
         (goto-char (point-min))
         (let ((anchor (text-property-search-forward 'order order t)))
           (if anchor
@@ -418,10 +417,8 @@ If PACKAGES is nil, use all available orders."
                 (goto-char (prop-match-beginning anchor))
                 (delete-region (prop-match-beginning anchor) (prop-match-end anchor)))
             (goto-char (point-max)))
-          (unless (or (bobp) anchor)
-            (insert (propertize "\n" 'cursor-intangible t 'read-only t)))
-          (insert (parcel-status-buffer-line order)))
-        (cursor-intangible-mode))
+          (unless (or (bobp) anchor) (insert (propertize "\n" 'read-only t)))
+          (insert (parcel-status-buffer-line order))))
       (parcel--set-header-line))))
 
 (defun parcel--clean-order (order)
@@ -1037,7 +1034,6 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
     (concat (propertize
              (format "%s (%s) %s" name (or status "?") (or (parcel-order-info order) ""))
              'read-only         t
-             'cursor-intangible t
              'front-sticky      t
              'package           package
              'order             order)
@@ -1325,8 +1321,7 @@ If FORCE is non-nil, do not ask for confirmation."
 (define-derived-mode parcel-status-mode text-mode "Parcel Status Mode"
   "Mode for interacting with the parcel status buffer.
 
-\\{parcel-status-mode-map}"
-  (cursor-intangible-mode))
+\\{parcel-status-mode-map}")
 
 (defun parcel-status-mode-send-input ()
   "Send input string to current process."
