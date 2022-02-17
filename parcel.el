@@ -29,7 +29,7 @@
 ;; An elisp package manager
 
 ;;; Code:
-(require 'cl-lib)
+(eval-and-compile (require 'cl-lib))
 (require 'text-property-search)
 (require 'parcel-process)
 
