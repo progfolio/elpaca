@@ -1288,15 +1288,16 @@ The expansion is a string indicating the package has been disabled."
        (use-package ,(if (listp order) (car order) order)
          ,@body))))
 
+(defun parcel-process-order (queued)
+  "Parcel QUEUED order."
+  (let ((order (cdr queued)))
+    (unless (memq (parcel-order-status order) '(failed blocked))
+      (parcel-run-next-build-step order))))
+
 ;;;###autoload
 (defun parcel-queue-empty ()
   "Process all orders in `parcel--queued-orders'."
-  (setq parcel--order-queue-start-time (current-time))
-  (mapc (lambda (cell)
-          (let ((order (cdr cell)))
-            (unless (memq (parcel-order-status order) '(failed blocked))
-              (parcel-run-next-build-step order))))
-        (reverse parcel--queued-orders)))
+  (mapc #'parcel-process-order (reverse parcel--queued-orders)))
 
 ;;;###autoload
 (defun parcel-delete-repos (&optional force)
