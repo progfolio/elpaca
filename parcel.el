@@ -66,6 +66,10 @@ However, loading errors will prevent later package autoloads from loading."
   "When non-nil, menu-items ares cached. Speeds up init load."
   :type 'boolean)
 
+(defcustom parcel-cache-orders t
+  "When non-nil, orders ares cached. Speeds up init load."
+  :type 'boolean)
+
 (defcustom parcel-directory (expand-file-name "parcel" user-emacs-directory)
   "Location of the parcel package store."
   :type 'directory)
@@ -491,7 +495,8 @@ If PACKAGES is nil, use all available orders."
           (mapcar #'parcel--cache-entry-to-order (read (current-buffer))))
       ((error) (warn "Error reading parcel cache.el: %S" err)))))
 
-(defvar parcel--cache (parcel--read-cache) "Built package information cache.")
+(defvar parcel--cache (when parcel-cache-orders (parcel--read-cache))
+  "Built package information cache.")
 
 (defun parcel--update-order-info (order info &optional status)
   "Update ORDER STATUS.
