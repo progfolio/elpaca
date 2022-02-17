@@ -614,10 +614,6 @@ RETURNS order structure."
         (if (not mono-repo)
             (parcel--update-order-info order info)
           (cl-pushnew order (parcel-order-includes mono-repo))
-          (message "pkg: %S :mono-statuses %S TEST: %S"
-                   package
-                   (parcel-order-statuses mono-repo)
-                   (memq 'ref-checked-out (parcel-order-statuses mono-repo)))
           (if (memq 'ref-checked-out (parcel-order-statuses mono-repo))
               (progn
                 (parcel--remove-build-steps
