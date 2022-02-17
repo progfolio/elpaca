@@ -477,12 +477,10 @@ If PACKAGES is nil, use all available orders."
              (print-circle nil)
              (print-level  nil)
              (print-length nil)
-             (finished (cl-remove-if-not (lambda (queued)
-                                           (eq (parcel-order-status (cdr queued))
-                                               'finished))
-                                         (reverse parcel--queued-orders)))
-             (plist (mapcar #'parcel--clean-order (mapcar #'cdr finished))))
-        (prin1 plist)))))
+             (finished (cl-loop for (_ . order) in (reverse parcel--queued-orders)
+                                when (eq (parcel-order-status order) 'finished)
+                                collect (parcel--clean-order order))))
+        (prin1 finished)))))
 
 (defun parcel--cache-entry-to-order (plist)
   "Return decoded PLIST as order."
