@@ -558,7 +558,6 @@ If INFO is non-nil, ORDER's info is updated as well."
           (run-hooks 'parcel-after-init-hook)
           (when parcel-cache-orders (parcel--write-cache)))))))
 
-
 (defun parcel--queue-order (item &optional status)
   "Queue (ITEM . ORDER) in `parcel--queued-orders'.
 If STATUS is non-nil, the order is given that initial status.
