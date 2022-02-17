@@ -888,8 +888,8 @@ If package's repo is not on disk, error."
                   (append (parcel-order-dependencies order) (list dep-order)))
             (push order (parcel-order-dependents dep-order))
             (parcel-run-next-build-step dep-order)))
-      (parcel--update-order-info order "No external dependencies detected")
-      (parcel-run-next-build-step order))))
+      (parcel--update-order-info order "No external dependencies detected"))
+    (parcel-run-next-build-step order)))
 
 (defun parcel--clone-dependencies (order)
   "Clone ORDER's dependencies."
