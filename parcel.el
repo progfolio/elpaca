@@ -546,7 +546,7 @@ If INFO is non-nil, ORDER's info is updated as well."
         (mapc #'parcel--order-check-status (parcel-order-dependents order))
       (parcel--update-order-info
        order
-       (format "✓ (%s)" (format-time-string "%02s.%3N" (parcel--log-duration order)))
+       (concat  "✓ " (format-time-string "%s.%3N" (parcel--log-duration order)) " secs")
        'finished)
       (let ((count 0))
         (dolist (queued parcel--queued-orders)
