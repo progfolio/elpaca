@@ -1272,7 +1272,7 @@ Async wrapper for `parcel-generate-autoloads'."
     (with-silent-modifications
       (erase-buffer)
       (insert (apply #'parcel--events packages))
-      (display-buffer (current-buffer)))
+      (pop-to-buffer-same-window (current-buffer)))
     (goto-char (point-min))
     (special-mode)))
 
@@ -1283,14 +1283,14 @@ Async wrapper for `parcel-generate-autoloads'."
     (unless (derived-mode-p 'parcel-status-mode)
       (parcel-status-mode))
     (parcel--set-header-line)
-    (display-buffer (current-buffer))))
+    (pop-to-buffer-same-window (current-buffer))))
 
 ;;;###autoload
 (defun parcel-display-status-buffer ()
   "Diplay `parcel-status-buffer'."
   (interactive)
   (if-let ((buffer (get-buffer parcel-status-buffer)))
-      (display-buffer buffer)
+      (pop-to-buffer-same-window buffer)
     (parcel--initialize-process-buffer)))
 
 ;;;###autoload
