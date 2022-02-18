@@ -80,11 +80,6 @@ However, loading errors will prevent later package autoloads from loading."
   "Location of the parcel package store."
   :type 'directory)
 
-;;@MAYBE: remove?
-(defcustom parcel-display-buffer t
-  "When non-nil, display `parcel-status-buffer' while processing orders."
-  :type 'boolean)
-
 (defcustom parcel-makeinfo-executable (executable-find "makeinfo")
   "Path of the makeinfo executable."
   :type 'string)
