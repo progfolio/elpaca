@@ -1315,8 +1315,25 @@ The expansion is a string indicating the package has been disabled."
        (use-package ,(if (listp order) (car order) order)
          ,@body))))
 
-(defun parcel-process-order (queued)
-  "Parcel QUEUED order."
+;;;###autoload
+(defun parcel-try-package (order)
+  "Try ORDER.
+Install the repo/build files on disk.
+Activate the corresponding package for the current session.
+ORDER's package is not made available during subsequent sessions."
+  (interactive (list
+                (let ((recipe (parcel-menu-item nil)))
+                  (append (list (intern (plist-get recipe :package)))
+                          recipe))))
+  (setq parcel-cache-autoloads nil)
+  (parcel--queue-order order)
+  (parcel--process-order (car parcel--queued-orders))
+  (parcel-display-status-buffer)
+  (with-current-buffer parcel-status-buffer
+    (goto-char (point-max))))
+
+(defun parcel--process-order (queued)
+  "Process QUEUED order."
   (let ((order (cdr queued)))
     (unless (memq (parcel-order-status order) '(failed blocked))
       (parcel-run-next-build-step order))))
