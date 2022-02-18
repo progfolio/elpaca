@@ -437,24 +437,21 @@ If PACKAGES is nil, use all available orders."
 
 (defun parcel--print-order-status (order)
   "Print ORDER's status in `parcel-status-buffer'."
-  (with-current-buffer (get-buffer-create parcel-status-buffer)
-    ;;@OPTIMIZE:
-    ;; Do we always need to check this?
-    ;; We should be able to make it so buffer is initialized prior to this being
-    ;; called.
-    (unless (derived-mode-p 'parcel-status-mode) (parcel-status-mode))
-    (with-silent-modifications
-      (save-excursion
-        (goto-char (point-min))
-        (let ((anchor (text-property-search-forward 'order order t)))
-          (if anchor
-              (progn
-                (goto-char (prop-match-beginning anchor))
-                (delete-region (prop-match-beginning anchor) (prop-match-end anchor)))
-            (goto-char (point-max)))
-          (unless (or (bobp) anchor) (insert (propertize "\n" 'read-only t)))
-          (insert (parcel-status-buffer-line order))))
-      (parcel--set-header-line))))
+  (let ((buffer (get-buffer parcel-status-buffer)))
+    (unless buffer (parcel--initialize-process-buffer))
+    (with-current-buffer (get-buffer-create parcel-status-buffer)
+      (with-silent-modifications
+        (save-excursion
+          (goto-char (point-min))
+          (let ((anchor (text-property-search-forward 'order order t)))
+            (if anchor
+                (progn
+                  (goto-char (prop-match-beginning anchor))
+                  (delete-region (prop-match-beginning anchor) (prop-match-end anchor)))
+              (goto-char (point-max)))
+            (unless (or (bobp) anchor) (insert (propertize "\n" 'read-only t)))
+            (insert (parcel-status-buffer-line order))))
+        (parcel--set-header-line)))))
 
 (defun parcel--clean-order (order)
   "Return ORDER plist with cache data."
@@ -1347,10 +1344,9 @@ If FORCE is non-nil, do not ask for confirmation."
     (define-key map (kbd "<return>") 'parcel-status-mode-send-input)
     (define-key map (kbd "C-c C-r")  'parcel-status-mode-visit-repo)
     (define-key map (kbd "C-c C-b")  'parcel-status-mode-visit-build)
-    (define-key map (kbd "C-c C-q")  'quit-window)
     map))
 
-(define-derived-mode parcel-status-mode text-mode "Parcel Status Mode"
+(define-derived-mode parcel-status-mode special-mode "Parcel Status Mode"
   "Mode for interacting with the parcel status buffer.
 
 \\{parcel-status-mode-map}")
