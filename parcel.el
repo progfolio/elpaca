@@ -111,6 +111,9 @@ However, loading errors will prevent later package autoloads from loading."
 (defvar parcel--post-process-forms '(lambda ())
   "Forms to be executed after orders are processed.")
 
+(defvar parcel--processed-order-count 0
+  "Used to tell whent the queue has finished running.")
+
 (defvar parcel-default-files-directive
   '("*.el" "*.el.in" "dir"
     "*.info" "*.texi" "*.texinfo"
@@ -542,16 +545,12 @@ If INFO is non-nil, ORDER's info is updated as well."
        order
        (concat  "✓ " (format-time-string "%s.%3N" (parcel--log-duration order)) " secs")
        'finished)
-      (let ((count 0))
-        (dolist (queued parcel--queued-orders)
-          (let* ((order (cdr queued))
-                 (status (parcel-order-status order)))
-            (when (member status '(finished failed)) (cl-incf count))))
-        (when (= count (length parcel--queued-orders))
-          (when parcel--autoloads-cache (parcel--load-cached-autoloads))
-          (funcall parcel--post-process-forms)
-          (run-hooks 'parcel-after-init-hook)
-          (when parcel-cache-orders (parcel--write-cache)))))))
+      (cl-incf parcel--processed-order-count)
+      (when (= parcel--processed-order-count (length parcel--queued-orders))
+        (when parcel--autoloads-cache (parcel--load-cached-autoloads))
+        (funcall parcel--post-process-forms)
+        (run-hooks 'parcel-after-init-hook)
+        (when parcel-cache-orders (parcel--write-cache))))))
 
 (defun parcel--queue-order (item &optional status)
   "Queue (ITEM . ORDER) in `parcel--queued-orders'.
@@ -1329,7 +1328,8 @@ The expansion is a string indicating the package has been disabled."
 ;;;###autoload
 (defun parcel-queue-empty ()
   "Process all orders in `parcel--queued-orders'."
-  (mapc #'parcel-process-order (reverse parcel--queued-orders)))
+  (setq parcel--processed-order-count 0)
+  (mapc #'parcel--process-order (reverse parcel--queued-orders)))
 
 ;;;###autoload
 (defun parcel-delete-repos (&optional force)
