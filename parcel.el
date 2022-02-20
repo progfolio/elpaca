@@ -592,9 +592,9 @@ RETURNS order structure."
                (if (file-exists-p build-dir)
                    (progn
                      (setq built-p t)
-                     (list #'parcel--add-info-path
-                           #'parcel--activate-package
-                           #'parcel--queue-dependencies))
+                     (list #'parcel--queue-dependencies
+                           #'parcel--add-info-path
+                           #'parcel--activate-package))
                  (when-let  ((steps (copy-tree parcel-build-steps)))
                    (when (file-exists-p repo-dir)
                      (setq steps (delq 'parcel--clone steps))
@@ -922,19 +922,28 @@ If package's repo is not on disk, error."
          (externals    (cl-remove-duplicates
                         (cl-remove-if (lambda (dependency)
                                         (member dependency parcel-ignored-dependencies))
-                                      dependencies :key #'car))))
+                                      dependencies :key #'car)))
+         queued-deps)
     (if externals
-        (dolist (spec externals)
-          (let* ((dependency (car spec))
-                 (queued     (alist-get dependency parcel--queued-orders))
-                 (dep-order  (or queued (parcel--queue-order dependency))))
-            (setf (parcel-order-dependencies order)
-                  (append (parcel-order-dependencies order) (list dep-order)))
-            (push order (parcel-order-dependents dep-order))
-            (parcel-run-next-build-step dep-order)))
-      (parcel--update-order-info order "No external dependencies detected"))
-    (parcel-run-next-build-step order)))
+        (progn
+          ;; We do this in two steps so that ORDER is aware of all its
+          ;; dependencies before any single dependency starts its build.
+          ;; Otherwise a dependency may finish prior to other dependencies being
+          ;; registered. This will cause the dependent order to become unblocked
+          ;; multiple times and run its build steps simultaneously/out of order.
+          (dolist (spec externals)
+            (let* ((dependency (car spec))
+                   (queued     (alist-get dependency parcel--queued-orders))
+                   (dep-order  (or queued (parcel--queue-order dependency))))
+              (setf (parcel-order-dependencies order)
+                    (delete-dups (append (parcel-order-dependencies order) (list dep-order))))
+              (cl-pushnew order (parcel-order-dependents dep-order))
+              (push dep-order queued-deps)))
+          (mapc #'parcel-run-next-build-step (nreverse queued-deps)))
+      (parcel--update-order-info order "No external dependencies detected")
+      (parcel-run-next-build-step order))))
 
+;;@TODO: fix possible race similar to queue--dependencies.
 (defun parcel--clone-dependencies (order)
   "Clone ORDER's dependencies."
   (parcel--update-order-info order "Cloning Dependencies" 'cloning-deps)
