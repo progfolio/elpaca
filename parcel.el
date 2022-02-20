@@ -1358,10 +1358,11 @@ ORDER's package is not made available during subsequent sessions."
                   (append (list (intern (plist-get recipe :package)))
                           recipe))))
   (setq parcel-cache-autoloads nil)
+  (parcel-display-status-buffer)
   (parcel--queue-order order)
   (parcel--process-order (car parcel--queued-orders))
-  (parcel-display-status-buffer)
-  (with-current-buffer parcel-status-buffer
+  (when-let ((buffer (get-buffer parcel-status-buffer)))
+    (pop-to-buffer-same-window parcel-status-buffer)
     (goto-char (point-max))))
 
 (defun parcel--process-order (queued)
