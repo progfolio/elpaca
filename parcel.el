@@ -90,7 +90,7 @@ However, loading errors will prevent later package autoloads from loading."
   :type 'string)
 
 (defcustom parcel-build-steps
-  (list #'parcel-clone
+  (list #'parcel--clone
         #'parcel--add-remotes
         #'parcel--checkout-ref
         #'parcel--run-pre-build-commands
@@ -501,7 +501,7 @@ If PACKAGES is nil, use all available orders."
   "Continue processing ORDER after it's mono-repo is in the proper state."
   (unless (member (parcel-order-statuses order) '(finished build-linked))
     (parcel--remove-build-steps
-     order '(parcel-clone parcel--add-remotes parcel--checkout-ref))
+     order '(parcel--clone parcel--add-remotes parcel--checkout-ref))
     (parcel-run-next-build-step order)))
 
 (defun parcel--update-order-info (order info &optional status)
@@ -588,7 +588,7 @@ RETURNS order structure."
                            #'parcel--queue-dependencies))
                  (when-let  ((steps (copy-tree parcel-build-steps)))
                    (when (file-exists-p repo-dir)
-                     (setq steps (delq 'parcel-clone steps))
+                     (setq steps (delq 'parcel--clone steps))
                      (when-let ((cached)
                                 (cached-recipe (parcel-order-recipe cached))
                                 ((eq recipe cached-recipe)))
@@ -613,7 +613,7 @@ RETURNS order structure."
           (if (memq 'ref-checked-out (parcel-order-statuses mono-repo))
               (progn
                 (parcel--remove-build-steps
-                 order '(parcel-clone parcel--add-remotes parcel--checkout-ref))
+                 order '(parcel--clone parcel--add-remotes parcel--checkout-ref))
                 (parcel-run-next-build-step order))
             (parcel--update-order-info
              order (format "Waiting for monorepo %S" repo-dir) 'blocked)))))))
@@ -1117,7 +1117,7 @@ Possibly kicks off next build step, or changes order status."
      ((cl-every (lambda (status) (eq (cdr status) 'finished)) statuses)
       (parcel-run-next-build-step order)))))
 
-(defun parcel-clone (order)
+(defun parcel--clone (order)
   "Clone repo to `parcel-directory' from ORDER.
 If FORCE is non-nil, ignore order queue."
   (let* ((recipe  (parcel-order-recipe order))
