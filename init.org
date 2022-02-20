@@ -773,9 +773,9 @@ It also helps if multiple instances of Emacs are editing the same file.
 ** auto-tangle-mode
 #+begin_src emacs-lisp :lexical t
 (parcel-use-package (auto-tangle-mode
-             :host github
-             :repo "progfolio/auto-tangle-mode.el"
-             :local-repo "auto-tangle-mode")
+                     :host github
+                     :repo "progfolio/auto-tangle-mode.el"
+                     :local-repo "auto-tangle-mode")
   :commands (auto-tangle-mode))
 #+end_src
 ** bookmark
