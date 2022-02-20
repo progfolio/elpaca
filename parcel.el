@@ -108,6 +108,8 @@ However, loading errors will prevent later package autoloads from loading."
 
 (defvar parcel--autoloads-cache nil "Cache for autoload forms.")
 
+;;@TODO: Each package's configuration should be stored in an alist first
+;; that way we can remove it if a package fails to install.
 (defvar parcel--post-process-forms '(lambda ())
   "Forms to be executed after orders are processed.")
 
