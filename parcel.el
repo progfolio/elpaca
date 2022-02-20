@@ -677,7 +677,8 @@ FILES and NOCONS are used recursively."
          (recipe            (parcel-order-recipe order))
          (files             (or files (plist-get recipe :files)))
          (exclusions        nil)
-         (targets           nil))
+         (targets           nil)
+         (with-subdirs      nil))
     (dolist (el files)
       (pcase el
         ((pred stringp) (push (or (file-expand-wildcards el) el) targets))
@@ -685,16 +686,25 @@ FILES and NOCONS are used recursively."
          (push (parcel--files order excluded 'nocons) exclusions)
          nil)
         (:defaults
-         (push (parcel--files order parcel-default-files-directive 'nocons) targets))))
+         (push (parcel--files order parcel-default-files-directive 'nocons) targets))
+        (`(,subdir . ,paths)
+         (push (apply #'append (mapcar (lambda (path)
+                                         (cons (expand-file-name path)
+                                               (let ((default-directory build-dir))
+                                                 (expand-file-name path subdir))))
+                                       paths))
+               with-subdirs))))
     (if nocons
         targets
-      (mapcar (lambda (target)
-                (cons (expand-file-name target)
-                      (expand-file-name (file-name-nondirectory target) build-dir)))
-              (cl-remove-if (lambda (target)
-                              (or (not (file-exists-p (expand-file-name target)))
-                                  (member target (flatten-tree exclusions))))
-                            (flatten-tree targets))))))
+      (append
+       with-subdirs
+       (mapcar (lambda (target)
+                 (cons (expand-file-name target)
+                       (expand-file-name (file-name-nondirectory target) build-dir)))
+               (cl-remove-if (lambda (target)
+                               (or (not (file-exists-p (expand-file-name target)))
+                                   (member target (flatten-tree exclusions))))
+                             (flatten-tree targets)))))))
 
 (defun parcel--link-build-files (order)
   "Link ORDER's :files into it's builds subdirectory."
