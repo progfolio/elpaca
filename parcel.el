@@ -244,7 +244,10 @@ If INTERACTIVE is equivalent to \\[universal-argument] prompt for MENUS."
                              :test #'equal))
                   (or menus parcel-menu-functions (user-error "No menus found"))))
          (parcel-menu-functions menus)
-         (candidates (parcel-menu--candidates))
+         (candidates (cl-remove-if
+                      (lambda (candidate)
+                        (alist-get (car candidate) parcel--queued-orders))
+                      (parcel-menu--candidates)))
          (symbol (or symbol
                      (intern-soft
                       (completing-read (or parcel-overriding-prompt "Package: ")
