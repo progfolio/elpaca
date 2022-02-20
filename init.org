@@ -162,7 +162,7 @@ It's a rough way of knowing when/if I need to optimize my init file.
                      gcs-done)))
 #+end_src
 We can also enable the profiler to view a report after init.
-#+begin_src emacs-lisp :lexical t :tangle no
+#+begin_src emacs-lisp :lexical t :tangle yes
 (profiler-start 'cpu+mem)
 (add-hook 'parcel-after-init-hook (lambda () (profiler-stop) (profiler-report)))
 #+end_src
@@ -3083,7 +3083,7 @@ https://github.com/bbatsov/projectile
   (add-to-list 'projectile-globally-ignored-directories "*node_modules")
   (projectile-mode))
 #+end_src
-** TODO pdf-tools (:post-build silently fails. Possibly something with compilation. cl-macs?)
+** TODO pdf-tools (:post-build fails)
 #+begin_quote
 PDF Tools is, among other things, a replacement of DocView for PDF files.
 The key difference is that pages are not pre-rendered by e.g. ghostscript and stored in the file-system, but rather created on-demand and stored in memory.
@@ -3094,7 +3094,17 @@ This  allows me to customize the color of the generated pdf.
 #+begin_src emacs-lisp :lexical t
 (parcel-use-package (pdf-tools :post-build ((require 'pdf-tools)
                                             (condition-case err
-                                                (pdf-tools-install 'no-query 'skip-dependencies)
+                                                (progn
+                                                  (pdf-tools-install 'noquery 'skip-deps)
+                                                  (with-current-buffer "*compilation*"
+                                                    (let ((seen ""))
+                                                      (while (get-buffer-process (current-buffer))
+                                                        ;; poll for async compilation output
+                                                        (sit-for 0.1)
+                                                        (when (buffer-modified-p)
+                                                          (let ((s (substring-no-properties (buffer-string))))
+                                                            (message "%S" s)
+                                                            (setq seen (concat seen (buffer-string)))))))))
                                               ((error) (message "PDF-TOOLS ERROR: %S" err)))))
   :functions (pdf-isearch-batch-mode)
   :commands (pdf-tools-install pdf-view-mode)
