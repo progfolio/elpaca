@@ -1141,6 +1141,14 @@ MPV integration
   :after (org)
   :commands (epoch-todo epoch-agenda-todo))
 #+end_src
+** erc
+Built in IRC client
+#+begin_src emacs-lisp :lexical t
+(use-feature erc
+  :general
+  (+general-global-application
+    "E" 'erc))
+#+end_src
 ** files
 By default Emacs saves backups in the current buffer's working directory.
 I'd rather have everything in one folder to keep my file system tidy.
