@@ -1222,13 +1222,14 @@ Async wrapper for `parcel-generate-autoloads'."
 (defun parcel--activate-package (order)
   "Activate ORDER's package."
   (parcel--update-order-info order "Activating package")
-  (let* ((default-directory (parcel-order-build-dir order))
+  (let* ((build-dir (parcel-order-build-dir order))
+         (default-directory build-dir)
          (package           (parcel-order-package order))
          (autoloads         (format "%s-autoloads.el" package)))
     (cl-pushnew default-directory load-path)
     ;;@TODO: condition on a slot we set on the order to indicate cached recipe?
     (parcel--update-order-info order "Package build dir added to load-path")
-    (if (and parcel-cache-autoloads (file-exists-p (expand-file-name autoloads)))
+    (if (and parcel-cache-autoloads (file-exists-p (expand-file-name autoloads build-dir)))
         (let ((forms nil))
           (parcel--update-order-info order "Caching autoloads")
           (with-temp-buffer
@@ -1247,7 +1248,7 @@ Async wrapper for `parcel-generate-autoloads'."
           (parcel--update-order-info order "Autoloads cached"))
       (condition-case err
           (progn
-            (load autoloads nil 'nomessage)
+            (load (expand-file-name autoloads build-dir) nil 'nomessage)
             (parcel--update-order-info order "Package activated" 'activated))
         ((error) (parcel--update-order-info
                   order (format "Failed to load %S: %S" autoloads err) 'failed-to-activate))))
