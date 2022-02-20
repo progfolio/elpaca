@@ -507,7 +507,7 @@ If PACKAGES is nil, use all available orders."
   (unless (member (parcel-order-statuses order) '(finished build-linked))
     (parcel--remove-build-steps
      order '(parcel--clone parcel--add-remotes parcel--checkout-ref))
-    (parcel-run-next-build-step order)))
+    (parcel--run-next-build-step order)))
 
 (defun parcel--update-order-info (order info &optional status)
   "Update ORDER STATUS.
@@ -537,7 +537,7 @@ If INFO is non-nil, ORDER's info is updated as well."
          (diff (time-subtract end start)))
     diff))
 
-(defun parcel-run-next-build-step (order)
+(defun parcel--run-next-build-step (order)
   "Run ORDER's next build step with ARGS."
   (if-let ((next (pop (parcel-order-build-steps order))))
       (funcall next order)
@@ -623,7 +623,7 @@ RETURNS order structure."
               (progn
                 (parcel--remove-build-steps
                  order '(parcel--clone parcel--add-remotes parcel--checkout-ref))
-                (parcel-run-next-build-step order))
+                (parcel--run-next-build-step order))
             (parcel--update-order-info
              order (format "Waiting for monorepo %S" repo-dir) 'blocked)))))))
 
@@ -671,7 +671,7 @@ RECURSE is used to keep track of recursive calls."
             order
             (format "(wrong-type-argument ((stringp listp)) %S" remotes)
             'failed)))))
-  (unless recurse (parcel-run-next-build-step order)))
+  (unless recurse (parcel--run-next-build-step order)))
 
 (defun parcel--remove-build-steps (order steplist)
   "Remove each step in STEPLIST from ORDER."
@@ -729,7 +729,7 @@ FILES and NOCONS are used recursively."
         (make-directory (file-name-directory link) 'parents)
         (make-symbolic-link file link 'overwrite))))
   (parcel--update-order-info order "Build files linked" 'build-linked)
-  (parcel-run-next-build-step order))
+  (parcel--run-next-build-step order))
 
 (defvar Info-directory-list)
 (declare-function info-initialize "info")
@@ -739,7 +739,7 @@ FILES and NOCONS are used recursively."
   (with-eval-after-load 'info
     (info-initialize)
     (cl-pushnew (parcel-order-build-dir order) Info-directory-list))
-  (parcel-run-next-build-step order))
+  (parcel--run-next-build-step order))
 
 (defun parcel--compile-info-process-filter (process output)
   "Filter PROCESS OUTPUT of async checkout-ref operation."
@@ -759,7 +759,7 @@ FILES and NOCONS are used recursively."
      order (if (equal event "finished\n")
                "Info compiled"
              (format "Failed to compile Info: %S" (string-trim event))))
-    (parcel-run-next-build-step order)))
+    (parcel--run-next-build-step order)))
 
 (defun parcel--compile-info (order)
   "Compile ORDER's .texi files."
@@ -787,7 +787,7 @@ FILES and NOCONS are used recursively."
       (process-put process :order order)
     (parcel--update-order-info order "No .info files found")
     (parcel--remove-build-steps order '(parcel--install-info parcel--add-info-path))
-    (parcel-run-next-build-step order)))
+    (parcel--run-next-build-step order)))
 
 (defun parcel--install-info (order)
   "Install ORDER's info files."
@@ -810,7 +810,7 @@ FILES and NOCONS are used recursively."
       (parcel-with-process (parcel-process-call parcel-install-info-executable
                                                 file dir)
         (unless success (parcel--update-order-info order result)))))
-  (parcel-run-next-build-step order))
+  (parcel--run-next-build-step order))
 
 (defun parcel--dispatch-build-commands-process-sentinel (process event)
   "PROCESS EVENT."
@@ -821,7 +821,7 @@ FILES and NOCONS are used recursively."
       (parcel--update-order-info order
                                  (format "%s steps finished" type)
                                  (intern (substring (symbol-name type) 1)))
-      (parcel-run-next-build-step order))
+      (parcel--run-next-build-step order))
      ((string-match-p "abnormally" event)
       (parcel--update-order-info
        order
@@ -876,7 +876,7 @@ The keyword's value is expected to be one of the following:
                  :sentinel #'parcel--dispatch-build-commands-process-sentinel)))
           (process-put process :order order)
           (process-put process :build-type type)))
-    (parcel-run-next-build-step order)))
+    (parcel--run-next-build-step order)))
 
 (defun parcel--run-pre-build-commands (order)
   "Run ORDER's :pre-build commands."
@@ -939,9 +939,9 @@ If package's repo is not on disk, error."
                     (delete-dups (append (parcel-order-dependencies order) (list dep-order))))
               (cl-pushnew order (parcel-order-dependents dep-order))
               (push dep-order queued-deps)))
-          (mapc #'parcel-run-next-build-step (nreverse queued-deps)))
+          (mapc #'parcel--run-next-build-step (nreverse queued-deps)))
       (parcel--update-order-info order "No external dependencies detected")
-      (parcel-run-next-build-step order))))
+      (parcel--run-next-build-step order))))
 
 ;;@TODO: fix possible race similar to queue--dependencies.
 (defun parcel--clone-dependencies (order)
@@ -974,11 +974,11 @@ If package's repo is not on disk, error."
                   (if included
                       ;; Unblock dependency published in same repo...
                       (when blocked (parcel--clone-dependencies dep-order))
-                    (unless blocked (parcel-run-next-build-step dep-order))))))
+                    (unless blocked (parcel--run-next-build-step dep-order))))))
             (when (= (length externals) finished) ; Our dependencies beat us to the punch
-              (parcel-run-next-build-step order)))
+              (parcel--run-next-build-step order)))
         (parcel--update-order-info order "No external dependencies detected")
-        (parcel-run-next-build-step order)))))
+        (parcel--run-next-build-step order)))))
 
 (defun parcel--checkout-ref-process-sentinel (process event)
   "PROCESS EVENT."
@@ -1005,7 +1005,7 @@ If package's repo is not on disk, error."
                'failed))))
         (unless (eq (parcel-order-status order) 'failed)
           (parcel--update-order-info order "Ref checked out" 'ref-checked-out)
-          (parcel-run-next-build-step order))))))
+          (parcel--run-next-build-step order))))))
 
 (defun parcel--checkout-ref-process-filter (process output)
   "Filter PROCESS OUTPUT of async checkout-ref operation."
@@ -1111,7 +1111,7 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
     (if (and (string-match-p "fatal" result)
              (not (string-match-p "already exists" result)))
         (parcel--update-order-info order nil 'failed)
-      (parcel-run-next-build-step order))))
+      (parcel--run-next-build-step order))))
 
 (defun parcel--order-check-status (order)
   "Called when one of an ORDER's dependencies have changed status.
@@ -1134,7 +1134,7 @@ Possibly kicks off next build step, or changes order status."
         (parcel--update-order-info
          order (format "Blocked by dependencies: %S" (mapcar #'car blocked)) 'blocked))
        ((cl-every (lambda (status) (eq (cdr status) 'finished)) statuses)
-        (parcel-run-next-build-step order))))))
+        (parcel--run-next-build-step order))))))
 
 (defun parcel--clone (order)
   "Clone repo to `parcel-directory' from ORDER.
@@ -1193,7 +1193,7 @@ If FORCE is non-nil, ignore order queue."
     (let ((order  (process-get process :order)))
       (unless (eq (parcel-order-status order) 'failed)
         (parcel--update-order-info order "Autoloads Generated" 'autoloads-generated)
-        (parcel-run-next-build-step order)))))
+        (parcel--run-next-build-step order)))))
 
 (defun parcel--generate-autoloads-async (order)
   "Generate ORDER's autoloads.
@@ -1252,7 +1252,7 @@ Async wrapper for `parcel-generate-autoloads'."
             (parcel--update-order-info order "Package activated" 'activated))
         ((error) (parcel--update-order-info
                   order (format "Failed to load %S: %S" autoloads err) 'failed-to-activate))))
-    (parcel-run-next-build-step order)))
+    (parcel--run-next-build-step order)))
 
 (defun parcel--byte-compile-process-filter (process output)
   "Filter async byte-compilation PROCESS OUTPUT."
@@ -1268,7 +1268,7 @@ Async wrapper for `parcel-generate-autoloads'."
     (let ((order (process-get process :order)))
       (unless (eq (parcel-order-status order) 'failed)
         (parcel--update-order-info order "Successfully byte compiled" 'byte-compiled)
-        (parcel-run-next-build-step order)))))
+        (parcel--run-next-build-step order)))))
 
 (defun parcel--byte-compile (order)
   "Byte compile package from ORDER."
@@ -1370,7 +1370,7 @@ ORDER's package is not made available during subsequent sessions."
   "Process QUEUED order."
   (let ((order (cdr queued)))
     (unless (memq (parcel-order-status order) '(failed blocked))
-      (parcel-run-next-build-step order))))
+      (parcel--run-next-build-step order))))
 
 ;;;###autoload
 (defun parcel-queue-empty ()
