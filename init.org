@@ -227,9 +227,9 @@ https://github.com/progfolio/parcel
 [[https://www.funtoo.org/Keychain][Keychain]] is a gpg/ssh agent that allows me to cache my credentials.
 This package gets the correct environment variables so parcel can use the ssh protocol.
 
-#+begin_src emacs-lisp :lexical t :tangle no
-(require 'keychain-environment)
-(keychain-refresh-environment)
+#+begin_src emacs-lisp :lexical t
+(parcel 'keychain-environment
+  (keychain-refresh-environment))
 #+end_src
 
 ** packaging
