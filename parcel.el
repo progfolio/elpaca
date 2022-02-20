@@ -1288,14 +1288,15 @@ Async wrapper for `parcel-generate-autoloads'."
     (goto-char (point-min))
     (special-mode)))
 
-(defun parcel--initialize-process-buffer ()
-  "Initialize the parcel process buffer."
+(defun parcel--initialize-process-buffer (&optional display)
+  "Initialize the parcel process buffer.
+When DISPLAY is non-nil, display the buffer."
   (with-current-buffer (get-buffer-create parcel-status-buffer)
     (with-silent-modifications (erase-buffer))
     (unless (derived-mode-p 'parcel-status-mode)
       (parcel-status-mode))
     (parcel--set-header-line)
-    (pop-to-buffer-same-window (current-buffer))))
+    (when display (pop-to-buffer-same-window (current-buffer)))))
 
 ;;;###autoload
 (defun parcel-display-status-buffer ()
@@ -1303,7 +1304,7 @@ Async wrapper for `parcel-generate-autoloads'."
   (interactive)
   (if-let ((buffer (get-buffer parcel-status-buffer)))
       (pop-to-buffer-same-window buffer)
-    (parcel--initialize-process-buffer)))
+    (parcel--initialize-process-buffer 'display)))
 
 ;;;###autoload
 (defmacro parcel (order &rest body)
