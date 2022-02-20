@@ -1377,15 +1377,37 @@ ORDER's package is not made available during subsequent sessions."
   (mapc #'parcel--process-order (reverse parcel--queued-orders)))
 
 ;;;###autoload
-(defun parcel-delete-repos (&optional force)
-  "Remove everything except parcel from `parcel-directory'.
-If FORCE is non-nil, do not ask for confirmation."
-  (interactive "P")
-  (when (or force (yes-or-no-p "Remove all parcel repos?"))
-    (mapc (lambda (file)
-            (unless (member (file-name-nondirectory file) '("." ".." "parcel"))
-              (delete-directory file 'recursive)))
-          (directory-files parcel-directory 'full))))
+(defun parcel-delete-package (force &optional package)
+  "Remove a PACKAGE from all caches and disk.
+This also deletes its dependencies and will error if PACKAGE has dependents.
+If FORCE is non-nil do not confirm before deleting."
+  (interactive (list current-prefix-arg
+                     (intern (completing-read "Delete package: "
+                                              (mapcar #'car parcel--queued-orders)))))
+  (when (or force (yes-or-no-p (format "Delete package %S?" package)))
+    (if-let ((order (alist-get package parcel--queued-orders)))
+        (let ((repo-dir      (parcel-order-repo-dir order))
+              (build-dir     (parcel-order-build-dir order))
+              (dependents    (parcel-order-dependents order))
+              (dependencies  (parcel-order-dependencies order)))
+          (if (cl-some (lambda (dependent)
+                         (let ((item (intern (parcel-order-package dependent))))
+                           (or (file-exists-p (parcel-order-repo-dir dependent))
+                               (file-exists-p (parcel-order-build-dir dependent))
+                               (alist-get item parcel--queued-orders)
+                               (alist-get item parcel--cache))))
+                       dependents)
+              (user-error "Cannot delete %S unless dependents %S are deleted first" package
+                          (mapcar #'parcel-order-package dependents))
+            (when (file-exists-p repo-dir)  (delete-directory repo-dir  'recursive))
+            (when (file-exists-p build-dir) (delete-directory build-dir 'recursive))
+            (setq parcel--cache (cl-remove package parcel--cache :key #'parcel-order-package :test #'equal)
+                  parcel--queued-orders (cl-remove package parcel--queued-orders :key #'car))
+            (parcel--write-cache)
+            (message "Deleted package %S" package)
+            (dolist (dependency dependencies)
+              (parcel-delete-package 'force (intern (parcel-order-package dependency))))))
+      (user-error "%S not a queued order" package))))
 
 ;;;; STATUS BUFFER
 (defvar parcel-status-mode-map
