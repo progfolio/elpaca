@@ -967,8 +967,8 @@ If package's repo is not on disk, error."
                      (included   (member dep-order (parcel-order-includes order)))
                      (blocked    (eq (parcel-order-status dep-order) 'blocked)))
                 (setf (parcel-order-dependencies order)
-                      (append (parcel-order-dependencies order) (list dep-order)))
-                (push order (parcel-order-dependents dep-order))
+                      (delete-dups (append (parcel-order-dependencies order) (list dep-order))))
+                (cl-pushnew order (parcel-order-dependents dep-order))
                 (if queued
                     (when (eq (parcel-order-status queued) 'finished) (cl-incf finished))
                   (if included
