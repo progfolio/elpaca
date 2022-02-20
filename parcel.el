@@ -161,7 +161,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
   :type 'hook)
 
 (defvar parcel-ignored-dependencies
-  (list 'emacs 'cl-lib 'cl-generic 'esxml 'nadvice 'org 'org-mode 'map 'seq)
+  (list 'emacs 'cl-lib 'cl-generic 'esxml 'nadvice 'org 'org-mode 'map 'seq 'json)
   "Built in packages.
 Ignore these unless the user explicitly requests they be installed.")
 
