@@ -541,18 +541,22 @@ If INFO is non-nil, ORDER's info is updated as well."
   "Run ORDER's next build step with ARGS."
   (if-let ((next (pop (parcel-order-build-steps order))))
       (funcall next order)
-    (if (eq (parcel-order-status order) 'finished)
-        (mapc #'parcel--order-check-status (parcel-order-dependents order))
-      (parcel--update-order-info
-       order
-       (concat  "✓ " (format-time-string "%s.%3N" (parcel--log-duration order)) " secs")
-       'finished)
-      (cl-incf parcel--processed-order-count)
-      (when (= parcel--processed-order-count (length parcel--queued-orders))
-        (when parcel--autoloads-cache (parcel--load-cached-autoloads))
-        (funcall parcel--post-process-forms)
-        (run-hooks 'parcel-after-init-hook)
-        (when parcel-cache-orders (parcel--write-cache))))))
+    (let ((status (parcel-order-status order)))
+      (if (eq  status 'finished)
+          (mapc #'parcel--order-check-status
+                (cl-remove-if (lambda (o) (eq (parcel-order-status o) 'finished))
+                              (parcel-order-dependents order)))
+        (unless (memq (parcel-order-status order) '(failed))
+          (parcel--update-order-info
+           order
+           (concat  "✓ " (format-time-string "%s.%3N" (parcel--log-duration order)) " secs")
+           'finished))
+        (cl-incf parcel--processed-order-count)
+        (when (= parcel--processed-order-count (length parcel--queued-orders))
+          (when parcel--autoloads-cache (parcel--load-cached-autoloads))
+          (funcall parcel--post-process-forms)
+          (run-hooks 'parcel-after-init-hook)
+          (when parcel-cache-orders (parcel--write-cache)))))))
 
 (defun parcel--queue-order (item &optional status)
   "Queue (ITEM . ORDER) in `parcel--queued-orders'.
