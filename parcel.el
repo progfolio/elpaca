@@ -722,12 +722,14 @@ FILES and NOCONS are used recursively."
   (parcel--update-order-info order "Build files linked" 'build-linked)
   (parcel-run-next-build-step order))
 
+(defvar Info-directory-list)
+(declare-function info-initialize "info")
 (defun parcel--add-info-path (order)
   "Add the ORDER's info to `Info-directory-list'."
   (parcel--update-order-info order "Adding Info path")
-  (eval-and-compile (require 'info))
-  (info-initialize)
-  (cl-pushnew (parcel-order-build-dir order) Info-directory-list)
+  (with-eval-after-load 'info
+    (info-initialize)
+    (cl-pushnew (parcel-order-build-dir order) Info-directory-list))
   (parcel-run-next-build-step order))
 
 (defun parcel--compile-info-process-filter (process output)
