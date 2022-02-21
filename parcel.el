@@ -1428,6 +1428,32 @@ If FORCE is non-nil do not confirm before deleting."
               (parcel-delete-package 'force (intern (parcel-order-package dependency))))))
       (user-error "%S not a queued order" package))))
 
+;;;###autoload
+(defun parcel-rebuild-package (item &optional hide)
+  "Rebuild ITEM's associated package.
+If HIDE is non-nil, do not display `parcel-status-buffer'."
+  (interactive
+   (list (let ((item
+                (completing-read "Rebuild package: "
+                                 (sort (mapcar #'car parcel--queued-orders) #'string<)
+                                 nil 'require-match)))
+           (if (string-empty-p item)
+               (user-error "No package selected")
+             (intern item)))))
+  (if-let ((queued (assoc item parcel--queued-orders)))
+      (let ((order (cdr queued)))
+        (parcel--update-order-info order "Rebuilding" 'rebuilding)
+        (setq parcel-cache-autoloads nil)
+        (setf (parcel-order-build-steps order)
+              (cl-remove #'parcel--clone-dependencies
+              (copy-tree parcel-build-steps)))
+        (parcel--process-order queued)
+        (unless hide
+          (when-let ((buffer (get-buffer parcel-status-buffer)))
+            (kill-buffer buffer))
+          (parcel-display-status-buffer)))
+    (user-error "Package %S has no queued order" item)))
+
 ;;;; STATUS BUFFER
 (defvar parcel-status-mode-map
   (let ((map (make-sparse-keymap)))
