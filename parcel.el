@@ -233,10 +233,12 @@ Values for each key are that of the right-most plist containing that key."
 
 ;;@TODO: clean up interface.
 ;;;###autoload
-(defun parcel-menu-item (&optional interactive symbol menus)
+(defun parcel-menu-item (&optional interactive symbol menus filter)
   "Return menu item matching SYMBOL in MENUS or `parcel-menu-functions'.
 If SYMBOL is nil, prompt for it.
-If INTERACTIVE is equivalent to \\[universal-argument] prompt for MENUS."
+If INTERACTIVE is equivalent to \\[universal-argument] prompt for MENUS.
+FILTER must be a function which accepts a candidate.
+If it returns nil, the candidate is not considered for selection."
   (interactive "P")
   (let* ((menus (if interactive
                     (mapcar #'intern-soft
@@ -248,10 +250,9 @@ If INTERACTIVE is equivalent to \\[universal-argument] prompt for MENUS."
                              :test #'equal))
                   (or menus parcel-menu-functions (user-error "No menus found"))))
          (parcel-menu-functions menus)
-         (candidates (cl-remove-if
-                      (lambda (candidate)
-                        (alist-get (car candidate) parcel--queued-orders))
-                      (parcel-menu--candidates)))
+         (candidates (if filter
+                         (cl-remove-if-not filter (parcel-menu--candidates))
+                       (parcel-menu--candidates)))
          (symbol (or symbol
                      (intern-soft
                       (completing-read (or parcel-overriding-prompt "Package: ")
@@ -1367,7 +1368,11 @@ Install the repo/build files on disk.
 Activate the corresponding package for the current session.
 ORDER's package is not made available during subsequent sessions."
   (interactive (list
-                (let ((recipe (parcel-menu-item nil)))
+                (let ((recipe (parcel-menu-item
+                               nil nil nil
+                               (lambda (candidate)
+                                 (not (alist-get (car candidate)
+                                                 parcel--queued-orders))))))
                   (append (list (intern (plist-get recipe :package)))
                           recipe))))
   (setq parcel-cache-autoloads nil)
