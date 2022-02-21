@@ -1300,13 +1300,20 @@ Async wrapper for `parcel-generate-autoloads'."
   "Print log for PACKAGES."
   (interactive (completing-read-multiple "Log for Packages: "
                                          (mapcar #'car parcel--queued-orders)))
-  (with-current-buffer (get-buffer-create "*Parcel Log*")
-    (with-silent-modifications
-      (erase-buffer)
-      (insert (apply #'parcel--events packages))
-      (pop-to-buffer-same-window (current-buffer)))
-    (goto-char (point-min))
-    (special-mode)))
+  (let ((queued (if packages
+                    (cl-remove-if-not (lambda (package)
+                                        (alist-get (intern package) parcel--queued-orders))
+                                      packages)
+                  (mapcar (lambda (queued) (symbol-name (car queued)))
+                            parcel--queued-orders))))
+    (unless queued (user-error "No queued packages by name: %S"  packages))
+    (with-current-buffer (get-buffer-create "*Parcel Log*")
+      (with-silent-modifications
+        (erase-buffer)
+        (insert (apply #'parcel--events queued))
+        (pop-to-buffer-same-window (current-buffer)))
+      (goto-char (point-min))
+      (special-mode))))
 
 (defun parcel--initialize-process-buffer (&optional display)
   "Initialize the parcel process buffer.
