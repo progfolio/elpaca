@@ -1310,7 +1310,7 @@ Async wrapper for `parcel-generate-autoloads'."
                                         (alist-get (intern package) parcel--queued-orders))
                                       packages)
                   (mapcar (lambda (queued) (symbol-name (car queued)))
-                            parcel--queued-orders))))
+                          parcel--queued-orders))))
     (unless queued (user-error "No queued packages by name: %S"  packages))
     (with-current-buffer (get-buffer-create "*Parcel Log*")
       (with-silent-modifications
@@ -1434,7 +1434,7 @@ If FORCE is non-nil do not confirm before deleting."
 (define-derived-mode parcel-status-mode special-mode "Parcel Status Mode"
   "Mode for interacting with the parcel status buffer.
 
-\\{parcel-status-mode-map}")
+  \\{parcel-status-mode-map}")
 
 (defun parcel-status-mode-send-input ()
   "Send input string to current process."
