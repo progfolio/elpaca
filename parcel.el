@@ -562,6 +562,7 @@ If INFO is non-nil, ORDER's info is updated as well."
           (funcall parcel--post-process-forms)
           (unless parcel--init-complete (run-hooks 'parcel-after-init-hook))
           (setq parcel--init-complete t)
+          (setq parcel-cache-autoloads nil)
           (when parcel-cache-orders (parcel--write-cache)))))))
 
 (defun parcel--queue-order (item &optional status)
