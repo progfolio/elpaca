@@ -548,9 +548,9 @@ If INFO is non-nil, ORDER's info is updated as well."
       (funcall next order)
     (let ((status (parcel-order-status order)))
       (if (eq  status 'finished)
-          (mapc #'parcel--order-check-status
-                (cl-remove-if (lambda (o) (eq (parcel-order-status o) 'finished))
-                              (parcel-order-dependents order)))
+          (cl-loop for order in (parcel-order-dependents order)
+                   unless (eq (parcel-order-status order) 'finished)
+                   do (parcel--order-check-status order))
         (unless (memq (parcel-order-status order) '(failed))
           (parcel--update-order-info
            order
@@ -703,23 +703,21 @@ FILES and NOCONS are used recursively."
         (:defaults
          (push (parcel--files order parcel-default-files-directive 'nocons) targets))
         (`(,subdir . ,paths)
-         (push (apply #'append (mapcar (lambda (path)
-                                         (cons (expand-file-name path)
-                                               (let ((default-directory build-dir))
-                                                 (expand-file-name path subdir))))
-                                       paths))
-               with-subdirs))))
+         (cl-loop for path in paths
+                  do (push (cons (expand-file-name path)
+                                 (let ((default-directory build-dir))
+                                   (expand-file-name path subdir)))
+                           with-subdirs)))))
     (if nocons
         targets
       (append
        with-subdirs
-       (mapcar (lambda (target)
-                 (cons (expand-file-name target)
-                       (expand-file-name (file-name-nondirectory target) build-dir)))
-               (cl-remove-if (lambda (target)
-                               (or (not (file-exists-p (expand-file-name target)))
-                                   (member target (flatten-tree exclusions))))
-                             (flatten-tree targets)))))))
+       (cl-loop for target in (flatten-tree targets)
+                unless (or (not (file-exists-p (expand-file-name target)))
+                           (member target (flatten-tree exclusions)))
+                collect
+                (cons (expand-file-name target)
+                      (expand-file-name (file-name-nondirectory target) build-dir)))))))
 
 (defun parcel--link-build-files (order)
   "Link ORDER's :files into it's builds subdirectory."
@@ -799,6 +797,7 @@ FILES and NOCONS are used recursively."
   "Install ORDER's info files."
   (when-let ((dir (expand-file-name "dir" (parcel-order-build-dir order)))
              ((not (file-exists-p dir)))
+             ;;@OPTIMIZE: cl-loop
              (files
               (delq nil
                     (mapcar
@@ -925,10 +924,9 @@ If package's repo is not on disk, error."
   (parcel--update-order-info order "Queueing Dependencies" 'queueing-deps)
   (let* ((recipe       (parcel-order-recipe order))
          (dependencies (parcel--dependencies recipe))
-         (externals    (cl-remove-duplicates
-                        (cl-remove-if (lambda (dependency)
-                                        (member dependency parcel-ignored-dependencies))
-                                      dependencies :key #'car)))
+         (externals    (cl-loop for (dep . version) in dependencies
+                                when (not (member dep parcel-ignored-dependencies))
+                                collect (list dep version)))
          queued-deps)
     (if externals
         (progn
@@ -956,6 +954,7 @@ If package's repo is not on disk, error."
   (let* ((recipe       (parcel-order-recipe order))
          (dependencies (parcel--dependencies recipe))
          (emacs        (assoc 'emacs dependencies))
+         ;;@TOOD: optimize with cl-loop
          (externals    (cl-remove-duplicates
                         (cl-remove-if (lambda (dependency)
                                         (member dependency parcel-ignored-dependencies))
