@@ -56,9 +56,13 @@
   '((t (:weight bold :foreground "#FF1818")))
   "Indicates an order has failed.")
 
+(defvar parcel--init-complete nil
+  "When non-nil prevent `parcel-after-init-hook' from being run.")
+
 (defcustom parcel-after-init-hook nil
   "Parcel's analogue to `after-init-hook'.
-This is run after all queued orders have finished processing.
+This is run after all orders queued during init have finished processing.
+It is only run once after init.
 Note a blocked process will prevent this hook from being run."
   :type 'hook)
 
@@ -555,7 +559,8 @@ If INFO is non-nil, ORDER's info is updated as well."
         (when (= parcel--processed-order-count (length parcel--queued-orders))
           (when parcel--autoloads-cache (parcel--load-cached-autoloads))
           (funcall parcel--post-process-forms)
-          (run-hooks 'parcel-after-init-hook)
+          (unless parcel--init-complete (run-hooks 'parcel-after-init-hook))
+          (setq parcel--init-complete t)
           (when parcel-cache-orders (parcel--write-cache)))))))
 
 (defun parcel--queue-order (item &optional status)
