@@ -1047,11 +1047,6 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
       (process-put process :order order)
       (setf (parcel-order-process order) process))))
 
-(eval-and-compile
-  (defun parcel--ensure-list (obj)
-    "Ensure OBJ is a list."
-    (if (listp obj) obj (list obj))))
-
 (defun parcel--set-header-line ()
   "Set header line format for `parcel-buffer'."
   (let ((counts nil)
