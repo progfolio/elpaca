@@ -34,10 +34,12 @@
 (require 'parcel-process)
 
 (declare-function autoload-rubric "autoload")
+(declare-function info-initialize "info")
 (declare-function url-filename    "url-parse")
 (declare-function url-host        "url-parse")
 (defvar autoload-timestamps)
 (defvar generated-autoload-file)
+(defvar Info-directory-list)
 
 (defgroup parcel nil
   "An elisp package manager."
@@ -736,8 +738,6 @@ FILES and NOCONS are used recursively."
   (parcel--update-order-info order "Build files linked" 'build-linked)
   (parcel--run-next-build-step order))
 
-(defvar Info-directory-list)
-(declare-function info-initialize "info")
 (defun parcel--add-info-path (order)
   "Add the ORDER's info to `Info-directory-list'."
   (parcel--update-order-info order "Adding Info path")
@@ -1441,7 +1441,7 @@ If HIDE is non-nil, do not display `parcel-status-buffer'."
         (setq parcel-cache-autoloads nil)
         (setf (parcel-order-build-steps order)
               (cl-remove #'parcel--clone-dependencies
-              (copy-tree parcel-build-steps)))
+                         (copy-tree parcel-build-steps)))
         (parcel--process-order queued)
         (unless hide
           (when-let ((buffer (get-buffer parcel-status-buffer)))
