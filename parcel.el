@@ -553,7 +553,7 @@ If INFO is non-nil, ORDER's info is updated as well."
           (cl-loop for order in (parcel-order-dependents order)
                    unless (eq (parcel-order-status order) 'finished)
                    do (parcel--order-check-status order))
-        (unless (memq (parcel-order-status order) '(failed))
+        (unless (eq (parcel-order-status order) 'failed)
           (parcel--update-order-info
            order
            (concat  "✓ " (format-time-string "%s.%3N" (parcel--log-duration order)) " secs")
