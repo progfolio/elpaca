@@ -740,7 +740,7 @@ FILES and NOCONS are used recursively."
 
 (defun parcel--add-info-path (order)
   "Add the ORDER's info to `Info-directory-list'."
-  (parcel--update-order-info order "Adding Info path")
+  (parcel--update-order-info order "Adding Info path" 'info)
   (with-eval-after-load 'info
     (info-initialize)
     (cl-pushnew (parcel-order-build-dir order) Info-directory-list))
