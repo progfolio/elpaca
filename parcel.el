@@ -796,6 +796,7 @@ If it matches, the order associated with process has its STATUS updated."
 
 (defun parcel--install-info (order)
   "Install ORDER's info files."
+  (parcel--update-order-info order "Installing Info files")
   (when-let ((dir (expand-file-name "dir" (parcel-order-build-dir order)))
              ((not (file-exists-p dir)))
              ;;@OPTIMIZE: cl-loop
