@@ -754,7 +754,7 @@ If it matches, the order associated with process has its STATUS updated."
   (let ((order  (process-get process :order))
         (result (process-get process :result)))
     (parcel--update-order-info
-     order (parcel-process-tail output)
+     order (parcel-process-tail result)
      (when (and pattern (string-match-p pattern result)) status))))
 
 (defun parcel--compile-info-process-sentinel (process event)
