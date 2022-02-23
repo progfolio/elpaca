@@ -444,7 +444,7 @@ If PACKAGES is nil, use all available orders."
           (if success
               (message stdout)
             (message "Build command error: %S" result)
-            (error "Build command failed")))
+            (error "Build command failed: %S" stderr)))
       (eval command t))))
 
 (defun parcel--print-order-status (order)
