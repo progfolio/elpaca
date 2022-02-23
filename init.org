@@ -231,8 +231,10 @@ https://github.com/progfolio/parcel
     (require 'parcel-autoloads))
   (setq parcel--order-queue-start-time (current-time)))
 (parcel--bootstrap)
-(add-hook 'after-init-hook #'parcel-display-status-buffer)
 (add-hook 'after-init-hook #'parcel-queue-empty)
+(add-hook 'parcel-after-init-hook
+          (lambda () (when-let ((buffer (get-buffer parcel-status-buffer)))
+                       (with-current-buffer buffer (quit-window)))))
 #+end_src
 [[https://www.funtoo.org/Keychain][Keychain]] is a gpg/ssh agent that allows me to cache my credentials.
 This package gets the correct environment variables so parcel can use the ssh protocol.
