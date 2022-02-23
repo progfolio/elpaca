@@ -152,7 +152,6 @@ The following line turns on lexical binding for performance reasons.
 This function displays how long Emacs took to start.
 It's a rough way of knowing when/if I need to optimize my init file.
 #+begin_src emacs-lisp :lexical t
-(setq debug-on-error t)
 (add-hook 'parcel-after-init-hook
           (lambda ()
             (message "Emacs loaded in %s with %d garbage collecitons."
