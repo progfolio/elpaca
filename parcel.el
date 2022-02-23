@@ -648,7 +648,7 @@ RECURSE is used to keep track of recursive calls."
           ((:repo recipe-repo))
           &allow-other-keys)
         recipe
-      (parcel--update-order-info order "Adding Remotes")
+      (unless recurse (parcel--update-order-info order "Adding Remotes"))
       (pcase remotes
         ("origin" nil)
         ((and (pred stringp) remote)
