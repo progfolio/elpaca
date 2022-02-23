@@ -750,12 +750,19 @@ FILES and NOCONS are used recursively."
   "Filter PROCESS OUTPUT.
 PATTERN is a string which is checked against the entire process output.
 If it matches, the order associated with process has its STATUS updated."
-  (process-put process :result (concat (process-get process :result) output))
-  (let ((order  (process-get process :order))
-        (result (process-get process :result)))
-    (parcel--update-order-info
-     order (parcel-process-tail result)
-     (when (and pattern (string-match-p pattern result)) status))))
+  (process-put process :raw-output (concat (process-get process :raw-output) output))
+  (let* ((order  (process-get process :order))
+         (result (process-get process :result))
+         (lines (split-string (concat result output) parcel-process-newline-regexp))
+         (last-is-full-line-p (string-empty-p (car (last lines)))))
+    (unless last-is-full-line-p
+      (process-put process :result (car (last lines)))
+      (setq lines (butlast lines)))
+    (dolist (line lines)
+      (unless (string-empty-p line)
+      (parcel--update-order-info
+       order line
+       (when (and pattern (string-match-p pattern line)) status))))))
 
 (defun parcel--compile-info-process-sentinel (process event)
   "Sentinel for info compilation PROCESS EVENT."
@@ -1106,10 +1113,10 @@ Possibly kicks off next build step, or changes order status."
 
 (defun parcel--clone-process-sentinel (process _event)
   "Sentinel for clone PROCESS."
-  (let ((order  (process-get process :order))
-        (result (process-get process :result)))
-    (if (and (string-match-p "fatal" result)
-             (not (string-match-p "already exists" result)))
+  (let ((order      (process-get process :order))
+        (raw-output (process-get process :raw-output)))
+    (if (and (string-match-p "fatal" raw-output)
+             (not (string-match-p "already exists" raw-output)))
         (parcel--update-order-info order nil 'failed)
       (parcel--run-next-build-step order))))
 

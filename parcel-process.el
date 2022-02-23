@@ -104,9 +104,5 @@ If the command cannot be run or returns a nonzero exit code, throw an error."
 ]"
   "Regexp matching return or newline in process output.")
 
-(defun parcel-process-tail (string)
-  "Return trimmed tail of process output STRING."
-  (car (last (split-string string parcel-process-newline-regexp 'omit-nulls " +"))))
-
 (provide 'parcel-process)
 ;;; parcel-process.el ends here
