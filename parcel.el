@@ -663,19 +663,19 @@ RECURSE is used to keep track of recursive calls."
                   copy)
                 'recurse)
              (pcase-let ((`(,remote . ,props) spec))
-               (if props
-                   (cl-destructuring-bind
-                       (&key (host     recipe-host)
-                             (protocol recipe-protocol)
-                             (repo     recipe-repo)
-                             &allow-other-keys
-                             &aux
-                             (recipe (list :host host :protocol protocol :repo repo)))
-                       props
-                     (parcel-process-call
-                      "git" "remote" "add" remote (parcel--repo-uri recipe))
-                     (unless (equal remote "origin")
-                       (parcel-process-call "git" "remote" "rename" "origin" remote))))))))
+               (when props
+                 (cl-destructuring-bind
+                     (&key (host     recipe-host)
+                           (protocol recipe-protocol)
+                           (repo     recipe-repo)
+                           &allow-other-keys
+                           &aux
+                           (recipe (list :host host :protocol protocol :repo repo)))
+                     props
+                   (parcel-process-call
+                    "git" "remote" "add" remote (parcel--repo-uri recipe))
+                   (unless (equal remote "origin")
+                     (parcel-process-call "git" "remote" "rename" "origin" remote))))))))
         (_ (parcel--update-order-info
             order
             (format "(wrong-type-argument ((stringp listp)) %S" remotes)
