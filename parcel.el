@@ -831,9 +831,9 @@ If it matches, the order associated with process has its STATUS updated."
      ((string-match-p "abnormally" event)
       (parcel--update-order-info
        order
-       ;;@TODO: fix this. Ugly, brittle. depends on log structure
-       (car (last (car (last (parcel-order-log order) 2))))
-       'failed)))))
+       ;; We want the event prior to the last "exited abnormally" event.
+       (nth 2 (car (last (parcel-order-log order) 2))))
+      'failed))))
 
 (defun parcel--dispatch-build-commands (order type)
   "Run ORDER's TYPE commands for.
