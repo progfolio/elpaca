@@ -746,16 +746,16 @@ FILES and NOCONS are used recursively."
     (cl-pushnew (parcel-order-build-dir order) Info-directory-list))
   (parcel--run-next-build-step order))
 
-(defun parcel--compile-info-process-filter (process output)
-  "Filter PROCESS OUTPUT of async checkout-ref operation."
+(defun parcel--process-filter (process output &optional pattern status)
+  "Filter PROCESS OUTPUT.
+PATTERN is a string which is checked against the entire process output.
+If it matches, the order associated with process has its STATUS updated."
   (process-put process :result (concat (process-get process :result) output))
   (let ((order  (process-get process :order))
         (result (process-get process :result)))
-    (parcel--update-order-info order
-                               (parcel-process-tail output)
-                               ;;@FIX: Don't rely on error message text
-                               ;; This is git specific.
-                               (when (string-match-p "fatal" result) 'failed))))
+    (parcel--update-order-info
+     order (parcel-process-tail output)
+     (when (and pattern (string-match-p pattern result)) status))))
 
 (defun parcel--compile-info-process-sentinel (process event)
   "Sentinel for info compilation PROCESS EVENT."
@@ -787,7 +787,7 @@ FILES and NOCONS are used recursively."
        (process (make-process
                  :name (format "parcel-compile-info-%s" (parcel-order-package order))
                  :command command
-                 :filter   #'parcel--compile-info-process-filter
+                 :filter   #'parcel--process-filter
                  :sentinel #'parcel--compile-info-process-sentinel)))
       (process-put process :order order)
     (parcel--update-order-info order "No .info files found")
@@ -835,14 +835,6 @@ FILES and NOCONS are used recursively."
        (car (last (car (last (parcel-order-log order) 2))))
        'failed)))))
 
-(defun parcel--dispatch-build-commands-process-filter (process output)
-  "Filter PROCESS OUTPUT of pre-build process."
-  (process-put process :result (concat (process-get process :result) output))
-  (let ((order  (process-get process :order))
-        (result (process-get process :result)))
-    (parcel--update-order-info order (parcel-process-tail output)
-                               (when (string-match-p "Debugger Entered" result) 'failed))))
-
 (defun parcel--dispatch-build-commands (order type)
   "Run ORDER's TYPE commands for.
 TYPE is either the keyword :pre-build, or :post-build.
@@ -868,18 +860,17 @@ The keyword's value is expected to be one of the following:
                                      (require 'parcel)
                                      (normal-top-level-add-subdirs-to-load-path)
                                      (parcel--run-build-commands ',commands)))
-               (process
-                (make-process
-                 :name (format "parcel-%s-%s" type (plist-get recipe :package))
-                 :command (list
-                           emacs "-Q"
-                           "-L" "./"
-                           "-L" (expand-file-name "parcel" parcel-directory)
-                           "--batch"
-                           "--eval" (let (print-level print-length)
-                                      (format "%S" program)))
-                 :filter   #'parcel--dispatch-build-commands-process-filter
-                 :sentinel #'parcel--dispatch-build-commands-process-sentinel)))
+               (process (make-process
+                         :name (format "parcel-%s-%s" type (plist-get recipe :package))
+                         :command (list
+                                   emacs "-Q"
+                                   "-L" "./"
+                                   "-L" (expand-file-name "parcel" parcel-directory)
+                                   "--batch"
+                                   "--eval" (let (print-level print-length)
+                                              (format "%S" program)))
+                         :filter   #'parcel--process-filter
+                         :sentinel #'parcel--dispatch-build-commands-process-sentinel)))
           (process-put process :order order)
           (process-put process :build-type type)))
     (parcel--run-next-build-step order)))
@@ -1013,15 +1004,6 @@ If package's repo is not on disk, error."
           (parcel--update-order-info order "Ref checked out" 'ref-checked-out)
           (parcel--run-next-build-step order))))))
 
-(defun parcel--checkout-ref-process-filter (process output)
-  "Filter PROCESS OUTPUT of async checkout-ref operation."
-  (process-put process :result (concat (process-get process :result) output))
-  (let ((order  (process-get process :order))
-        (result (process-get process :result)))
-    (parcel--update-order-info order
-                               (parcel-process-tail output)
-                               (when (string-match-p "fatal" result) 'failed))))
-
 (defun parcel--checkout-ref (order)
   "Checkout ORDER's :ref.
 The :branch and :tag keywords are syntatic sugar and are handled here, too."
@@ -1039,11 +1021,13 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
        ((and ref branch) (warn "Recipe :ref overriding :branch %S" recipe))
        ((and ref tag)    (warn "Recipe :ref overriding :tag %S" recipe))
        ((and tag branch) (error "Recipe :ref ambiguous :tag and :branch %S" recipe))))
-    (let* ((process (make-process
-                     :name     (format "parcel-fetch-%s" package)
-                     :command  (list "git" "fetch" "--all")
-                     :filter   #'parcel--checkout-ref-process-filter
-                     :sentinel #'parcel--checkout-ref-process-sentinel)))
+    (let* ((process
+            (make-process
+             :name     (format "parcel-fetch-%s" package)
+             :command  (list "git" "fetch" "--all")
+             :filter   (lambda (process output)
+                         (parcel--process-filter process output "fatal" 'failed))
+             :sentinel #'parcel--checkout-ref-process-sentinel)))
       (process-put process :order order)
       (setf (parcel-order-process order) process))))
 
@@ -1096,24 +1080,6 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
              'order             order)
             " ")))
 
-(defun parcel--clone-process-filter (process output)
-  "Filter PROCESS OUTPUT of async clone operation."
-  (process-put process :result (concat (process-get process :result) output))
-  (let ((order  (process-get process :order))
-        (result (process-get process :result)))
-    (parcel--update-order-info order
-                               (parcel-process-tail output)
-                               (when (string-match-p "Username" result) 'blocked))))
-
-(defun parcel--clone-process-sentinel (process _event)
-  "Sentinel for clone PROCESS."
-  (let ((order  (process-get process :order))
-        (result (process-get process :result)))
-    (if (and (string-match-p "fatal" result)
-             (not (string-match-p "already exists" result)))
-        (parcel--update-order-info order nil 'failed)
-      (parcel--run-next-build-step order))))
-
 (defun parcel--order-check-status (order)
   "Called when one of an ORDER's dependencies have changed status.
 Possibly kicks off next build step, or changes order status."
@@ -1137,6 +1103,15 @@ Possibly kicks off next build step, or changes order status."
        ((cl-every (lambda (status) (eq (cdr status) 'finished)) statuses)
         (parcel--run-next-build-step order))))))
 
+(defun parcel--clone-process-sentinel (process _event)
+  "Sentinel for clone PROCESS."
+  (let ((order  (process-get process :order))
+        (result (process-get process :result)))
+    (if (and (string-match-p "fatal" result)
+             (not (string-match-p "already exists" result)))
+        (parcel--update-order-info order nil 'failed)
+      (parcel--run-next-build-step order))))
+
 (defun parcel--clone (order)
   "Clone repo to `parcel-directory' from ORDER.
 If FORCE is non-nil, ignore order queue."
@@ -1147,15 +1122,17 @@ If FORCE is non-nil, ignore order queue."
          (URI     (parcel--repo-uri recipe))
          (default-directory parcel-directory))
     (push 'cloning (parcel-order-statuses order))
-    (let ((process (make-process
-                    :name     (format "parcel-clone-%s" package)
-                    :command  `("git" "clone"
-                                ;;@TODO: certain refs will necessitate full clone
-                                ;; or specific branch...
-                                ,@(when depth (list "--depth" (number-to-string depth)))
-                                ,URI ,repodir)
-                    :filter   #'parcel--clone-process-filter
-                    :sentinel #'parcel--clone-process-sentinel)))
+    (let ((process
+           (make-process
+            :name     (format "parcel-clone-%s" package)
+            :command  `("git" "clone"
+                        ;;@TODO: certain refs will necessitate full clone
+                        ;; or specific branch...
+                        ,@(when depth (list "--depth" (number-to-string depth)))
+                        ,URI ,repodir)
+            :filter   (lambda (process output)
+                        (parcel--process-filter process output "Username" 'blocked))
+            :sentinel #'parcel--clone-process-sentinel)))
       (process-put process :order order)
       (setf (parcel-order-process order) process))))
 
@@ -1177,16 +1154,6 @@ If FORCE is non-nil, ignore order queue."
     (when-let ((buf (find-buffer-visiting output)))
       (kill-buffer buf))
     auto-name))
-
-(defun parcel--generate-autoloads-async-process-filter (process output)
-  "Filter autoload PROCESS OUTPUT."
-  (process-put process :result (concat (process-get process :result) output))
-  (let ((order  (process-get process :order))
-        (result (process-get process :result)))
-    ;;@TODO: Warn on failure?
-    ;;@FIX: debugger blocks and causes abnormal exit in sentinel
-    (parcel--update-order-info order (parcel-process-tail output)
-                               (when (string-match-p "Debugger entered" result) 'blocked))))
 
 (defun parcel--generate-autoloads-async-process-sentinel (process event)
   "PROCESS autoload generation EVENT."
@@ -1216,7 +1183,7 @@ Async wrapper for `parcel-generate-autoloads'."
           (make-process
            :name     (format "parcel-autoloads-%s" package)
            :command  command
-           :filter   #'parcel--generate-autoloads-async-process-filter
+           :filter   #'parcel--process-filter
            :sentinel #'parcel--generate-autoloads-async-process-sentinel)))
     (process-put process :order order)))
 
@@ -1255,14 +1222,6 @@ Async wrapper for `parcel-generate-autoloads'."
                   order (format "Failed to load %S: %S" autoloads err) 'failed-to-activate))))
     (parcel--run-next-build-step order)))
 
-(defun parcel--byte-compile-process-filter (process output)
-  "Filter async byte-compilation PROCESS OUTPUT."
-  (process-put process :result (concat (process-get process :result) output))
-  (let ((order  (process-get process :order))
-        (result (process-get process :result)))
-    (parcel--update-order-info order (parcel-process-tail output)
-                               (when (string-match-p "Debugger entered" result) 'failed))))
-
 (defun parcel--byte-compile-process-sentinel (process event)
   "PROCESS byte-compilation EVENT."
   (when (equal event "finished\n")
@@ -1292,7 +1251,7 @@ Async wrapper for `parcel-generate-autoloads'."
           (make-process
            :name     (format "parcel-byte-compile-%s" (parcel-order-package order))
            :command  `(,emacs "-Q" "--batch" "--eval" ,(format "%S" program))
-           :filter   #'parcel--byte-compile-process-filter
+           :filter   #'parcel--process-filter
            :sentinel #'parcel--byte-compile-process-sentinel)))
     (process-put process :order order)))
 
