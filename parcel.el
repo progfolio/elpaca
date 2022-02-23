@@ -1435,8 +1435,8 @@ If HIDE is non-nil, do not display `parcel-status-buffer'."
   (if-let ((order (get-text-property (line-beginning-position) 'order))
            (process (parcel-order-process order)))
       (let* ((input (read-string (format "Send input to %S: " (process-name process)))))
-        (process-send-string process (concat input "\n"))))
-  (user-error "No process associated with current package"))
+        (process-send-string process (concat input "\n")))
+    (user-error "No process associated with current package")))
 
 (defun parcel-status-mode-visit-repo ()
   "Visit repo associated with current process."
