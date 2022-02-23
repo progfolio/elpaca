@@ -459,7 +459,7 @@ If PACKAGES is nil, use all available orders."
             (if anchor
                 (progn
                   (goto-char (prop-match-beginning anchor))
-                  (delete-region (prop-match-beginning anchor) (prop-match-end anchor)))
+                  (delete-region (prop-match-beginning anchor) (line-end-position)))
               (goto-char (point-max)))
             (unless (or (bobp) anchor) (insert (propertize "\n" 'read-only t)))
             (insert (parcel-status-buffer-line order))))
