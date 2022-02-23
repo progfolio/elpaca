@@ -753,16 +753,20 @@ If it matches, the order associated with process has its STATUS updated."
   (process-put process :raw-output (concat (process-get process :raw-output) output))
   (let* ((order  (process-get process :order))
          (result (process-get process :result))
-         (lines (split-string (concat result output) parcel-process-newline-regexp))
+         (lines  (split-string (concat result output) parcel-process-newline-regexp))
          (last-is-full-line-p (string-empty-p (car (last lines)))))
     (unless last-is-full-line-p
       (process-put process :result (car (last lines)))
       (setq lines (butlast lines)))
     (dolist (line lines)
       (unless (string-empty-p line)
-      (parcel--update-order-info
-       order line
-       (when (and pattern (string-match-p pattern line)) status))))))
+        (parcel--update-order-info
+         order line
+         (when (and pattern (string-match-p pattern line))
+           status))))
+    (when (and pattern (string-match-p pattern output))
+      (process-put process :result nil)
+      (parcel--update-order-info order output status))))
 
 (defun parcel--compile-info-process-sentinel (process event)
   "Sentinel for info compilation PROCESS EVENT."
@@ -1141,7 +1145,7 @@ If FORCE is non-nil, ignore order queue."
                         ,@(when depth (list "--depth" (number-to-string depth)))
                         ,URI ,repodir)
             :filter   (lambda (process output)
-                        (parcel--process-filter process output "Username" 'blocked))
+                        (parcel--process-filter process output "\\(?:^\\(?:Password\\|Username\\)\\)" 'blocked))
             :sentinel #'parcel--clone-process-sentinel)))
       (process-put process :order order)
       (setf (parcel-order-process order) process))))
