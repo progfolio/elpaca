@@ -1426,16 +1426,9 @@ If HIDE is non-nil, do not display `parcel-status-buffer'."
   (interactive)
   (if-let ((order (get-text-property (line-beginning-position) 'order))
            (process (parcel-order-process order)))
-      (let* ((input-start nil)
-             (input (save-excursion
-                      (beginning-of-line)
-                      (while (get-text-property (point) 'read-only)
-                        (forward-char))
-                      (setq input-start (point))
-                      (string-trim (buffer-substring input-start (line-end-position))))))
-        (replace-region-contents input-start (line-end-position) (lambda () " "))
-        (process-send-string process (concat input "\n")))
-    (user-error "No process associated with current package")))
+      (let* ((input (read-string (format "Send input to %S: " (process-name process)))))
+        (process-send-string process (concat input "\n"))))
+  (user-error "No process associated with current package"))
 
 (defun parcel-status-mode-visit-repo ()
   "Visit repo associated with current process."
