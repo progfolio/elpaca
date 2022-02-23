@@ -3093,7 +3093,7 @@ https://github.com/bbatsov/projectile
   (add-to-list 'projectile-globally-ignored-directories "*node_modules")
   (projectile-mode))
 #+end_src
-** TODO pdf-tools (:post-build fails)
+** TODO pdf-tools (:post-build should be simpler. Are we processing :files correctly?)
 #+begin_quote
 PDF Tools is, among other things, a replacement of DocView for PDF files.
 The key difference is that pages are not pre-rendered by e.g. ghostscript and stored in the file-system, but rather created on-demand and stored in memory.
@@ -3102,19 +3102,20 @@ https://github.com/politza/pdf-tools#about-this-package
 #+end_quote
 This  allows me to customize the color of the generated pdf.
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (pdf-tools :post-build ((require 'pdf-tools)
-                                            (condition-case err
-                                                (progn
+(parcel-use-package (pdf-tools :post-build ((condition-case err
+                                                (let* ((repo-dir default-directory)
+                                                       (build-dir (expand-file-name "builds/pdf-tools" parcel-directory))
+                                                       (default-directory build-dir))
+                                                  (require 'pdf-tools)
+                                                  (setq pdf-tools-enabled-modes nil)
                                                   (pdf-tools-install 'noquery 'skip-deps)
                                                   (with-current-buffer "*compilation*"
-                                                    (let ((seen ""))
-                                                      (while (get-buffer-process (current-buffer))
-                                                        ;; poll for async compilation output
-                                                        (sit-for 0.1)
-                                                        (when (buffer-modified-p)
-                                                          (let ((s (substring-no-properties (buffer-string))))
-                                                            (message "%S" s)
-                                                            (setq seen (concat seen (buffer-string)))))))))
+                                                    (while (get-buffer-process (current-buffer))
+                                                      ;; poll for async compilation output
+                                                      (sit-for 0.25)
+                                                      (when (buffer-modified-p)
+                                                        (message (substring-no-properties (buffer-string))))))
+                                                  (copy-file (expand-file-name "./lisp/epdfinfo" repo-dir) (file-name-as-directory build-dir)))
                                               ((error) (message "PDF-TOOLS ERROR: %S" err)))))
   :functions (pdf-isearch-batch-mode)
   :commands (pdf-tools-install pdf-view-mode)
