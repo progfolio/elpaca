@@ -1117,7 +1117,9 @@ Possibly kicks off next build step, or changes order status."
         (raw-output (process-get process :raw-output)))
     (if (and (string-match-p "fatal" raw-output)
              (not (string-match-p "already exists" raw-output)))
-        (parcel--update-order-info order nil 'failed)
+        (parcel--update-order-info order
+                                   (nth 2 (car (parcel-order-log order)))
+                                   'failed)
       (parcel--run-next-build-step order))))
 
 (defun parcel--clone (order)
