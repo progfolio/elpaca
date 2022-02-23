@@ -1157,7 +1157,9 @@ Built in IRC client
 (use-feature erc
   :general
   (+general-global-application
-    "E" 'erc))
+    "E" 'erc)
+  :hook
+  (erc-mode . erc-spelling-mode))
 #+end_src
 ** files
 By default Emacs saves backups in the current buffer's working directory.
