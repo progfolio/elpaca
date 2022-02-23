@@ -3374,16 +3374,24 @@ Emacs-libvterm (vterm) is fully-fledged terminal emulator inside GNU Emacs based
 https://github.com/akermu/emacs-libvterm
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (vterm :post-build ((setq vterm-always-compile-module t)
-                                        (require 'vterm)
-                                        ;;print compilation info for parcel
-                                        (with-current-buffer (get-buffer-create vterm-install-buffer-name)
-                                          (goto-char (point-min))
-                                          (while (not (eobp))
-                                            (message "%S"
-                                                     (buffer-substring (line-beginning-position)
-                                                                       (line-end-position)))
-                                            (forward-line)))))
+(parcel-use-package (vterm :post-build
+                           (progn
+                             (setq vterm-always-compile-module t)
+                             (require 'vterm)
+                             ;;print compilation info for parcel
+                             (with-current-buffer (get-buffer-create vterm-install-buffer-name)
+                               (goto-char (point-min))
+                               (while (not (eobp))
+                                 (message "%S"
+                                          (buffer-substring (line-beginning-position)
+                                                            (line-end-position)))
+                                 (forward-line)))
+                             (when-let ((so (expand-file-name "./vterm-module.so"))
+                                        ((file-exists-p so)))
+                               (make-symbolic-link
+                                so (expand-file-name (file-name-nondirectory so)
+                                                     "../../builds/vterm")
+                                'ok-if-already-exists))))
   :commands (vterm vterm-other-window)
   :general
   (+general-global-application
