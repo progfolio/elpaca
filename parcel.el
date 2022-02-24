@@ -86,6 +86,9 @@ However, loading errors will prevent later package autoloads from loading."
   "Location of the parcel package store."
   :type 'directory)
 
+(defvar parcel-cache-directory (expand-file-name "cache" parcel-directory)
+  "Location of the cache directory.")
+
 (defcustom parcel-makeinfo-executable (executable-find "makeinfo")
   "Path of the makeinfo executable."
   :type 'string)
@@ -175,13 +178,13 @@ Ignore these unless the user explicitly requests they be installed.")
 
 (defun parcel--read-menu-cache ()
   "Read the menu-cache."
-  (when-let ((cache (expand-file-name "menu-cache.el" parcel-directory))
+  (when-let ((cache (expand-file-name "menu-items.el" parcel-cache-directory))
              ((file-exists-p cache)))
     (with-temp-buffer
       (insert-file-contents cache)
       (condition-case err
           (read (buffer-string))
-        ((error) (message "Parcel could not read menu-cache.el: %S" err))))))
+        ((error) (message "Parcel could not read menu-items.el: %S" err))))))
 
 (defvar parcel-menu--candidates-cache
   (when parcel-cache-menu-items (parcel--read-menu-cache))
@@ -212,15 +215,26 @@ Values for each key are that of the right-most plist containing that key."
       (while current (setq plist (plist-put plist (pop current) (pop current)))))
     plist))
 
+(defmacro parcel--write-file (file &rest body)
+  "Write FILE using BODY.
+`standard-output' and print variables are lexically bound for convenience.
+e.g. elisp forms may be printed via `prin1'."
+  (declare (indent 1) (debug all))
+  `(let ((coding-system-for-write 'utf-8))
+     (with-temp-file ,file
+       (let* ((standard-output (current-buffer))
+              (print-circle nil)
+              (print-level  nil)
+              (print-length nil))
+         ,@body
+         nil))))
+
 (defun parcel--write-menu-cache ()
   "Write menu item cache to disk."
-  (let ((coding-system-for-write 'utf-8))
-    (with-temp-file (expand-file-name "menu-cache.el" parcel-directory)
-      (let* ((standard-output (current-buffer))
-             (print-circle nil)
-             (print-level  nil)
-             (print-length nil))
-        (prin1 parcel-menu--candidates-cache)))))
+  (unless (file-exists-p parcel-cache-directory)
+    (make-directory parcel-cache-directory))
+  (parcel--write-file (expand-file-name "menu-items.el" parcel-cache-directory)
+    (prin1 parcel-menu--candidates-cache)))
 
 (defun parcel-menu--candidates ()
   "Return alist of `parcel-menu-functions' candidates."
@@ -475,19 +489,14 @@ If PACKAGES is nil, use all available orders."
    :files        (parcel-order-files order)
    :dependencies (mapcar #'parcel--clean-order (parcel-order-dependencies order))))
 
-;;@TODO: decompose general file writing utility, use in other cache files.
-(defun parcel--write-cache ()
+(defun parcel--write-order-cache ()
   "Write order cache to disk."
-  (let ((coding-system-for-write 'utf-8))
-    (with-temp-file (expand-file-name "cache.el" parcel-directory)
-      (let* ((standard-output (current-buffer))
-             (print-circle nil)
-             (print-level  nil)
-             (print-length nil)
-             (finished (cl-loop for (_ . order) in (reverse parcel--queued-orders)
-                                when (eq (parcel-order-status order) 'finished)
-                                collect (parcel--clean-order order))))
-        (prin1 finished)))))
+  (unless (file-exists-p parcel-cache-directory)
+    (make-directory parcel-cache-directory 'parents))
+  (parcel--write-file (expand-file-name "cache/cache.el" parcel-directory)
+    (prin1 (cl-loop for (_ . order) in (reverse parcel--queued-orders)
+                    when (eq (parcel-order-status order) 'finished)
+                    collect (parcel--clean-order order)))))
 
 (defun parcel--cache-entry-to-order (plist)
   "Return decoded PLIST as order."
@@ -496,9 +505,9 @@ If PACKAGES is nil, use all available orders."
           (mapcar #'parcel--cache-entry-to-order (parcel-order-dependencies order)))
     order))
 
-(defun parcel--read-cache ()
+(defun parcel--read-order-cache ()
   "Return cache alist or nil if not available."
-  (when-let ((cache (expand-file-name "cache.el" parcel-directory))
+  (when-let ((cache (expand-file-name "cache.el" parcel-cache-directory))
              ((file-exists-p cache)))
     (condition-case err
         (with-temp-buffer
@@ -506,7 +515,7 @@ If PACKAGES is nil, use all available orders."
           (mapcar #'parcel--cache-entry-to-order (read (current-buffer))))
       ((error) (warn "Error reading parcel cache.el: %S" err)))))
 
-(defvar parcel--cache (when parcel-cache-orders (parcel--read-cache))
+(defvar parcel--order-cache (when parcel-cache-orders (parcel--read-order-cache))
   "Built package information cache.")
 
 (defun parcel--continue-mono-repo-dependency (order)
@@ -563,7 +572,7 @@ If INFO is non-nil, ORDER's info is updated as well."
           (unless parcel--init-complete (run-hooks 'parcel-after-init-hook))
           (setq parcel--init-complete t)
           (setq parcel-cache-autoloads nil)
-          (when parcel-cache-orders (parcel--write-cache)))))))
+          (when parcel-cache-orders (parcel--write-order-cache)))))))
 
 (defun parcel--queue-order (item &optional status)
   "Queue (ITEM . ORDER) in `parcel--queued-orders'.
@@ -589,7 +598,7 @@ RETURNS order structure."
                                 info (format "Unable to determine repo dir: %S" err))))))
            (build-dir (when recipe (parcel-build-dir recipe)))
            (cached (cl-some (lambda (o) (when (equal (parcel-order-package o) name) o))
-                            parcel--cache))
+                            parcel--order-cache))
            (built-p nil)
            (order
             (parcel-order-create
@@ -1408,15 +1417,15 @@ If FORCE is non-nil do not confirm before deleting."
                            (or (file-exists-p (parcel-order-repo-dir dependent))
                                (file-exists-p (parcel-order-build-dir dependent))
                                (alist-get item parcel--queued-orders)
-                               (alist-get item parcel--cache))))
+                               (alist-get item parcel--order-cache))))
                        dependents)
               (user-error "Cannot delete %S unless dependents %S are deleted first" package
                           (mapcar #'parcel-order-package dependents))
             (when (file-exists-p repo-dir)  (delete-directory repo-dir  'recursive))
             (when (file-exists-p build-dir) (delete-directory build-dir 'recursive))
-            (setq parcel--cache (cl-remove package parcel--cache :key #'parcel-order-package :test #'equal)
+            (setq parcel--order-cache (cl-remove package parcel--order-cache :key #'parcel-order-package :test #'equal)
                   parcel--queued-orders (cl-remove package parcel--queued-orders :key #'car))
-            (parcel--write-cache)
+            (parcel--write-order-cache)
             (message "Deleted package %S" package)
             (dolist (dependency dependencies)
               (parcel-delete-package 'force (intern (parcel-order-package dependency))))))
