@@ -32,6 +32,7 @@
 (eval-and-compile (require 'cl-lib))
 (require 'text-property-search)
 (require 'parcel-process)
+(require 'tabulated-list)
 
 (declare-function autoload-rubric "autoload")
 (declare-function info-initialize "info")
@@ -88,6 +89,12 @@ However, loading errors will prevent later package autoloads from loading."
 
 (defvar parcel-cache-directory (expand-file-name "cache" parcel-directory)
   "Location of the cache directory.")
+
+(defcustom parcel-display-status-buffer-during-init nil
+  "When non-nil, display `parcel-status-buffer' during init.
+This can slow down your init substantially.
+Only recommended for troubleshooting."
+  :type 'boolean)
 
 (defcustom parcel-makeinfo-executable (executable-find "makeinfo")
   "Path of the makeinfo executable."
@@ -461,23 +468,33 @@ If PACKAGES is nil, use all available orders."
             (error "Build command failed: %S" stderr)))
       (eval command t))))
 
-(defun parcel--print-order-status (order)
+(defsubst parcel-order-info (order)
+  "Return ORDER's most recent log event info."
+  (nth 2 (car (parcel-order-log order))))
+
+(defun parcel-status-buffer-entries ()
+  "Return list of queued orders entries suitable for `tabulated-list-entries'."
+  (cl-loop for (item . order) in parcel--queued-orders
+           for status = (parcel-order-status order)
+           collect
+           (list item (vector (propertize (parcel-order-package order)
+                                          'face (cond
+                                                 ((eq status 'blocked)  'parcel-blocked)
+                                                 ((eq status 'finished) 'parcel-finished)
+                                                 ((eq status 'failed)   'parcel-failed)
+                                                 (t                     'default))
+                                          'order order)
+                              (symbol-name status)
+                              (parcel-order-info order)))))
+
+(defun parcel--print-order-status ()
   "Print ORDER's status in `parcel-status-buffer'."
   (let ((buffer (get-buffer parcel-status-buffer)))
     (unless buffer (parcel--initialize-process-buffer))
     (with-current-buffer (get-buffer-create parcel-status-buffer)
-      (with-silent-modifications
-        (save-excursion
-          (goto-char (point-min))
-          (let ((anchor (text-property-search-forward 'order order t)))
-            (if anchor
-                (progn
-                  (goto-char (prop-match-beginning anchor))
-                  (delete-region (prop-match-beginning anchor) (line-end-position)))
-              (goto-char (point-max)))
-            (unless (or (bobp) anchor) (insert (propertize "\n" 'read-only t)))
-            (insert (parcel-status-buffer-line order))))
-        (parcel--set-header-line)))))
+      (setq tabulated-list-entries (parcel-status-buffer-entries))
+      (tabulated-list-init-header)
+      (tabulated-list-print 'remember-pos 'update))))
 
 (defun parcel--clean-order (order)
   "Return ORDER plist with cache data."
@@ -538,7 +555,8 @@ If INFO is non-nil, ORDER's info is updated as well."
     (when (eq status 'ref-checked-out)
       (mapc #'parcel--continue-mono-repo-dependency (parcel-order-includes order))))
   (when info (parcel--log-event order info))
-  (parcel--print-order-status order))
+  (when (or parcel-display-status-buffer-during-init parcel--init-complete)
+    (parcel--print-order-status)))
 
 (defun parcel--load-cached-autoloads ()
   "Load `parcel--autoloads-cache'."
@@ -1076,10 +1094,6 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
                      (propertize "Failed" 'face 'parcel-failed)
                      (or (alist-get 'failed   counts) 0)))))))
 
-(defsubst parcel-order-info (order)
-  "Return ORDER's most recent log event info."
-  (nth 2 (car (parcel-order-log order))))
-
 (defun parcel-status-buffer-line (order)
   "Return status string for ORDER."
   (let* ((package (parcel-order-package order))
@@ -1324,13 +1338,21 @@ RECURSE is used to keep track of recursive calls."
       (goto-char (point-min))
       (special-mode))))
 
+(defvar parcel-status-buffer-list-format [("Package" 30 t) ("Status" 15 t) ("Info" 100 t)]
+  "Format of `parcel-status-buffer' columns.")
+
 (defun parcel--initialize-process-buffer (&optional display)
   "Initialize the parcel process buffer.
 When DISPLAY is non-nil, display the buffer."
   (with-current-buffer (get-buffer-create parcel-status-buffer)
+    (unless (derived-mode-p 'parcel-status-mode) (parcel-status-mode))
     (with-silent-modifications (erase-buffer))
-    (unless (derived-mode-p 'parcel-status-mode)
-      (parcel-status-mode))
+    (setq tabulated-list-use-header-line nil
+          tabulated-list-format parcel-status-buffer-list-format
+          tabulated-list-entries (parcel-status-buffer-entries))
+    (tabulated-list-init-header)
+    (tabulated-list-print-fake-header)
+    (tabulated-list-print 'remember-pos 'update)
     (parcel--set-header-line)
     (when display (pop-to-buffer-same-window (current-buffer)))))
 
@@ -1338,9 +1360,7 @@ When DISPLAY is non-nil, display the buffer."
 (defun parcel-display-status-buffer ()
   "Diplay `parcel-status-buffer'."
   (interactive)
-  (if-let ((buffer (get-buffer parcel-status-buffer)))
-      (pop-to-buffer-same-window buffer)
-    (parcel--initialize-process-buffer 'display)))
+  (parcel--initialize-process-buffer 'display))
 
 ;;;###autoload
 (defmacro parcel (order &rest body)
@@ -1381,10 +1401,7 @@ ORDER's package is not made available during subsequent sessions."
   (setq parcel-cache-autoloads nil)
   (parcel-display-status-buffer)
   (parcel--queue-order order)
-  (parcel--process-order (car parcel--queued-orders))
-  (when-let ((buffer (get-buffer parcel-status-buffer)))
-    (pop-to-buffer-same-window parcel-status-buffer)
-    (goto-char (point-max))))
+  (parcel--process-order (car parcel--queued-orders)))
 
 (defun parcel--process-order (queued)
   "Process QUEUED order."
@@ -1426,6 +1443,7 @@ If FORCE is non-nil do not confirm before deleting."
             (setq parcel--order-cache (cl-remove package parcel--order-cache :key #'parcel-order-package :test #'equal)
                   parcel--queued-orders (cl-remove package parcel--queued-orders :key #'car))
             (parcel--write-order-cache)
+            (when (equal (buffer-name) parcel-status-buffer) (parcel-display-status-buffer))
             (message "Deleted package %S" package)
             (dolist (dependency dependencies)
               (parcel-delete-package 'force (intern (parcel-order-package dependency))))))
@@ -1461,12 +1479,13 @@ If HIDE is non-nil, do not display `parcel-status-buffer'."
 ;;;; STATUS BUFFER
 (defvar parcel-status-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "<return>") 'parcel-status-mode-send-input)
-    (define-key map (kbd "C-c C-r")  'parcel-status-mode-visit-repo)
-    (define-key map (kbd "C-c C-b")  'parcel-status-mode-visit-build)
+    (define-key map (kbd "I")  'parcel-status-mode-send-input)
+    (define-key map (kbd "R")  'parcel-status-mode-visit-repo)
+    (define-key map (kbd "B")  'parcel-status-mode-visit-build)
+    (define-key map (kbd "D")  'parcel-status-delete-package)
     map))
 
-(define-derived-mode parcel-status-mode special-mode "Parcel Status Mode"
+(define-derived-mode parcel-status-mode tabulated-list-mode "Parcel Status Mode"
   "Mode for interacting with the parcel status buffer.
 
   \\{parcel-status-mode-map}")
@@ -1475,33 +1494,37 @@ If HIDE is non-nil, do not display `parcel-status-buffer'."
   "Send input string to current process."
   (interactive)
   (if-let ((order (get-text-property (line-beginning-position) 'order))
-           (process (parcel-order-process order)))
+           (process (parcel-order-process order))
+           ((process-live-p process)))
       (let* ((input (read-string (format "Send input to %S: " (process-name process)))))
         (process-send-string process (concat input "\n")))
-    (user-error "No process associated with current package")))
+    (user-error "No running process associated with %S" (parcel-order-package order))))
+
+(defun parcel-status-mode--visit (type)
+  "Visit current order's TYPE dir.
+TYPE is either the symbol `repo` or `build`."
+  (if-let ((order (get-text-property (line-beginning-position) 'order))
+           (dir   (funcall (intern (format "parcel-order-%s-dir" type)) order))
+           ((file-exists-p dir)))
+      (dired dir)
+    (user-error "No %s dir associated with current line" type)))
 
 (defun parcel-status-mode-visit-repo ()
   "Visit repo associated with current process."
   (interactive)
-  (save-excursion
-    (beginning-of-line)
-    (if-let ((order (get-text-property (point) 'order))
-             (dir   (parcel-order-repo-dir order))
-             ((file-exists-p dir)))
-        (dired dir)
-      (user-error "No repo dir associated with current line"))))
+  (parcel-status-mode--visit 'repo))
 
-;;@TODO: consolidate with above
 (defun parcel-status-mode-visit-build ()
   "Visit builds dir associated with current process."
   (interactive)
-  (save-excursion
-    (beginning-of-line)
-    (if-let ((order (get-text-property (point) 'order))
-             (dir   (parcel-order-build-dir order))
-             ((file-exists-p dir)))
-        (dired dir)
-      (user-error "No build dir associated with current line"))))
+  (parcel-status-mode--visit 'build))
+
+(defun parcel-status-delete-package (&optional force)
+  "Delete package at point. If FORCE is non-nil, do not confirm."
+  (interactive)
+  (if-let ((package (intern (parcel-order-package
+                             (get-text-property (line-beginning-position) 'order)))))
+      (parcel-delete-package force package)))
 
 (provide 'parcel)
 ;;; parcel.el ends here
