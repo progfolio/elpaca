@@ -24,6 +24,8 @@
 
 ;;; Code:
 (require 'cl-lib)
+(require 'url)
+(defvar url-http-end-of-headers)
 
 (defcustom parcel-menu-melpa-path
   (expand-file-name "melpa/" (temporary-file-directory))
@@ -33,6 +35,14 @@
 
 (defvar parcel-menu-melpa--index-cache nil "Cache of index.")
 (defvar parcel-default-files-directive) ;defined in parcel.el
+
+(defun parcel-menu-melpa--metadata ()
+  "Return an alist of MELPA package metadata."
+  (with-current-buffer (url-retrieve-synchronously
+                        "https://melpa.org/archive.json")
+    (goto-char url-http-end-of-headers)
+    ;;@COMPAT: Emacs<28
+    (json-read)))
 
 ;;@TODO: needs to be more robust if processes error
 (defun parcel-menu-melpa--clone (path)
@@ -59,22 +69,25 @@
 (defun parcel-menu-melpa--index ()
   "Return candidate list of available MELPA recipes."
   (or parcel-menu-melpa--index-cache
-      (setq parcel-menu-melpa--index-cache
-            (mapcar (lambda (file)
-                      (with-temp-buffer
-                        (insert-file-contents file)
-                        (condition-case-unless-debug _
-                            (when-let ((recipe (read (buffer-string)))
-                                       (package (pop recipe))
-                                       ((member (plist-get recipe :fetcher) '(git github gitlab))))
-                              (setq recipe
-                                    (append (list :package (symbol-name package)) recipe))
-                              (unless (plist-member recipe :files)
-                                (setq recipe (plist-put recipe :files parcel-default-files-directive)))
-                              (cons (intern-soft (file-name-nondirectory file))
-                                    (list :source "MELPA" :recipe recipe)))
-                          ((error) (message "parcel-menu-melpa couldn't process %S" file) nil))))
-                    (directory-files "./recipes/" 'full "\\(?:^[^.]\\)")))))
+      (let ((metadata (parcel-menu-melpa--metadata)))
+        (setq parcel-menu-melpa--index-cache
+              (mapcar (lambda (file)
+                        (with-temp-buffer
+                          (insert-file-contents file)
+                          (condition-case-unless-debug _
+                              (when-let ((recipe (read (buffer-string)))
+                                         (package (pop recipe))
+                                         ((member (plist-get recipe :fetcher) '(git github gitlab))))
+                                (setq recipe
+                                      (append (list :package (symbol-name package)) recipe))
+                                (unless (plist-member recipe :files)
+                                  (setq recipe (plist-put recipe :files parcel-default-files-directive)))
+                                (cons (intern-soft (file-name-nondirectory file))
+                                      (list :source "MELPA" :recipe recipe
+                                            :description (when-let ((data (alist-get package metadata)))
+                                                           (alist-get 'desc data)))))
+                            ((error) (message "parcel-menu-melpa couldn't process %S" file) nil))))
+                      (directory-files "./recipes/" 'full "\\(?:^[^.]\\)"))))))
 
 ;;;###autoload
 (defun parcel-menu-melpa (request)

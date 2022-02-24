@@ -256,12 +256,14 @@ e.g. elisp forms may be printed via `prin1'."
 
 ;;@TODO: clean up interface.
 ;;;###autoload
-(defun parcel-menu-item (&optional interactive symbol menus filter)
+(defun parcel-menu-item (&optional interactive symbol menus filter no-descriptions)
   "Return menu item matching SYMBOL in MENUS or `parcel-menu-functions'.
 If SYMBOL is nil, prompt for it.
 If INTERACTIVE is equivalent to \\[universal-argument] prompt for MENUS.
 FILTER must be a function which accepts a candidate.
-If it returns nil, the candidate is not considered for selection."
+If it returns nil, the candidate is not considered for selection.
+If NO-DESCRIPTIONS is non-nil, candidate descriptions are not included.
+This is faster (what you want with non-interactive calls)."
   (interactive "P")
   (let* ((menus (if interactive
                     (mapcar #'intern-soft
@@ -273,14 +275,31 @@ If it returns nil, the candidate is not considered for selection."
                              :test #'equal))
                   (or menus parcel-menu-functions (user-error "No menus found"))))
          (parcel-menu-functions menus)
-         (candidates (if filter
-                         (cl-remove-if-not filter (parcel-menu--candidates))
-                       (parcel-menu--candidates)))
+         (candidates
+          (let ((c (if filter
+                       (cl-remove-if-not filter (parcel-menu--candidates))
+                     (parcel-menu--candidates))))
+            (if no-descriptions
+                c
+              (mapcar (lambda (candidate)
+                        (propertize
+                         (format "%-30s %s" (car candidate)
+                                 (or (plist-get (cdr candidate) :description) ""))
+                         'candidate candidate))
+                      c))))
          (symbol (or symbol
-                     (intern-soft
-                      (completing-read (or parcel-overriding-prompt "Package: ")
-                                       candidates nil t))))
-         (candidate (alist-get symbol candidates))
+                     (intern
+                      (let ((choice
+                             (completing-read (or parcel-overriding-prompt "Package: ")
+                                              candidates nil t)))
+                        (if no-descriptions
+                            choice
+                          (car (split-string choice "\\(?:[[:space:]]+\\)")))))))
+         (candidate (alist-get symbol
+                               (if no-descriptions
+                                   candidates
+                                   (mapcar (lambda (c) (get-text-property 0 'candidate c))
+                                           candidates))))
          (recipe (plist-get candidate :recipe)))
     (if (called-interactively-p 'interactive)
         (progn
@@ -308,7 +327,7 @@ ITEM is any of the following values:
         ingredients)
     (cond
      ((or (null item) (symbolp item))
-      (let ((menu-item (parcel-menu-item nil item)))
+      (let ((menu-item (parcel-menu-item nil item nil nil 'no-descriptions)))
         (unless menu-item (user-error "No menu-item for %S" item))
         (push (run-hook-with-args-until-success 'parcel-order-functions item)
               ingredients)
@@ -319,7 +338,7 @@ ITEM is any of the following values:
         (let ((mods (run-hook-with-args-until-success 'parcel-order-functions item)))
           (push mods ingredients)
           (when (or (plist-get item :inherit) (plist-get mods :inherit))
-            (push (parcel-menu-item nil package) ingredients))))
+            (push (parcel-menu-item nil package nil nil 'no-descriptions) ingredients))))
       (setq ingredients (append ingredients (list item))))
      (t (signal 'wrong-type-argument `((null symbolp listp) . ,item))))
     (if-let ((recipe (apply #'parcel-merge-plists ingredients)))
