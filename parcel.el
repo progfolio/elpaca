@@ -388,7 +388,7 @@ ITEM is any of the following values:
                             (:named))
   "Order object for queued processing."
   package recipe build-steps statuses dependencies dependents body
-  includes repo-dir build-dir files process log)
+  includes repo-dir build-dir files process log queue-time)
 
 (defsubst parcel-order-status (order)
   "Return `car' of ORDER's statuses."
@@ -398,7 +398,7 @@ ITEM is any of the following values:
   "Store TEXT in ORDER's log.
 Each event is of the form: (STATUS TIME TEXT)"
   (push (list (parcel-order-status order)
-              (time-subtract (current-time) parcel--order-queue-start-time)
+              (current-time)
               text)
         (parcel-order-log order)))
 
@@ -429,7 +429,7 @@ If PACKAGES is nil, use all available orders."
                                                      (_         '(:weight bold))))))
                           (push (cons time
                                       (format "[%s]%s %s"
-                                              (format-time-string "%02s.%3N" time)
+                                              (format-time-string "%02s.%3N" (time-subtract time parcel--order-queue-start-time))
                                               (format "%-30s" (concat "(" name "):"))
                                               text))
                                 log)))))
@@ -539,10 +539,8 @@ If INFO is non-nil, ORDER's info is updated as well."
   "Return ORDER's log duration."
   ;;most recent event is car of log
   (let* ((log (parcel-order-log order))
-         (end (nth 1 (car log)))
-         (start (nth 1 (car (last log))))
-         (diff (time-subtract end start)))
-    diff))
+         (end (nth 1 (car log))))
+    (time-subtract end (parcel-order-queue-time order))))
 
 (defun parcel--run-next-build-step (order)
   "Run ORDER's next build step with ARGS."
@@ -614,7 +612,7 @@ RETURNS order structure."
                                                               parcel--checkout-ref
                                                               parcel--dispatch-build-commands)))))
                    steps)))
-             :repo-dir repo-dir :build-dir build-dir))
+             :repo-dir repo-dir :build-dir build-dir :queue-time (current-time)))
            (mono-repo
             (unless built-p
               (cl-some (lambda (cell)
@@ -1443,6 +1441,7 @@ If HIDE is non-nil, do not display `parcel-status-buffer'."
         (setf (parcel-order-build-steps order)
               (cl-remove #'parcel--clone-dependencies
                          (copy-tree parcel-build-steps)))
+        (setf (parcel-order-queue-time order) (current-time))
         (parcel--process-order queued)
         (unless hide
           (when-let ((buffer (get-buffer parcel-status-buffer)))
