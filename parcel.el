@@ -1269,6 +1269,34 @@ Async wrapper for `parcel-generate-autoloads'."
            :sentinel #'parcel--byte-compile-process-sentinel)))
     (process-put process :order order)))
 
+(defun parcel-dependencies (item &optional recurse)
+  "Return recursive list of ITEM's dependencies.
+RECURSE is used to track recursive calls."
+  (if-let ((order (alist-get item parcel--queued-orders))
+           (dependencies (parcel--dependencies (parcel-order-recipe order))))
+      (let ((transitives (cl-loop for dependency in dependencies
+                                  for name = (car dependency)
+                                  unless (eq name 'emacs)
+                                  for ds = (parcel-dependencies name 'recurse)
+                                  collect (append (list name) ds))))
+        (delete-dups (delq 'emacs (flatten-tree transitives))))
+    (when recurse item)))
+
+(defun parcel-dependents (item &optional recurse)
+  "Return recursive list of packages which depend on ITEM.
+RECURSE is used to keep track of recursive calls."
+  (if-let ((order (alist-get item parcel--queued-orders))
+           (dependents (parcel-order-dependents order)))
+      (let ((transitives
+             (cl-loop
+              for dependent in dependents
+              collect
+              (append (list (intern (parcel-order-package dependent))
+                            (mapcar (lambda (o) (intern (parcel-order-package o)))
+                                    (parcel-dependents dependent 'recurse)))))))
+        (nreverse (flatten-tree transitives)))
+    (when recurse order)))
+
 ;;;; COMMANDS/MACROS
 (defun parcel-print-log (&rest packages)
   "Print log for PACKAGES."
