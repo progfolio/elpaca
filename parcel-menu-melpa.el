@@ -82,10 +82,11 @@
                                       (append (list :package (symbol-name package)) recipe))
                                 (unless (plist-member recipe :files)
                                   (setq recipe (plist-put recipe :files parcel-default-files-directive)))
-                                (cons (intern-soft (file-name-nondirectory file))
-                                      (list :source "MELPA" :recipe recipe
-                                            :description (when-let ((data (alist-get package metadata)))
-                                                           (alist-get 'desc data)))))
+                                (let ((candidate (list :source "MELPA" :recipe recipe)))
+                                  (when-let ((data (alist-get package metadata)))
+                                    (setq candidate (append candidate (list :description (alist-get 'desc data)
+                                                                            :url (alist-get 'url (alist-get 'props data))))))
+                                  (cons (intern-soft (file-name-nondirectory file)) candidate)))
                             ((error) (message "parcel-menu-melpa couldn't process %S" file) nil))))
                       (directory-files "./recipes/" 'full "\\(?:^[^.]\\)"))))))
 

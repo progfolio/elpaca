@@ -71,6 +71,8 @@
               (list
                (cons 'org
                      (list  :source "Org"
+                            :description "Outline-based notes management and organizer"
+                            :url "https:/orgmode.org"
                             :recipe
                             (list
                              :package "org"
@@ -83,6 +85,8 @@
                              :files '(:defaults "lisp/*.el" ("etc/styles/" "etc/styles/*")))))
                (cons 'org-contrib
                      (list :source "Org"
+                           :description "Contributed Org packages in search of new maintainers"
+                           :url "https://git.sr.ht/~bzg/org-contrib"
                            :recipe
                            (list
                             :package "org-contrib"
