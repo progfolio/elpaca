@@ -59,18 +59,40 @@
         (message "GNU ELPA updates downloaded"))
     ((error) (message "Unable to pull GNU ELPA recipes"))))
 
+(declare-function dom-by-tag "dom")
+(declare-function dom-texts  "dom")
+(defun parcel-menu-gnu-elpa-mirror--metadata ()
+  "Return alist of package metadata."
+  (when (libxml-available-p)
+    (require 'url)
+    (require 'dom)
+    (with-current-buffer (url-retrieve-synchronously "https://elpa.gnu.org/packages/")
+      (when-let ((html (libxml-parse-html-region (point-min) (point-max)))
+                 (rows (dom-by-tag html 'tr)))
+        (pop rows) ;discard table headers
+        (mapcar (lambda (row)
+                  (let* ((s (split-string (dom-texts row) " " 'omit-nulls))
+                         (item (intern (pop s))))
+                    (pop s) ;discard version info
+                    (cons item (string-join s " "))))
+                rows)))))
+
 (defun parcel-menu-gnu-elpa-mirror--index ()
   "Return candidate list of available GNU ELPA recipes."
   (or parcel-menu-gnu-elpa-mirror--index-cache
-      (setq parcel-menu-gnu-elpa-mirror--index-cache
-            (mapcar (lambda (file)
-                      (when (file-exists-p (expand-file-name file default-directory))
-                        (cons (intern file)
-                              (list :source "GNU ELPA Mirror"
-                                    :recipe (list :package file
-                                                  :host 'github
-                                                  :repo (concat "emacs-straight/" file))))))
-                    (directory-files default-directory nil "\\(?:^[^.]\\)")))))
+      (let ((metadata (parcel-menu-gnu-elpa-mirror--metadata))) ; Only stores descriptions.
+        (setq parcel-menu-gnu-elpa-mirror--index-cache
+              (mapcar (lambda (file)
+                        (when-let (((file-exists-p (expand-file-name file default-directory)))
+                                   (item (intern file)))
+                          (cons item
+                                (list :source "GNU ELPA Mirror"
+                                      :description (or (alist-get item metadata) "This package has not been released yet.")
+                                      :url (format "https://elpa.gnu.org/packages/%s.html" item)
+                                      :recipe (list :package file
+                                                    :host 'github
+                                                    :repo (concat "emacs-straight/" file))))))
+                      (directory-files default-directory nil "\\(?:^[^.]\\)"))))))
 
 ;;;###autoload
 (defun parcel-menu-gnu-elpa-mirror (request)
