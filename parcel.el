@@ -1455,7 +1455,7 @@ If FORCE is non-nil do not confirm before deleting."
                                (alist-get item parcel--queued-orders)
                                (alist-get item parcel--order-cache))))
                        dependents)
-              (user-error "Cannot delete %S unless dependents %S are deleted first" package
+              (message "Cannot delete %S unless dependents %S are deleted first" package
                           (mapcar #'parcel-order-package dependents))
             (when (file-exists-p repo-dir)  (delete-directory repo-dir  'recursive))
             (when (file-exists-p build-dir) (delete-directory build-dir 'recursive))
