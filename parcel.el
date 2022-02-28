@@ -1040,10 +1040,14 @@ If package's repo is not on disk, error."
     (let* ((order             (process-get process   :order))
            (recipe            (parcel-order-recipe   order))
            (default-directory (parcel-order-repo-dir order)))
-      (cl-destructuring-bind ( &key remotes ref tag branch &allow-other-keys
-                               &aux (remote (if (stringp remotes) remotes (caar remotes))))
+      (cl-destructuring-bind ( &key remotes ref tag &allow-other-keys
+                               &aux
+                               (remote (if (stringp remotes) remotes (car remotes)))
+                               (branch (or (plist-get (cdr (car-safe remotes)) :branch)
+                                           (plist-get recipe :branch)))
+                               (target (or ref tag branch)))
           recipe
-        (when (or ref tag branch)
+        (when target
           (parcel-with-process
               (apply #'parcel-process-call
                      `("git"
@@ -1052,13 +1056,17 @@ If package's repo is not on disk, error."
                                 (ref    (list "checkout" ref))
                                 (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
                                 (branch (list "switch" "-C" branch
-                                              (format "%s/%s" remote branch)))))))
+                                              (format "%s/%s" (if (listp remote)
+                                                                  (car remote)
+                                                                remote)
+                                                      branch)))))))
             (unless success
               (parcel--update-order-info
                order (format "Unable to check out ref: %S " (string-trim stderr))
                'failed))))
         (unless (eq (parcel-order-status order) 'failed)
-          (parcel--update-order-info order "Ref checked out" 'ref-checked-out)
+          (parcel--update-order-info
+           order (if target (format "%S ref checked out" target) "Default ref checked out") 'ref-checked-out)
           (parcel--run-next-build-step order))))))
 
 (defun parcel--checkout-ref (order)
@@ -1069,9 +1077,10 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
          (package           (parcel-order-package order))
          (recipe            (parcel-order-recipe order))
          (ref               (plist-get recipe :ref))
-         (branch            (plist-get recipe :branch))
-         (tag               (plist-get recipe :tag))
-         (remotes           (plist-get recipe :remotes)))
+         (remotes           (plist-get recipe :remotes))
+         (branch            (or (plist-get (cdr (car-safe remotes)) :branch)
+                                (plist-get recipe :branch)))
+         (tag               (plist-get recipe :tag)))
     (unless remotes (signal 'wrong-type-argument `((stringp listp) ,remotes ,recipe)))
     (when (or ref branch tag)
       (cond
