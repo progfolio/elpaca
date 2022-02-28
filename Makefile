@@ -1,12 +1,12 @@
 EMACS ?= emacs
 
 .PHONY: all
-all: clean compile test
+all: clean compile autoloads test
 
 .PHONY: clean
 clean: 
-	@echo "Removed: " *.elc
-	@rm -f *.elc
+	@echo "Removed: " *.elc parcel-autoloads.el
+	@rm -f *.elc parcel-autoloads.el
 
 .PHONY: compile
 compile: *.el
@@ -17,3 +17,7 @@ test: parcel.elc
 	$(EMACS) -Q --batch -L . -l ert -l ./test/parcel-test.el \
   --eval "(let ((ert-quiet t)) (ert-run-tests-batch-and-exit))"
 
+
+.PHONY: autoloads
+autoloads: *.el
+	$(EMACS) -Q --batch --eval '(make-directory-autoloads "./" "parcel-autoloads.el")'
