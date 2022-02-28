@@ -298,8 +298,8 @@ This is faster (what you want with non-interactive calls)."
          (candidate (alist-get symbol
                                (if no-descriptions
                                    candidates
-                                   (mapcar (lambda (c) (get-text-property 0 'candidate c))
-                                           candidates))))
+                                 (mapcar (lambda (c) (get-text-property 0 'candidate c))
+                                         candidates))))
          (recipe (plist-get candidate :recipe)))
     (if (called-interactively-p 'interactive)
         (progn
@@ -1467,7 +1467,7 @@ If FORCE is non-nil do not confirm before deleting."
                                (alist-get item parcel--order-cache))))
                        dependents)
               (message "Cannot delete %S unless dependents %S are deleted first" package
-                          (mapcar #'parcel-order-package dependents))
+                       (mapcar #'parcel-order-package dependents))
             (when (file-exists-p repo-dir)  (delete-directory repo-dir  'recursive))
             (when (file-exists-p build-dir) (delete-directory build-dir 'recursive))
             (setq parcel--order-cache (cl-remove package parcel--order-cache :key #'parcel-order-package :test #'equal)
