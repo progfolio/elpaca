@@ -428,7 +428,7 @@ ITEM is any of the following values:
                             (:named))
   "Order object for queued processing."
   package recipe build-steps statuses dependencies dependents body
-  includes repo-dir build-dir files process log queue-time)
+  includes repo-dir build-dir files process log queue-time init)
 
 (defsubst parcel-order-status (order)
   "Return `car' of ORDER's statuses."
@@ -658,7 +658,8 @@ RETURNS order structure."
                                                               parcel--checkout-ref
                                                               parcel--dispatch-build-commands)))))
                    steps)))
-             :repo-dir repo-dir :build-dir build-dir :queue-time (current-time)))
+             :repo-dir repo-dir :build-dir build-dir :queue-time (current-time)
+             :init (not after-init-time)))
            (mono-repo
             (unless built-p
               (cl-some (lambda (cell)
