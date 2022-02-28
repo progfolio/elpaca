@@ -1441,6 +1441,7 @@ ORDER's package is not made available during subsequent sessions."
 ;;;###autoload
 (defun parcel-queue-empty ()
   "Process all orders in `parcel--queued-orders'."
+  (interactive)
   (setq parcel--processed-order-count 0)
   (mapc #'parcel--process-order (reverse parcel--queued-orders)))
 
