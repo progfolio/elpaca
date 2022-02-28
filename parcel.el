@@ -1389,6 +1389,8 @@ When DISPLAY is non-nil, display the buffer."
 (defun parcel-display-status-buffer ()
   "Diplay `parcel-status-buffer'."
   (interactive)
+  ;; If this is invoked during init, we want it to be updated.
+  (setq parcel-display-status-buffer-during-init t)
   (parcel--initialize-process-buffer 'display))
 
 ;;;###autoload
