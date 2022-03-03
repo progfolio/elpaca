@@ -1301,8 +1301,13 @@ Async wrapper for `parcel-generate-autoloads'."
   (let* ((build-dir         (parcel-order-build-dir order))
          (default-directory build-dir)
          (emacs             (parcel--emacs-path))
-         (dependency-dirs (mapcar #'parcel-order-build-dir
-                                  (parcel-order-dependencies order)))
+         (dependency-dirs
+          (cl-loop for item in (parcel-dependencies (intern (parcel-order-package order))
+                                                    parcel-ignored-dependencies)
+                   when item
+                   for build-dir = (parcel-order-build-dir (alist-get item parcel--queued-orders))
+                   when build-dir
+                   collect build-dir))
          (program `(progn
                      (mapc (lambda (dir) (let ((default-directory dir))
                                            (add-to-list 'load-path dir)
@@ -1319,17 +1324,19 @@ Async wrapper for `parcel-generate-autoloads'."
            :sentinel #'parcel--byte-compile-process-sentinel)))
     (process-put process :order order)))
 
-(defun parcel-dependencies (item &optional recurse)
+(defun parcel-dependencies (item &optional ignore recurse)
   "Return recursive list of ITEM's dependencies.
+IGNORE may be a list of symbols which are not included in the resulting list.
 RECURSE is used to track recursive calls."
   (if-let ((order (alist-get item parcel--queued-orders))
            (dependencies (parcel--dependencies (parcel-order-recipe order))))
       (let ((transitives (cl-loop for dependency in dependencies
                                   for name = (car dependency)
-                                  unless (eq name 'emacs)
-                                  for ds = (parcel-dependencies name 'recurse)
-                                  collect (append (list name) ds))))
-        (delete-dups (delq 'emacs (flatten-tree transitives))))
+                                  unless (member name ignore)
+                                  collect
+                                  (append (list name)
+                                          (parcel-dependencies name ignore 'recurse)))))
+        (delete-dups (flatten-tree transitives)))
     (when recurse item)))
 
 (defun parcel-dependents (item &optional recurse)
