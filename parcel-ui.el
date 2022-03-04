@@ -45,6 +45,7 @@ The cdr of each cell is a function which takes an item as it's sole argument."
 
 (defcustom parcel-ui-search-tags
   '(("dirty"     . parcel-ui-tag-dirty)
+    ("declared"  . parcel-ui-tag-declared)
     ("random"    . parcel-ui-tag-random)
     ("installed" . parcel-ui-tag-installed))
   "Alist of search tags.
@@ -216,6 +217,17 @@ Toggle all if already filtered."
 (defun parcel-ui-tag-dirty (candidate)
   "Return t if CANDIDATE's worktree is ditry."
   (parcel-ui--worktree-dirty-p (car candidate)))
+
+(defun parcel-ui-tag-declared (candidate)
+  "Return t if CANDIDATE declared in init or an init declaration dependency."
+  (when-let ((item (car candidate))
+             (order (alist-get item parcel--queued-orders)))
+    (or (parcel-order-init order)
+        (cl-some #'parcel-order-init
+                 (delq nil
+                 (mapcar (lambda (dependent)
+                           (alist-get dependent parcel--queued-orders))
+                         (parcel-dependents item)))))))
 
 (defun parcel-ui-tag-installed (candidate)
   "Return t if CANDIDATE is installed."
