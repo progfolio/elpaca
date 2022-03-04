@@ -1514,6 +1514,88 @@ If HIDE is non-nil, do not display `parcel-status-buffer'."
           (parcel-display-status-buffer)))
     (user-error "Package %S has no queued order" item)))
 
+(defun parcel--log-updates-process-sentinel (process event)
+  "Handle PROCESS EVENT."
+  (when (equal event "finished\n")
+    (let ((order (process-get process :order)))
+      (parcel--update-order-info order "End Update log" 'updates-logged)
+      (parcel--run-next-build-step order))))
+
+;;@INCOMPLETE:
+;; What do we actually want to log here?
+;; If the user is on a different branch which has an upstream?
+;; Or do we strictly log the difference between the recipe's declared ref and upstream?
+;; Probably the latter, because that's the only case we can automatically update.
+;; Anything else will require user intervention. ~ NV [2022-03-03]
+(defun parcel--log-updates (order)
+  "Log ORDER's fetched commits."
+  (parcel--update-order-info order "Start Update log" 'log-updates)
+  (let* ((default-directory (parcel-order-repo-dir order))
+         (recipe (parcel-order-recipe order))
+         (remotes (plist-get recipe :remotes))
+         (remote (if (listp remotes) (car remotes) remotes))
+         (process (make-process
+                   :name (format "parcel-log-updates-%s" (parcel-order-package order))
+                   ;; Pager will break this process. Complains about terminal functionality.
+                   :command (list "git" "--no-pager" "log"
+                                  (if (listp remote) (car remote) remote)
+                                  "..." "HEAD")
+                   :filter   #'parcel--process-filter
+                   :sentinel #'parcel--log-updates-process-sentinel)))
+    (process-put process :order order)))
+
+(defun parcel--fetch-process-sentinel (process event)
+  "Handle PROCESS EVENT."
+  (when (equal event "finished\n")
+    (let ((order (process-get process :order)))
+      (parcel--update-order-info order "Updates fetched" 'updates-fetched)
+      (parcel--run-next-build-step order))))
+
+(defun parcel--fetch (order)
+  "Fetch ORDER's remote's commits."
+  (let ((default-directory (parcel-order-repo-dir order))
+        (process (make-process
+                  :name (format "parcel-fetch-update-%s" (parcel-order-package order))
+                  :command (list "git" "fetch" "--all")
+                  :filter   #'parcel--process-filter
+                  :sentinel #'parcel--fetch-process-sentinel)))
+    (process-put process :order order)))
+
+;;;###autoload
+(defun parcel-fetch (item &optional hide)
+  "Fetch ITEM's associated package remote commits.
+This does not merge changes or rebuild the packages.
+If HIDE is non-nil don't display `parcel-status-buffer'."
+  (interactive
+   (list (let ((item
+                (completing-read "Fetch updates: "
+                                 (sort (mapcar #'car parcel--queued-orders) #'string<)
+                                 nil 'require-match)))
+           (if (string-empty-p item)
+               (user-error "No package selected")
+             (intern item)))))
+  (if-let ((queued (assoc item parcel--queued-orders)))
+      (let ((order (cdr queued)))
+        (parcel--update-order-info order "Fetching updates" 'fetching-updates)
+        (setf (parcel-order-build-steps order) (list #'parcel--fetch #'parcel--log-updates))
+        (setf (parcel-order-queue-time order) (current-time))
+        (parcel--process-order queued)
+        (unless hide
+          (when-let ((buffer (get-buffer parcel-status-buffer)))
+            (kill-buffer buffer))
+          (parcel-display-status-buffer)
+          (with-current-buffer parcel-status-buffer
+            (goto-char (point-min))
+            (re-search-forward (format "^%s " item) nil 'noerror))))
+    (user-error "Package %S has no queued order" item)))
+
+;;;###autoload
+(defun parcel-fetch-all (&optional hide)
+  "Fetch remote commits for every order in `parcel-queued-orders'.
+If HIDE is non-nil, do not show `parcel-status-buffer'."
+  (interactive "P")
+  (mapc (lambda (queued) (parcel-fetch (car queued) hide)) parcel--queued-orders))
+
 ;;;; STATUS BUFFER
 (defvar parcel-status-mode-map
   (let ((map (make-sparse-keymap)))
