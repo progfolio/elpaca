@@ -69,7 +69,7 @@ See `run-at-time' for acceptable values."
   :type 'string
   :group 'parcel-ui)
 
-(defcustom parcel-ui-install-prefix "⚙ "
+(defcustom parcel-ui-install-prefix "⚙️ "
   "Prefix for packages marked for deferred installation."
   :type 'string
   :group 'parcel-ui)
