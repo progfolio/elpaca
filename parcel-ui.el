@@ -28,6 +28,11 @@
   "Face for marked packages."
   :group 'parcel-faces)
 
+(defface parcel-ui-marked-rebuild
+  '((default :inherit default :weight bold :foreground "#f28500"))
+  "Face for marked packages."
+  :group 'parcel-faces)
+
 (defgroup parcel-ui nil
   "Parcel's UI options."
   :group 'striaght-ui
@@ -71,6 +76,11 @@ See `run-at-time' for acceptable values."
 
 (defcustom parcel-ui-install-prefix "⚙️ "
   "Prefix for packages marked for deferred installation."
+  :type 'string
+  :group 'parcel-ui)
+
+(defcustom parcel-ui-rebuild-prefix "♻️️ "
+  "Prefix for packages marked for deferred rebuilding."
   :type 'string
   :group 'parcel-ui)
 
@@ -426,6 +436,17 @@ PREFIX is displayed before package name."
   (parcel-ui-toggle-mark #'parcel-try-package
                          'parcel-ui-marked-install parcel-ui-install-prefix))
 
+(defun parcel-ui-mark-rebuild ()
+  "Mark package for rebuild."
+  (interactive)
+  (unless (string= (buffer-name) parcel-ui-buffer)
+    (user-error "Cannot mark outside of %S" parcel-ui-buffer))
+  (let ((package (parcel-ui-current-package)))
+    (unless (parcel-ui--installed-p package)
+      (user-error "Package %S is not installed" package)))
+  (parcel-ui-toggle-mark #'parcel-rebuild-package
+                         'parcel-ui-marked-rebuild parcel-ui-rebuild-prefix))
+
 (defun parcel-ui-mark-delete ()
   "Mark package for deletion."
   (interactive)
@@ -465,12 +486,13 @@ PREFIX is displayed before package name."
 (define-key parcel-ui-mode-map (kbd "*")   'parcel-ui-toggle-mark)
 (define-key parcel-ui-mode-map (kbd "F")   'parcel-ui-toggle-follow-mode)
 (define-key parcel-ui-mode-map (kbd "I")   'parcel-ui-show-installed)
+(define-key parcel-ui-mode-map (kbd "R")   'parcel-ui-search-refresh)
 (define-key parcel-ui-mode-map (kbd "RET") 'parcel-ui-describe-package)
 (define-key parcel-ui-mode-map (kbd "S")   'parcel-ui-search-edit)
 (define-key parcel-ui-mode-map (kbd "b")   'parcel-ui-browse-package)
 (define-key parcel-ui-mode-map (kbd "d")   'parcel-ui-mark-delete)
 (define-key parcel-ui-mode-map (kbd "i")   'parcel-ui-mark-install)
-(define-key parcel-ui-mode-map (kbd "r")   'parcel-ui-search-refresh)
+(define-key parcel-ui-mode-map (kbd "r")   'parcel-ui-mark-rebuild)
 (define-key parcel-ui-mode-map (kbd "s")   'parcel-ui-search)
 (define-key parcel-ui-mode-map (kbd "x")   'parcel-ui-execute-marks)
 
