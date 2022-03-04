@@ -1348,11 +1348,10 @@ RECURSE is used to keep track of recursive calls."
              (cl-loop
               for dependent in dependents
               collect
-              (append (list (intern (parcel-order-package dependent))
-                            (mapcar (lambda (o) (intern (parcel-order-package o)))
-                                    (parcel-dependents dependent 'recurse)))))))
+              (let ((i (intern (parcel-order-package dependent))))
+                (append (list i (parcel-dependents i 'recurse)))))))
         (nreverse (flatten-tree transitives)))
-    (when recurse order)))
+    (when recurse (intern (parcel-order-package order)))))
 
 ;;;; COMMANDS/MACROS
 (defun parcel-print-log (&rest packages)
