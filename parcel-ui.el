@@ -56,8 +56,6 @@ See `run-at-time' for acceptable values."
 
 ;;;; Variables:
 (defvar parcel-ui--search-timer nil "Timer to debounce search input.")
-(defvar parcel-ui--current-package nil
-  "Package currently being viewed in package info buffer.")
 (defvar parcel-ui--marked-packages nil
   "List of marked packages. Each element is a cons of (PACKAGE . ACTION).")
 (defvar parcel-ui-buffer "* Parcel-UI *")
@@ -79,18 +77,6 @@ Allows for less debouncing than during `post-command-hook'.")
   (when-let ((order (parcel-alist-get item parcel--queued-orders))
              ((file-exists-p (parcel-order-repo-dir order))))
     t))
-
-(defun parcel-ui--package-name (package)
-  "Return propertized PACKAGE string."
-  (let ((installed (parcel-ui--installed-p (intern package))))
-    (apply #'propertize
-           (delq nil
-                 `(,package
-                   ,@(when installed '(mouse-face highlight))
-                   help-echo "click to see package info"
-                   face ,(if installed
-                             'parcel-finished
-                           'parcel-ui-package))))))
 
 (defun parcel-ui-entries (&optional recache)
   "Return list of all entries available in `parcel-menu-functions'.
@@ -115,12 +101,6 @@ If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
          ("Source" 20 t)]
         tabulated-list-entries
         #'parcel-ui-entries))
-
-(defun parcel--ui-installed ()
-  "Return a list of installed packages."
-  (cl-loop for (_ . order) in parcel--queued-orders
-           when (eq (parcel-order-status order) 'finished)
-           collect order))
 
 (defun parcel-ui-show-installed ()
   "Show only installed packages.
