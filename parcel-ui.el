@@ -376,9 +376,8 @@ If EDIT is non-nil, edit the last search."
   "Return t if PACKAGE is marked."
   (and (member package (mapcar #'car parcel-ui--marked-packages)) t))
 
-(defun parcel-ui-unmark (package)
+(defun parcel-ui--unmark (package)
   "Unmark PACKAGE."
-  (interactive (list (parcel-ui-current-package)))
   (unless (equal (buffer-name) parcel-ui-buffer)
     (user-error "Can't unmark package outside of %S" parcel-status-buffer))
   (setq parcel-ui--marked-packages
@@ -392,6 +391,24 @@ If EDIT is non-nil, edit the last search."
       (narrow-to-region (line-beginning-position) (line-end-position))
       (parcel-ui--apply-faces)))
   (forward-line))
+
+(defun parcel-ui-unmark ()
+  "Unmark current package.
+If region is active unmark all packages in region."
+  (interactive)
+  (if (not (use-region-p))
+      (parcel-ui--unmark (parcel-ui-current-package))
+    (save-excursion
+      (save-restriction
+        (narrow-to-region (save-excursion (goto-char (region-beginning))
+                                          (line-beginning-position))
+                          (region-end))
+        (goto-char (point-min))
+        (while (not (eobp))
+          (condition-case _
+              (progn
+                (parcel-ui--unmark (parcel-ui-current-package)))
+            ((error) (forward-line))))))))
 
 (defun parcel-ui-mark (package &optional action)
   "Mark PACKAGE for ACTION with PREFIX.
@@ -418,7 +435,7 @@ The current package is its sole argument."
       (progn
         (when test (funcall test package))
         (if (parcel-ui-package-marked-p package)
-            (parcel-ui-unmark package)
+            (parcel-ui--unmark package)
           (parcel-ui-mark package action)))
     (user-error "No package associated with current line")))
 
@@ -481,7 +498,7 @@ The current package is its sole argument."
             (goto-char (point-min))
             (while (not (eobp))
               (condition-case _
-                  (parcel-ui-unmark (parcel-ui-current-package))
+                  (parcel-ui-unmark)
                 ((error) (forward-line)))))))
       (parcel-ui-entries 'recache)
       (parcel-ui-search-refresh))))
