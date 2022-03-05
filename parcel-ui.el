@@ -14,22 +14,7 @@
   :group 'parcel-faces)
 
 (defface parcel-ui-marked-package
-  '((default :inherit default :weight bold :foreground "pink"))
-  "Face for marked packages."
-  :group 'parcel-faces)
-
-(defface parcel-ui-marked-install
-  '((default :inherit default :weight bold :foreground "#89cff0"))
-  "Face for marked packages."
-  :group 'parcel-faces)
-
-(defface parcel-ui-marked-delete
-  '((default :inherit default :weight bold :foreground "#FF0022"))
-  "Face for marked packages."
-  :group 'parcel-faces)
-
-(defface parcel-ui-marked-rebuild
-  '((default :inherit default :weight bold :foreground "#f28500"))
+  '((default (:inherit default :weight bold :foreground "pink")))
   "Face for marked packages."
   :group 'parcel-faces)
 
@@ -39,14 +24,14 @@
   :prefix "parcel-ui-")
 
 ;;;; Customizations:
-(defcustom parcel-ui-deferred-actions
-  '(("delete"  . (lambda (i) (parcel-delete-package 'force i)))
-    ("install" . parcel-try-package)
-    ("rebuild" . parcel-rebuild-package))
-  "Alist of possible deffered actions selected during `parcel-ui-execute-marks'.
-The car of the cell is a description of the action.
-The cdr of each cell is a function which takes an item as it's sole argument."
-  :type 'alist)
+(defcustom parcel-ui-actions
+  '(("delete"  "💀" (:inherit default :weight bold :foreground "#FF0022")
+     (lambda (i) (parcel-delete-package 'force nil i)))
+    ("install" "⚙️" (:inherit default :weight bold :foreground "#89cff0") parcel-try-package)
+    ("rebuild" "♻️️" (:inherit default :weight bold :foreground "#f28500") parcel-rebuild-package))
+  "List of actions which can be taken on packages.
+Each element is of the form: (DESCRIPTION PREFIX FACE FUNCTION)."
+  :type 'list)
 
 (defcustom parcel-ui-search-tags
   '(("dirty"     . parcel-ui-tag-dirty)
@@ -68,21 +53,6 @@ exclamation point to it. e.g. #!installed."
 See `run-at-time' for acceptable values."
   :group 'parcel-ui
   :type (or 'string 'int 'float))
-
-(defcustom parcel-ui-delete-prefix "💀 "
-  "Prefix for packages marked for deferred deletion."
-  :type 'string
-  :group 'parcel-ui)
-
-(defcustom parcel-ui-install-prefix "⚙️ "
-  "Prefix for packages marked for deferred installation."
-  :type 'string
-  :group 'parcel-ui)
-
-(defcustom parcel-ui-rebuild-prefix "♻️️ "
-  "Prefix for packages marked for deferred rebuilding."
-  :type 'string
-  :group 'parcel-ui)
 
 ;;;; Variables:
 (defvar parcel-ui--search-timer nil "Timer to debounce search input.")
@@ -397,90 +367,98 @@ If EDIT is non-nil, edit the last search."
                        'display nil))
   (forward-line))
 
-(defun parcel-ui-mark (package &optional action face prefix)
+(defun parcel-ui-mark (package &optional action)
   "Mark PACKAGE for ACTION with PREFIX.
-ACTION is a function which will be called.
-It is passed the name of the package as its sole argument.
-If FACE is non-nil, use that instead of `parcel-ui-marked-package'.
-PREFIX is displayed before the PACKAGE name."
+ACTION is the description of a cell in `parcel-ui-actions'.
+The action's function is passed the name of the package as its sole argument."
   (interactive)
-  (cl-pushnew (cons package action) parcel-ui--marked-packages
-              :test (lambda (a b) (string= (car a) (car b))))
   (with-silent-modifications
-    (put-text-property (line-beginning-position) (line-end-position)
-                       'display
-                       (propertize
-                        (concat (or prefix "* ") (string-trim (thing-at-point 'line)))
-                        'face
-                        (or face 'parcel-ui-marked-package)))
-    (forward-line)))
+    (cl-pushnew (cons package (assoc action parcel-ui-actions))
+                parcel-ui--marked-packages
+                :test (lambda (a b) (string= (car a) (car b))))
+    (save-restriction
+      (narrow-to-region (line-beginning-position) (line-end-position))
+      (parcel-ui--apply-faces)))
+  (forward-line))
 
-(defun parcel-ui-toggle-mark (&optional action face prefix)
+(defun parcel-ui-toggle-mark (&optional test action)
   "Toggle ACTION mark for current package.
-FACE is used as line's display.
-PREFIX is displayed before package name."
-  (interactive)
-  (let ((package (parcel-ui-current-package)))
-    (if (parcel-ui-package-marked-p package)
-        (parcel-ui-unmark package)
-      (parcel-ui-mark package action face prefix))))
-
-(defun parcel-ui-mark-install ()
-  "Mark package for installation."
+TEST is a unary function evaluated prior to toggling the mark.
+The current package is its sole argument."
   (interactive)
   (unless (string= (buffer-name) parcel-ui-buffer)
     (user-error "Cannot mark outside of %S" parcel-ui-buffer))
-  (let ((package (parcel-ui-current-package)))
-    (when (parcel-ui--installed-p package)
-      (user-error "Package %S already installed" package)))
-  (parcel-ui-toggle-mark #'parcel-try-package
-                         'parcel-ui-marked-install parcel-ui-install-prefix))
+  (if-let ((package (parcel-ui-current-package)))
+      (progn
+        (when test (funcall test package))
+        (if (parcel-ui-package-marked-p package)
+            (parcel-ui-unmark package)
+          (parcel-ui-mark package action)))
+    (user-error "No package associated with current line")))
 
-(defun parcel-ui-mark-rebuild ()
-  "Mark package for rebuild."
-  (interactive)
-  (unless (string= (buffer-name) parcel-ui-buffer)
-    (user-error "Cannot mark outside of %S" parcel-ui-buffer))
-  (let ((package (parcel-ui-current-package)))
-    (unless (parcel-ui--installed-p package)
-      (user-error "Package %S is not installed" package)))
-  (parcel-ui-toggle-mark #'parcel-rebuild-package
-                         'parcel-ui-marked-rebuild parcel-ui-rebuild-prefix))
+(defmacro parcel-ui-defmark (name test)
+  "Define a marking command with NAME and TEST."
+  (declare (indent 1) (debug t))
+  `(defun ,(intern (format "parcel-ui-mark-%s" name)) ()
+     ,(format "Mark package for %s." name)
+     (interactive)
+     (if (not (use-region-p))
+         (parcel-ui-toggle-mark ,test ,name)
+       (save-excursion
+         (save-restriction
+           (narrow-to-region (save-excursion (goto-char (region-beginning))
+                                             (line-beginning-position))
+                             (region-end))
+           (goto-char (point-min))
+           (while (not (eobp))
+             (condition-case _
+                 (parcel-ui-toggle-mark ,test ,name)
+               ((error) (forward-line)))))))))
 
-(defun parcel-ui-mark-delete ()
-  "Mark package for deletion."
-  (interactive)
-  (unless (string= (buffer-name) parcel-ui-buffer)
-    (user-error "Cannot mark outside of %S" parcel-ui-buffer))
-  (let ((package (parcel-ui-current-package)))
-    (unless (parcel-ui--installed-p package)
-      (user-error "Package %S is not installed" package)))
-  (parcel-ui-toggle-mark (lambda (p) (parcel-delete-package 'force p))
-                         'parcel-ui-marked-delete parcel-ui-delete-prefix))
+(parcel-ui-defmark "rebuild"
+  (lambda (p) (unless (parcel-ui--installed-p p)
+                (user-error "Package %S is not installed" p))))
+
+(parcel-ui-defmark "install"
+  (lambda (p)
+    (when (parcel-ui--installed-p p) (user-error "Package %S already installed" p))))
+
+(parcel-ui-defmark "delete"
+  (lambda (p) (unless (parcel-ui--installed-p p)
+                (user-error "Package %S is not installed" p))))
 
 (defun parcel-ui--choose-deferred-action ()
   "Choose a deferred action from `parcel-ui-deferred-actions'."
   (when-let ((choice (completing-read "Action for deferred marks: "
-                                      parcel-ui-deferred-actions nil 'require-match)))
-    (alist-get choice parcel-ui-deferred-actions nil nil #'equal)))
+                                      parcel-ui-actions nil 'require-match)))
+    (alist-get choice parcel-ui-actions nil nil #'equal)))
 
 (defun parcel-ui-execute-marks ()
   "Execute each action in `parcel-ui-marked-packages'."
   (interactive)
-  (let ((generics nil))
-    (mapc (lambda (marked)
-            (if-let ((action (cdr marked)))
-                (condition-case err
-                    (funcall action (car marked))
-                  ((error) (message "Executing mark %S failed: %S" marked err)))
-              (push (car marked) generics)))
-          (nreverse parcel-ui--marked-packages))
-    (when-let ((generics)
-               (action (parcel-ui--choose-deferred-action)))
-      (mapc action generics))
-    (setq parcel-ui--marked-packages nil)
-    (parcel-ui-entries 'recache)
-    (parcel-ui-search-refresh)))
+  (when parcel-ui--marked-packages
+    (let ((generics nil))
+      (mapc (lambda (marked)
+              (if-let ((action (nth 3 (cdr marked))))
+                  (condition-case err
+                      (funcall action (car marked))
+                    ((error) (message "Executing mark %S failed: %S" marked err)))
+                (push (car marked) generics)))
+            (nreverse parcel-ui--marked-packages))
+      (when-let ((generics)
+                 (action (nth 3 (parcel-ui--choose-deferred-action))))
+        (mapc action generics))
+      (setq parcel-ui--marked-packages nil)
+      (when-let ((buffer (get-buffer parcel-ui-buffer)))
+        (with-current-buffer buffer
+          (save-excursion
+            (goto-char (point-min))
+            (while (not (eobp))
+              (condition-case _
+                  (parcel-ui-unmark (parcel-ui-current-package))
+                ((error) (forward-line)))))))
+      (parcel-ui-entries 'recache)
+      (parcel-ui-search-refresh))))
 
 ;;;; Key bindings
 (define-key parcel-ui-mode-map (kbd "*")   'parcel-ui-toggle-mark)
