@@ -167,6 +167,8 @@ Toggle all if already filtered."
 
 ;; @TODO Implement these:
 ;; (defun parcel--package-on-default-branch-p (package)
+;;git ls-remote --symref REMOTE HEAD
+;;git symbolic-ref HEAD  vs :branch
 ;; (defun parcel-ui--local-branch-behind-p (package)
 
 (defun parcel-ui-tag-marked (candidate)
