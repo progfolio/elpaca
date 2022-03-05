@@ -88,7 +88,7 @@ If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
                       when item
                       collect (list
                                item
-                               (vector (parcel-ui--package-name (format "%S" item))
+                               (vector (format "%S" item)
                                        (or (plist-get data :description) "")
                                        (or (plist-get data :source) ""))))
              :key #'car :from-end t))))
@@ -267,6 +267,50 @@ Toggle all if already filtered."
                               tags)
                              ", ")))))))
 
+;;@TODO: decompose these loops into a function
+;; They do essentially the same thing.
+(defun parcel-ui--apply-faces ()
+  "Update entry faces for marked, installed packages."
+  (when-let ((buffer parcel-ui-buffer))
+    (with-current-buffer buffer
+      (cl-loop for (item . order) in parcel--queued-orders
+               unless (assq item parcel-ui--marked-packages)
+               do (when-let ((repo-dir (parcel-order-repo-dir order))
+                             (file-exist-p repo-dir))
+                    (save-excursion
+                      (goto-char (point-min))
+                      (let ((continue t))
+                        (while (and continue (not (eobp)))
+                          (if-let ((package (ignore-errors (parcel-ui-current-package)))
+                                   ((eq package item))
+                                   (start (line-beginning-position))
+                                   (o (make-overlay start
+                                                    (+ start (length (symbol-name item))))))
+                              (progn
+                                (setq continue nil)
+                                (overlay-put o 'face 'parcel-finished)
+                                (overlay-put o 'evaporate t)
+                                (overlay-put o 'priority 0)
+                                (overlay-put o 'type 'parcel-mark))
+                            (forward-line)))))))
+      (cl-loop for (item . spec) in parcel-ui--marked-packages
+               do (save-excursion
+                    (goto-char (point-min))
+                    (let ((continue t))
+                      (while (and continue (not (eobp)))
+                        (if-let ((package (ignore-errors (parcel-ui-current-package)))
+                                 ((eq package item)))
+                            (let* ((o      (make-overlay (line-beginning-position) (line-end-position)))
+                                   (face   (or (nth 2 spec) 'parcel-ui-marked-package))
+                                   (prefix (or (nth 1 spec) "*")))
+                              (setq continue nil)
+                              (overlay-put o 'before-string  (propertize (concat prefix " ") 'face face))
+                              (overlay-put o 'face face)
+                              (overlay-put o 'evaporate t)
+                              (overlay-put o 'priority 1)
+                              (overlay-put o 'type 'parcel-mark))
+                          (forward-line)))))))))
+
 (defun parcel-ui--update-search-filter (&optional query)
   "Update the UI to reflect search input.
 If QUERY is non-nil, use that instead of the minibuffer."
@@ -277,6 +321,7 @@ If QUERY is non-nil, use that instead of the minibuffer."
         (let ((parsed (parcel-ui--parse-search-filter query)))
           (setq tabulated-list-entries (eval `(parcel-ui-query-loop ,parsed) t))
           (tabulated-list-print 'remember-pos 'update)
+          (parcel-ui--apply-faces)
           (parcel-ui--search-header parsed))))))
 
 (defun parcel-ui--debounce-search ()
@@ -337,13 +382,19 @@ If EDIT is non-nil, edit the last search."
 
 (defun parcel-ui-unmark (package)
   "Unmark PACKAGE."
-  (interactive)
+  (interactive (list (parcel-ui-current-package)))
+  (unless (equal (buffer-name) parcel-ui-buffer)
+    (user-error "Can't unmark package outside of %S" parcel-status-buffer))
   (setq parcel-ui--marked-packages
         (cl-remove-if (lambda (cell) (string= (car cell) package))
                       parcel-ui--marked-packages))
   (with-silent-modifications
-    (put-text-property (line-beginning-position) (line-end-position)
-                       'display nil))
+    (mapc #'delete-overlay
+          (cl-remove-if-not (lambda (o) (eq (overlay-get o 'type) 'parcel-mark))
+                            (overlays-at (line-beginning-position))))
+    (save-restriction
+      (narrow-to-region (line-beginning-position) (line-end-position))
+      (parcel-ui--apply-faces)))
   (forward-line))
 
 (defun parcel-ui-mark (package &optional action)
