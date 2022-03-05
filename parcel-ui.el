@@ -503,10 +503,32 @@ The current package is its sole argument."
       (parcel-ui-entries 'recache)
       (parcel-ui-search-refresh))))
 
+(defmacro parcel-ui-defsearch (name query)
+  "Define a QUERY toggle command with NAME."
+  `(defun ,(intern (format "parcel-ui-search-%s" name)) (toggle)
+     ,(format "Search for packages which are %s.
+If TOGGLE is non-nil, invert search." name)
+     (interactive "P")
+     (parcel-ui--update-search-filter
+      (if toggle ,(mapconcat (lambda (token)
+                               (if (string-prefix-p "!" token)
+                                   (substring token 1)
+                                 (concat "!" token)))
+                             (split-string query " " 'omit-nulls)
+                             " ")
+        ,query))))
+
+(parcel-ui-defsearch "marked"     "#marked")
+(parcel-ui-defsearch "installed"  "#installed")
+(parcel-ui-defsearch "undeclared" "#installed !#declared")
+
 ;;;; Key bindings
 (define-key parcel-ui-mode-map (kbd "*")   'parcel-ui-toggle-mark)
 (define-key parcel-ui-mode-map (kbd "F")   'parcel-ui-toggle-follow-mode)
+(define-key parcel-ui-mode-map (kbd "I")   'parcel-ui-search-installed)
+(define-key parcel-ui-mode-map (kbd "M")   'parcel-ui-search-marked)
 (define-key parcel-ui-mode-map (kbd "R")   'parcel-ui-search-refresh)
+(define-key parcel-ui-mode-map (kbd "U")   'parcel-ui-search-undeclared)
 (define-key parcel-ui-mode-map (kbd "RET") 'parcel-ui-describe-package)
 (define-key parcel-ui-mode-map (kbd "S")   'parcel-ui-search-edit)
 (define-key parcel-ui-mode-map (kbd "b")   'parcel-ui-browse-package)
