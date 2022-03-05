@@ -514,6 +514,7 @@ The current package is its sole argument."
 (define-key parcel-ui-mode-map (kbd "i")   'parcel-ui-mark-install)
 (define-key parcel-ui-mode-map (kbd "r")   'parcel-ui-mark-rebuild)
 (define-key parcel-ui-mode-map (kbd "s")   'parcel-ui-search)
+(define-key parcel-ui-mode-map (kbd "u")   'parcel-ui-unmark)
 (define-key parcel-ui-mode-map (kbd "x")   'parcel-ui-execute-marks)
 
 (provide 'parcel-ui)
