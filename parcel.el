@@ -1459,10 +1459,12 @@ ORDER's package is not made available during subsequent sessions."
   (setq parcel--processed-order-count 0)
   (mapc #'parcel--process-order (reverse parcel--queued-orders)))
 
+;;@INCOMPLETE: We need to determine policy for deleting dependencies.
+;; Maybe skip dependencies which weren't declared or dependencies of a declared order.
 ;;;###autoload
-(defun parcel-delete-package (force &optional package)
+(defun parcel-delete-package (force with-deps &optional package asker)
   "Remove a PACKAGE from all caches and disk.
-This also deletes its dependencies and will error if PACKAGE has dependents.
+If WITH-DEPS is non-nil dependencies other than ASKER are deleted.
 If FORCE is non-nil do not confirm before deleting."
   (interactive (list current-prefix-arg
                      (intern (completing-read "Delete package: "
@@ -1471,8 +1473,9 @@ If FORCE is non-nil do not confirm before deleting."
     (if-let ((order (parcel-alist-get package parcel--queued-orders)))
         (let ((repo-dir      (parcel-order-repo-dir  order))
               (build-dir     (parcel-order-build-dir order))
-              (dependents    (parcel-order-dependents order))
-              (dependencies  (parcel-order-dependencies order)))
+              (dependents    (delq asker (parcel-dependents package)))
+              (dependencies  (when with-deps
+                               (parcel-dependencies package parcel-ignored-dependencies))))
           (if (cl-some (lambda (dependent)
                          (let ((item (intern (parcel-order-package dependent))))
                            (or (file-exists-p (parcel-order-repo-dir dependent))
@@ -1481,7 +1484,7 @@ If FORCE is non-nil do not confirm before deleting."
                                (parcel-alist-get item parcel--order-cache))))
                        dependents)
               (message "Cannot delete %S unless dependents %S are deleted first" package
-                       (mapcar #'parcel-order-package dependents))
+                       dependents)
             (when (file-exists-p repo-dir)  (delete-directory repo-dir  'recursive))
             (when (file-exists-p build-dir) (delete-directory build-dir 'recursive))
             (setq parcel--order-cache (cl-remove package parcel--order-cache :key #'parcel-order-package :test #'equal)
@@ -1489,8 +1492,9 @@ If FORCE is non-nil do not confirm before deleting."
             (parcel--write-order-cache)
             (when (equal (buffer-name) parcel-status-buffer) (parcel-display-status-buffer))
             (message "Deleted package %S" package)
-            (dolist (dependency dependencies)
-              (parcel-delete-package 'force (intern (parcel-order-package dependency))))))
+            (when with-deps
+              (dolist (dependency dependencies)
+                (parcel-delete-package 'force with-deps dependency package)))))
       (user-error "%S not a queued order" package))))
 
 ;;;###autoload
