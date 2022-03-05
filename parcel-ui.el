@@ -24,6 +24,10 @@
   :prefix "parcel-ui-")
 
 ;;;; Customizations:
+(defcustom parcel-ui-initial-query ".*"
+  "Search query used when enabling `parcel-ui-mode'."
+  :type 'string)
+
 (defcustom parcel-ui-actions
   '(("delete"  "💀" (:inherit default :weight bold :foreground "#FF0022")
      (lambda (i) (parcel-delete-package 'force nil i)))
@@ -123,8 +127,7 @@ Toggle all if already filtered."
   "Major mode to manage packages."
   (parcel--ui-init)
   (setq tabulated-list-use-header-line nil)
-  (tabulated-list-init-header)
-  (tabulated-list-print 'remember-pos 'update)
+  (parcel-ui--update-search-filter (or parcel-ui-initial-query ".*"))
   (add-hook 'minibuffer-setup-hook 'parcel-ui--minibuffer-setup))
 
 ;;;###autoload
