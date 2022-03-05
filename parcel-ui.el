@@ -118,6 +118,7 @@ If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
   (parcel--ui-init)
   (setq tabulated-list-use-header-line nil)
   (parcel-ui--update-search-filter (or parcel-ui-initial-query ".*"))
+  (hl-line-mode)
   (add-hook 'minibuffer-setup-hook 'parcel-ui--minibuffer-setup))
 
 ;;;###autoload
