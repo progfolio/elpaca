@@ -280,43 +280,32 @@ If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
   "Update entry faces for marked, installed packages."
   (when-let ((buffer parcel-ui-buffer))
     (with-current-buffer buffer
-      (cl-loop for (item . order) in parcel--queued-orders
-               unless (assq item parcel-ui--marked-packages)
-               do (when-let ((repo-dir (parcel-order-repo-dir order))
-                             (file-exist-p repo-dir))
-                    (save-excursion
-                      (goto-char (point-min))
-                      (let ((continue t))
-                        (while (and continue (not (eobp)))
-                          (if-let ((package (ignore-errors (parcel-ui-current-package)))
-                                   ((eq package item))
-                                   (start (line-beginning-position))
-                                   (o (make-overlay start
-                                                    (+ start (length (symbol-name item))))))
-                              (progn
-                                (setq continue nil)
-                                (overlay-put o 'face 'parcel-finished)
-                                (overlay-put o 'evaporate t)
-                                (overlay-put o 'priority 0)
-                                (overlay-put o 'type 'parcel-mark))
-                            (forward-line)))))))
-      (cl-loop for (item . spec) in parcel-ui--marked-packages
-               do (save-excursion
-                    (goto-char (point-min))
-                    (let ((continue t))
-                      (while (and continue (not (eobp)))
-                        (if-let ((package (ignore-errors (parcel-ui-current-package)))
-                                 ((eq package item)))
-                            (let* ((o      (make-overlay (line-beginning-position) (line-end-position)))
-                                   (face   (or (nth 2 spec) 'parcel-ui-marked-package))
-                                   (prefix (or (nth 1 spec) "*")))
-                              (setq continue nil)
-                              (overlay-put o 'before-string  (propertize (concat prefix " ") 'face face))
-                              (overlay-put o 'face face)
-                              (overlay-put o 'evaporate t)
-                              (overlay-put o 'priority 1)
-                              (overlay-put o 'type 'parcel-mark))
-                          (forward-line)))))))))
+      (cl-loop
+       for (item . rest) in (append parcel-ui--marked-packages parcel--queued-orders)
+       for type = (if (parcel-order-p rest) 'queued 'marked)
+       for marked = (eq type 'marked)
+       for queued = (eq type 'queued)
+       do
+       (save-excursion
+         (goto-char (point-min))
+         (let ((continue t))
+           (while (and continue (not (eobp)))
+             (if-let ((package (ignore-errors (parcel-ui-current-package)))
+                      ((eq package item))
+                      (start (line-beginning-position))
+                      (o (if queued
+                             (make-overlay start (+ start (length (symbol-name item))))
+                           (make-overlay (line-beginning-position) (line-end-position)))))
+                 (let ((face   (when marked (or (nth 2 rest) 'parcel-ui-marked-package)))
+                       (prefix (when marked (or (nth 1 rest) "*"))))
+                   (setq continue nil)
+                   (when marked
+                     (overlay-put o 'before-string  (propertize (concat prefix " ") 'face face)))
+                   (overlay-put o 'face (or face 'parcel-finished))
+                   (overlay-put o 'evaporate t)
+                   (overlay-put o 'priority (if marked 1 0))
+                   (overlay-put o 'type 'parcel-mark))
+               (forward-line)))))))))
 
 (defun parcel-ui--update-search-filter (&optional query)
   "Update the UI to reflect search input.
