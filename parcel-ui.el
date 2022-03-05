@@ -117,7 +117,8 @@ Toggle all if already filtered."
   (parcel--ui-init)
   (setq tabulated-list-use-header-line nil)
   (tabulated-list-init-header)
-  (tabulated-list-print 'remember-pos 'update))
+  (tabulated-list-print 'remember-pos 'update)
+  (add-hook 'minibuffer-setup-hook 'parcel-ui--minibuffer-setup))
 
 ;;;###autoload
 (defun parcel-ui ()
@@ -133,8 +134,6 @@ Toggle all if already filtered."
   (when parcel-ui-search-active
     (add-hook 'post-command-hook
               'parcel-ui--debounce-search nil :local)))
-
-(add-hook 'minibuffer-setup-hook 'parcel-ui--minibuffer-setup)
 
 (defun parcel-ui--parse-search-filter (filter)
   "Return a list of form ((TAGS...) ((COLUMN)...)) for FILTER string."
