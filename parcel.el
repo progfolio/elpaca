@@ -254,6 +254,11 @@ e.g. elisp forms may be printed via `prin1'."
                          (lambda (a b) (string-lessp (car a) (car b)))))
         (when parcel-cache-menu-items (parcel--write-menu-cache)))))
 
+(defsubst parcel-alist-get (key alist)
+  "Return KEY's value in ALIST.
+Simplified version of `alist-get'."
+  (cdr (assq key alist)))
+
 ;;@TODO: clean up interface.
 ;;;###autoload
 (defun parcel-menu-item (&optional interactive symbol menus filter no-descriptions)
@@ -295,11 +300,11 @@ This is faster (what you want with non-interactive calls)."
                         (if no-descriptions
                             choice
                           (car (split-string choice "\\(?:[[:space:]]+\\)")))))))
-         (candidate (alist-get symbol
-                               (if no-descriptions
-                                   candidates
-                                 (mapcar (lambda (c) (get-text-property 0 'candidate c))
-                                         candidates))))
+         (candidate (parcel-alist-get symbol
+                                      (if no-descriptions
+                                          candidates
+                                        (mapcar (lambda (c) (get-text-property 0 'candidate c))
+                                                candidates))))
          (recipe (plist-get candidate :recipe)))
     (if (called-interactively-p 'interactive)
         (progn
@@ -615,7 +620,7 @@ If INFO is non-nil, ORDER's info is updated as well."
   "Queue (ITEM . ORDER) in `parcel--queued-orders'.
 If STATUS is non-nil, the order is given that initial status.
 RETURNS order structure."
-  (if (and (not after-init-time) (alist-get item parcel--queued-orders))
+  (if (and (not after-init-time) (parcel-alist-get item parcel--queued-orders))
       (warn "%S already queued. Duplicate?" item)
     (let* ((status  (or status 'queued))
            (info    "Package queued")
@@ -986,7 +991,7 @@ If package's repo is not on disk, error."
           ;; multiple times and run its build steps simultaneously/out of order.
           (dolist (spec externals)
             (let* ((dependency (car spec))
-                   (queued     (alist-get dependency parcel--queued-orders))
+                   (queued     (parcel-alist-get dependency parcel--queued-orders))
                    (dep-order  (or queued (parcel--queue-order dependency))))
               (setf (parcel-order-dependencies order)
                     (delete-dups (append (parcel-order-dependencies order) (list dep-order))))
@@ -1016,7 +1021,7 @@ If package's repo is not on disk, error."
           (let ((finished 0))
             (dolist (spec externals)
               (let* ((dependency (car spec))
-                     (queued     (alist-get dependency parcel--queued-orders))
+                     (queued     (parcel-alist-get dependency parcel--queued-orders))
                      (dep-order  (or queued (parcel--queue-order dependency)))
                      (included   (member dep-order (parcel-order-includes order)))
                      (blocked    (eq (parcel-order-status dep-order) 'blocked)))
@@ -1103,7 +1108,8 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
         (queue-len (length parcel--queued-orders)))
     (dolist (queued parcel--queued-orders)
       (let ((status (parcel-order-status (cdr queued))))
-        (if (alist-get status counts)
+        (if (parcel-alist-get status counts)
+            ;; Avoid `parcel-alist-get'. doesn't return PLACE.
             (cl-incf (alist-get status counts))
           (push (cons status 1) counts))))
     (with-current-buffer (get-buffer-create parcel-status-buffer)
@@ -1114,14 +1120,14 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
              (format "Queued: %d | %s(%.2f%%%%): %d | %s: %d | %s: %d"
                      queue-len
                      (propertize "Finished" 'face 'parcel-finished)
-                     (if-let ((finished (alist-get 'finished counts)))
+                     (if-let ((finished (parcel-alist-get 'finished counts)))
                          (* (/ (float finished) queue-len) 100)
                        0.00)
-                     (or (alist-get 'finished counts) 0)
+                     (or (parcel-alist-get 'finished counts) 0)
                      (propertize "Blocked" 'face 'parcel-blocked)
-                     (or (alist-get 'blocked  counts) 0)
+                     (or (parcel-alist-get 'blocked  counts) 0)
                      (propertize "Failed" 'face 'parcel-failed)
-                     (or (alist-get 'failed   counts) 0)))))))
+                     (or (parcel-alist-get 'failed   counts) 0)))))))
 
 (defun parcel-status-buffer-line (order)
   "Return status string for ORDER."
@@ -1305,7 +1311,7 @@ Async wrapper for `parcel-generate-autoloads'."
           (cl-loop for item in (parcel-dependencies (intern (parcel-order-package order))
                                                     parcel-ignored-dependencies)
                    when item
-                   for build-dir = (parcel-order-build-dir (alist-get item parcel--queued-orders))
+                   for build-dir = (parcel-order-build-dir (parcel-alist-get item parcel--queued-orders))
                    when build-dir
                    collect build-dir))
          (program `(progn
@@ -1328,7 +1334,7 @@ Async wrapper for `parcel-generate-autoloads'."
   "Return recursive list of ITEM's dependencies.
 IGNORE may be a list of symbols which are not included in the resulting list.
 RECURSE is used to track recursive calls."
-  (if-let ((order (alist-get item parcel--queued-orders))
+  (if-let ((order (parcel-alist-get item parcel--queued-orders))
            (dependencies (parcel--dependencies (parcel-order-recipe order))))
       (let ((transitives (cl-loop for dependency in dependencies
                                   for name = (car dependency)
@@ -1342,7 +1348,7 @@ RECURSE is used to track recursive calls."
 (defun parcel-dependents (item &optional recurse)
   "Return recursive list of packages which depend on ITEM.
 RECURSE is used to keep track of recursive calls."
-  (if-let ((order (alist-get item parcel--queued-orders))
+  (if-let ((order (parcel-alist-get item parcel--queued-orders))
            (dependents (parcel-order-dependents order)))
       (let ((transitives
              (cl-loop
@@ -1360,7 +1366,7 @@ RECURSE is used to keep track of recursive calls."
                                          (mapcar #'car parcel--queued-orders)))
   (let ((queued (if packages
                     (cl-remove-if-not (lambda (package)
-                                        (alist-get (intern package) parcel--queued-orders))
+                                        (parcel-alist-get (intern package) parcel--queued-orders))
                                       packages)
                   (mapcar (lambda (queued) (symbol-name (car queued)))
                           parcel--queued-orders))))
@@ -1431,8 +1437,8 @@ ORDER's package is not made available during subsequent sessions."
                 (let ((recipe (parcel-menu-item
                                nil nil nil
                                (lambda (candidate)
-                                 (not (alist-get (car candidate)
-                                                 parcel--queued-orders))))))
+                                 (not (parcel-alist-get (car candidate)
+                                                        parcel--queued-orders))))))
                   (append (list (intern (plist-get recipe :package)))
                           recipe))))
   (setq parcel-cache-autoloads nil)
@@ -1462,8 +1468,8 @@ If FORCE is non-nil do not confirm before deleting."
                      (intern (completing-read "Delete package: "
                                               (mapcar #'car parcel--queued-orders)))))
   (when (or force (yes-or-no-p (format "Delete package %S?" package)))
-    (if-let ((order (alist-get package parcel--queued-orders)))
-        (let ((repo-dir      (parcel-order-repo-dir order))
+    (if-let ((order (parcel-alist-get package parcel--queued-orders)))
+        (let ((repo-dir      (parcel-order-repo-dir  order))
               (build-dir     (parcel-order-build-dir order))
               (dependents    (parcel-order-dependents order))
               (dependencies  (parcel-order-dependencies order)))
@@ -1471,8 +1477,8 @@ If FORCE is non-nil do not confirm before deleting."
                          (let ((item (intern (parcel-order-package dependent))))
                            (or (file-exists-p (parcel-order-repo-dir dependent))
                                (file-exists-p (parcel-order-build-dir dependent))
-                               (alist-get item parcel--queued-orders)
-                               (alist-get item parcel--order-cache))))
+                               (parcel-alist-get item parcel--queued-orders)
+                               (parcel-alist-get item parcel--order-cache))))
                        dependents)
               (message "Cannot delete %S unless dependents %S are deleted first" package
                        (mapcar #'parcel-order-package dependents))

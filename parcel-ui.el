@@ -106,7 +106,7 @@ Allows for less debouncing than during `post-command-hook'.")
 ;;;; Functions:
 (defun parcel-ui--installed-p (item)
   "Return non-nil if ITEM's associated repo dir is on disk."
-  (when-let ((order (alist-get item parcel--queued-orders))
+  (when-let ((order (parcel-alist-get item parcel--queued-orders))
              ((file-exists-p (parcel-order-repo-dir order))))
     t))
 
@@ -215,7 +215,7 @@ Toggle all if already filtered."
 
 (defun parcel-ui--worktree-dirty-p (item)
   "Return t if ITEM has a dirty worktree."
-  (when-let ((order (alist-get item parcel--queued-orders))
+  (when-let ((order (parcel-alist-get item parcel--queued-orders))
              (recipe (parcel-order-recipe order))
              (repo-dir (parcel-order-repo-dir order))
              ((file-exists-p repo-dir)))
@@ -231,13 +231,13 @@ Toggle all if already filtered."
 (defun parcel-ui-tag-declared (candidate)
   "Return t if CANDIDATE declared in init or an init declaration dependency."
   (when-let ((item (car candidate))
-             (order (alist-get item parcel--queued-orders)))
+             (order (parcel-alist-get item parcel--queued-orders)))
     (or (parcel-order-init order)
         (cl-some #'parcel-order-init
                  (delq nil
-                 (mapcar (lambda (dependent)
-                           (alist-get dependent parcel--queued-orders))
-                         (parcel-dependents item)))))))
+                       (mapcar (lambda (dependent)
+                                 (parcel-alist-get dependent parcel--queued-orders))
+                               (parcel-dependents item)))))))
 
 (defun parcel-ui-tag-installed (candidate)
   "Return t if CANDIDATE is installed."
@@ -377,7 +377,7 @@ If EDIT is non-nil, edit the last search."
   "Display general info for package on current line."
   (interactive)
   (if-let ((item (parcel-ui-current-package))
-           (candidate (alist-get item (parcel-menu--candidates)))
+           (candidate (parcel-alist-get item (parcel-menu--candidates)))
            (url (plist-get candidate :url)))
       (browse-url url)
     (user-error "No URL associated with current line")))
