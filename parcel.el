@@ -1356,8 +1356,8 @@ RECURSE is used to keep track of recursive calls."
               collect
               (let ((i (intern (parcel-order-package dependent))))
                 (append (list i (parcel-dependents i 'recurse)))))))
-        (nreverse (flatten-tree transitives)))
-    (when recurse (intern (parcel-order-package order)))))
+        (delete-dups (nreverse (flatten-tree transitives))))
+    (when recurse item)))
 
 ;;;; COMMANDS/MACROS
 (defun parcel-print-log (&rest packages)
