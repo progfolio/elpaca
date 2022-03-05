@@ -78,13 +78,20 @@ Allows for less debouncing than during `post-command-hook'.")
              ((file-exists-p (parcel-order-repo-dir order))))
     t))
 
+(defun parcel-ui--custom-candidates ()
+  "Return candidate list of declared items with no known recipe in `parcel-menu-functions'."
+  (cl-loop for (item . order) in parcel--queued-orders
+           unless (parcel-menu-item nil item nil nil 'no-descriptions)
+           collect (list item :source "init file" :description "Not available in menu functions")))
+
 (defun parcel-ui-entries (&optional recache)
-  "Return list of all entries available in `parcel-menu-functions'.
+  "Return list of all entries available in `parcel-menu-functions' and init.
 If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
   (or (and (not recache) parcel-ui--entry-cache)
       (setq parcel-ui--entry-cache
             (cl-remove-duplicates
-             (cl-loop for (item . data) in (parcel-menu--candidates)
+             (cl-loop for (item . data) in (append (parcel-menu--candidates)
+                                                   (parcel-ui--custom-candidates))
                       when item
                       collect (list
                                item
