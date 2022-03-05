@@ -315,7 +315,7 @@ Toggle all if already filtered."
   "Update the UI to reflect search input.
 If QUERY is non-nil, use that instead of the minibuffer."
   (when-let ((buffer parcel-ui-buffer)
-             (query (or query (minibuffer-contents-no-properties))))
+             (query (or query (and (minibufferp) (minibuffer-contents-no-properties)))))
     (unless (string-empty-p query)
       (with-current-buffer (get-buffer-create buffer)
         (let ((parsed (parcel-ui--parse-search-filter query)))
