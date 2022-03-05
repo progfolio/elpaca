@@ -61,7 +61,6 @@ See `run-at-time' for acceptable values."
 (defvar parcel-ui-buffer "* Parcel-UI *")
 (defvar parcel-ui--entry-cache nil "Cache of all menu items.")
 (defvar parcel-ui-mode-map (make-sparse-keymap) "Keymap for `parcel-ui-mode'.")
-(defvar parcel-ui-package-info-mode-map (make-sparse-keymap))
 (defvar parcel-ui--previous-minibuffer-contents ""
   "Keep track of minibuffer contents changes.
 Allows for less debouncing than during `post-command-hook'.")
