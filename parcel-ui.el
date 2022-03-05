@@ -40,6 +40,7 @@ Each element is of the form: (DESCRIPTION PREFIX FACE FUNCTION)."
 (defcustom parcel-ui-search-tags
   '(("dirty"     . parcel-ui-tag-dirty)
     ("declared"  . parcel-ui-tag-declared)
+    ("orphan"    . parcel-ui-tag-orphan)
     ("random"    . parcel-ui-tag-random)
     ("installed" . parcel-ui-tag-installed)
     ("marked"    . parcel-ui-tag-marked))
@@ -81,6 +82,15 @@ Allows for less debouncing than during `post-command-hook'.")
   (when-let ((order (parcel-alist-get item parcel--queued-orders))
              ((file-exists-p (parcel-order-repo-dir order))))
     t))
+
+(defun parcel-ui--orphan-p (item)
+  "Return non-nil if ITEM's repo is on disk, but not a queued order."
+  (and (not (alist-get item parcel--queued-orders))
+       (file-exists-p (parcel-repo-dir (parcel-recipe item)))))
+
+(defun parcel-ui-tag-orphan (candidate)
+  "Return non-nil if CANDIDATE is an oprhaned package."
+  (parcel-ui--orphan-p (car candidate)))
 
 (defun parcel-ui--custom-candidates ()
   "Return candidate list of declared items with no known recipe in `parcel-menu-functions'."
