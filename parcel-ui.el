@@ -93,7 +93,7 @@ Allows for less debouncing than during `post-command-hook'.")
   (parcel-ui--orphan-p (car candidate)))
 
 (defun parcel-ui--custom-candidates ()
-  "Return candidate list of declared items with no known recipe in `parcel-menu-functions'."
+  "Return declared candidate list with no recipe in `parcel-menu-functions'."
   (cl-loop for (item . order) in parcel--queued-orders
            unless (parcel-menu-item nil item nil nil 'no-descriptions)
            collect (list item :source "init file" :description "Not available in menu functions")))
