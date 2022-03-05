@@ -366,7 +366,8 @@ If EDIT is non-nil, edit the last search."
 (defun parcel-ui-search-refresh ()
   "Rerun the current search."
   (interactive)
-  (parcel-ui--update-search-filter parcel-ui-search-filter))
+  (parcel-ui--update-search-filter parcel-ui-search-filter)
+  (message "Search %S refreshed" parcel-ui-search-filter))
 
 (defun parcel-ui-current-package ()
   "Return current package of UI line."
