@@ -113,16 +113,6 @@ If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
         tabulated-list-entries
         #'parcel-ui-entries))
 
-(defun parcel-ui-show-installed ()
-  "Show only installed packages.
-Toggle all if already filtered."
-  (interactive)
-  (setq parcel-ui-search-filter
-        (if (setq parcel-ui-show-installed (not parcel-ui-show-installed))
-            ".*"
-          "#installed"))
-  (parcel-ui--update-search-filter parcel-ui-search-filter))
-
 (define-derived-mode parcel-ui-mode tabulated-list-mode "parcel-ui"
   "Major mode to manage packages."
   (parcel--ui-init)
@@ -509,7 +499,6 @@ The current package is its sole argument."
 ;;;; Key bindings
 (define-key parcel-ui-mode-map (kbd "*")   'parcel-ui-toggle-mark)
 (define-key parcel-ui-mode-map (kbd "F")   'parcel-ui-toggle-follow-mode)
-(define-key parcel-ui-mode-map (kbd "I")   'parcel-ui-show-installed)
 (define-key parcel-ui-mode-map (kbd "R")   'parcel-ui-search-refresh)
 (define-key parcel-ui-mode-map (kbd "RET") 'parcel-ui-describe-package)
 (define-key parcel-ui-mode-map (kbd "S")   'parcel-ui-search-edit)
