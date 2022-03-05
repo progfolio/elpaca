@@ -37,7 +37,8 @@ Each element is of the form: (DESCRIPTION PREFIX FACE FUNCTION)."
   '(("dirty"     . parcel-ui-tag-dirty)
     ("declared"  . parcel-ui-tag-declared)
     ("random"    . parcel-ui-tag-random)
-    ("installed" . parcel-ui-tag-installed))
+    ("installed" . parcel-ui-tag-installed)
+    ("marked"    . parcel-ui-tag-marked))
   "Alist of search tags.
 Each cell is of form (NAME FILTER).
 If FILTER is a function it must accept a single candidate as its sole
@@ -160,6 +161,10 @@ Toggle all if already filtered."
 ;; @TODO Implement these:
 ;; (defun parcel--package-on-default-branch-p (package)
 ;; (defun parcel-ui--local-branch-behind-p (package)
+
+(defun parcel-ui-tag-marked (candidate)
+  "Return non-nil if CANDIDATE is a marked package."
+  (cl-member (car candidate) parcel-ui--marked-packages :key #'car))
 
 (defun parcel-ui--worktree-dirty-p (item)
   "Return t if ITEM has a dirty worktree."
