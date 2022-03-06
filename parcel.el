@@ -520,7 +520,8 @@ If PACKAGES is nil, use all available orders."
     (with-current-buffer (get-buffer-create parcel-status-buffer)
       (setq tabulated-list-entries (parcel-status-buffer-entries))
       (tabulated-list-init-header)
-      (tabulated-list-print 'remember-pos 'update))))
+      (tabulated-list-print 'remember-pos 'update)
+      (parcel--set-header-line))))
 
 (defun parcel--clean-order (order)
   "Return ORDER plist with cache data."
