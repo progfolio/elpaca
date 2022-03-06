@@ -235,6 +235,15 @@ https://github.com/progfolio/parcel
           (lambda () (when-let ((buffer (get-buffer parcel-status-buffer)))
                        (with-current-buffer buffer (quit-window)))))
 #+end_src
+
+#+begin_src emacs-lisp :lexical t
+(with-eval-after-load 'evil
+  (with-eval-after-load 'parcel
+    (evil-make-intercept-map parcel-status-mode-map))
+  (with-eval-after-load 'parcel-ui
+    (evil-make-intercept-map parcel-ui-mode-map)))
+#+end_src
+
 [[https://www.funtoo.org/Keychain][Keychain]] is a gpg/ssh agent that allows me to cache my credentials.
 This package gets the correct environment variables so parcel can use the ssh protocol.
 
