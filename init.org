@@ -1856,7 +1856,12 @@ Additionally it can display the number of unread emails in the mode-line.
 https://github.com/iqbalansari/mu4e-alert
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (mu4e-alert :host github :remotes (("fork" :repo "progfolio/mu4e-alert") "origin"))
+(parcel-use-package (mu4e-alert
+                     :host github
+                     :remotes (("fork"
+                                :repo "progfolio/mu4e-alert"
+                                :branch "fix/mu4e--switch-context-advice")
+                               "origin"))
   :defer 20
   :after (org)
   :config
