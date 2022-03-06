@@ -161,7 +161,7 @@ It's a rough way of knowing when/if I need to optimize my init file.
                      gcs-done)))
 #+end_src
 We can also enable the profiler to view a report after init.
-#+begin_src emacs-lisp :lexical t :tangle yes
+#+begin_src emacs-lisp :lexical t :tangle no
 (profiler-start 'cpu+mem)
 (add-hook 'parcel-after-init-hook (lambda () (profiler-stop) (profiler-report)))
 #+end_src
