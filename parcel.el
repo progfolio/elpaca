@@ -59,6 +59,8 @@
   '((t (:weight bold :foreground "#FF1818")))
   "Indicates an order has failed.")
 
+(defvar parcel--order-info-timer nil "Timer to debounce order info printing.")
+
 (defvar parcel--init-complete nil
   "When non-nil prevent `parcel-after-init-hook' from being run.")
 
@@ -90,12 +92,6 @@ However, loading errors will prevent later package autoloads from loading."
 (defvar parcel-cache-directory (expand-file-name "cache" parcel-directory)
   "Location of the cache directory.")
 
-(defcustom parcel-display-status-buffer-during-init nil
-  "When non-nil, display `parcel-status-buffer' during init.
-This can slow down your init substantially.
-Only recommended for troubleshooting."
-  :type 'boolean)
-
 (defcustom parcel-makeinfo-executable (executable-find "makeinfo")
   "Path of the makeinfo executable."
   :type 'string)
@@ -104,6 +100,12 @@ Only recommended for troubleshooting."
   (executable-find "install-info")
   "Path of the install-info executable."
   :type 'string)
+
+(defcustom parcel-order-info-debounce-interval 0.02
+  "Number of idle seconds to wait before printing order statuses.
+Setting this to too low may cause the status buffer to block more.
+Setting it too high causes prints fewer status updates."
+  :type 'number)
 
 (defcustom parcel-build-steps
   (list #'parcel--clone
@@ -579,8 +581,11 @@ If INFO is non-nil, ORDER's info is updated as well."
     (when (eq status 'ref-checked-out)
       (mapc #'parcel--continue-mono-repo-dependency (parcel-order-includes order))))
   (when info (parcel--log-event order info))
-  (when (or parcel-display-status-buffer-during-init parcel--init-complete)
-    (parcel--print-order-status)))
+  (when (get-buffer-window parcel-status-buffer t) ;status buffer visible
+    (when parcel--order-info-timer (cancel-timer parcel--order-info-timer))
+    (setq parcel--order-info-timer
+          (run-at-time parcel-order-info-debounce-interval
+                       nil #'parcel--print-order-status))))
 
 (defun parcel--load-cached-autoloads ()
   "Load `parcel--autoloads-cache'."
@@ -1402,7 +1407,6 @@ When DISPLAY is non-nil, display the buffer."
   "Diplay `parcel-status-buffer'."
   (interactive)
   ;; If this is invoked during init, we want it to be updated.
-  (setq parcel-display-status-buffer-during-init t)
   (parcel--initialize-process-buffer 'display))
 
 ;;;###autoload
