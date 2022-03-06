@@ -1,0 +1,11 @@
+#!/bin/bash
+
+#TODO make REF variable 
+git checkout HEAD~ 2>&1 \
+  | sed -n 2p \
+  | sed -e 's/HEAD is now at //' \
+  && make &>/dev/null  \
+  && for i in {1..3}; do
+       TIMEFORMAT=%U;
+       time emacs --eval '(kill-emacs)';
+     done
