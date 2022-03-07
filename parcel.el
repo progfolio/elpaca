@@ -657,11 +657,7 @@ RETURNS order structure."
              :build-steps
              (when recipe
                (if (file-exists-p build-dir)
-                   (progn
-                     (setq built-p t)
-                     (list #'parcel--queue-dependencies
-                           #'parcel--add-info-path
-                           #'parcel--activate-package))
+                   (progn (setq built-p t) parcel--pre-built-steps)
                  (when-let  ((steps (copy-tree parcel-build-steps)))
                    (when (file-exists-p repo-dir)
                      (setq steps (delq 'parcel--clone steps))
