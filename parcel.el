@@ -245,9 +245,10 @@ e.g. elisp forms may be printed via `prin1'."
   (parcel--write-file (expand-file-name "menu-items.el" parcel-cache-directory)
     (prin1 parcel-menu--candidates-cache)))
 
-(defun parcel-menu--candidates ()
-  "Return alist of `parcel-menu-functions' candidates."
-  (or parcel-menu--candidates-cache
+(defun parcel-menu--candidates (&optional recache)
+  "Return alist of `parcel-menu-functions' candidates.
+If RECACHE is non-nil, recompute `parcel-menu--candidates-cache'."
+  (or (and (not recache) parcel-menu--candidates-cache)
       (prog1 (setq parcel-menu--candidates-cache
                    (sort (apply #'append
                                 (cl-loop for fn in parcel-menu-functions
