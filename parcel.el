@@ -334,7 +334,7 @@ ITEM is any of the following values:
         ingredients)
     (cond
      ((or (null item) (symbolp item))
-      (let ((menu-item (parcel-menu-item nil item nil nil 'no-descriptions)))
+      (let ((menu-item (parcel-menu-item nil item nil nil (not interactive))))
         (unless menu-item (user-error "No menu-item for %S" item))
         (push (run-hook-with-args-until-success 'parcel-order-functions item)
               ingredients)
