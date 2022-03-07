@@ -381,29 +381,26 @@ ITEM is any of the following values:
 
 (defun parcel-repo-dir (recipe)
   "Return path to repo given RECIPE."
-  (cl-destructuring-bind (&key url local-repo (repo url) fetcher (host fetcher) &allow-other-keys)
+  (cl-destructuring-bind
+      (&key url local-repo (repo url) fetcher (host fetcher) &allow-other-keys)
       recipe
     (expand-file-name
      (if (parcel--full-repo-protocol-p repo)
          (progn
            (require 'url-parse)
            (let ((url (url-generic-parse-url repo)))
-             (string-join
-              (list
-               (or local-repo
-                   (file-name-sans-extension
-                    (replace-regexp-in-string
-                     ".*/" ""
-                     (url-filename
-                      (url-generic-parse-url (or local-repo repo))))))
-               "_"
-               (url-host url))
-              ".")))
+             (format "%s._.%s" ; repo._.host
+                     (or local-repo
+                         (file-name-sans-extension
+                          (replace-regexp-in-string
+                           ".*/" "" (url-filename
+                                     (url-generic-parse-url (or local-repo repo))))))
+                     (url-host url))))
        ;;repo-or-local-repo.user.host
-       (string-join (list (or local-repo (parcel--repo-name repo))
-                          (parcel--repo-user repo)
-                          (symbol-name host))
-                    "."))
+       (format "%s.%s.%s"
+               (or local-repo (parcel--repo-name repo))
+               (parcel--repo-user repo)
+               (symbol-name host)))
      (expand-file-name "repos/" parcel-directory))))
 
 (defun parcel-build-dir (recipe)
