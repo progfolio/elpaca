@@ -984,9 +984,9 @@ If package's repo is not on disk, error."
   (parcel--update-order-info order "Queueing Dependencies" 'queueing-deps)
   (let* ((recipe       (parcel-order-recipe order))
          (dependencies (parcel--dependencies recipe))
-         (externals    (cl-loop for (dep . version) in dependencies
-                                when (not (member dep parcel-ignored-dependencies))
-                                collect (list dep version)))
+         (externals    (cl-loop for spec in dependencies
+                                unless (member (car spec) parcel-ignored-dependencies)
+                                collect spec))
          queued-deps)
     (if externals
         (progn
