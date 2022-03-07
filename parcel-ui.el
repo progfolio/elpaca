@@ -172,7 +172,7 @@ If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
                        (setq query (substring query 1))))
          (match (ignore-errors (string-match-p query subject))))
     (cond
-     ;;ignore negation operator by itself
+     ;; Ignore negation operator by itself.
      ((string-empty-p query) t)
      (negated (not match))
      (t match))))
@@ -221,8 +221,6 @@ If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
   "1/1000th of a chance candidate is shown."
   (zerop (random parcel-ui-tag-random-chance)))
 
-;;@MAYBE: allow literal string searches?
-;;similar to a macro, a tag expands to a search?
 (defmacro parcel-ui-query-loop (parsed)
   "Return `cl-loop' from PARSED query."
   (declare (indent 1) (debug t))
@@ -292,8 +290,6 @@ If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
                               tags)
                              ", ")))))))
 
-;;@TODO: decompose these loops into a function
-;; They do essentially the same thing.
 (defun parcel-ui--apply-faces ()
   "Update entry faces for marked, installed packages."
   (when-let ((buffer parcel-ui-buffer))
