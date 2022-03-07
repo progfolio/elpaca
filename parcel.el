@@ -60,7 +60,9 @@
   "Indicates an order has failed.")
 
 (defvar parcel--order-info-timer nil "Timer to debounce order info printing.")
-
+(defvar parcel--pre-built-steps
+  '(parcel--queue-dependencies parcel--add-info-path parcel--activate-package)
+  "List of steps for packages which are already built.")
 (defvar parcel--init-complete nil
   "When non-nil prevent `parcel-after-init-hook' from being run.")
 
@@ -107,20 +109,19 @@ Setting this to too low may cause the status buffer to block more.
 Setting it too high causes prints fewer status updates."
   :type 'number)
 
-(defcustom parcel-build-steps
-  (list #'parcel--clone
-        #'parcel--add-remotes
-        #'parcel--checkout-ref
-        #'parcel--run-pre-build-commands
-        #'parcel--clone-dependencies
-        #'parcel--link-build-files
-        #'parcel--byte-compile
-        #'parcel--generate-autoloads-async
-        #'parcel--compile-info
-        #'parcel--install-info
-        #'parcel--add-info-path
-        #'parcel--run-post-build-commands
-        #'parcel--activate-package)
+(defcustom parcel-build-steps '(parcel--clone
+                                parcel--add-remotes
+                                parcel--checkout-ref
+                                parcel--run-pre-build-commands
+                                parcel--clone-dependencies
+                                parcel--link-build-files
+                                parcel--byte-compile
+                                parcel--generate-autoloads-async
+                                parcel--compile-info
+                                parcel--install-info
+                                parcel--add-info-path
+                                parcel--run-post-build-commands
+                                parcel--activate-package)
   "List of steps which are run when installing/building a package."
   :type 'list)
 
@@ -147,7 +148,7 @@ is used in a `:files' directive.")
   "Default order modifications. Matches any order."
   (list :protocol 'https :remotes "origin" :inherit t :depth 1))
 
-(defcustom parcel-order-functions (list #'parcel-order-defaults)
+(defcustom parcel-order-functions '(parcel-order-defaults)
   "Abnormal hook run to alter orders.
 Each element must be a unary function which accepts an order.
 An order may be nil, a symbol naming a package, or a plist.
@@ -160,7 +161,7 @@ This hook is run via `run-hook-with-args-until-success'."
   (unless (plist-get order :files)
     (list :files (list :defaults))))
 
-(defcustom parcel-recipe-functions (list #'parcel-recipe-defaults)
+(defcustom parcel-recipe-functions '(parcel-recipe-defaults)
   "Abnormal hook run to alter recipes.
 Each element must be a unary function which accepts an recipe plist.
 The function may return nil or a plist to be merged with the recipe.
@@ -179,7 +180,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
   :type 'hook)
 
 (defvar parcel-ignored-dependencies
-  (list 'emacs 'cl-lib 'cl-generic 'nadvice 'org 'org-mode 'map 'seq 'json)
+  '(emacs cl-lib cl-generic nadvice org org-mode map seq json)
   "Built in packages.
 Ignore these unless the user explicitly requests they be installed.")
 
@@ -203,9 +204,8 @@ Ignore these unless the user explicitly requests they be installed.")
   "\\(?:^;+[[:space:]]*Package-Requires[[:space:]]*:[[:space:]]*\\([^z-a]*?$\\)\\)"
   "Regexp matching the Package-Requires metadata in an elisp source file.")
 
-(defvar parcel-recipe-keywords (list :branch :depth :fork :host :nonrecursive
-                                     :package :post-build :pre-build :protocol
-                                     :remote :repo)
+(defvar parcel-recipe-keywords '( :branch :depth :fork :host :nonrecursive :package
+                                  :post-build :pre-build :protocol :remote :repo)
   "Recognized parcel recipe keywords.")
 
 (defvar parcel--queued-orders nil "List of queued orders.")
