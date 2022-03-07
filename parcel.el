@@ -1482,8 +1482,11 @@ If FORCE is non-nil do not confirm before deleting."
                        package dependents)
             (when (file-exists-p repo-dir)  (delete-directory repo-dir  'recursive))
             (when (file-exists-p build-dir) (delete-directory build-dir 'recursive))
-            (setq parcel--order-cache (cl-remove package parcel--order-cache :key #'parcel-order-package :test #'equal)
-                  parcel--queued-orders (cl-remove package parcel--queued-orders :key #'car))
+            (setq parcel--order-cache
+                  (cl-remove package parcel--order-cache
+                             :key #'parcel-order-package :test #'equal)
+                  parcel--queued-orders
+                  (cl-remove package parcel--queued-orders :key #'car))
             (parcel--write-order-cache)
             (when (equal (buffer-name) parcel-status-buffer) (parcel-display-status-buffer))
             (message "Deleted package %S" package)
