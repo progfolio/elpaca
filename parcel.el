@@ -1155,24 +1155,19 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
   "Called when one of an ORDER's dependencies have changed status.
 Possibly kicks off next build step, or changes order status."
   (unless (eq (parcel-order-status order) 'finished)
-    (let* ((statuses
-            (mapcar (lambda (dependency)
-                      (cons (parcel-order-package dependency)
-                            (parcel-order-status  dependency)))
-                    (parcel-order-dependencies order)))
-           (blocked (cl-remove-if (lambda (status) (eq status 'finished))
-                                  statuses :key #'cdr))
-           (failed  (cl-remove-if-not (lambda (status) (eq status 'failed))
-                                      statuses :key #'cdr)))
+    (let (failed blocked)
+      (cl-loop for dep-order in (parcel-order-dependencies order)
+               for status = (parcel-order-status dep-order)
+               unless (eq status 'finished)
+               do (if (eq status 'failed)
+                      (push (parcel-order-package dep-order) failed)
+                    (push (parcel-order-package dep-order) blocked)))
       (cond
-       (failed
-        (parcel--update-order-info
-         order (format "Failed dependencies: %S" (mapcar #'car failed)) 'failed))
-       (blocked
-        (parcel--update-order-info
-         order (format "Blocked by dependencies: %S" (mapcar #'car blocked)) 'blocked))
-       ((cl-every (lambda (status) (eq (cdr status) 'finished)) statuses)
-        (parcel--run-next-build-step order))))))
+       (failed (parcel--update-order-info
+                order (format "Failed dependencies: %S" failed) 'failed))
+       (blocked (parcel--update-order-info
+                 order (format "Blocked by dependencies: %S" blocked) 'blocked))
+       (t (parcel--run-next-build-step order))))))
 
 (defun parcel--clone-process-sentinel (process _event)
   "Sentinel for clone PROCESS."
