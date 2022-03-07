@@ -252,7 +252,8 @@ If RECACHE is non-nil, recompute `parcel-menu--candidates-cache'."
       (prog1 (setq parcel-menu--candidates-cache
                    (sort (apply #'append
                                 (cl-loop for fn in parcel-menu-functions
-                                         for index = (funcall fn 'index)
+                                         ;; Allows adding a symbol prior menu installation.
+                                         for index = (and (fboundp fn) (funcall fn 'index))
                                          when index collect index))
                          (lambda (a b) (string-lessp (car a) (car b)))))
         (when parcel-cache-menu-items (parcel--write-menu-cache)))))
