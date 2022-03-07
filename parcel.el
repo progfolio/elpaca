@@ -1455,6 +1455,11 @@ ORDER's package is not made available during subsequent sessions."
   (setq parcel--processed-order-count 0)
   (mapc #'parcel--process-order (reverse parcel--queued-orders)))
 
+(defun parcel--order-on-disk-p (item)
+  "Return t if ITEM has an associated order and a build or repo dir on disk."
+  (when-let ((order (parcel-alist-get item parcel--queued-orders)))
+    (or (file-exists-p (parcel-order-repo-dir order))
+        (file-exists-p (parcel-order-build-dir order)))))
 ;;@INCOMPLETE: We need to determine policy for deleting dependencies.
 ;; Maybe skip dependencies which weren't declared or dependencies of a declared order.
 ;;;###autoload
@@ -1472,15 +1477,9 @@ If FORCE is non-nil do not confirm before deleting."
               (dependents    (delq asker (parcel-dependents package)))
               (dependencies  (when with-deps
                                (parcel-dependencies package parcel-ignored-dependencies))))
-          (if (cl-some (lambda (dependent)
-                         (let ((item (intern (parcel-order-package dependent))))
-                           (or (file-exists-p (parcel-order-repo-dir dependent))
-                               (file-exists-p (parcel-order-build-dir dependent))
-                               (parcel-alist-get item parcel--queued-orders)
-                               (parcel-alist-get item parcel--order-cache))))
-                       dependents)
-              (message "Cannot delete %S unless dependents %S are deleted first" package
-                       dependents)
+          (if (cl-some #'parcel--order-on-disk-p dependents)
+              (message "Cannot delete %S unless dependents %S are deleted first"
+                       package dependents)
             (when (file-exists-p repo-dir)  (delete-directory repo-dir  'recursive))
             (when (file-exists-p build-dir) (delete-directory build-dir 'recursive))
             (setq parcel--order-cache (cl-remove package parcel--order-cache :key #'parcel-order-package :test #'equal)
