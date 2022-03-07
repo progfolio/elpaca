@@ -1217,8 +1217,10 @@ If FORCE is non-nil, ignore order queue."
             (find-file-hook nil) ;; Don't clobber recentf
             (write-file-functions nil))
         (write-region (autoload-rubric output nil 'feature) nil output nil 'silent)
-        ;;@TODO: support older Emacs?
-        (make-directory-autoloads dir output)))
+        (if (fboundp 'make-directory-autoloads)
+            (make-directory-autoloads dir output)
+          ;; Compatibility for Emacs < 28.1
+          (with-no-warnings (update-directory-autoloads dir)))))
     (when-let ((buf (find-buffer-visiting output)))
       (kill-buffer buf))
     auto-name))
