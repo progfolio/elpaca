@@ -336,13 +336,15 @@ ITEM is any of the following values:
      ((or (null item) (symbolp item))
       (let ((menu-item (parcel-menu-item nil item nil nil (not interactive))))
         (unless menu-item (user-error "No menu-item for %S" item))
-        (push (run-hook-with-args-until-success 'parcel-order-functions item)
-              ingredients)
+        (when parcel-order-functions
+          (push (run-hook-with-args-until-success 'parcel-order-functions item)
+                ingredients))
         (push menu-item ingredients)))
      ((listp item)
       (setq package (pop item))
       (unless (parcel--inheritance-disabled-p item)
-        (let ((mods (run-hook-with-args-until-success 'parcel-order-functions item)))
+        (when-let ((parcel-order-functions)
+                   (mods (run-hook-with-args-until-success 'parcel-order-functions item)))
           (push mods ingredients)
           (when (or (plist-get item :inherit) (plist-get mods :inherit))
             (push (parcel-menu-item nil package nil nil 'no-descriptions) ingredients))))
@@ -352,11 +354,11 @@ ITEM is any of the following values:
         (progn
           (unless (plist-get recipe :package)
             (setq recipe (plist-put recipe :package (format "%S" package))))
-          (setq recipe
-                (parcel-merge-plists
-                 recipe
-                 (run-hook-with-args-until-success 'parcel-recipe-functions recipe)))
-          (if interactive (message "%S" recipe)) recipe)
+          (when-let ((parcel-recipe-functions)
+                     (recipe-mods (run-hook-with-args-until-success
+                                   'parcel-recipe-functions recipe)))
+            (setq recipe (parcel-merge-plists recipe recipe-mods)))
+          (if interactive (message "%S" recipe) recipe))
       (when interactive (user-error "No recipe for %S" package)))))
 
 (defsubst parcel--emacs-path ()
