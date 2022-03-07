@@ -348,7 +348,8 @@ ITEM is any of the following values:
           (push mods ingredients)
           (when (or (plist-get item :inherit) (plist-get mods :inherit))
             (push (parcel-menu-item nil package nil nil 'no-descriptions) ingredients))))
-      (setq ingredients (append ingredients (list item))))
+      (push item ingredients)
+      (setq ingredients (nreverse ingredients)))
      (t (signal 'wrong-type-argument `((null symbolp listp) . ,item))))
     (if-let ((recipe (apply #'parcel-merge-plists ingredients)))
         (progn
