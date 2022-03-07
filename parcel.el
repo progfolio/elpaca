@@ -1095,7 +1095,7 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
     (let* ((process
             (make-process
              :name     (format "parcel-fetch-%s" package)
-             :command  (list "git" "fetch" "--all")
+             :command  '("git" "fetch" "--all")
              :filter   (lambda (process output)
                          (parcel--process-filter process output "fatal" 'failed))
              :sentinel #'parcel--checkout-ref-process-sentinel)))
@@ -1340,8 +1340,7 @@ RECURSE is used to track recursive calls."
                                   for name = (car dependency)
                                   unless (member name ignore)
                                   collect
-                                  (append (list name)
-                                          (parcel-dependencies name ignore 'recurse)))))
+                                  (cons name (parcel-dependencies name ignore 'recurse)))))
         (delete-dups (flatten-tree transitives)))
     (when recurse item)))
 
@@ -1350,12 +1349,10 @@ RECURSE is used to track recursive calls."
 RECURSE is used to keep track of recursive calls."
   (if-let ((order (parcel-alist-get item parcel--queued-orders))
            (dependents (parcel-order-dependents order)))
-      (let ((transitives
-             (cl-loop
-              for dependent in dependents
-              collect
-              (let ((i (intern (parcel-order-package dependent))))
-                (append (list i (parcel-dependents i 'recurse)))))))
+      (let ((transitives (cl-loop for dependent in dependents
+                                  collect
+                                  (let ((i (intern (parcel-order-package dependent))))
+                                    (cons i (parcel-dependents i 'recurse))))))
         (delete-dups (nreverse (flatten-tree transitives))))
     (when recurse item)))
 
@@ -1565,7 +1562,7 @@ If HIDE is non-nil, do not display `parcel-status-buffer'."
   (let ((default-directory (parcel-order-repo-dir order))
         (process (make-process
                   :name (format "parcel-fetch-update-%s" (parcel-order-package order))
-                  :command (list "git" "fetch" "--all")
+                  :command  '("git" "fetch" "--all")
                   :filter   #'parcel--process-filter
                   :sentinel #'parcel--fetch-process-sentinel)))
     (process-put process :order order)))
