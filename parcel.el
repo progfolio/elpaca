@@ -1650,7 +1650,7 @@ TYPE is either the symbol `repo` or `build`."
   (interactive)
   (if-let ((package (intern (parcel-order-package
                              (get-text-property (line-beginning-position) 'order)))))
-      (parcel-delete-package force package)))
+      (parcel-delete-package force nil package)))
 
 (provide 'parcel)
 ;;; parcel.el ends here
