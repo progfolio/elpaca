@@ -634,12 +634,10 @@ RETURNS order structure."
     (let* ((status  (or status 'queued))
            (info    "Package queued")
            (package (if (listp item) (car item) item))
-           (name (format "%S" package))
+           (name    (format "%S" package))
            (recipe  (condition-case err
                         (parcel-recipe item)
-                      ((error)
-                       (setq status 'failed
-                             info (format "No recipe: %S" err))
+                      ((error) (setq status 'failed info (format "No recipe: %S" err))
                        nil)))
            (repo-dir (when recipe
                        (condition-case err
@@ -648,12 +646,14 @@ RETURNS order structure."
                           (setq status 'failed
                                 info (format "Unable to determine repo dir: %S" err))))))
            (build-dir (when recipe (parcel-build-dir recipe)))
-           (cached (cl-some (lambda (o) (when (equal (parcel-order-package o) name) o))
-                            parcel--order-cache))
-           (built-p nil)
+           (cached    (cl-some (lambda (o) (when (equal (parcel-order-package o) name) o))
+                               parcel--order-cache))
+           (built-p    nil)
            (order
             (parcel-order-create
-             :package name :recipe recipe :statuses (list status)
+             :package name      :recipe recipe       :statuses (list status)
+             :repo-dir repo-dir :build-dir build-dir :queue-time (current-time)
+             :init (not after-init-time)
              :build-steps
              (when recipe
                (if (file-exists-p build-dir)
@@ -667,9 +667,7 @@ RETURNS order structure."
                        (setq steps (cl-set-difference steps '(parcel--add-remotes
                                                               parcel--checkout-ref
                                                               parcel--dispatch-build-commands)))))
-                   steps)))
-             :repo-dir repo-dir :build-dir build-dir :queue-time (current-time)
-             :init (not after-init-time)))
+                   steps)))))
            (mono-repo
             (unless built-p
               (cl-some (lambda (cell)
