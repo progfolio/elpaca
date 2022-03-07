@@ -264,7 +264,7 @@ If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
                                       (length tabulated-list-entries))
                               'face '(:weight bold))
                   " "
-                  (when (and cols (not (equal cols '(nil))))
+                  (unless (member cols '((nil) nil))
                     (concat
                      (propertize
                       (if full-match-p "Matching:" "Columns Matching:")
