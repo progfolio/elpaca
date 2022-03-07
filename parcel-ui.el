@@ -84,9 +84,17 @@ Allows for less debouncing than during `post-command-hook'.")
     t))
 
 (defun parcel-ui--orphan-p (item)
-  "Return non-nil if ITEM's repo is on disk, but not a queued order."
-  (and (not (alist-get item parcel--queued-orders))
-       (file-exists-p (parcel-repo-dir (parcel-recipe item)))))
+  "Return non-nil if ITEM's repo or build are on disk without having been queued."
+  (unless (alist-get item parcel--queued-orders)
+    (let* ((recipe (parcel-recipe item))
+           (repo   (parcel-repo-dir recipe)))
+      (unless (cl-some (lambda (cell)
+                         (when-let ((queued (cdr cell))
+                                    ((equal repo (parcel-order-repo-dir queued))))
+                           queued))
+                       parcel--queued-orders)
+        (or (file-exists-p (parcel-build-dir recipe))
+            (file-exists-p (parcel-repo-dir  recipe)))))))
 
 (defun parcel-ui-tag-orphan (candidate)
   "Return non-nil if CANDIDATE is an oprhaned package."
