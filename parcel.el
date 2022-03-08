@@ -566,7 +566,7 @@ If PACKAGES is nil, use all available orders."
 
 (defun parcel--continue-mono-repo-dependency (order)
   "Continue processing ORDER after it's mono-repo is in the proper state."
-  (unless (member (parcel-order-statuses order) '(finished build-linked))
+  (unless (memq (parcel-order-statuses order) '(finished build-linked))
     (parcel--remove-build-steps
      order '(parcel--clone parcel--add-remotes parcel--checkout-ref))
     (parcel--run-next-build-step order)))
@@ -579,7 +579,7 @@ signal ORDER's depedentents to check (and possibly change) their status.
 If INFO is non-nil, ORDER's info is updated as well."
   (when status
     (push status (parcel-order-statuses order))
-    (when (member status '(finished failed blocked))
+    (when (memq status '(finished failed blocked))
       (mapc #'parcel--order-check-status (parcel-order-dependents order)))
     (when (eq status 'ref-checked-out)
       (mapc #'parcel--continue-mono-repo-dependency (parcel-order-includes order))))
@@ -984,7 +984,7 @@ If package's repo is not on disk, error."
   (let* ((recipe       (parcel-order-recipe order))
          (dependencies (parcel--dependencies recipe))
          (externals    (cl-loop for spec in dependencies
-                                unless (member (car spec) parcel-ignored-dependencies)
+                                unless (memq (car spec) parcel-ignored-dependencies)
                                 collect spec))
          queued-deps)
     (if externals
@@ -1016,7 +1016,7 @@ If package's repo is not on disk, error."
          ;;@TOOD: optimize with cl-loop
          (externals    (cl-remove-duplicates
                         (cl-remove-if (lambda (dependency)
-                                        (member dependency parcel-ignored-dependencies))
+                                        (memq dependency parcel-ignored-dependencies))
                                       dependencies :key #'car))))
     (if (and emacs (version< emacs-version (cadr emacs)))
         (parcel--update-order-info
@@ -1340,7 +1340,7 @@ RECURSE is used to track recursive calls."
            (dependencies (parcel--dependencies (parcel-order-recipe order))))
       (let ((transitives (cl-loop for dependency in dependencies
                                   for name = (car dependency)
-                                  unless (member name ignore)
+                                  unless (memq name ignore)
                                   collect
                                   (cons name (parcel-dependencies name ignore 'recurse)))))
         (delete-dups (flatten-tree transitives)))
@@ -1419,7 +1419,7 @@ If the :disabled keyword is present in body, the package is completely ignored.
 This happens regardless of the value associated with :disabled.
 The expansion is a string indicating the package has been disabled."
   (declare (indent 1))
-  (if (member :disabled body)
+  (if (memq :disabled body)
       (format "%S :disabled by parcel-use-package" order)
     `(parcel ',order
        (use-package ,(if (listp order) (car order) order)
