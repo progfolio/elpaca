@@ -568,6 +568,10 @@ If PACKAGES is nil, use all available orders."
 (defvar parcel--order-cache (when parcel-cache-orders (parcel--read-order-cache))
   "Built package information cache.")
 
+(defsubst parcel--run-next-build-step (order)
+  "Run ORDER's next build step with ARGS."
+  (funcall (or (pop (parcel-order-build-steps order)) #'parcel--finalize-order) order))
+
 (defun parcel--continue-mono-repo-dependency (order)
   "Continue processing ORDER after it's mono-repo is in the proper state."
   (unless (memq (parcel-order-statuses order) '(finished build-linked))
@@ -608,28 +612,35 @@ If INFO is non-nil, ORDER's info is updated as well."
          (end (nth 1 (car log))))
     (time-subtract end (parcel-order-queue-time order))))
 
-(defun parcel--run-next-build-step (order)
-  "Run ORDER's next build step with ARGS."
-  (if-let ((next (pop (parcel-order-build-steps order))))
-      (funcall next order)
-    (let ((status (parcel-order-status order)))
-      (if (eq  status 'finished)
-          (cl-loop for order in (parcel-order-dependents order)
-                   unless (eq (parcel-order-status order) 'finished)
-                   do (parcel--order-check-status order))
-        (unless (eq (parcel-order-status order) 'failed)
-          (parcel--update-order-info
-           order
-           (concat  "✓ " (format-time-string "%s.%3N" (parcel--log-duration order)) " secs")
-           'finished))
+(defun parcel--finalize-queue ()
+  "Run post isntallation functions:
+- load cached autoloads
+- evaluate deferred package configuration forms
+- possibly run `parcel-after-init-hook'."
+  (when parcel--autoloads-cache (parcel--load-cached-autoloads))
+  (funcall parcel--post-process-forms)
+  (unless parcel-init-in-progress (run-hooks 'parcel-after-init-hook))
+  (setq parcel-init-in-progress (not after-init-time))
+  (when after-init-time
+    (setq parcel-cache-autoloads nil
+          parcel--autoloads-cache nil)
+    (when parcel-cache-orders (parcel--write-order-cache))))
+
+(defun parcel--finalize-order (order)
+  "Declare ORDER finished or failed."
+  (let ((status (parcel-order-status order)))
+    (if (eq  status 'finished)
+        (cl-loop for order in (parcel-order-dependents order)
+                 unless (eq (parcel-order-status order) 'finished)
+                 do (parcel--order-check-status order))
+      (unless (eq (parcel-order-status order) 'failed)
+        (parcel--update-order-info
+         order
+         (concat  "✓ " (format-time-string "%s.%3N" (parcel--log-duration order)) " secs")
+         'finished)
         (cl-incf parcel--processed-order-count)
         (when (= parcel--processed-order-count (length parcel--queued-orders))
-          (when parcel--autoloads-cache (parcel--load-cached-autoloads))
-          (funcall parcel--post-process-forms)
-          (unless parcel--init-complete (run-hooks 'parcel-after-init-hook))
-          (setq parcel--init-complete t)
-          (setq parcel-cache-autoloads nil)
-          (when parcel-cache-orders (parcel--write-order-cache)))))))
+          (parcel--finalize-queue))))))
 
 (defun parcel--queue-order (item &optional status)
   "Queue (ITEM . ORDER) in `parcel--queued-orders'.
