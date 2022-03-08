@@ -133,7 +133,7 @@ Setting it too high causes prints fewer status updates."
 
 ;;@TODO: Each package's configuration should be stored in an alist first
 ;; that way we can remove it if a package fails to install.
-(defvar parcel--post-process-forms '(lambda ())
+(defvar parcel--post-process-forms nil
   "Forms to be executed after orders are processed.")
 
 (defvar parcel--processed-order-count 0
@@ -618,9 +618,9 @@ If INFO is non-nil, ORDER's info is updated as well."
 - evaluate deferred package configuration forms
 - possibly run `parcel-after-init-hook'."
   (when parcel--autoloads-cache (parcel--load-cached-autoloads))
-  (funcall parcel--post-process-forms)
   (unless parcel-init-in-progress (run-hooks 'parcel-after-init-hook))
   (setq parcel-init-in-progress (not after-init-time))
+  (eval `(progn ,@(apply #'append (nreverse parcel--post-process-forms))) t)
   (when after-init-time
     (setq parcel-cache-autoloads nil
           parcel--autoloads-cache nil)
@@ -1435,7 +1435,7 @@ If ORDER is `nil`, defer BODY until orders have been processed."
   (declare (indent 1))
   `(progn
      ,@(unless (null order) (list `(parcel--queue-order ,order)))
-     (setq parcel--post-process-forms (append parcel--post-process-forms ',body))))
+     (push ',body parcel--post-process-forms)))
 
 ;;;###autoload
 (defmacro parcel-use-package (order &rest body)
