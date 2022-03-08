@@ -1215,7 +1215,7 @@ If FORCE is non-nil, ignore order queue."
                         ,@(when depth (list "--depth" (number-to-string depth)))
                         ,URI ,repodir)
             :filter   (lambda (process output)
-                        (parcel--process-filter process output "\\(?:^\\(?:Password\\|Username\\)\\)" 'blocked))
+                        (parcel--process-filter process output "\\(?:^\\(?:Password\\|Username\\|passphrase\\)\\)" 'blocked))
             :sentinel #'parcel--clone-process-sentinel)))
       (process-put process :order order)
       (setf (parcel-order-process order) process))))
