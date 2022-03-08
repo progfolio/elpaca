@@ -109,6 +109,10 @@ Setting this to too low may cause the status buffer to block more.
 Setting it too high causes prints fewer status updates."
   :type 'number)
 
+(defcustom parcel--process-busy-interval 5
+  "Seconds to wait between subprocess outputs before declaring process blocked."
+  :type 'number)
+
 (defcustom parcel-build-steps '(parcel--clone
                                 parcel--add-remotes
                                 parcel--checkout-ref
@@ -801,6 +805,12 @@ FILES and NOCONS are used recursively."
     (cl-pushnew (parcel-order-build-dir order) Info-directory-list))
   (parcel--run-next-build-step order))
 
+(defun parcel--process-busy (process)
+  "Update order status when PROCESS has stopped producing output."
+  (when-let (((eq (process-status process) 'run))
+             (order (process-get process :order)))
+    (parcel--update-order-info order (process-get process :result) 'blocked)))
+
 (defun parcel--process-filter (process output &optional pattern status)
   "Filter PROCESS OUTPUT.
 PATTERN is a string which is checked against the entire process output.
@@ -808,8 +818,12 @@ If it matches, the order associated with process has its STATUS updated."
   (process-put process :raw-output (concat (process-get process :raw-output) output))
   (let* ((order  (process-get process :order))
          (result (process-get process :result))
+         (timer  (process-get process :timer))
          (lines  (split-string (concat result output) parcel-process-newline-regexp))
          (last-is-full-line-p (string-empty-p (car (last lines)))))
+    (when timer (cancel-timer timer))
+    (process-put process :timer (run-at-time parcel--process-busy-interval nil
+                                             (lambda () (parcel--process-busy process))))
     (unless last-is-full-line-p
       (process-put process :result (car (last lines)))
       (setq lines (butlast lines)))
