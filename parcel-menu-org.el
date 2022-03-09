@@ -76,7 +76,6 @@
                             :recipe
                             (list
                              :package "org"
-                             :type 'git
                              :repo "https://git.savannah.gnu.org/git/emacs/org-mode.git"
                              :depth 'full ; `org-version' depends on repository tags.
                              :pre-build '(progn (require 'parcel-menu-org)
@@ -90,7 +89,6 @@
                            :recipe
                            (list
                             :package "org-contrib"
-                            :type 'git
                             :includes
                             '(ob-arduino ; Intentionally short for indentation
                               ob-clojure-literate ob-csharp ob-eukleides
