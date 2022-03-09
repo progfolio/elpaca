@@ -504,17 +504,21 @@ If PACKAGES is nil, use all available orders."
   "Return ORDER's most recent log event info."
   (nth 2 (car (parcel-order-log order))))
 
+(defsubst parcel--status-face (status &optional default)
+  "Return face for STATUS or DEFAULT if not found."
+  (cond
+   ((eq status 'blocked)  'parcel-blocked)
+   ((eq status 'finished) 'parcel-finished)
+   ((eq status 'failed)   'parcel-failed)
+   (t                     (or default 'default))))
+
 (defun parcel-status-buffer-entries ()
   "Return list of queued orders entries suitable for `tabulated-list-entries'."
   (cl-loop for (item . order) in parcel--queued-orders
            for status = (parcel-order-status order)
            collect
            (list item (vector (propertize (parcel-order-package order)
-                                          'face (cond
-                                                 ((eq status 'blocked)  'parcel-blocked)
-                                                 ((eq status 'finished) 'parcel-finished)
-                                                 ((eq status 'failed)   'parcel-failed)
-                                                 (t                     'default))
+                                          'face (parcel--status-face status)
                                           'order order)
                               (symbol-name status)
                               (parcel-order-info order)))))
@@ -1163,13 +1167,9 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
   "Return status string for ORDER."
   (let* ((package (parcel-order-package order))
          (status  (parcel-order-status  order))
-         (name (format "%-30s"
+         (name    (format "%-30s"
                        (propertize package 'face
-                                   (pcase status
-                                     ('blocked  'parcel-blocked)
-                                     ('failed   'parcel-failed)
-                                     ('finished 'parcel-finished)
-                                     (_         '(:weight bold)))))))
+                                   (parcel--status-face status '(:weight bold))))))
     (concat (propertize
              (format "%s (%s) %s" name (or status "?") (or (parcel-order-info order) ""))
              'read-only         t
