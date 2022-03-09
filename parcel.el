@@ -184,9 +184,8 @@ Each function is passed a request, which may be any of the follwoing symbols:
   :type 'hook)
 
 (defvar parcel-ignored-dependencies
-  '(emacs cl-lib cl-generic nadvice org org-mode map seq json)
-  "Built in packages.
-Ignore these unless the user explicitly requests they be installed.")
+  '(emacs cl-lib cl-generic nadvice org org-mode map seq json parcel)
+  "Ignore these unless the user explicitly requests they be installed.")
 
 (defvar parcel-overriding-prompt nil "Overriding prompt for interactive functions.")
 
