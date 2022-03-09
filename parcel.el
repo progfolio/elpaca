@@ -1168,8 +1168,8 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
   (let* ((package (parcel-order-package order))
          (status  (parcel-order-status  order))
          (name    (format "%-30s"
-                       (propertize package 'face
-                                   (parcel--status-face status '(:weight bold))))))
+                          (propertize package 'face
+                                      (parcel--status-face status '(:weight bold))))))
     (concat (propertize
              (format "%s (%s) %s" name (or status "?") (or (parcel-order-info order) ""))
              'read-only         t
