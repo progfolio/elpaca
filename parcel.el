@@ -63,8 +63,10 @@
 (defvar parcel--pre-built-steps
   '(parcel--queue-dependencies parcel--add-info-path parcel--activate-package)
   "List of steps for packages which are already built.")
-(defvar parcel--init-complete nil
-  "When non-nil prevent `parcel-after-init-hook' from being run.")
+(defvar parcel--queue-count 1 "Number or queues to process.
+Used to determine when to fire `parcel-after-init-hook'.")
+(defvar parcel--queue-id 0 "Current queue generation.")
+(defvar parcel-synchronous nil "When non-nil, process orders synchronously.")
 
 (defcustom parcel-after-init-hook nil
   "Parcel's analogue to `after-init-hook'.
@@ -440,7 +442,7 @@ ITEM is any of the following values:
                             (:named))
   "Order object for queued processing."
   build-dir build-steps dependencies dependents files includes init log package
-  process queue-time recipe repo-dir statuses)
+  process queue-time recipe repo-dir statuses queue-id)
 
 (defsubst parcel-order-status (order)
   "Return `car' of ORDER's statuses."
@@ -622,9 +624,14 @@ If INFO is non-nil, ORDER's info is updated as well."
 - evaluate deferred package configuration forms
 - possibly run `parcel-after-init-hook'."
   (when parcel--autoloads-cache (parcel--load-cached-autoloads))
-  (unless parcel-init-in-progress (run-hooks 'parcel-after-init-hook))
-  (setq parcel-init-in-progress (not after-init-time))
-  (eval `(progn ,@(apply #'append (nreverse parcel--post-process-forms))) t)
+  (let ((queued-forms (cl-loop for cell in parcel--post-process-forms
+                               when (= (car cell) parcel--queue-id)
+                               collect (cdr cell))))
+    (eval `(progn ,@(apply #'append (nreverse queued-forms))) t))
+  (cl-decf parcel--queue-count)
+  (when (zerop parcel--queue-count) (run-hooks 'parcel-after-init-hook))
+  (setq parcel--queue-id (1+ parcel--queue-id))
+  (parcel-process-queue)
   (when after-init-time
     (setq parcel-cache-autoloads nil
           parcel--autoloads-cache nil)
@@ -643,7 +650,12 @@ If INFO is non-nil, ORDER's info is updated as well."
          (concat  "✓ " (format-time-string "%s.%3N" (parcel--log-duration order)) " secs")
          'finished)
         (cl-incf parcel--processed-order-count)
-        (when (= parcel--processed-order-count (length parcel--queued-orders))
+        (when-let ((qid (parcel-order-queue-id order))
+                   ((= parcel--processed-order-count
+                       ;;@OPTIMIZE: Do we have to do this for every order?
+                       (length (cl-remove-if
+                                (lambda (q) (> (parcel-order-queue-id (cdr q)) qid))
+                                parcel--queued-orders)))))
           (parcel--finalize-queue))))))
 
 (defun parcel--queue-order (item &optional status)
@@ -674,6 +686,7 @@ RETURNS order structure."
             (parcel-order-create
              :package name      :recipe recipe       :statuses (list status)
              :repo-dir repo-dir :build-dir build-dir :queue-time (current-time)
+             :queue-id parcel--queue-id
              :init (not after-init-time)
              :build-steps
              (when recipe
@@ -1437,7 +1450,7 @@ If ORDER is `nil`, defer BODY until orders have been processed."
   (declare (indent 1))
   `(progn
      ,@(unless (null order) (list `(parcel--queue-order ,order)))
-     (push ',body parcel--post-process-forms)))
+     (push (cons ,parcel--queue-id ',body) parcel--post-process-forms)))
 
 ;;;###autoload
 (defmacro parcel-use-package (order &rest body)
@@ -1477,12 +1490,29 @@ ORDER's package is not made available during subsequent sessions."
     (unless (memq (parcel-order-status order) '(failed blocked))
       (parcel--run-next-build-step order))))
 
+(defun parcel--order-queue-current-p (queued)
+  "Return t if QUEUED order belongs to `parcel--queue-id'."
+  (= (parcel-order-queue-id (cdr queued)) parcel--queue-id))
+
+;;@MAYBE: Don't expose this as public API; just expose `parcel-process-init'?
 ;;;###autoload
 (defun parcel-process-queue ()
   "Process  orders in `parcel--queued-orders'."
   (interactive)
-  (setq parcel--processed-order-count 0)
-  (mapc #'parcel--process-order (reverse parcel--queued-orders)))
+  (mapc #'parcel--process-order
+        (reverse (cl-remove-if-not #'parcel--order-queue-current-p parcel--queued-orders))))
+
+;;;###autoload
+(defun parcel-process-init ()
+  "Process entire queue."
+  (setq parcel--queue-id 0)
+  (parcel-process-queue))
+
+;;;###autoload
+(defun parcel-split-queue ()
+  "Split remaining orders into new queue."
+  (cl-incf parcel--queue-id)
+  (cl-incf parcel--queue-count))
 
 (defun parcel--order-on-disk-p (item)
   "Return t if ITEM has an associated order and a build or repo dir on disk."
