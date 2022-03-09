@@ -440,8 +440,8 @@ ITEM is any of the following values:
                             (:type list)
                             (:named))
   "Order object for queued processing."
-  package recipe build-steps statuses dependencies dependents body
-  includes repo-dir build-dir files process log queue-time init)
+  build-dir build-steps dependencies dependents files includes init log package
+  process queue-time recipe repo-dir statuses)
 
 (defsubst parcel-order-status (order)
   "Return `car' of ORDER's statuses."
@@ -482,7 +482,8 @@ If PACKAGES is nil, use all available orders."
                                                      (_         '(:weight bold))))))
                           (push (cons time
                                       (format "[%s]%s %s"
-                                              (format-time-string "%02s.%3N" (time-subtract time parcel--order-queue-start-time))
+                                              (format-time-string
+                                               "%02s.%3N" (time-subtract time parcel--order-queue-start-time))
                                               (format "%-30s" (concat "(" name "):"))
                                               text))
                                 log)))))
@@ -1226,7 +1227,9 @@ If FORCE is non-nil, ignore order queue."
                         ,@(when depth (list "--depth" (number-to-string depth)))
                         ,URI ,repodir)
             :filter   (lambda (process output)
-                        (parcel--process-filter process output "\\(?:^\\(?:Password\\|Username\\|passphrase\\)\\)" 'blocked))
+                        (parcel--process-filter
+                         process output
+                         "\\(?:^\\(?:Password\\|Username\\|passphrase\\)\\)" 'blocked))
             :sentinel #'parcel--clone-process-sentinel)))
       (process-put process :order order)
       (setf (parcel-order-process order) process))))
