@@ -63,10 +63,6 @@
 (defvar parcel--pre-built-steps
   '(parcel--queue-dependencies parcel--add-info-path parcel--activate-package)
   "List of steps for packages which are already built.")
-(defvar parcel--queue-count 1 "Number or queues to process.
-Used to determine when to fire `parcel-after-init-hook'.")
-(defvar parcel--queue-id 0 "Current queue generation.")
-(defvar parcel-synchronous nil "When non-nil, process orders synchronously.")
 
 (defcustom parcel-after-init-hook nil
   "Parcel's analogue to `after-init-hook'.
@@ -130,16 +126,6 @@ Setting it too high causes prints fewer status updates."
                                 parcel--activate-package)
   "List of steps which are run when installing/building a package."
   :type 'list)
-
-(defvar parcel--autoloads-cache nil "Cache for autoload forms.")
-
-;;@TODO: Each package's configuration should be stored in an alist first
-;; that way we can remove it if a package fails to install.
-(defvar parcel--post-process-forms nil
-  "Forms to be executed after orders are processed.")
-
-(defvar parcel--processed-order-count 0
-  "Used to tell whent the queue has finished running.")
 
 (defvar parcel-default-files-directive
   '("*.el" "*.el.in" "dir"
@@ -213,7 +199,17 @@ Each function is passed a request, which may be any of the follwoing symbols:
                                   :post-build :pre-build :protocol :remote :repo)
   "Recognized parcel recipe keywords.")
 
-(defvar parcel--queued-orders nil "List of queued orders.")
+(defvar parcel--queue-index 0 "Index for tracking current queue.")
+
+(cl-defstruct (parcel-queue (:constructor parcel-queue-create)
+                            (:type list)
+                            (:named))
+  "Queue to hold parcel orders."
+  autoloads forms init (id (cl-incf parcel--queue-index))
+  orders (processed 0) (status 'incomplete))
+
+(defvar parcel--queues (list (parcel-queue-create :id parcel--queue-index))
+  "List of parcel queue objects.")
 
 (defvar parcel--order-queue-start-time nil
   "Time used to keep order logs relative to start of queue.")
@@ -262,6 +258,10 @@ If RECACHE is non-nil, recompute `parcel-menu--candidates-cache'."
                                          when index collect index))
                          (lambda (a b) (string-lessp (car a) (car b)))))
         (when parcel-cache-menu-items (parcel--write-menu-cache)))))
+
+(defun parcel--current-queue ()
+  "Return the current queue."
+  (car (nthcdr (- (1- (length parcel--queues)) parcel--queue-index) parcel--queues)))
 
 (defsubst parcel-alist-get (key alist)
   "Return KEY's value in ALIST.
@@ -440,7 +440,7 @@ ITEM is any of the following values:
 (cl-defstruct (parcel-order (:constructor parcel-order-create)
                             (:type list)
                             (:named))
-  "Order object for queued processing."
+  "Order for queued processing."
   build-dir build-steps dependencies dependents files includes init log package
   process queue-time recipe repo-dir statuses queue-id)
 
@@ -456,14 +456,24 @@ Each event is of the form: (STATUS TIME TEXT)"
               text)
         (parcel-order-log order)))
 
+(defun parcel--queued-orders (&optional arg)
+  "Return list of queued orders from ARG.
+If ARG is a non-negative integer return Nth queue's orders in `parcel--queues'.
+Otherwise return a list of all queued orders."
+  (if arg
+      (parcel-queue-orders (car (nthcdr (- (1- (length parcel--queues)) parcel--queue-index)
+                                        parcel--queues)))
+    (apply #'append (nreverse (cl-loop for queue in parcel--queues
+                                       collect (parcel-queue-orders queue))))))
+
 (defun parcel--events (&rest packages)
   "Return sorted event log string for PACKAGES.
 If PACKAGES is nil, use all available orders."
   (let* ((packages (delete-dups (if packages (mapcar #'intern packages))))
          (queued (if packages
                      (cl-remove-if-not (lambda (cell) (member (car cell) packages))
-                                       parcel--queued-orders)
-                   parcel--queued-orders))
+                                       (parcel--queued-orders))
+                   (parcel--queued-orders)))
          (logs
           (mapcar (lambda (cell)
                     (let* ((package (car cell))
@@ -514,9 +524,9 @@ If PACKAGES is nil, use all available orders."
    ((eq status 'failed)   'parcel-failed)
    (t                     (or default 'default))))
 
-(defun parcel-status-buffer-entries ()
-  "Return list of queued orders entries suitable for `tabulated-list-entries'."
-  (cl-loop for (item . order) in parcel--queued-orders
+(defun parcel-status-buffer-entries (&optional queued)
+  "Return list of `tabultaed-list-entries' from QUEUED orders."
+  (cl-loop for (item . order) in (or queued (parcel-queue-orders (parcel--current-queue)))
            for status = (parcel-order-status order)
            collect
            (list item (vector (propertize (parcel-order-package order)
@@ -525,15 +535,15 @@ If PACKAGES is nil, use all available orders."
                               (symbol-name status)
                               (parcel-order-info order)))))
 
-(defun parcel--print-order-status ()
-  "Print ORDER's status in `parcel-status-buffer'."
+(defun parcel--print-order-status (&optional queued)
+  "Print status of QUEUED orders in `parcel-status-buffer'."
   (let ((buffer (get-buffer parcel-status-buffer)))
-    (unless buffer (parcel--initialize-process-buffer))
+    (unless buffer (parcel--initialize-process-buffer queued))
     (with-current-buffer (get-buffer-create parcel-status-buffer)
-      (setq tabulated-list-entries (parcel-status-buffer-entries))
+      (setq tabulated-list-entries (parcel-status-buffer-entries queued))
       (tabulated-list-init-header)
       (tabulated-list-print 'remember-pos 'update)
-      (parcel--set-header-line))))
+      (parcel--set-header-line queued))))
 
 (defun parcel--clean-order (order)
   "Return ORDER plist with cache data."
@@ -550,7 +560,7 @@ If PACKAGES is nil, use all available orders."
   (unless (file-exists-p parcel-cache-directory)
     (make-directory parcel-cache-directory 'parents))
   (parcel--write-file (expand-file-name "cache/cache.el" parcel-directory)
-    (prin1 (cl-loop for (_ . order) in (reverse parcel--queued-orders)
+    (prin1 (cl-loop for (_ . order) in (parcel--queued-orders)
                     when (eq (parcel-order-status order) 'finished)
                     collect (parcel--clean-order order)))))
 
@@ -607,10 +617,6 @@ If INFO is non-nil, ORDER's info is updated as well."
                              nil #'parcel--print-order-status)))
       (when (eq status 'failed) (parcel-display-status-buffer)))))
 
-(defun parcel--load-cached-autoloads ()
-  "Load `parcel--autoloads-cache'."
-  (eval `(progn ,@parcel--autoloads-cache) t))
-
 (defun parcel--log-duration (order)
   "Return ORDER's log duration."
   ;;most recent event is car of log
@@ -618,24 +624,23 @@ If INFO is non-nil, ORDER's info is updated as well."
          (end (nth 1 (car log))))
     (time-subtract end (parcel-order-queue-time order))))
 
-(defun parcel--finalize-queue ()
-  "Run post isntallation functions:
+(defun parcel--finalize-queue (queue)
+  "Run QUEUE's post isntallation functions:
 - load cached autoloads
 - evaluate deferred package configuration forms
 - possibly run `parcel-after-init-hook'."
-  (when parcel--autoloads-cache (parcel--load-cached-autoloads))
-  (let ((queued-forms (cl-loop for cell in parcel--post-process-forms
-                               when (= (car cell) parcel--queue-id)
-                               collect (cdr cell))))
-    (eval `(progn ,@(apply #'append (nreverse queued-forms))) t))
-  (cl-decf parcel--queue-count)
-  (when (zerop parcel--queue-count) (run-hooks 'parcel-after-init-hook))
-  (setq parcel--queue-id (1+ parcel--queue-id))
-  (parcel-process-queue)
-  (when after-init-time
-    (setq parcel-cache-autoloads nil
-          parcel--autoloads-cache nil)
-    (when parcel-cache-orders (parcel--write-order-cache))))
+  (when-let ((autoloads (parcel-queue-autoloads queue)))
+    (eval `(progn ,@autoloads) t))
+  (when-let ((forms (parcel-queue-forms queue)))
+    (eval `(progn ,@(apply #'append (nreverse forms))) t))
+  (setf (parcel-queue-status queue) 'complete)
+  (if (and (parcel-queue-init queue) (= (parcel-queue-id queue) (1- (length parcel--queues))))
+      (progn
+        (run-hooks 'parcel-after-init-hook)
+        (parcel-split-queue))
+    (cl-incf parcel--queue-index)
+    (when-let ((queue (parcel--current-queue)))
+      (parcel--process-queue queue))))
 
 (defun parcel--finalize-order (order)
   "Declare ORDER finished or failed."
@@ -649,20 +654,16 @@ If INFO is non-nil, ORDER's info is updated as well."
          order
          (concat  "✓ " (format-time-string "%s.%3N" (parcel--log-duration order)) " secs")
          'finished)
-        (cl-incf parcel--processed-order-count)
-        (when-let ((qid (parcel-order-queue-id order))
-                   ((= parcel--processed-order-count
-                       ;;@OPTIMIZE: Do we have to do this for every order?
-                       (length (cl-remove-if
-                                (lambda (q) (> (parcel-order-queue-id (cdr q)) qid))
-                                parcel--queued-orders)))))
-          (parcel--finalize-queue))))))
+        (when-let ((queue (nth parcel--queue-index (reverse parcel--queues)))
+                   ((= (cl-incf (parcel-queue-processed queue))
+                       (length (parcel-queue-orders queue)))))
+          (parcel--finalize-queue queue))))))
 
 (defun parcel--queue-order (item &optional status)
   "Queue (ITEM . ORDER) in `parcel--queued-orders'.
 If STATUS is non-nil, the order is given that initial status.
 RETURNS order structure."
-  (if (and (not after-init-time) (parcel-alist-get item parcel--queued-orders))
+  (if (and (not after-init-time) (parcel-alist-get item (parcel--queued-orders)))
       (warn "%S already queued. Duplicate?" item)
     (let* ((status  (or status 'queued))
            (info    "Package queued")
@@ -686,7 +687,6 @@ RETURNS order structure."
             (parcel-order-create
              :package name      :recipe recipe       :statuses (list status)
              :repo-dir repo-dir :build-dir build-dir :queue-time (current-time)
-             :queue-id parcel--queue-id
              :init (not after-init-time)
              :build-steps
              (when recipe
@@ -709,9 +709,9 @@ RETURNS order structure."
                                     ((and repo-dir
                                           (equal repo-dir (parcel-order-repo-dir queued)))))
                            queued))
-                       (reverse parcel--queued-orders)))))
+                       (reverse (parcel--queued-orders))))))
       (prog1 order
-        (push (cons package order) parcel--queued-orders)
+        (push (cons package order) (parcel-queue-orders (parcel--current-queue)))
         (if (not mono-repo)
             (parcel--update-order-info order info)
           (cl-pushnew order (parcel-order-includes mono-repo))
@@ -1038,7 +1038,7 @@ If package's repo is not on disk, error."
           ;; multiple times and run its build steps simultaneously/out of order.
           (dolist (spec externals)
             (let* ((dependency (car spec))
-                   (queued     (parcel-alist-get dependency parcel--queued-orders))
+                   (queued     (parcel-alist-get dependency (parcel--queued-orders)))
                    (dep-order  (or queued (parcel--queue-order dependency))))
               (setf (parcel-order-dependencies order)
                     (delete-dups (append (parcel-order-dependencies order) (list dep-order))))
@@ -1068,7 +1068,7 @@ If package's repo is not on disk, error."
           (let ((finished 0))
             (dolist (spec externals)
               (let* ((dependency (car spec))
-                     (queued     (parcel-alist-get dependency parcel--queued-orders))
+                     (queued     (parcel-alist-get dependency (parcel--queued-orders)))
                      (dep-order  (or queued (parcel--queue-order dependency)))
                      (included   (member dep-order (parcel-order-includes order)))
                      (blocked    (eq (parcel-order-status dep-order) 'blocked)))
@@ -1149,12 +1149,12 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
       (process-put process :order order)
       (setf (parcel-order-process order) process))))
 
-(defun parcel--set-header-line ()
-  "Set header line format for `parcel-buffer'."
-  (let ((counts nil)
-        (queue-len (length parcel--queued-orders)))
-    (dolist (queued parcel--queued-orders)
-      (let ((status (parcel-order-status (cdr queued))))
+(defun parcel--set-header-line (queued)
+  "Set `parcel-buffer' header line to reflect QUEUED order statuses."
+  (let* ((counts nil)
+         (queue-len (length queued)))
+    (dolist (q queued)
+      (let ((status (parcel-order-status (cdr q))))
         (if (parcel-alist-get status counts)
             ;; Avoid `parcel-alist-get'. doesn't return PLACE.
             (cl-incf (alist-get status counts))
@@ -1324,7 +1324,7 @@ Async wrapper for `parcel-generate-autoloads'."
                      (condition-case err
                          (eval '(progn ,@(nreverse forms)) t)
                        ((error) (warn "Error loading %S autoloads: %S" package err))))
-                  parcel--autoloads-cache))
+                  (parcel-queue-autoloads (parcel--current-queue))))
           (parcel--update-order-info order "Autoloads cached"))
       (condition-case err
           (progn
@@ -1353,7 +1353,7 @@ Async wrapper for `parcel-generate-autoloads'."
           (cl-loop for item in (parcel-dependencies (intern (parcel-order-package order))
                                                     parcel-ignored-dependencies)
                    when item
-                   for build-dir = (parcel-order-build-dir (parcel-alist-get item parcel--queued-orders))
+                   for build-dir = (parcel-order-build-dir (parcel-alist-get item (parcel--queued-orders)))
                    when build-dir
                    collect build-dir))
          (program `(progn
@@ -1376,7 +1376,7 @@ Async wrapper for `parcel-generate-autoloads'."
   "Return recursive list of ITEM's dependencies.
 IGNORE may be a list of symbols which are not included in the resulting list.
 RECURSE is used to track recursive calls."
-  (if-let ((order (parcel-alist-get item parcel--queued-orders))
+  (if-let ((order (parcel-alist-get item (parcel--queued-orders)))
            (dependencies (parcel--dependencies (parcel-order-recipe order))))
       (let ((transitives (cl-loop for dependency in dependencies
                                   for name = (car dependency)
@@ -1389,7 +1389,7 @@ RECURSE is used to track recursive calls."
 (defun parcel-dependents (item &optional recurse)
   "Return recursive list of packages which depend on ITEM.
 RECURSE is used to keep track of recursive calls."
-  (if-let ((order (parcel-alist-get item parcel--queued-orders))
+  (if-let ((order (parcel-alist-get item (parcel--queued-orders)))
            (dependents (parcel-order-dependents order)))
       (let ((transitives (cl-loop for dependent in dependents
                                   collect
@@ -1402,13 +1402,13 @@ RECURSE is used to keep track of recursive calls."
 (defun parcel-print-log (&rest packages)
   "Print log for PACKAGES."
   (interactive (completing-read-multiple "Log for Packages: "
-                                         (mapcar #'car parcel--queued-orders)))
+                                         (mapcar #'car (parcel--queued-orders))))
   (let ((queued (if packages
                     (cl-remove-if-not (lambda (package)
-                                        (parcel-alist-get (intern package) parcel--queued-orders))
+                                        (parcel-alist-get (intern package) (parcel--queued-orders)))
                                       packages)
                   (mapcar (lambda (queued) (symbol-name (car queued)))
-                          parcel--queued-orders))))
+                          (parcel--queued-orders)))))
     (unless queued (user-error "No queued packages by name: %S"  packages))
     (with-current-buffer (get-buffer-create "*Parcel Log*")
       (with-silent-modifications
@@ -1421,27 +1421,34 @@ RECURSE is used to keep track of recursive calls."
 (defvar parcel-status-buffer-list-format [("Package" 30 t) ("Status" 15 t) ("Info" 100 t)]
   "Format of `parcel-status-buffer' columns.")
 
-(defun parcel--initialize-process-buffer (&optional display)
-  "Initialize the parcel process buffer.
+(defun parcel--initialize-process-buffer (&optional queued display)
+  "Initialize the parcel process buffer for QUEUED orders.
+If QUEUED is nil, display the most recent queue's orders.
 When DISPLAY is non-nil, display the buffer."
   (with-current-buffer (get-buffer-create parcel-status-buffer)
     (unless (derived-mode-p 'parcel-status-mode) (parcel-status-mode))
     (with-silent-modifications (erase-buffer))
-    (setq tabulated-list-use-header-line nil
+    (setq queued
+          (or queued (parcel-queue-orders (parcel--current-queue)))
+          tabulated-list-use-header-line nil
           tabulated-list-format parcel-status-buffer-list-format
-          tabulated-list-entries (parcel-status-buffer-entries))
+          tabulated-list-entries (parcel-status-buffer-entries queued))
     (tabulated-list-init-header)
     (tabulated-list-print-fake-header)
     (tabulated-list-print 'remember-pos 'update)
-    (parcel--set-header-line)
+    (parcel--set-header-line queued)
     (when display (pop-to-buffer-same-window (current-buffer)))))
 
 ;;;###autoload
-(defun parcel-display-status-buffer ()
-  "Diplay `parcel-status-buffer'."
-  (interactive)
+(defun parcel-display-status-buffer (&optional arg)
+  "Diplay `parcel-status-buffer' for latest queue.
+When ARG is non-nil display all queues, else, display only the most recent."
+  (interactive "P")
   ;; If this is invoked during init, we want it to be updated.
-  (parcel--initialize-process-buffer 'display))
+  (parcel--initialize-process-buffer
+   (when arg (apply #'append (cl-loop for queue in parcel--queues
+                                      collect (parcel-queue-orders queue))))
+   'display))
 
 ;;;###autoload
 (defmacro parcel (order &rest body)
@@ -1450,7 +1457,7 @@ If ORDER is `nil`, defer BODY until orders have been processed."
   (declare (indent 1))
   `(progn
      ,@(unless (null order) (list `(parcel--queue-order ,order)))
-     (push (cons ,parcel--queue-id ',body) parcel--post-process-forms)))
+     (push ',body (parcel-queue-forms (parcel--current-queue)))))
 
 ;;;###autoload
 (defmacro parcel-use-package (order &rest body)
@@ -1476,7 +1483,7 @@ ORDER's package is not made available during subsequent sessions."
                                nil nil nil
                                (lambda (candidate)
                                  (not (parcel-alist-get (car candidate)
-                                                        parcel--queued-orders))))))
+                                                        (parcel--queued-orders)))))))
                   (append (list (intern (plist-get recipe :package)))
                           recipe))))
   (setq parcel-cache-autoloads nil)
@@ -1490,47 +1497,37 @@ ORDER's package is not made available during subsequent sessions."
     (unless (memq (parcel-order-status order) '(failed blocked))
       (parcel--run-next-build-step order))))
 
-(defun parcel--order-queue-current-p (queued)
-  "Return t if QUEUED order belongs to `parcel--queue-id'."
-  (= (parcel-order-queue-id (cdr queued)) parcel--queue-id))
-
-;;@MAYBE: Don't expose this as public API; just expose `parcel-process-init'?
-;;;###autoload
-(defun parcel-process-queue ()
-  "Process  orders in `parcel--queued-orders'."
-  (interactive)
-  (mapc #'parcel--process-order
-        (reverse (cl-remove-if-not #'parcel--order-queue-current-p parcel--queued-orders))))
+(defun parcel--process-queue (queue)
+  "Process  orders in QUEUE."
+  (mapc #'parcel--process-order (reverse (parcel-queue-orders queue))))
 
 ;;;###autoload
 (defun parcel-process-init ()
   "Process entire queue."
-  (setq parcel--queue-id 0)
-  (parcel-process-queue))
+  (setq parcel--queue-index 0)
+  (parcel--process-queue (parcel--current-queue)))
 
 ;;;###autoload
 (defun parcel-split-queue ()
   "Split remaining orders into new queue."
-  (cl-incf parcel--queue-id)
-  (cl-incf parcel--queue-count))
+  (push (parcel-queue-create :init (not after-init-time))
+        parcel--queues))
 
 (defun parcel--order-on-disk-p (item)
   "Return t if ITEM has an associated order and a build or repo dir on disk."
-  (when-let ((order (parcel-alist-get item parcel--queued-orders)))
+  (when-let ((order (parcel-alist-get item (parcel--queued-orders))))
     (or (file-exists-p (parcel-order-repo-dir order))
         (file-exists-p (parcel-order-build-dir order)))))
 ;;@INCOMPLETE: We need to determine policy for deleting dependencies.
 ;; Maybe skip dependencies which weren't declared or dependencies of a declared order.
+
 ;;;###autoload
 (defun parcel-delete-package (force with-deps &optional package asker)
   "Remove a PACKAGE from all caches and disk.
 If WITH-DEPS is non-nil dependencies other than ASKER are deleted.
 If FORCE is non-nil do not confirm before deleting."
-  (interactive (list current-prefix-arg
-                     (intern (completing-read "Delete package: "
-                                              (mapcar #'car parcel--queued-orders)))))
   (when (or force (yes-or-no-p (format "Delete package %S?" package)))
-    (if-let ((order (parcel-alist-get package parcel--queued-orders)))
+    (if-let ((order (parcel-alist-get package (parcel--queued-orders))))
         (let ((repo-dir      (parcel-order-repo-dir  order))
               (build-dir     (parcel-order-build-dir order))
               (dependents    (delq asker (parcel-dependents package)))
@@ -1543,9 +1540,10 @@ If FORCE is non-nil do not confirm before deleting."
             (when (file-exists-p build-dir) (delete-directory build-dir 'recursive))
             (setq parcel--order-cache
                   (cl-remove package parcel--order-cache
-                             :key #'parcel-order-package :test #'equal)
-                  parcel--queued-orders
-                  (cl-remove package parcel--queued-orders :key #'car))
+                             :key #'parcel-order-package :test #'equal))
+            (dolist (queue parcel--queues)
+              (setf (parcel-queue-orders queue)
+                    (cl-remove package (parcel-queue-orders queue) :key #'car)))
             (parcel--write-order-cache)
             (when (equal (buffer-name) parcel-status-buffer) (parcel-display-status-buffer))
             (message "Deleted package %S" package)
@@ -1561,12 +1559,12 @@ If HIDE is non-nil, do not display `parcel-status-buffer'."
   (interactive
    (list (let ((item
                 (completing-read "Rebuild package: "
-                                 (sort (mapcar #'car parcel--queued-orders) #'string<)
+                                 (sort (mapcar #'car (parcel--queued-orders)) #'string<)
                                  nil 'require-match)))
            (if (string-empty-p item)
                (user-error "No package selected")
              (intern item)))))
-  (if-let ((queued (assoc item parcel--queued-orders)))
+  (if-let ((queued (assoc item (parcel--queued-orders))))
       (let ((order (cdr queued)))
         (parcel--update-order-info order "Rebuilding" 'rebuilding)
         (setq parcel-cache-autoloads nil)
@@ -1636,12 +1634,12 @@ If HIDE is non-nil don't display `parcel-status-buffer'."
   (interactive
    (list (let ((item
                 (completing-read "Fetch updates: "
-                                 (sort (mapcar #'car parcel--queued-orders) #'string<)
+                                 (sort (mapcar #'car (parcel--queued-orders)) #'string<)
                                  nil 'require-match)))
            (if (string-empty-p item)
                (user-error "No package selected")
              (intern item)))))
-  (if-let ((queued (assoc item parcel--queued-orders)))
+  (if-let ((queued (assoc item (parcel--queued-orders))))
       (let ((order (cdr queued)))
         (parcel--update-order-info order "Fetching updates" 'fetching-updates)
         (setf (parcel-order-build-steps order) (list #'parcel--fetch #'parcel--log-updates))
@@ -1658,10 +1656,10 @@ If HIDE is non-nil don't display `parcel-status-buffer'."
 
 ;;;###autoload
 (defun parcel-fetch-all (&optional hide)
-  "Fetch remote commits for every order in `parcel-queued-orders'.
+  "Fetch remote commits for every queued order.
 If HIDE is non-nil, do not show `parcel-status-buffer'."
   (interactive "P")
-  (mapc (lambda (queued) (parcel-fetch (car queued) hide)) parcel--queued-orders))
+  (mapc (lambda (queued) (parcel-fetch (car queued) hide)) (parcel--queued-orders)))
 
 ;;;; STATUS BUFFER
 (defvar parcel-status-mode-map

@@ -79,22 +79,23 @@ Allows for less debouncing than during `post-command-hook'.")
 ;;;; Functions:
 (defun parcel-ui--installed-p (item)
   "Return non-nil if ITEM's associated repo dir is on disk."
-  (when-let ((order (parcel-alist-get item parcel--queued-orders))
+  (when-let ((order (parcel-alist-get item (parcel--queued-orders)))
              ((file-exists-p (parcel-order-repo-dir order))))
     t))
 
 (defun parcel-ui--orphan-p (item)
   "Return non-nil if ITEM's repo or build are on disk without having been queued."
-  (unless (alist-get item parcel--queued-orders)
-    (let* ((recipe (parcel-recipe item))
-           (repo   (parcel-repo-dir recipe)))
-      (unless (cl-some (lambda (cell)
-                         (when-let ((queued (cdr cell))
-                                    ((equal repo (parcel-order-repo-dir queued))))
-                           queued))
-                       parcel--queued-orders)
-        (or (file-exists-p (parcel-build-dir recipe))
-            (file-exists-p (parcel-repo-dir  recipe)))))))
+  (let ((queued-orders (parcel--queued-orders)))
+    (unless (alist-get item queued-orders)
+      (let* ((recipe (parcel-recipe item))
+             (repo   (parcel-repo-dir recipe)))
+        (unless (cl-some (lambda (cell)
+                           (when-let ((queued (cdr cell))
+                                      ((equal repo (parcel-order-repo-dir queued))))
+                             queued))
+                         queued-orders)
+          (or (file-exists-p (parcel-build-dir recipe))
+              (file-exists-p (parcel-repo-dir  recipe))))))))
 
 (defun parcel-ui-tag-orphan (candidate)
   "Return non-nil if CANDIDATE is an oprhaned package."
@@ -102,7 +103,7 @@ Allows for less debouncing than during `post-command-hook'.")
 
 (defun parcel-ui--custom-candidates ()
   "Return declared candidate list with no recipe in `parcel-menu-functions'."
-  (cl-loop for (item . order) in parcel--queued-orders
+  (cl-loop for (item . order) in (parcel--queued-orders)
            unless (parcel-menu-item nil item nil nil 'no-descriptions)
            collect (list item :source "init file" :description "Not available in menu functions")))
 
@@ -189,7 +190,7 @@ If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
 
 (defun parcel-ui--worktree-dirty-p (item)
   "Return t if ITEM has a dirty worktree."
-  (when-let ((order (parcel-alist-get item parcel--queued-orders))
+  (when-let ((order (parcel-alist-get item (parcel--queued-orders)))
              (recipe (parcel-order-recipe order))
              (repo-dir (parcel-order-repo-dir order))
              ((file-exists-p repo-dir)))
@@ -205,12 +206,12 @@ If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
 (defun parcel-ui-tag-declared (candidate)
   "Return t if CANDIDATE declared in init or an init declaration dependency."
   (when-let ((item (car candidate))
-             (order (parcel-alist-get item parcel--queued-orders)))
+             (order (parcel-alist-get item (parcel--queued-orders))))
     (or (parcel-order-init order)
         (cl-some #'parcel-order-init
                  (delq nil
                        (mapcar (lambda (dependent)
-                                 (parcel-alist-get dependent parcel--queued-orders))
+                                 (parcel-alist-get dependent (parcel--queued-orders)))
                                (parcel-dependents item)))))))
 
 (defun parcel-ui-tag-installed (candidate)
@@ -295,7 +296,7 @@ If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
   (when-let ((buffer parcel-ui-buffer))
     (with-current-buffer buffer
       (cl-loop
-       for (item . rest) in (append parcel-ui--marked-packages parcel--queued-orders)
+       for (item . rest) in (append parcel-ui--marked-packages (parcel--queued-orders))
        for type = (if (parcel-order-p rest) 'queued 'marked)
        for marked = (eq type 'marked)
        for queued = (eq type 'queued)
