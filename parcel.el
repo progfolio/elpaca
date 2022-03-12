@@ -150,8 +150,14 @@ This hook is run via `run-hook-with-args-until-success'."
 
 (defun parcel-recipe-defaults (order)
   "Default ORDER modifications. Matches any ORDER."
-  (unless (plist-get order :files)
-    (list :files (list :defaults))))
+  (let ((plist))
+    (unless (plist-get order :files)
+      (push (list :defaults) plist)
+      (push :files plist))
+    (when-let ((url (plist-get order :url))
+               ((string-match-p "depp.brause.cc" url)))
+      (push nil plist)
+      (push :depth plist))))
 
 (defcustom parcel-recipe-functions '(parcel-recipe-defaults)
   "Abnormal hook run to alter recipes.
