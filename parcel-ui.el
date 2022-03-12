@@ -112,17 +112,15 @@ Allows for less debouncing than during `post-command-hook'.")
 If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
   (or (and (not recache) parcel-ui--entry-cache)
       (setq parcel-ui--entry-cache
-            (cl-remove-duplicates
-             (cl-loop for (item . data) in (append (parcel-menu--candidates)
-                                                   (parcel-ui--custom-candidates))
+            (reverse
+             (cl-loop for (item . data) in (reverse (append (parcel-menu--candidates)
+                                                            (parcel-ui--custom-candidates)))
                       when item
                       collect (list
                                item
                                (vector (format "%S" item)
                                        (or (plist-get data :description) "")
-                                       (or (plist-get data :source) ""))))
-             :key #'car :from-end t))))
-
+                                       (or (plist-get data :source) ""))))))))
 (defun parcel--ui-init ()
   "Initialize format of the UI."
   (setq tabulated-list-format
