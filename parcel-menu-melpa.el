@@ -66,29 +66,33 @@
         (message "MELPA updates downloaded"))
     ((error) (message "Unable to pull MELPA recipes"))))
 
+(defun parcel-menu-melpa--convert (file metadata)
+  "Return menu item candidate for FILE's MELPA recipe and METADATA."
+  (with-temp-buffer
+    (insert-file-contents file)
+    (condition-case-unless-debug _
+        (when-let ((recipe (read (buffer-string)))
+                   (package (pop recipe))
+                   ((member (plist-get recipe :fetcher) '(git github gitlab))))
+          (setq recipe
+                (append (list :package (symbol-name package)) recipe))
+          (unless (plist-member recipe :files)
+            (setq recipe (plist-put recipe :files parcel-default-files-directive)))
+          (let ((candidate (list :source "MELPA" :recipe recipe)))
+            (when-let ((data (alist-get package metadata)))
+              (setq candidate (append candidate (list :description (alist-get 'desc data)
+                                                      :url (alist-get 'url (alist-get 'props data))))))
+            (cons (intern-soft (file-name-nondirectory file)) candidate)))
+      ((error) (message "parcel-menu-melpa couldn't process %S" file) nil))))
+
 (defun parcel-menu-melpa--index ()
   "Return candidate list of available MELPA recipes."
   (or parcel-menu-melpa--index-cache
       (let ((metadata (parcel-menu-melpa--metadata)))
         (setq parcel-menu-melpa--index-cache
-              (mapcar (lambda (file)
-                        (with-temp-buffer
-                          (insert-file-contents file)
-                          (condition-case-unless-debug _
-                              (when-let ((recipe (read (buffer-string)))
-                                         (package (pop recipe))
-                                         ((member (plist-get recipe :fetcher) '(git github gitlab))))
-                                (setq recipe
-                                      (append (list :package (symbol-name package)) recipe))
-                                (unless (plist-member recipe :files)
-                                  (setq recipe (plist-put recipe :files parcel-default-files-directive)))
-                                (let ((candidate (list :source "MELPA" :recipe recipe)))
-                                  (when-let ((data (alist-get package metadata)))
-                                    (setq candidate (append candidate (list :description (alist-get 'desc data)
-                                                                            :url (alist-get 'url (alist-get 'props data))))))
-                                  (cons (intern-soft (file-name-nondirectory file)) candidate)))
-                            ((error) (message "parcel-menu-melpa couldn't process %S" file) nil))))
-                      (directory-files "./recipes/" 'full "\\(?:^[^.]\\)"))))))
+              (cl-loop for file in (directory-files "./recipes/" 'full "\\(?:^[^.]\\)")
+                       for candidate = (parcel-menu-melpa--convert file metadata)
+                       when candidate collect candidate)))))
 
 ;;;###autoload
 (defun parcel-menu-melpa (request)
