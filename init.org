@@ -2420,11 +2420,11 @@ If =C-c-c= refuses to run code blocks and you get an error message:
 #+end_quote
 delete the =*.el(c)= files and restart
 #+begin_src emacs-lisp :lexical t
-(use-feature ob-js
+(use-package ob-js
   :commands (org-babel-execute:js))
-(use-feature ob-python
+(use-package ob-python
   :commands (org-babel-execute:python))
-(use-feature ob-shell
+(use-package ob-shell
   :commands (org-babel-execute:bash
              org-babel-execute:shell
              org-babel-expand-body:generic)
