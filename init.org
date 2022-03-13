@@ -91,7 +91,8 @@ table of values from popular Emacs configurations.
      (when (boundp 'after-focus-change-function)
        (add-function :after after-focus-change-function #'+gc-after-focus-change)))))
 
-(add-hook 'emacs-startup-hook '+reset-init-values)
+(with-eval-after-load 'parcel
+  (add-hook 'parcel-after-init-hook '+reset-init-values))
 #+end_src
 
 *** UI
@@ -215,13 +216,11 @@ https://github.com/progfolio/parcel
                                            "clone" "git@github.com:progfolio/parcel.git"
                                            parcel-repo))
                 (error "%s" (list (with-current-buffer buffer (buffer-string)))))
-              ;;@FIX: this breaks our defstruct somehow?
               (byte-recompile-directory parcel-repo 0 'force)
               (require 'parcel)
               (parcel-generate-autoloads "parcel" parcel-repo))
           ((error)
-           (when (file-exists-p parcel-directory)
-             (delete-directory parcel-directory 'recursive))
+           (when (file-exists-p parcel-directory) (delete-directory parcel-directory 'recursive))
            (with-current-buffer buffer
              (goto-char (point-max))
              (insert (format "\n%S" err))
@@ -230,7 +229,17 @@ https://github.com/progfolio/parcel
     (require 'parcel-autoloads))
   (setq parcel--order-queue-start-time (current-time)))
 (parcel--bootstrap)
-(add-hook 'after-init-hook #'parcel-queue-empty)
+(add-hook 'after-init-hook #'parcel-process-init)
+#+end_src
+
+I want to see the status buffer when doing an initial install.
+#+begin_src emacs-lisp :lexical t
+(setq +parcel-installed (file-exists-p (expand-file-name "repos" parcel-directory)))
+(add-hook 'emacs-startup-hook (lambda () (unless +parcel-installed (parcel-display-status-buffer))))
+#+end_src
+
+Bury the status buffer when everything initialized OK.
+#+begin_src emacs-lisp :lexical t
 (add-hook 'parcel-after-init-hook
           (lambda () (when-let ((buffer (get-buffer parcel-status-buffer)))
                        (with-current-buffer buffer (quit-window)))))
@@ -250,6 +259,11 @@ This package gets the correct environment variables so parcel can use the ssh pr
 #+begin_src emacs-lisp :lexical t
 (parcel 'keychain-environment
   (keychain-refresh-environment))
+;; We need this loaded for SSH protocol
+(parcel-split-queue)
+(parcel '(parcel-menu-demo :host github :repo "progfolio/parcel-menu-demo" :protocol ssh)
+  (add-to-list 'parcel-menu-functions 'parcel-menu-demo))
+(parcel-split-queue)
 #+end_src
 
 ** packaging
