@@ -258,12 +258,12 @@ e.g. elisp forms may be printed via `prin1'."
 If RECACHE is non-nil, recompute `parcel-menu--candidates-cache'."
   (or (and (not recache) parcel-menu--candidates-cache)
       (prog1 (setq parcel-menu--candidates-cache
-                (sort (copy-tree (apply #'append
-                             (cl-loop for fn in parcel-menu-functions
-                                      ;; Allows adding a symbol prior menu installation.
-                                      for index = (and (fboundp fn) (funcall fn 'index))
-                                      when index collect index)))
-                      (lambda (a b) (string-lessp (car a) (car b)))))
+                   (sort (apply #'append
+                                (copy-tree
+                                 (cl-loop for fn in parcel-menu-functions
+                                          ;; Allows adding a symbol prior menu installation.
+                                          collect (and (fboundp fn) (funcall fn 'index)))))
+                         (lambda (a b) (string-lessp (car a) (car b)))))
         (when parcel-cache-menu-items (parcel--write-menu-cache)))))
 
 (defun parcel--current-queue ()
