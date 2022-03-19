@@ -198,7 +198,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
   "Cache for menu candidates.")
 
 (defvar parcel--package-requires-regexp
-  "\\(?:^;+[[:space:]]*Package-Requires[[:space:]]*:[[:space:]]*\\([^z-a]*?$\\)\\)"
+  "\\(?:[[:space:]]*;+[[:space:]]*Package-Requires:[[:space:]]*\\(([^z-a]*?))\\)\\)"
   "Regexp matching the Package-Requires metadata in an elisp source file.")
 
 (defvar parcel-recipe-keywords '( :branch :depth :fork :host :nonrecursive :package
@@ -1024,7 +1024,8 @@ If package's repo is not on disk, error."
         (let ((case-fold-search t))
           (when (re-search-forward parcel--package-requires-regexp nil 'noerror)
             (condition-case err
-                (read (match-string 1))
+                ;; Replace comment delimiters in multi-line package-requires metadata.
+                (read (replace-regexp-in-string ";" "" (match-string 1)))
               (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))
 
 (defun parcel--queue-dependencies (order)
