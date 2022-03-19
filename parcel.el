@@ -473,6 +473,14 @@ Otherwise return a list of all queued orders."
     (apply #'append (nreverse (cl-loop for queue in parcel--queues
                                        collect (parcel-queue-orders queue))))))
 
+(defsubst parcel--status-face (status &optional default)
+  "Return face for STATUS or DEFAULT if not found."
+  (cond
+   ((eq status 'blocked)  'parcel-blocked)
+   ((eq status 'finished) 'parcel-finished)
+   ((eq status 'failed)   'parcel-failed)
+   (t                     (or default 'default))))
+
 (defun parcel--events (&rest packages)
   "Return sorted event log string for PACKAGES.
 If PACKAGES is nil, use all available orders."
@@ -493,11 +501,7 @@ If PACKAGES is nil, use all available orders."
                                (text   (nth 2 event))
                                (name   (propertize (symbol-name package)
                                                    'face
-                                                   (pcase status
-                                                     ('blocked  'parcel-blocked)
-                                                     ('failed   'parcel-failed)
-                                                     ('finished 'parcel-finished)
-                                                     (_         '(:weight bold))))))
+                                                   (parcel--status-face status '(:weight bold)))))
                           (push (cons time
                                       (format "[%s]%s %s"
                                               (format-time-string
@@ -522,14 +526,6 @@ If PACKAGES is nil, use all available orders."
 (defsubst parcel-order-info (order)
   "Return ORDER's most recent log event info."
   (nth 2 (car (parcel-order-log order))))
-
-(defsubst parcel--status-face (status &optional default)
-  "Return face for STATUS or DEFAULT if not found."
-  (cond
-   ((eq status 'blocked)  'parcel-blocked)
-   ((eq status 'finished) 'parcel-finished)
-   ((eq status 'failed)   'parcel-failed)
-   (t                     (or default 'default))))
 
 (defun parcel-status-buffer-entries (&optional queued)
   "Return list of `tabultaed-list-entries' from QUEUED orders."
