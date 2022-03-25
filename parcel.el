@@ -1256,7 +1256,9 @@ If FORCE is non-nil, ignore order queue."
          (output    (expand-file-name auto-name dir))
          (autoload-timestamps nil)
          (backup-inhibited t)
-         (version-control 'never))
+         (version-control 'never)
+         ;; Prevents spurious parens in autoloads
+         (left-margin 0))
     (unless (file-exists-p output)
       (require 'autoload)
       (let ((generated-autoload-file output)
