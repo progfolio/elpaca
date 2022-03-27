@@ -157,7 +157,8 @@ This hook is run via `run-hook-with-args-until-success'."
     (when-let ((url (plist-get order :url))
                ((string-match-p "depp.brause.cc" url)))
       (push nil plist)
-      (push :depth plist))))
+      (push :depth plist))
+    plist))
 
 (defcustom parcel-recipe-functions '(parcel-recipe-defaults)
   "Abnormal hook run to alter recipes.
