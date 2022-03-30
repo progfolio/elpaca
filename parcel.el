@@ -1100,7 +1100,7 @@ If package's repo is not on disk, error."
       (cl-destructuring-bind ( &key remotes ref tag &allow-other-keys
                                &aux
                                (remote (if (stringp remotes) remotes (car remotes)))
-                               (branch (or (plist-get (cdr (car-safe remotes)) :branch)
+                               (branch (or (plist-get (cdr-safe (car-safe remotes)) :branch)
                                            (plist-get recipe :branch)))
                                (target (or ref tag branch)))
           recipe
@@ -1135,7 +1135,7 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
          (recipe            (parcel-order-recipe order))
          (ref               (plist-get recipe :ref))
          (remotes           (plist-get recipe :remotes))
-         (branch            (or (plist-get (cdr (car-safe remotes)) :branch)
+         (branch            (or (plist-get (cdr-safe (car-safe remotes)) :branch)
                                 (plist-get recipe :branch)))
          (tag               (plist-get recipe :tag)))
     (unless remotes (signal 'wrong-type-argument `((stringp listp) ,remotes ,recipe)))
