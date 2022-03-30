@@ -1495,8 +1495,8 @@ ORDER's package is not made available during subsequent sessions."
                           recipe))))
   (setq parcel-cache-autoloads nil)
   (parcel-display-status-buffer)
-  (parcel--queue-order order)
-  (parcel--process-order (car parcel--queued-orders)))
+  ;;@FIX: wasteful to pad out the order to make it QUEUED.
+  (parcel--process-order (cons 'trying (parcel--queue-order order))))
 
 (defun parcel--process-order (queued)
   "Process QUEUED order."
