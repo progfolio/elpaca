@@ -1464,7 +1464,7 @@ If ORDER is `nil`, defer BODY until orders have been processed."
   (declare (indent 1))
   `(progn
      ,@(unless (null order) (list `(parcel--queue-order ,order)))
-     (push ',body (parcel-queue-forms (parcel--current-queue)))))
+     ,@(when body (list `(push ',body (parcel-queue-forms (parcel--current-queue)))))))
 
 ;;;###autoload
 (defmacro parcel-use-package (order &rest body)
