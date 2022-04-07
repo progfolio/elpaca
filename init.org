@@ -1613,17 +1613,17 @@ https://github.com/mooz/js2-mode
 #+end_src
 *** TODO May not need this on Emacs 27+
 Need to investigate, but js-mode might have been fixed/updated.
-** TODO lilypond (:pre-build fails...)
+** lilypond
 Major mode for Lilypond music engraver.
 Installing Lilypond puts these in =/usr/share/Emacs/site-lisp=, but I plan on editing these.
-#+begin_src emacs-lisp :lexical t :tangle no
+#+begin_src emacs-lisp :lexical t
 (parcel-use-package (lilypond-mode :host gitlab :repo "lilypond/lilypond"
                                    :remotes (("fork" :host github :repo "progfolio/lilypond" :protocol ssh)
                                              "origin")
                                    :branch "fix/lilypond-mode"
                                    :files ("elisp/*.el" "elisp/out/lilypond-words.el")
                                    :protocol ssh
-                                   :pre-build (;;("./autogen.sh")
+                                   :pre-build (("./autogen.sh")
                                                ("bash" "-c"
                                                 "cd elisp && make && \
                                        echo ';; Local Variables:\n;; no-byte-compile: t\n;; End:' \
