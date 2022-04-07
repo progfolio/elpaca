@@ -326,7 +326,8 @@ This is faster (what you want with non-interactive calls)."
     (if (called-interactively-p 'interactive)
         (progn
           (unless recipe (user-error "No menu recipe for %s" symbol))
-          (message "%S menu recipe for %s: %S"
+          (kill-new (format "%S" recipe))
+          (message "%S menu recipe for %s copied to kill ring:\n%S"
                    (plist-get candidate :source) symbol recipe))
       recipe)))
 
@@ -374,7 +375,11 @@ ITEM is any of the following values:
                      (recipe-mods (run-hook-with-args-until-success
                                    'parcel-recipe-functions recipe)))
             (setq recipe (parcel-merge-plists recipe recipe-mods)))
-          (if interactive (message "%S" recipe) recipe))
+          (if interactive
+              (progn
+                (kill-new (format "%S" recipe))
+                (message "%S recipe copied to kill-ring:\n%S" (plist-get recipe :package) recipe))
+            recipe))
       (when interactive (user-error "No recipe for %S" package)))))
 
 (defsubst parcel--emacs-path ()
