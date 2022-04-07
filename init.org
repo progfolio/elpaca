@@ -188,9 +188,9 @@ I'm working on a theme that is readable and attractive.
 
 #+begin_src emacs-lisp :lexical t
 (setq +theme 'mine)
-;; remove synthetic use-package theme
 (require 'cl-lib)
 (require 'custom)
+;; remove synthetic use-package theme
 (unless (remq 'use-package custom-enabled-themes) (load-theme +theme t))
 #+end_src
 
