@@ -3085,10 +3085,6 @@ can make sure they're balanced easily.
   :defer 1
   :config (show-paren-mode))
 #+end_src
-** parcel
-#+begin_quote
-TBA
-#+end_quote
 ** projectile
 #+begin_quote
 Projectile is a project interaction library for Emacs.
