@@ -3243,6 +3243,16 @@ https://depp.brause.cc/shackle/
   (+general-global-text
     "d" '(stardict-define :which-key "dictionary")))
 #+end_src
+** straight.el
+#+begin_src emacs-lisp :lexical t
+(parcel '(straight.el :host github
+                      :depth nil
+                      :repo "raxod502/straight.el"
+                      :branch "develop"
+                      :protocol ssh
+                      :remotes ("origin"
+                                ("fork" :repo "progfolio/straight.el"))))
+#+end_src
 ** tab-bar
 #+begin_src emacs-lisp :lexical t
 (use-feature tab-bar
