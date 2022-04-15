@@ -1161,7 +1161,8 @@ The :branch and :tag keywords are syntatic sugar and are handled here, too."
 
 (defun parcel--set-header-line (queued)
   "Set `parcel-buffer' header line to reflect QUEUED order statuses."
-  (let* ((counts nil)
+  (let* ((queued (or queued (parcel-queue-orders (parcel--current-queue))))
+         (counts nil)
          (queue-len (length queued)))
     (dolist (q queued)
       (let ((status (parcel-order-status (cdr q))))
