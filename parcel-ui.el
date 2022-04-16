@@ -483,7 +483,10 @@ The current package is its sole argument."
     (when (parcel-ui--installed-p p) (user-error "Package %S already installed" p))))
 
 (parcel-ui-defmark "delete"
-  (lambda (p) (unless (parcel-ui--installed-p p)
+  (lambda (p) (unless (or (parcel-ui--installed-p p)
+                          (let ((recipe (parcel-recipe p)))
+                            (or (file-exists-p (parcel-build-dir recipe))
+                                (file-exists-p (parcel-repo-dir recipe)))))
                 (user-error "Package %S is not installed" p))))
 
 (defun parcel-ui--choose-deferred-action ()

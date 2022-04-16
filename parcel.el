@@ -1565,7 +1565,11 @@ If FORCE is non-nil do not confirm before deleting."
             (when with-deps
               (dolist (dependency dependencies)
                 (parcel-delete-package 'force with-deps dependency package)))))
-      (user-error "%S not a queued order" package))))
+      (if-let ((recipe (parcel-recipe package)))
+          (progn
+            (when-let ((repo-dir (parcel-repo-dir recipe))) (delete-directory repo-dir 'recursive))
+            (when-let ((build-dir (parcel-build-dir recipe))) (delete-directory build-dir 'recursive)))
+        (user-error "%S not a queued order" package)))))
 
 ;;;###autoload
 (defun parcel-rebuild-package (item &optional hide)
