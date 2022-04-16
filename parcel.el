@@ -1486,23 +1486,25 @@ The expansion is a string indicating the package has been disabled."
          ,@body))))
 
 ;;;###autoload
-(defun parcel-try-package (order)
-  "Try ORDER.
+(defun parcel-try-package (&rest orders)
+  "Try ORDERS.
 Install the repo/build files on disk.
 Activate the corresponding package for the current session.
 ORDER's package is not made available during subsequent sessions."
-  (interactive (list
-                (let ((recipe (parcel-menu-item
-                               nil nil nil
-                               (lambda (candidate)
-                                 (not (parcel-alist-get (car candidate)
-                                                        (parcel--queued-orders)))))))
-                  (append (list (intern (plist-get recipe :package)))
-                          recipe))))
+  (interactive (list (list
+                      (let ((recipe (parcel-menu-item
+                                     nil nil nil
+                                     (lambda (candidate)
+                                       (not (parcel-alist-get (car candidate)
+                                                              (parcel--queued-orders)))))))
+                        (append (list (intern (plist-get recipe :package)))
+                                recipe)))))
   (setq parcel-cache-autoloads nil)
   (parcel-display-status-buffer)
-  ;;@FIX: wasteful to pad out the order to make it QUEUED.
-  (parcel--process-order (cons 'trying (parcel--queue-order order))))
+  (dolist (order orders)
+    ;;@FIX: wasteful to pad out the order to make it QUEUED.
+    (let ((package (if (listp order) (car order) order)))
+      (parcel--process-order (cons package (parcel--queue-order order))))))
 
 (defun parcel--process-order (queued)
   "Process QUEUED order."
