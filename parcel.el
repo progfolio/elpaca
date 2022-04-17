@@ -71,6 +71,11 @@ It is only run once after init.
 Note a blocked process will prevent this hook from being run."
   :type 'hook)
 
+(defcustom parcel-post-queue-hook nil
+  "Hook run after a queue is finished processing.
+Note blocked or failed orders will prevent this hook from being run."
+  :type 'hook)
+
 (defcustom parcel-cache-autoloads t
   "If non-nil, cache package autoloads and load all at once.
 Results in faster start-up time.
@@ -1514,7 +1519,8 @@ ORDER's package is not made available during subsequent sessions."
 
 (defun parcel--process-queue (queue)
   "Process  orders in QUEUE."
-  (mapc #'parcel--process-order (reverse (parcel-queue-orders queue))))
+  (mapc #'parcel--process-order (reverse (parcel-queue-orders queue)))
+  (run-hooks 'parcel-post-queue-hook))
 
 ;;;###autoload
 (defun parcel-process-init ()
