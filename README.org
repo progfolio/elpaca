@@ -1,0 +1,55 @@
+#+title: Parcel: An Elisp Package Manager
+#+author: Nicholas Vollmer
+* What is Parcel?
+Parcel is an elisp package manager.
+It allows the user to find, install, update, and remove third-party packages for Emacs.
+It is a replacement for the built-in Emacs package manager, package.el.
+
+* Installation
+** Requirements
+- git (min version TBD)
+** Bootstrap Snippet
+To install parcel, add the following bootstrapping snippet to your init.el.
+It must come before any calls to other parcel functions/macros.
+This will clone parcel into your =user-emacs-directory= under the =parcel= subdirectory.
+It then builds and activates parcel.
+
+#+begin_src emacs-lisp :lexical t
+(declare-function parcel-generate-autoloads "parcel")
+(defvar parcel-directory (expand-file-name "parcel/" user-emacs-directory))
+(defun parcel--bootstrap ()
+  (let ((parcel-repo (expand-file-name "parcel/" parcel-directory)))
+    (add-to-list 'load-path parcel-repo)
+    (unless (file-exists-p parcel-repo)
+      (let ((buffer (get-buffer-create "*parcel-bootstrap*")))
+        (condition-case-unless-debug err
+            (progn
+              (unless (zerop (call-process "git" nil (list buffer t) t
+                                           "clone" "https://www.github.com:progfolio/parcel.git"
+                                           parcel-repo))
+                (error "%s" (list (with-current-buffer buffer (buffer-string)))))
+              (byte-recompile-directory parcel-repo 0 'force)
+              (require 'parcel)
+              (parcel-generate-autoloads "parcel" parcel-repo))
+          ((error)
+           (when (file-exists-p parcel-directory) (delete-directory parcel-directory 'recursive))
+           (with-current-buffer buffer
+             (goto-char (point-max))
+             (insert (format "\n%S" err))
+             (display-buffer buffer)
+             (kill-buffer buffer))))))
+    (require 'parcel-autoloads))
+  (setq parcel--order-queue-start-time (current-time)))
+(parcel--bootstrap)
+(add-hook 'after-init-hook #'parcel-process-init)
+#+end_src
+  
+* Finding Packages
+* Installing Packages
+* Updating Packages
+* Removing Packages
+
+
+
+
+
