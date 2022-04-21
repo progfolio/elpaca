@@ -788,10 +788,13 @@ RECURSE is used to keep track of recursive calls."
   (setf (parcel-order-build-steps order)
         (cl-set-difference (parcel-order-build-steps order) steplist)))
 
+;;@FIX: when a folder is linked over we're nesting it in itself.
+;; e.g. slime/contrib becomes slime/contrib/contrib/
 (defun parcel--files (order &optional files nocons)
   "Return alist of ORDER :files to be symlinked: (PATH . TARGET PATH).
 FILES and NOCONS are used recursively."
-  (let* ((default-directory (parcel-order-repo-dir order))
+  (let* ((repo-dir          (parcel-order-repo-dir order))
+         (default-directory repo-dir)
          (build-dir         (parcel-order-build-dir order))
          (recipe            (parcel-order-recipe order))
          (files             (or files (plist-get recipe :files)))
@@ -806,12 +809,15 @@ FILES and NOCONS are used recursively."
          nil)
         (:defaults
          (push (parcel--files order parcel-default-files-directive 'nocons) targets))
-        (`(,subdir . ,paths)
+        ;;@FIX: subdir needn't be same name as globbed path...
+        (`(,_subdir . ,paths)
          (cl-loop for path in paths
-                  do (push (cons (expand-file-name path)
-                                 (let ((default-directory build-dir))
-                                   (expand-file-name path subdir)))
-                           with-subdirs)))))
+                  for globbed = (file-expand-wildcards path)
+                  do (cl-loop for p in globbed
+                              do (push (cons (expand-file-name p repo-dir)
+                                             (let ((default-directory build-dir))
+                                                (expand-file-name p build-dir)))
+                                       with-subdirs))))))
     (if nocons
         targets
       (append
