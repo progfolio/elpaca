@@ -1496,14 +1496,14 @@ The expansion is a string indicating the package has been disabled."
 Install the repo/build files on disk.
 Activate the corresponding package for the current session.
 ORDER's package is not made available during subsequent sessions."
-  (interactive (list (list
-                      (let ((recipe (parcel-menu-item
-                                     nil nil nil
-                                     (lambda (candidate)
-                                       (not (parcel-alist-get (car candidate)
-                                                              (parcel--queued-orders)))))))
-                        (append (list (intern (plist-get recipe :package)))
-                                recipe)))))
+  (interactive (list
+                (let ((recipe (parcel-menu-item
+                               nil nil nil
+                               (lambda (candidate)
+                                 (not (parcel-alist-get (car candidate)
+                                                        (parcel--queued-orders)))))))
+                  (append (list (intern (plist-get recipe :package)))
+                          recipe))))
   (setq parcel-cache-autoloads nil)
   (parcel-display-status-buffer)
   (dolist (order orders)
