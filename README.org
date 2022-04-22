@@ -7,6 +7,7 @@ It is a replacement for the built-in Emacs package manager, package.el.
 
 * Installation
 ** Requirements
+- Emacs >= 27.1
 - git (min version TBD)
 ** Bootstrap Snippet
 To install parcel, add the following bootstrapping snippet to your init.el.
