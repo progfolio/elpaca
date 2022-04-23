@@ -928,25 +928,18 @@ If it matches, the order associated with process has its STATUS updated."
   "Install ORDER's info files."
   (parcel--update-order-info order "Installing Info files")
   (when-let ((dir (expand-file-name "dir" (parcel-order-build-dir order)))
-             ((not (file-exists-p dir)))
-             ;;@OPTIMIZE: cl-loop
-             (files
-              (delq nil
-                    (mapcar
-                     (lambda (spec)
-                       (let ((repo-file  (car spec))
-                             (build-file (cdr spec)))
-                         (cond
-                          ((string-match-p "\\.info$" build-file)
-                           build-file)
-                          ((string-match-p "\\.texi\\(nfo\\)?$" repo-file)
-                           (concat (file-name-sans-extension build-file) ".info")))))
-                     (or (parcel-order-files order)
-                         (setf (parcel-order-files order) (parcel--files order)))))))
-    (dolist (file (cl-remove-if-not #'file-exists-p files))
-      (parcel-with-process (parcel-process-call parcel-install-info-executable
-                                                file dir)
-        (unless success (parcel--update-order-info order result)))))
+             ((not (file-exists-p dir))))
+    (cl-loop for (repo-file . build-file) in
+             (or (parcel-order-files order)
+                 (setf (parcel-order-files order) (parcel--files order)))
+             for f = (cond
+                      ((string-match-p "\\.info$" build-file) build-file)
+                      ((string-match-p "\\.texi\\(nfo\\)?$" repo-file)
+                       (concat (file-name-sans-extension build-file) ".info")))
+             when (file-exists-p f)
+             do (parcel-with-process
+                    (parcel-process-call parcel-install-info-executable f dir)
+                  (unless success (parcel--update-order-info order result)))))
   (parcel--run-next-build-step order))
 
 (defun parcel--dispatch-build-commands-process-sentinel (process event)
