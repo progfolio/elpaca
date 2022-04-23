@@ -186,35 +186,18 @@ If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
   "Return non-nil if CANDIDATE is a marked package."
   (cl-member (car candidate) parcel-ui--marked-packages :key #'car))
 
-(defun parcel-ui--worktree-dirty-p (item)
-  "Return t if ITEM has a dirty worktree."
-  (when-let ((order (parcel-alist-get item (parcel--queued-orders)))
-             (recipe (parcel-order-recipe order))
-             (repo-dir (parcel-order-repo-dir order))
-             ((file-exists-p repo-dir)))
-    (let ((default-directory repo-dir))
-      (not (string-empty-p
-            (parcel-process-output "git" "-c" "status.branch=false"
-                                   "status" "--short"))))))
-
 (defun parcel-ui-tag-dirty (candidate)
   "Return t if CANDIDATE's worktree is ditry."
-  (parcel-ui--worktree-dirty-p (car candidate)))
+  (parcel-worktree-dirty-p (car candidate)))
 
 (defun parcel-ui-tag-declared (candidate)
   "Return t if CANDIDATE declared in init or an init declaration dependency."
-  (when-let ((item (car candidate))
-             (order (parcel-alist-get item (parcel--queued-orders))))
-    (or (parcel-order-init order)
-        (cl-some #'parcel-order-init
-                 (delq nil
-                       (mapcar (lambda (dependent)
-                                 (parcel-alist-get dependent (parcel--queued-orders)))
-                               (parcel-dependents item)))))))
+  (when-let ((item (car candidate)))
+    (parcel-declared-p item)))
 
 (defun parcel-ui-tag-installed (candidate)
   "Return t if CANDIDATE is installed."
-  (parcel-ui--installed-p (car candidate)))
+  (parcel-installed-p (car candidate)))
 
 (defun parcel-ui-tag-random (_)
   "1/1000th of a chance candidate is shown."

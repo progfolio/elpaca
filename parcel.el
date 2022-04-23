@@ -1737,5 +1737,61 @@ TYPE is either the symbol `repo` or `build`."
                              (get-text-property (line-beginning-position) 'order)))))
       (parcel-delete-package force nil package)))
 
+
+;;; Lockfiles
+(defun parcel-declared-p (item)
+  "Return t if ITEM is declared in user's init file, nil otherwise."
+  (when-let ((order (parcel-alist-get item (parcel--queued-orders))))
+    (or (parcel-order-init order)
+        (cl-loop for dependent in (parcel-dependents item)
+                 when (parcel-alist-get dependent (parcel--queued-orders))
+                 return t))))
+
+(defun parcel-installed-p (item)
+  "Return t if ITEM's associated repo directory is on disk, nil otherwise."
+  (when-let ((order (parcel-alist-get item (parcel--queued-orders)))
+             ((file-exists-p (parcel-order-repo-dir order))))
+    t))
+
+(defun parcel-worktree-dirty-p (item)
+  "Return t if ITEM's associated repository has a dirty worktree, nil otherwise."
+  (when-let ((order (parcel-alist-get item (parcel--queued-orders)))
+             (recipe (parcel-order-recipe order))
+             (repo-dir (parcel-order-repo-dir order))
+             ((file-exists-p repo-dir))
+             (default-directory repo-dir))
+    (not (string-empty-p
+          (parcel-process-output "git" "-c" "status.branch=false" "status" "--short")))))
+
+(defun parcel-load-lockfile (&optional lockfile _force)
+  "Load LOCKFILE.
+If FORCE is non-nil,."
+  (interactive "fLockfile: ")
+  (message "%S" lockfile))
+
+(defun parcel-write-lockfile (&optional path)
+  "Write lockfile to PATH for current state of package repositories."
+  (interactive "FWrite lockfile to: ")
+  (unless path (user-error "Need file PATH"))
+  (let* ((seen)
+         (revisions
+          (nreverse
+           (apply
+            #'append
+            (cl-loop for queue in  parcel--queues
+                     collect
+                     (cl-loop for (item . order) in (parcel-queue-orders queue)
+                              unless (member item seen)
+                              for rev =
+                              (let ((default-directory (parcel-order-repo-dir order)))
+                                (parcel-with-process (parcel-process-call "git"
+                                                                          "rev-parse"
+                                                                          "HEAD")
+                                  (when success (string-trim stdout))))
+                              when rev
+                              collect (cons item rev)
+                              do (push item seen)))))))
+    (parcel--write-file path (pp revisions))))
+
 (provide 'parcel)
 ;;; parcel.el ends here
