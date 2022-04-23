@@ -1273,8 +1273,9 @@ https://www.flycheck.org/en/latest/
   (defun +flymake-toggle-diagnostics-buffer ()
     "Toggle the diagnostics buffer when entering/exiting `flymake-mode'."
     (if flymake-mode
-        (flymake-show-diagnostics-buffer)
-      (when-let ((window (get-buffer-window (flymake--diagnostics-buffer-name))))
+        (flymake-show-project-diagnostics)
+      (when-let ((root (vc-root-dir))
+                 (window (get-buffer-window (flymake--project-diagnostics-buffer root))))
         (with-selected-window window
           (kill-buffer-and-window))))))
 #+end_src
