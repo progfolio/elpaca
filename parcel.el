@@ -818,7 +818,7 @@ FILES and NOCONS are used recursively."
                   do (cl-loop for p in globbed
                               do (push (cons (expand-file-name p repo-dir)
                                              (let ((default-directory build-dir))
-                                                (expand-file-name p build-dir)))
+                                               (expand-file-name p build-dir)))
                                        with-subdirs))))))
     (if nocons
         targets
