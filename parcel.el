@@ -189,15 +189,36 @@ Each function is passed a request, which may be any of the follwoing symbols:
 
 (defvar parcel-overriding-prompt nil "Overriding prompt for interactive functions.")
 
+(defmacro parcel--read-file (path)
+  "Read file at PATH into memory."
+  (declare (debug all))
+  (let ((psym (gensym "path")))
+    `(when-let ((,psym ,path)
+                (file (expand-file-name ,psym))
+                ((file-exists-p file)))
+       (condition-case err
+           (with-temp-buffer
+             (insert-file-contents file)
+             (read (current-buffer)))
+         ((error) (warn "Error reading %S into memory: %S" ,psym err))))))
+
+(defmacro parcel--write-file (file &rest body)
+  "Write FILE using BODY.
+`standard-output' and print variables are lexically bound for convenience.
+e.g. elisp forms may be printed via `prin1'."
+  (declare (indent 1) (debug all))
+  `(let ((coding-system-for-write 'utf-8))
+     (with-temp-file ,file
+       (let* ((standard-output (current-buffer))
+              (print-circle nil)
+              (print-level  nil)
+              (print-length nil))
+         ,@body
+         nil))))
+
 (defun parcel--read-menu-cache ()
   "Read the menu-cache."
-  (when-let ((cache (expand-file-name "menu-items.el" parcel-cache-directory))
-             ((file-exists-p cache)))
-    (with-temp-buffer
-      (insert-file-contents cache)
-      (condition-case err
-          (read (buffer-string))
-        ((error) (message "Parcel could not read menu-items.el: %S" err))))))
+  (parcel--read-file (expand-file-name "menu-items.el" parcel-cache-directory)))
 
 (defvar parcel-menu--candidates-cache
   (when parcel-cache-menu-items (parcel--read-menu-cache))
@@ -236,20 +257,6 @@ Values for each key are that of the right-most plist containing that key."
     (while (setq current (pop plists))
       (while current (setq plist (plist-put plist (pop current) (pop current)))))
     plist))
-
-(defmacro parcel--write-file (file &rest body)
-  "Write FILE using BODY.
-`standard-output' and print variables are lexically bound for convenience.
-e.g. elisp forms may be printed via `prin1'."
-  (declare (indent 1) (debug all))
-  `(let ((coding-system-for-write 'utf-8))
-     (with-temp-file ,file
-       (let* ((standard-output (current-buffer))
-              (print-circle nil)
-              (print-level  nil)
-              (print-length nil))
-         ,@body
-         nil))))
 
 (defun parcel--write-menu-cache ()
   "Write menu item cache to disk."
@@ -587,13 +594,8 @@ If PACKAGES is nil, use all available orders."
 
 (defun parcel--read-order-cache ()
   "Return cache alist or nil if not available."
-  (when-let ((cache (expand-file-name "cache.el" parcel-cache-directory))
-             ((file-exists-p cache)))
-    (condition-case err
-        (with-temp-buffer
-          (insert-file-contents cache)
-          (mapcar #'parcel--cache-entry-to-order (read (current-buffer))))
-      ((error) (warn "Error reading parcel cache.el: %S" err)))))
+  (mapcar #'parcel--cache-entry-to-order
+          (parcel--read-file (expand-file-name "cache.el" parcel-cache-directory))))
 
 (defvar parcel--order-cache (when parcel-cache-orders (parcel--read-order-cache))
   "Built package information cache.")
