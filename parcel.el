@@ -1732,7 +1732,6 @@ TYPE is either the symbol `repo` or `build`."
                              (get-text-property (line-beginning-position) 'order)))))
       (parcel-delete-package force nil package)))
 
-
 ;;; Lockfiles
 (defun parcel-declared-p (item)
   "Return t if ITEM is declared in user's init file, nil otherwise."
