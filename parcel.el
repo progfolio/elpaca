@@ -899,26 +899,21 @@ If it matches, the order associated with process has its STATUS updated."
 (defun parcel--compile-info (order)
   "Compile ORDER's .texi files."
   (parcel--update-order-info order "Compiling Info files")
-  (if-let
-      ((files
-        (delq
-         nil
-         (mapcar
-          (lambda (spec)
-            (let ((repo-file  (car spec))
-                  (build-file (cdr spec)))
-              (when-let (((string-match-p "\\.texi\\(nfo\\)?$" repo-file))
-                         (info (concat (file-name-sans-extension build-file) ".info"))
-                         ((not (file-exists-p info))))
-                (list repo-file "-o" info))))
-          (or (parcel-order-files order)
-              (setf (parcel-order-files order) (parcel--files order))))))
-       (command `(,parcel-makeinfo-executable ,@(apply #'append files)))
-       (process (make-process
-                 :name (format "parcel-compile-info-%s" (parcel-order-package order))
-                 :command command
-                 :filter   #'parcel--process-filter
-                 :sentinel #'parcel--compile-info-process-sentinel)))
+  (if-let ((files
+            (cl-loop for (repo-file . build-file) in
+                     (or (parcel-order-files order)
+                         (setf (parcel-order-files order) (parcel--files order)))
+                     for f = (when-let (((string-match-p "\\.texi\\(nfo\\)?$" repo-file))
+                                        (info (concat (file-name-sans-extension build-file) ".info"))
+                                        ((not (file-exists-p info))))
+                               (list repo-file "-o" info))
+                     when f collect f))
+           (command `(,parcel-makeinfo-executable ,@(apply #'append files)))
+           (process (make-process
+                     :name (format "parcel-compile-info-%s" (parcel-order-package order))
+                     :command command
+                     :filter   #'parcel--process-filter
+                     :sentinel #'parcel--compile-info-process-sentinel)))
       (process-put process :order order)
     (parcel--update-order-info order "No .info files found")
     (parcel--remove-build-steps order '(parcel--install-info parcel--add-info-path))
@@ -936,7 +931,7 @@ If it matches, the order associated with process has its STATUS updated."
                       ((string-match-p "\\.info$" build-file) build-file)
                       ((string-match-p "\\.texi\\(nfo\\)?$" repo-file)
                        (concat (file-name-sans-extension build-file) ".info")))
-             when (file-exists-p f)
+             when (and f (file-exists-p f))
              do (parcel-with-process
                     (parcel-process-call parcel-install-info-executable f dir)
                   (unless success (parcel--update-order-info order result)))))
