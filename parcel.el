@@ -1493,8 +1493,8 @@ When ARG is non-nil display all queues, else, display only the most recent."
 If ORDER is `nil`, defer BODY until orders have been processed."
   (declare (indent 1))
   `(progn
-     ,@(unless (null order) (list `(parcel--queue-order ,order)))
-     ,@(when body (list `(push ',body (parcel-queue-forms (parcel--current-queue)))))))
+     ,@(when body (list `(push ',body (parcel-queue-forms (parcel--current-queue)))))
+     ,@(unless (null order) (list `(parcel--queue-order ',order)))))
 
 ;;;###autoload
 (defmacro parcel-use-package (order &rest body)
@@ -1505,7 +1505,7 @@ The expansion is a string indicating the package has been disabled."
   (declare (indent 1))
   (if (memq :disabled body)
       (format "%S :disabled by parcel-use-package" order)
-    `(parcel ',order
+    `(parcel ,order
        (use-package ,(if (listp order) (car order) order)
          ,@body))))
 
