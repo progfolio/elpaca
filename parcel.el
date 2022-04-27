@@ -1122,8 +1122,9 @@ If package's repo is not on disk, error."
                     (when (eq (parcel-order-status queued) 'finished) (cl-incf finished))
                   (if included
                       ;; Unblock dependency published in same repo...
-                      (when blocked (parcel--clone-dependencies dep-order))
-                    (unless blocked (parcel--run-next-build-step dep-order))))))
+                      (if blocked
+                          (parcel--clone-dependencies dep-order)
+                        (parcel--run-next-build-step dep-order))))))
             (when (= (length externals) finished) ; Our dependencies beat us to the punch
               (parcel--run-next-build-step order)))
         (parcel--update-order-info order "No external dependencies detected")
