@@ -545,6 +545,15 @@ ITEM is any of the following values:
   (init (not after-init-time))
   (queue-time (current-time)))
 
+(defun parcel--fail-order (order &optional reason)
+  "Fail ORDER for REASON."
+  (let ((item (parcel-order-item order))
+        (queue (nth (parcel-order-queue-id order) parcel--queues)))
+    (setf (parcel-queue-forms queue)
+          (assq-delete-all (if (listp item) (car item) item)
+                           (parcel-queue-forms queue))))
+  (parcel--update-order-info order reason 'failed))
+
 (defsubst parcel-order-status (order)
   "Return `car' of ORDER's statuses."
   (car (parcel-order-statuses order)))
