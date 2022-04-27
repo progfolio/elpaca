@@ -716,7 +716,7 @@ If INFO is non-nil, ORDER's info is updated as well."
   (when-let ((autoloads (parcel-queue-autoloads queue)))
     (eval `(progn ,@autoloads) t))
   (when-let ((forms (parcel-queue-forms queue)))
-    (eval `(progn ,@(apply #'append (nreverse forms))) t))
+    (eval `(progn ,@(apply #'append (mapcar #'cdr (nreverse forms)))) t))
   (setf (parcel-queue-status queue) 'complete)
   (if (and (parcel-queue-init queue) (= (parcel-queue-id queue) (1- (length parcel--queues))))
       (progn
@@ -1493,8 +1493,11 @@ When ARG is non-nil display all queues, else, display only the most recent."
 If ORDER is `nil`, defer BODY until orders have been processed."
   (declare (indent 1))
   `(progn
-     ,@(when body (list `(push ',body (parcel-queue-forms (parcel--current-queue)))))
-     ,@(unless (null order) (list `(parcel--queue-order ',order)))))
+     ,@(unless (null order) (list `(parcel--queue-order ',order)))
+     ,@(when body
+         (list `(push ',(cons (if (listp order) (car order) order)
+                              body)
+                      (parcel-queue-forms (parcel--current-queue)))))))
 
 ;;;###autoload
 (defmacro parcel-use-package (order &rest body)
