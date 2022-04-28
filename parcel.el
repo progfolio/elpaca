@@ -462,55 +462,51 @@ ITEM is any of the following values:
                                                 `(:host (github gitlab stringp) ,host ,recipe))))))
         (format "%s%s%s%s.git" (car protocol) host (cdr protocol) repo)))))
 
-(defun parcel--read-order-cache ()
-  "Return cache alist or nil if not available."
-  (mapcar #'parcel--cache-entry-to-order
-          (parcel--read-file (expand-file-name "cache.el" parcel-cache-directory))))
-
-(defvar parcel--order-cache (when parcel-cache-orders (parcel--read-order-cache))
-  "Built package information cache.")
-
 (cl-defstruct (parcel-order
                (:constructor parcel-order-create
                              (item
+                              &key
+                              recipe
+                              repo-dir
+                              build-dir
+                              cached
+                              files
+                              mono-repo
                               &aux
                               (status 'queued)
                               (info "Package queued")
                               (id (if (listp item) (car item) item))
-                              (recipe  (condition-case err
-                                           (parcel-recipe item)
-                                         ((error)
-                                          (setq status 'failed
-                                                info (format "No recipe: %S" err))
-                                          nil)))
-                              (repo-dir
-                               (when recipe
-                                 (condition-case err
-                                     (parcel-repo-dir recipe)
-                                   ((error)
-                                    (setq status 'failed
-                                          info (format "Unable to determine repo dir: %S" err))
-                                    nil))))
+                              (recipe  (or recipe
+                                           (condition-case err
+                                               (parcel-recipe item)
+                                             ((error)
+                                              (setq status 'failed
+                                                    info (format "No recipe: %S" err))
+                                              nil))))
+                              (repo-dir (or repo-dir
+                                            (when recipe
+                                              (condition-case err
+                                                  (parcel-repo-dir recipe)
+                                                ((error)
+                                                 (setq status 'failed
+                                                       info (format "Unable to determine repo dir: %S" err))
+                                                 nil)))))
                               (statuses (list status))
-                              (build-dir (when recipe (parcel-build-dir recipe)))
+                              (build-dir (or build-dir (when recipe (parcel-build-dir recipe))))
                               (package (format "%S" id))
-                              (cached (cl-some (lambda (o)
-                                                 (when (equal (parcel-order-package o) package) o))
-                                               parcel--order-cache))
-
                               (built-p nil)
-                              (mono-repo
-                               (unless built-p
-                                 (when-let ((mono (cl-some (lambda (cell)
-                                                             (when-let ((queued (cdr cell))
-                                                                        ((and repo-dir
-                                                                              (equal repo-dir
-                                                                                     (parcel-order-repo-dir queued)))))
-                                                               queued))
-                                                           (reverse (parcel--queued-orders)))))
-                                   (setq info (format "Waiting for monorepo %S" repo-dir)
-                                         status 'blocked)
-                                   mono)))
+                              (mono-repo (or mono-repo
+                                             (unless built-p
+                                               (when-let ((mono (cl-some (lambda (cell)
+                                                                           (when-let ((queued (cdr cell))
+                                                                                      ((and repo-dir
+                                                                                            (equal repo-dir
+                                                                                                   (parcel-order-repo-dir queued)))))
+                                                                             queued))
+                                                                         (reverse (parcel--queued-orders)))))
+                                                 (setq info (format "Waiting for monorepo %S" repo-dir)
+                                                       status 'blocked)
+                                                 mono))))
                               (build-steps
                                (when recipe
                                  (if (file-exists-p build-dir)
@@ -526,7 +522,7 @@ ITEM is any of the following values:
                                      (when (file-exists-p repo-dir)
                                        (setq steps (delq 'parcel--clone steps))
                                        (when-let ((cached)
-                                                  (cached-recipe (parcel-order-recipe cached))
+                                                  (cached-recipe (plist-get cached recipe))
                                                   ((eq recipe cached-recipe)))
                                          (setq steps (cl-set-difference
                                                       steps
@@ -666,16 +662,16 @@ If PACKAGES is nil, use all available orders."
   (unless (file-exists-p parcel-cache-directory)
     (make-directory parcel-cache-directory 'parents))
   (parcel--write-file (expand-file-name "cache/cache.el" parcel-directory)
-    (prin1 (cl-loop for (_ . order) in (parcel--queued-orders)
+    (prin1 (cl-loop for (item . order) in (parcel--queued-orders)
                     when (eq (parcel-order-status order) 'finished)
-                    collect (parcel--clean-order order)))))
+                    collect (cons item (parcel--clean-order order))))))
 
-(defun parcel--cache-entry-to-order (plist)
-  "Return decoded PLIST as order."
-  (let ((order (apply #'parcel-order-create plist)))
+(defun parcel--cache-entry-to-order (cached)
+  "Return decoded CACHED plist as order."
+  (let ((order (apply #'parcel-order-create (cdr cached))))
     (setf (parcel-order-dependencies order)
           (mapcar #'parcel--cache-entry-to-order (parcel-order-dependencies order)))
-    order))
+    (cons (car cached) order)))
 
 (defsubst parcel--run-next-build-step (order)
   "Run ORDER's next build step with ARGS."
@@ -752,14 +748,28 @@ If INFO is non-nil, ORDER's info is updated as well."
                        (length (parcel-queue-orders queue)))))
           (parcel--finalize-queue queue))))))
 
+(defun parcel--read-order-cache ()
+  "Return cache alist or nil if not available."
+  (mapcar #'parcel--cache-entry-to-order
+          (parcel--read-file (expand-file-name "cache.el" parcel-cache-directory))))
+
+(defvar parcel--order-cache (when parcel-cache-orders (parcel--read-order-cache))
+  "Built package information cache.")
+
 (defun parcel--queue-order (item)
-  "Queue (ITEM . ORDER) in `parcel--queued-orders'.
+ "Queue (ITEM . ORDER) in `parcel--queued-orders'.
 If STATUS is non-nil, the order is given that initial status.
 RETURNS order structure."
   (if (and (not after-init-time) (parcel-alist-get item (parcel--queued-orders)))
       (warn "Duplicate item declaration: %S" item)
-    (let* ((order     (parcel-order-create item))
-           (info      (parcel-order-info order))
+    (let* ((package (symbol-name (if (listp item) (car item) item)))
+           (cached (cl-some
+                    (lambda (o) (when (equal (car o) package) o))
+                    parcel--order-cache))
+           (order (if cached
+                      (apply #'parcel-order-create (cdr cached))
+                    (parcel-order-create item)))
+           (info (parcel-order-info order))
            (mono-repo (parcel-order-mono-repo order)))
       ;;@TODO: can this be moved to order constructor somehow?
       ;; The problem is we need a reference to the entire order.
