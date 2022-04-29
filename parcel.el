@@ -462,6 +462,10 @@ ITEM is any of the following values:
                                                 `(:host (github gitlab stringp) ,host ,recipe))))))
         (format "%s%s%s%s.git" (car protocol) host (cdr protocol) repo)))))
 
+(defsubst parcel--first (obj)
+  "Return `car' of OBJ if it is a list, else OBJ."
+  (if (listp obj) (car obj) obj))
+
 (cl-defstruct (parcel-order
                (:constructor parcel-order-create
                              (item
@@ -470,7 +474,7 @@ ITEM is any of the following values:
                               &aux
                               (status 'queued)
                               (info "Package queued")
-                              (id (if (listp item) (car item) item))
+                              (id (parcel--first item))
                               (recipe
                                (or recipe
                                    (condition-case err
@@ -543,8 +547,7 @@ ITEM is any of the following values:
   (let ((item (parcel-order-item order))
         (queue (nth (parcel-order-queue-id order) parcel--queues)))
     (setf (parcel-queue-forms queue)
-          (assq-delete-all (if (listp item) (car item) item)
-                           (parcel-queue-forms queue))))
+          (assq-delete-all (parcel--first item) (parcel-queue-forms queue))))
   (parcel--update-order-info order reason 'failed))
 
 (defsubst parcel-order-status (order)
@@ -1156,9 +1159,7 @@ If package's repo is not on disk, error."
                                 (ref    (list "checkout" ref))
                                 (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
                                 (branch (list "switch" "-C" branch
-                                              (format "%s/%s" (if (listp remote)
-                                                                  (car remote)
-                                                                remote)
+                                              (format "%s/%s" (parcel--first remote)
                                                       branch)))))))
             (unless success
               (parcel--fail-order
@@ -1505,8 +1506,7 @@ If ORDER is `nil`, defer BODY until orders have been processed."
   `(progn
      ,@(unless (null order) (list `(parcel--queue-order ',order)))
      ,@(when body
-         (list `(push ',(cons (if (listp order) (car order) order)
-                              body)
+         (list `(push ',(cons (parcel--first order) body)
                       (parcel-queue-forms (parcel--current-queue)))))))
 
 ;;;###autoload
@@ -1518,9 +1518,7 @@ The expansion is a string indicating the package has been disabled."
   (declare (indent 1))
   (if (memq :disabled body)
       (format "%S :disabled by parcel-use-package" order)
-    `(parcel ,order
-       (use-package ,(if (listp order) (car order) order)
-         ,@body))))
+    `(parcel ,order (use-package ,(parcel--first order) ,@body))))
 
 ;;;###autoload
 (defun parcel-try-package (&rest orders)
@@ -1540,8 +1538,7 @@ ORDER's package is not made available during subsequent sessions."
   (parcel-display-status-buffer)
   (dolist (order orders)
     ;;@FIX: wasteful to pad out the order to make it QUEUED.
-    (let ((package (if (listp order) (car order) order)))
-      (parcel--process-order (cons package (parcel--queue-order order))))))
+    (parcel--process-order (cons (parcel--first order) (parcel--queue-order order)))))
 
 (defun parcel--process-order (queued)
   "Process QUEUED order."
@@ -1655,13 +1652,12 @@ If HIDE is non-nil, do not display `parcel-status-buffer'."
   (let* ((default-directory (parcel-order-repo-dir order))
          (recipe (parcel-order-recipe order))
          (remotes (plist-get recipe :remotes))
-         (remote (if (listp remotes) (car remotes) remotes))
+         (remote (parcel--first remotes))
          (process (make-process
                    :name (format "parcel-log-updates-%s" (parcel-order-package order))
                    ;; Pager will break this process. Complains about terminal functionality.
-                   :command (list "git" "--no-pager" "log"
-                                  (if (listp remote) (car remote) remote)
-                                  "..." "HEAD")
+                   :command
+                   (list "git" "--no-pager" "log" (parcel--first remote) "..." "HEAD")
                    :filter   #'parcel--process-filter
                    :sentinel #'parcel--log-updates-process-sentinel)))
     (process-put process :order order)))
