@@ -465,25 +465,20 @@ ITEM is any of the following values:
 (cl-defstruct (parcel-order
                (:constructor parcel-order-create
                              (item
-                              &key
-                              recipe
-                              repo-dir
-                              build-dir
-                              cached
-                              dependencies
-                              files
-                              mono-repo
+                              &key recipe repo-dir build-dir cached dependencies
+                              files mono-repo
                               &aux
                               (status 'queued)
                               (info "Package queued")
                               (id (if (listp item) (car item) item))
-                              (recipe  (or recipe
-                                           (condition-case err
-                                               (parcel-recipe item)
-                                             ((error)
-                                              (setq status 'failed
-                                                    info (format "No recipe: %S" err))
-                                              nil))))
+                              (recipe
+                               (or recipe
+                                   (condition-case err
+                                       (parcel-recipe item)
+                                     ((error)
+                                      (setq status 'failed
+                                            info (format "No recipe: %S" err))
+                                      nil))))
                               (repo-dir (or repo-dir
                                             (when recipe
                                               (condition-case err
@@ -497,13 +492,14 @@ ITEM is any of the following values:
                               (built-p nil)
                               (mono-repo (or mono-repo
                                              (unless built-p
-                                               (when-let ((mono (cl-some (lambda (cell)
-                                                                           (when-let ((queued (cdr cell))
-                                                                                      ((and repo-dir
-                                                                                            (equal repo-dir
-                                                                                                   (parcel-order-repo-dir queued)))))
-                                                                             queued))
-                                                                         (reverse (parcel--queued-orders)))))
+                                               (when-let ((mono
+                                                           (cl-some (lambda (cell)
+                                                                      (when-let ((queued (cdr cell))
+                                                                                 ((and repo-dir
+                                                                                       (equal repo-dir
+                                                                                              (parcel-order-repo-dir queued)))))
+                                                                        queued))
+                                                                    (reverse (parcel--queued-orders)))))
                                                  (setq info (format "Waiting for monorepo %S" repo-dir)
                                                        status 'blocked)
                                                  mono))))
