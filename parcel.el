@@ -470,7 +470,7 @@ ITEM is any of the following values:
                               repo-dir
                               build-dir
                               cached
-			      dependencies
+                              dependencies
                               files
                               mono-repo
                               &aux
@@ -651,12 +651,12 @@ If PACKAGES is nil, use all available orders."
 (defun parcel--clean-order (order)
   "Return ORDER plist with cache data."
   (cons (parcel-order-item order)
-	(list
-	 :recipe       (parcel-order-recipe order)
-	 :repo-dir     (parcel-order-repo-dir order)
-	 :build-dir    (parcel-order-build-dir order)
-	 :files        (parcel-order-files order)
-	 :dependencies (mapcar #'parcel--clean-order (parcel-order-dependencies order)))))
+        (list
+         :recipe       (parcel-order-recipe order)
+         :repo-dir     (parcel-order-repo-dir order)
+         :build-dir    (parcel-order-build-dir order)
+         :files        (parcel-order-files order)
+         :dependencies (mapcar #'parcel--clean-order (parcel-order-dependencies order)))))
 
 (defun parcel--write-order-cache ()
   "Write order cache to disk."
@@ -1134,7 +1134,7 @@ If package's repo is not on disk, error."
                   (if included
                       ;; Unblock dependency published in same repo...
                       (when blocked (parcel--clone-dependencies dep-order))
-		    (unless blocked (parcel--run-next-build-step dep-order))))))
+                    (unless blocked (parcel--run-next-build-step dep-order))))))
             (when (= (length externals) finished) ; Our dependencies beat us to the punch
               (parcel--run-next-build-step order)))
         (parcel--update-order-info order "No external dependencies detected")
