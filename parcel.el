@@ -770,13 +770,16 @@ RETURNS order structure."
                       (apply #'parcel-order-create cached)
                     (parcel-order-create item)))
            (mono-repo (parcel-order-mono-repo order))
-           (info (pop (parcel-order-log order))))
+           (info (pop (parcel-order-log order)))
+           (status (pop (parcel-order-statuses order))))
       ;;@TODO: can this be moved to order constructor somehow?
       ;; The problem is we need a reference to the entire order.
       ;; Unless we change our "includes" slot to contain a list of item symbols.
       ;; I don't know if this will be slower over all...
       (when mono-repo (cl-pushnew order (parcel-order-includes mono-repo)))
-      (parcel--update-order-info order (pop (parcel-order-statuses order)) info)
+      (if (eq status 'failed)
+          (parcel--fail-order order info)
+        (parcel--update-order-info order status info))
       (push (cons (intern (parcel-order-package order)) order)
             (parcel-queue-orders (parcel--current-queue)))
       order)))
