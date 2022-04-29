@@ -822,10 +822,8 @@ RECURSE is used to keep track of recursive calls."
                     "git" "remote" "add" remote (parcel--repo-uri recipe))
                    (unless (equal remote "origin")
                      (parcel-process-call "git" "remote" "rename" "origin" remote))))))))
-        (_ (parcel--update-order-info
-            order
-            (format "(wrong-type-argument ((stringp listp)) %S" remotes)
-            'failed)))))
+        (_ (parcel--fail-order
+            order (format "(wrong-type-argument ((stringp listp)) %S" remotes))))))
   (unless recurse (parcel--run-next-build-step order)))
 
 (defun parcel--remove-build-steps (order steplist)
@@ -928,7 +926,9 @@ If it matches, the order associated with process has its STATUS updated."
            status))))
     (when (and pattern (string-match-p pattern output))
       (process-put process :result nil)
-      (parcel--update-order-info order output status))))
+      (if (eq status 'failed)
+          (parcel--fail-order order output)
+        (parcel--update-order-info order output status)))))
 
 (defun parcel--compile-info-process-sentinel (process event)
   "Sentinel for info compilation PROCESS EVENT."
@@ -991,11 +991,10 @@ If it matches, the order associated with process has its STATUS updated."
                                  (intern (substring (symbol-name type) 1)))
       (parcel--run-next-build-step order))
      ((string-match-p "abnormally" event)
-      (parcel--update-order-info
+      (parcel--fail-order
        order
        ;; We want the event prior to the last "exited abnormally" event.
-       (nth 2 (car (last (parcel-order-log order) 2))))
-      'failed))))
+       (nth 2 (car (last (parcel-order-log order) 2))))))))
 
 (defun parcel--dispatch-build-commands (order type)
   "Run ORDER's TYPE commands for.
@@ -1115,8 +1114,7 @@ If package's repo is not on disk, error."
                                         (memq dependency parcel-ignored-dependencies))
                                       dependencies :key #'car))))
     (if (and emacs (version< emacs-version (cadr emacs)))
-        (parcel--update-order-info
-         order (format "Requires %S; running %S" emacs emacs-version) 'failed)
+        (parcel--fail-order order (format "Requires %S; running %S" emacs emacs-version))
       (if externals
           ;;@TODO: Major Version conflict checks?
           (let ((finished 0))
@@ -1167,9 +1165,8 @@ If package's repo is not on disk, error."
                                                                 remote)
                                                       branch)))))))
             (unless success
-              (parcel--update-order-info
-               order (format "Unable to check out ref: %S " (string-trim stderr))
-               'failed))))
+              (parcel--fail-order
+               order (format "Unable to check out ref: %S " (string-trim stderr))))))
         (unless (eq (parcel-order-status order) 'failed)
           (parcel--update-order-info
            order (if target (format "%S ref checked out" target) "Default ref checked out") 'ref-checked-out)
@@ -1258,8 +1255,7 @@ Possibly kicks off next build step, or changes order status."
                       (push (parcel-order-package dep-order) failed)
                     (push (parcel-order-package dep-order) blocked)))
       (cond
-       (failed (parcel--update-order-info
-                order (format "Failed dependencies: %S" failed) 'failed))
+       (failed (parcel--fail-order order (format "Failed dependencies: %S" failed)))
        (blocked (parcel--update-order-info
                  order (format "Blocked by dependencies: %S" blocked) 'blocked))
        (t (parcel--run-next-build-step order))))))
@@ -1270,9 +1266,7 @@ Possibly kicks off next build step, or changes order status."
         (raw-output (process-get process :raw-output)))
     (if (and (string-match-p "fatal" raw-output)
              (not (string-match-p "already exists" raw-output)))
-        (parcel--update-order-info order
-                                   (nth 2 (car (parcel-order-log order)))
-                                   'failed)
+        (parcel--fail-order order (nth 2 (car (parcel-order-log order))))
       (parcel--run-next-build-step order))))
 
 (defun parcel--clone (order)
