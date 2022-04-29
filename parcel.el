@@ -470,6 +470,7 @@ ITEM is any of the following values:
                               repo-dir
                               build-dir
                               cached
+			      dependencies
                               files
                               mono-repo
                               &aux
@@ -649,26 +650,26 @@ If PACKAGES is nil, use all available orders."
 
 (defun parcel--clean-order (order)
   "Return ORDER plist with cache data."
-  (list
-   :package      (parcel-order-package order)
-   :recipe       (parcel-order-recipe order)
-   :repo-dir     (parcel-order-repo-dir order)
-   :build-dir    (parcel-order-build-dir order)
-   :files        (parcel-order-files order)
-   :dependencies (mapcar #'parcel--clean-order (parcel-order-dependencies order))))
+  (cons (parcel-order-item order)
+	(list
+	 :recipe       (parcel-order-recipe order)
+	 :repo-dir     (parcel-order-repo-dir order)
+	 :build-dir    (parcel-order-build-dir order)
+	 :files        (parcel-order-files order)
+	 :dependencies (mapcar #'parcel--clean-order (parcel-order-dependencies order)))))
 
 (defun parcel--write-order-cache ()
   "Write order cache to disk."
   (unless (file-exists-p parcel-cache-directory)
     (make-directory parcel-cache-directory 'parents))
   (parcel--write-file (expand-file-name "cache/cache.el" parcel-directory)
-    (prin1 (cl-loop for (item . order) in (parcel--queued-orders)
+    (prin1 (cl-loop for (_ . order) in (parcel--queued-orders)
                     when (eq (parcel-order-status order) 'finished)
-                    collect (cons item (parcel--clean-order order))))))
+                    collect (parcel--clean-order order)))))
 
 (defun parcel--cache-entry-to-order (cached)
   "Return decoded CACHED plist as order."
-  (let ((order (apply #'parcel-order-create (cdr cached))))
+  (let ((order (apply #'parcel-order-create cached)))
     (setf (parcel-order-dependencies order)
           (mapcar #'parcel--cache-entry-to-order (parcel-order-dependencies order)))
     (cons (car cached) order)))
@@ -757,7 +758,7 @@ If INFO is non-nil, ORDER's info is updated as well."
   "Built package information cache.")
 
 (defun parcel--queue-order (item)
- "Queue (ITEM . ORDER) in `parcel--queued-orders'.
+  "Queue (ITEM . ORDER) in `parcel--queued-orders'.
 If STATUS is non-nil, the order is given that initial status.
 RETURNS order structure."
   (if (and (not after-init-time) (parcel-alist-get item (parcel--queued-orders)))
@@ -767,7 +768,7 @@ RETURNS order structure."
                     (lambda (o) (when (equal (car o) package) o))
                     parcel--order-cache))
            (order (if cached
-                      (apply #'parcel-order-create (cdr cached))
+                      (apply #'parcel-order-create cached)
                     (parcel-order-create item)))
            (info (parcel-order-info order))
            (mono-repo (parcel-order-mono-repo order)))
@@ -1132,9 +1133,8 @@ If package's repo is not on disk, error."
                     (when (eq (parcel-order-status queued) 'finished) (cl-incf finished))
                   (if included
                       ;; Unblock dependency published in same repo...
-                      (if blocked
-                          (parcel--clone-dependencies dep-order)
-                        (parcel--run-next-build-step dep-order))))))
+                      (when blocked (parcel--clone-dependencies dep-order))
+		    (unless blocked (parcel--run-next-build-step dep-order))))))
             (when (= (length externals) finished) ; Our dependencies beat us to the punch
               (parcel--run-next-build-step order)))
         (parcel--update-order-info order "No external dependencies detected")
