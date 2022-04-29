@@ -534,7 +534,7 @@ ITEM is any of the following values:
                               (includes (when mono-repo (list mono-repo)))
                               ;; Not a proper log entry. We just store info here
                               ;; to catch failures during struct creation and
-                              ;; handle first log entry in `pardel--queue-order'
+                              ;; handle first log entry in `parcel--queue-order'
                               (log (list info))))
                (:type list)
                (:named))
