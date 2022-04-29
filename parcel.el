@@ -765,10 +765,7 @@ If STATUS is non-nil, the order is given that initial status.
 RETURNS order structure."
   (if (and (not after-init-time) (parcel-alist-get item (parcel--queued-orders)))
       (warn "Duplicate item declaration: %S" item)
-    (let* ((package (symbol-name (if (listp item) (car item) item)))
-           (cached (cl-some
-                    (lambda (o) (when (equal (car o) package) o))
-                    parcel--order-cache))
+    (let* ((cached (parcel-alist-get item parcel--order-cache))
            (order (if cached
                       (apply #'parcel-order-create cached)
                     (parcel-order-create item)))
