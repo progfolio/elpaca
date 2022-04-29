@@ -532,7 +532,10 @@ ITEM is any of the following values:
                                                         parcel--dispatch-build-commands)))))
                                      steps))))
                               (includes (when mono-repo (list mono-repo)))
-                              (log (list (list status (current-time) info)))))
+                              ;; Not a proper log entry. We just store info here
+                              ;; to catch failures during struct creation and
+                              ;; handle first log entry in `pardel--queue-order'
+                              (log (list info))))
                (:type list)
                (:named))
   "Order for queued processing."
@@ -769,14 +772,14 @@ RETURNS order structure."
            (order (if cached
                       (apply #'parcel-order-create cached)
                     (parcel-order-create item)))
-           (info (parcel-order-info order))
-           (mono-repo (parcel-order-mono-repo order)))
+           (mono-repo (parcel-order-mono-repo order))
+           (info (pop (parcel-order-log order))))
       ;;@TODO: can this be moved to order constructor somehow?
       ;; The problem is we need a reference to the entire order.
       ;; Unless we change our "includes" slot to contain a list of item symbols.
       ;; I don't know if this will be slower over all...
       (when mono-repo (cl-pushnew order (parcel-order-includes mono-repo)))
-      (parcel--update-order-info order info)
+      (parcel--update-order-info order (pop (parcel-order-statuses order)) info)
       (push (cons (intern (parcel-order-package order)) order)
             (parcel-queue-orders (parcel--current-queue)))
       order)))
