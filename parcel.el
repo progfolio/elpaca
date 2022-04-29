@@ -492,7 +492,6 @@ ITEM is any of the following values:
                                                  (setq status 'failed
                                                        info (format "Unable to determine repo dir: %S" err))
                                                  nil)))))
-                              (statuses (list status))
                               (build-dir (or build-dir (when recipe (parcel-build-dir recipe))))
                               (package (format "%S" id))
                               (built-p nil)
@@ -508,6 +507,7 @@ ITEM is any of the following values:
                                                  (setq info (format "Waiting for monorepo %S" repo-dir)
                                                        status 'blocked)
                                                  mono))))
+                              (statuses (list status))
                               (build-steps
                                (when recipe
                                  (if (file-exists-p build-dir)
