@@ -494,19 +494,21 @@ ITEM is any of the following values:
                               (build-dir (or build-dir (when recipe (parcel-build-dir recipe))))
                               (package (format "%S" id))
                               (built-p nil)
-                              (mono-repo (or mono-repo
-                                             (unless built-p
-                                               (when-let ((mono
-                                                           (cl-some (lambda (cell)
-                                                                      (when-let ((queued (cdr cell))
-                                                                                 ((and repo-dir
-                                                                                       (equal repo-dir
-                                                                                              (parcel-order-repo-dir queued)))))
-                                                                        queued))
-                                                                    (reverse (parcel--queued-orders)))))
-                                                 (setq info (format "Waiting for monorepo %S" repo-dir)
-                                                       status 'blocked)
-                                                 mono))))
+                              (mono-repo
+                               (or mono-repo
+                                   (unless built-p
+                                     (when-let ((mono
+                                                 (cl-some
+                                                  (lambda (cell)
+                                                    (when-let ((queued (cdr cell))
+                                                               ((and repo-dir
+                                                                     (equal repo-dir
+                                                                            (parcel-order-repo-dir queued)))))
+                                                      queued))
+                                                  (reverse (parcel--queued-orders)))))
+                                       (setq info (format "Waiting for monorepo %S" repo-dir)
+                                             status 'blocked)
+                                       mono))))
                               (statuses (list status))
                               (build-steps
                                (when recipe
