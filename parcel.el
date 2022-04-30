@@ -1075,6 +1075,8 @@ If package's repo is not on disk, error."
                 (read (replace-regexp-in-string ";" "" (match-string 1)))
               (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))
 
+;;@DECOMPOSE: The body of this function is similar to `parcel--clone-dependencies'.
+;; Refactor into a macro to operate on dependencies?
 (defun parcel--queue-dependencies (order)
   "Queue ORDER's dependencies."
   (parcel--update-order-info order "Queueing Dependencies" 'queueing-deps)
