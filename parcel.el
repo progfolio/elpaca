@@ -703,16 +703,13 @@ If INFO is non-nil, ORDER's info is updated as well."
     (when (memq status '(finished failed blocked))
       (mapc #'parcel--order-check-status (parcel-order-dependents order)))
     (when (eq status 'ref-checked-out)
-      (mapc #'parcel--continue-mono-repo-dependency (parcel-order-includes order))))
+      (mapc #'parcel--continue-mono-repo-dependency (parcel-order-includes order)))
+    (when (eq status 'failed) (parcel-display-status-buffer)))
   (when info (parcel--log-event order info))
-  (let ((status-buffer-visible-p (get-buffer-window parcel-status-buffer t)))
-    (if status-buffer-visible-p
-        (progn
-          (when parcel--order-info-timer (cancel-timer parcel--order-info-timer))
-          (setq parcel--order-info-timer
-                (run-at-time parcel-order-info-debounce-interval
-                             nil #'parcel--print-order-status)))
-      (when (eq status 'failed) (parcel-display-status-buffer)))))
+  (when (get-buffer-window parcel-status-buffer t) ;; Status buffer visible
+    (when parcel--order-info-timer (cancel-timer parcel--order-info-timer))
+    (setq parcel--order-info-timer (run-at-time parcel-order-info-debounce-interval
+                                                nil #'parcel--print-order-status))))
 
 (defun parcel--log-duration (order)
   "Return ORDER's log duration."
