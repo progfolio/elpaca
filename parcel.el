@@ -542,8 +542,9 @@ ITEM is any of the following values:
                (:named))
   "Order for queued processing."
   id item log mono-repo package process
-  queue-id build-dir build-steps dependencies dependents files
+  build-dir build-steps dependencies dependents files
   includes recipe repo-dir statuses
+  (queue-id parcel--queue-index)
   (init (not after-init-time))
   (queue-time (current-time)))
 
