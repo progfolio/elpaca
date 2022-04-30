@@ -1096,7 +1096,11 @@ If package's repo is not on disk, error."
                    (queued     (parcel-alist-get dependency (parcel--queued-orders)))
                    (dep-order  (or queued (parcel--queue-order dependency))))
               (setf (parcel-order-dependencies order)
-                    (delete-dups (append (parcel-order-dependencies order) (list dep-order))))
+                    ;;@OPTIMIZE: can we do without deleting dups here?
+                    ;;Why are they being added in the first place?
+                    (cl-delete-duplicates
+                     (append (parcel-order-dependencies order) (list dep-order))
+                     :key #'car))
               (cl-pushnew order (parcel-order-dependents dep-order))
               (push dep-order queued-deps)))
           (mapc #'parcel--run-next-build-step (nreverse queued-deps)))
@@ -1127,7 +1131,9 @@ If package's repo is not on disk, error."
                      (included   (member dep-order (parcel-order-includes order)))
                      (blocked    (eq (parcel-order-status dep-order) 'blocked)))
                 (setf (parcel-order-dependencies order)
-                      (delete-dups (append (parcel-order-dependencies order) (list dep-order))))
+                      (cl-delete-duplicates
+                       (append (parcel-order-dependencies order) (list dep-order))
+                       :key #'car))
                 (cl-pushnew order (parcel-order-dependents dep-order))
                 (if queued
                     (when (eq (parcel-order-status queued) 'finished) (cl-incf finished))
