@@ -191,7 +191,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
 
 (defmacro parcel--read-file (path)
   "Read file at PATH into memory."
-  (declare (debug all))
+  (declare (debug t))
   (let ((psym (gensym "path")))
     `(when-let ((,psym ,path)
                 (file (expand-file-name ,psym))
@@ -206,7 +206,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
   "Write FILE using BODY.
 `standard-output' and print variables are lexically bound for convenience.
 e.g. elisp forms may be printed via `prin1'."
-  (declare (indent 1) (debug all))
+  (declare (indent 1) (debug t))
   `(let ((coding-system-for-write 'utf-8))
      (with-temp-file ,file
        (let* ((standard-output (current-buffer))
