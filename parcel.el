@@ -747,11 +747,13 @@ If INFO is non-nil, ORDER's info is updated as well."
         (parcel--update-order-info
          order
          (concat  "✓ " (format-time-string "%s.%3N" (parcel--log-duration order)) " secs")
-         'finished)
-        (when-let ((queue (nth parcel--queue-index (reverse parcel--queues)))
-                   ((= (cl-incf (parcel-queue-processed queue))
-                       (length (parcel-queue-orders queue)))))
-          (parcel--finalize-queue queue))))))
+         'finished))
+      (when-let ((n (1+ parcel--queue-index))
+                 ((<= n (length parcel--queues)))
+                 (queue (car (last parcel--queues n)))
+                 ((= (cl-incf (parcel-queue-processed queue))
+                     (length (parcel-queue-orders queue)))))
+        (parcel--finalize-queue queue)))))
 
 (defun parcel--read-order-cache ()
   "Return cache alist or nil if not available."
