@@ -672,12 +672,14 @@ If PACKAGES is nil, use all available orders."
                     when (eq (parcel-order-status order) 'finished)
                     collect (parcel--clean-order order)))))
 
-(defun parcel--cache-entry-to-order (cached)
-  "Return decoded CACHED plist as order."
+(defun parcel--cache-entry-to-order (cached &optional dependency)
+  "Return decoded CACHED plist as order.
+If DEPENDENCY is non-nil, the return order directly."
   (let ((order (apply #'parcel-order-create cached)))
     (setf (parcel-order-dependencies order)
-          (mapcar #'parcel--cache-entry-to-order (parcel-order-dependencies order)))
-    (cons (car cached) order)))
+          (mapcar (lambda (o) (parcel--cache-entry-to-order o 'dependency))
+                  (parcel-order-dependencies order)))
+    (if dependency order (cons (car cached) order))))
 
 (defsubst parcel--run-next-build-step (order)
   "Run ORDER's next build step with ARGS."
