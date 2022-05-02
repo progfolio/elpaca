@@ -781,7 +781,7 @@ RETURNS order structure."
       (when mono-repo (cl-pushnew order (parcel-order-includes mono-repo)))
       (if (eq status 'failed)
           (parcel--fail-order order info)
-        (parcel--update-order-info order status info))
+        (parcel--update-order-info order info status))
       (push (cons (intern (parcel-order-package order)) order)
             (parcel-queue-orders (parcel--current-queue)))
       order)))
