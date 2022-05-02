@@ -551,10 +551,11 @@ ITEM is any of the following values:
 (defun parcel--fail-order (order &optional reason)
   "Fail ORDER for REASON."
   (let ((item (parcel-order-item order))
-        (queue (nth (parcel-order-queue-id order) parcel--queues)))
+        (queue (car (last parcel--queues (1+ (parcel-order-queue-id order))))))
     (setf (parcel-queue-forms queue)
           (assq-delete-all (parcel--first item) (parcel-queue-forms queue))))
-  (parcel--update-order-info order reason 'failed))
+  (parcel--update-order-info order reason 'failed)
+  (parcel--finalize-order order))
 
 (defsubst parcel-order-status (order)
   "Return `car' of ORDER's statuses."
@@ -1519,10 +1520,10 @@ When ARG is non-nil display all queues, else, display only the most recent."
 If ORDER is `nil`, defer BODY until orders have been processed."
   (declare (indent 1))
   `(progn
-     ,@(unless (null order) (list `(parcel--queue-order ',order)))
      ,@(when body
          (list `(push ',(cons (parcel--first order) body)
-                      (parcel-queue-forms (parcel--current-queue)))))))
+                      (parcel-queue-forms (parcel--current-queue)))))
+     ,@(unless (null order) (list `(parcel--queue-order ',order)))))
 
 ;;;###autoload
 (defmacro parcel-use-package (order &rest body)
