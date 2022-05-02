@@ -1490,7 +1490,9 @@ When DISPLAY is non-nil, display the buffer."
     (unless (derived-mode-p 'parcel-status-mode) (parcel-status-mode))
     (with-silent-modifications (erase-buffer))
     (setq queued
-          (or queued (parcel-queue-orders (parcel--current-queue)))
+          (or queued (parcel-queue-orders
+                      (or (cl-find 'complete parcel--queues :key #'parcel-queue-status)
+                          (parcel--current-queue))))
           tabulated-list-use-header-line nil
           tabulated-list-format parcel-status-buffer-list-format
           tabulated-list-entries (parcel-status-buffer-entries queued))
