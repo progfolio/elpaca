@@ -506,8 +506,8 @@ ITEM is any of the following values:
                                                                             (parcel-order-repo-dir queued)))))
                                                       queued))
                                                   (reverse (parcel--queued-orders)))))
-                                       (setq info (format "Waiting for monorepo %S" repo-dir)
-                                             status 'blocked)
+                                       (setq status 'blocked
+                                             info (format "Waiting for monorepo %S" repo-dir))
                                        mono))))
                               (statuses (list status))
                               (build-steps
