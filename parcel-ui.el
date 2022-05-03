@@ -77,12 +77,6 @@ Allows for less debouncing than during `post-command-hook'.")
 (defvar url-http-end-of-headers)
 
 ;;;; Functions:
-(defun parcel-ui--installed-p (item)
-  "Return non-nil if ITEM's associated repo dir is on disk."
-  (when-let ((order (parcel-alist-get item (parcel--queued-orders)))
-             ((file-exists-p (parcel-order-repo-dir order))))
-    t))
-
 (defun parcel-ui--orphan-p (item)
   "Return non-nil if ITEM's repo or build are on disk without having been queued."
   (let ((queued-orders (parcel--queued-orders)))
@@ -458,15 +452,15 @@ The current package is its sole argument."
                ((error) (forward-line)))))))))
 
 (parcel-ui-defmark "rebuild"
-  (lambda (p) (unless (parcel-ui--installed-p p)
+  (lambda (p) (unless (parcel-installed-p p)
                 (user-error "Package %S is not installed" p))))
 
 (parcel-ui-defmark "install"
   (lambda (p)
-    (when (parcel-ui--installed-p p) (user-error "Package %S already installed" p))))
+    (when (parcel-installed-p p) (user-error "Package %S already installed" p))))
 
 (parcel-ui-defmark "delete"
-  (lambda (p) (unless (or (parcel-ui--installed-p p)
+  (lambda (p) (unless (or (parcel-installed-p p)
                           (let ((recipe (parcel-recipe p)))
                             (or (file-exists-p (parcel-build-dir recipe))
                                 (file-exists-p (parcel-repo-dir recipe)))))
