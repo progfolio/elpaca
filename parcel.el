@@ -1268,7 +1268,7 @@ Possibly kicks off next build step, or changes order status."
       (cond
        (failed (parcel--fail-order order (format "Failed dependencies: %S" failed)))
        (blocked (parcel--update-order-info
-                 order (format "Blocked by dependencies: %S" blocked) 'blocked))
+                 order (format "Blocked by dependencies: %s" blocked) 'blocked))
        (t (parcel--run-next-build-step order))))))
 
 (defun parcel--clone-process-sentinel (process _event)
