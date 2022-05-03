@@ -1792,7 +1792,8 @@ TYPE is either the symbol `repo` or `build`."
 (defun parcel-installed-p (item)
   "Return t if ITEM's associated repo directory is on disk, nil otherwise."
   (when-let ((order (parcel-alist-get item (parcel--queued-orders)))
-             ((file-exists-p (parcel-order-repo-dir order))))
+             (repo-dir (parcel-order-repo-dir order))
+             ((file-exists-p repo-dir)))
     t))
 
 (defun parcel-worktree-dirty-p (item)
