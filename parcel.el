@@ -344,10 +344,13 @@ This is faster (what you want with non-interactive calls)."
       recipe)))
 
 ;;;###autoload
-(defun parcel-update-menus ()
-  "Update all menus in `parcel-menu-functions'."
-  (interactive)
-  (run-hook-with-args 'parcel-menu-functions 'update)
+(defun parcel-update-menus (&optional sources)
+  "Update all menus in SOURCES or `parcel-menu-functions'."
+  (interactive (list (mapcar #'intern
+                             (completing-read-multiple
+                              "Update Menus: " parcel-menu-functions))))
+  (let ((parcel-menu-functions (or sources parcel-menu-functions)))
+    (run-hook-with-args 'parcel-menu-functions 'update))
   (parcel-menu--candidates 'recache))
 
 (defsubst parcel--inheritance-disabled-p (plist)
