@@ -1180,7 +1180,9 @@ If package's repo is not on disk, error."
                order (format "Unable to check out ref: %S " (string-trim stderr))))))
         (unless (eq (parcel-order-status order) 'failed)
           (parcel--update-order-info
-           order (if target (format "%S ref checked out" target) "Default ref checked out") 'ref-checked-out)
+           order
+           (if target (format "%S ref checked out" target) "Default ref checked out")
+           'ref-checked-out)
           (parcel--run-next-build-step order))))))
 
 (defun parcel--checkout-ref (order)
@@ -1821,15 +1823,14 @@ If FORCE is non-nil,."
           (nreverse
            (apply
             #'append
-            (cl-loop for queue in  parcel--queues
+            (cl-loop for queue in parcel--queues
                      collect
                      (cl-loop for (item . order) in (parcel-queue-orders queue)
                               unless (member item seen)
                               for rev =
                               (let ((default-directory (parcel-order-repo-dir order)))
-                                (parcel-with-process (parcel-process-call "git"
-                                                                          "rev-parse"
-                                                                          "HEAD")
+                                (parcel-with-process
+                                    (parcel-process-call "git" "rev-parse" "HEAD")
                                   (when success (string-trim stdout))))
                               when rev
                               collect (cons item rev)
