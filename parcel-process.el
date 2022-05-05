@@ -30,6 +30,14 @@
                     temporary-file-directory)
   "File for storing proccesses' stderr.")
 
+(defun parcel--delete-stderr-file ()
+  "Remove `parcel-process--stderr' file."
+  (when (and (boundp 'parcel-process--stderr)
+             (file-exists-p parcel-process--stderr))
+    (delete-file parcel-process--stderr)))
+
+(add-hook 'kill-emacs-hook #'parcel--delete-stderr-file)
+
 (defun parcel-process-call (program &rest args)
   "Run PROGRAM syncrhonously with ARGS.
 Return a list of form: (EXITCODE STDOUT STDERR).
