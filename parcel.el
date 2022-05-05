@@ -1807,6 +1807,14 @@ TYPE is either the symbol `repo` or `build`."
              (default-directory repo-dir))
     (not (string-empty-p
           (parcel-process-output "git" "-c" "status.branch=false" "status" "--short")))))
+;; @TODO Implement these:
+;; (defun parcel-on-default-branch-p (item)
+;;   (if-let ((order (parcel-alist-get item (parcel--queued-orders))))
+;;       (let* ((default-directory (parcel-repo-dir order)))
+;;         (
+;;          ;;git ls-remote --symref REMOTE HEAD
+;;          ;;git symbolic-ref HEAD  vs :branch
+;;          ;; (defun parcel-ui--local-branch-behind-p (package)
 
 (defun parcel-load-lockfile (&optional lockfile _force)
   "Load LOCKFILE.

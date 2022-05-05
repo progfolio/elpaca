@@ -170,12 +170,6 @@ If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
      (negated (not match))
      (t match))))
 
-;; @TODO Implement these:
-;; (defun parcel--package-on-default-branch-p (package)
-;;git ls-remote --symref REMOTE HEAD
-;;git symbolic-ref HEAD  vs :branch
-;; (defun parcel-ui--local-branch-behind-p (package)
-
 (defun parcel-ui-tag-marked (candidate)
   "Return non-nil if CANDIDATE is a marked package."
   (cl-member (car candidate) parcel-ui--marked-packages :key #'car))
