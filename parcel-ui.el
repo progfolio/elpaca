@@ -495,7 +495,9 @@ The current package is its sole argument."
 
 (defmacro parcel-ui-defsearch (name query)
   "Define a QUERY toggle command with NAME."
-  `(defun ,(intern (format "parcel-ui-search-%s" name)) (toggle)
+  `(defun ,(intern (format "parcel-ui-search-%s"
+                           (replace-regexp-in-string "[[:space:]]+" "-" name)))
+       (toggle)
      ,(format "Search for packages which are %s.
 If TOGGLE is non-nil, invert search." name)
      (interactive "P")
