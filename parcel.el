@@ -594,6 +594,7 @@ Otherwise return a list of all queued orders."
    ((eq status 'failed)   'parcel-failed)
    (t                     (or default 'default))))
 
+;;@TODO: integrate with tabulated-list-mode
 (defun parcel--events (&rest packages)
   "Return sorted event log string for PACKAGES.
 If PACKAGES is nil, use all available orders."
