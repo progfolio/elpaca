@@ -343,6 +343,11 @@ This is faster (what you want with non-interactive calls)."
                    (plist-get candidate :source) symbol recipe))
       recipe)))
 
+;;;###autoload
+(defun parcel-update-menus ()
+  (interactive)
+  (run-hook-with-args 'parcel-menu-functions 'update))
+
 (defsubst parcel--inheritance-disabled-p (plist)
   "Return t if PLIST explicitly has :inherit nil key val, nil otherwise."
   (when-let ((member (plist-member plist :inherit)))
