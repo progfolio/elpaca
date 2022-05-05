@@ -238,7 +238,7 @@ e.g. elisp forms may be printed via `prin1'."
                             (:type list)
                             (:named))
   "Queue to hold parcel orders."
-  autoloads forms init (id (cl-incf parcel--queue-index))
+  autoloads forms type (id (cl-incf parcel--queue-index))
   orders (processed 0) (status 'incomplete))
 
 (defvar parcel--queues (list (parcel-queue-create :id parcel--queue-index))
@@ -736,7 +736,8 @@ If INFO is non-nil, ORDER's info is updated as well."
   (when-let ((forms (parcel-queue-forms queue)))
     (eval `(progn ,@(apply #'append (mapcar #'cdr (nreverse forms)))) t))
   (setf (parcel-queue-status queue) 'complete)
-  (if (and (parcel-queue-init queue) (= (parcel-queue-id queue) (1- (length parcel--queues))))
+  (if (and (eq (parcel-queue-type queue) 'init)
+           (= (parcel-queue-id queue) (1- (length parcel--queues))))
       (progn
         (run-hooks 'parcel-after-init-hook)
         (parcel-split-queue))
@@ -1585,7 +1586,7 @@ ORDER's package is not made available during subsequent sessions."
 ;;;###autoload
 (defun parcel-split-queue ()
   "Split remaining orders into new queue."
-  (push (parcel-queue-create :init (not after-init-time))
+  (push (parcel-queue-create :type (unless after-init-time 'init))
         parcel--queues))
 
 (defun parcel--order-on-disk-p (item)
