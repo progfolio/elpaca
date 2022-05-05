@@ -1650,10 +1650,7 @@ If HIDE is non-nil, do not display `parcel-status-buffer'."
                          (copy-tree parcel-build-steps)))
         (setf (parcel-order-queue-time order) (current-time))
         (parcel--process-order queued)
-        (unless hide
-          (when-let ((buffer (get-buffer parcel-status-buffer)))
-            (kill-buffer buffer))
-          (parcel-display-status-buffer)))
+        (unless hide (parcel-display-status-buffer)))
     (user-error "Package %S has no queued order" item)))
 
 (defun parcel--log-updates-process-sentinel (process event)
