@@ -1832,7 +1832,7 @@ If FORCE is non-nil,."
                                     (parcel-process-call "git" "rev-parse" "HEAD")
                                   (when success (string-trim stdout))))
                               when rev
-                              collect (cons item rev)
+                              collect (cons item (plist-put (copy-tree (parcel-order-recipe order)) :ref rev))
                               do (push item seen)))))))
     (parcel--write-file path (pp revisions))))
 
