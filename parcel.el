@@ -345,8 +345,10 @@ This is faster (what you want with non-interactive calls)."
 
 ;;;###autoload
 (defun parcel-update-menus ()
+  "Update all menus in `parcel-menu-functions'."
   (interactive)
-  (run-hook-with-args 'parcel-menu-functions 'update))
+  (run-hook-with-args 'parcel-menu-functions 'update)
+  (parcel-menu--candidates 'recache))
 
 (defsubst parcel--inheritance-disabled-p (plist)
   "Return t if PLIST explicitly has :inherit nil key val, nil otherwise."
