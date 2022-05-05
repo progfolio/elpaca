@@ -1721,13 +1721,7 @@ If HIDE is non-nil don't display `parcel-status-buffer'."
         (setf (parcel-order-build-steps order) (list #'parcel--fetch #'parcel--log-updates))
         (setf (parcel-order-queue-time order) (current-time))
         (parcel--process-order queued)
-        (unless hide
-          (when-let ((buffer (get-buffer parcel-status-buffer)))
-            (kill-buffer buffer))
-          (parcel-display-status-buffer)
-          (with-current-buffer parcel-status-buffer
-            (goto-char (point-min))
-            (re-search-forward (format "^%s " item) nil 'noerror))))
+        (unless hide (parcel-display-status-buffer)))
     (user-error "Package %S has no queued order" item)))
 
 ;;;###autoload
