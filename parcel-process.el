@@ -25,6 +25,10 @@
 ;;; Code:
 (eval-when-compile (require 'subr-x))
 
+(defvar parcel-process-newline-regexp "[
+]"
+  "Regexp matching return or newline in process output.")
+
 (defconst parcel-process--stderr
   (expand-file-name (format "parcel-stderr-%s" (emacs-pid))
                     temporary-file-directory)
@@ -107,10 +111,6 @@ If the command cannot be run or returns a nonzero exit code, throw an error."
      (success       (concat stdout stderr)) ; Programs may exit normally and print to stderr
      ((not invoked) (error "%S" result))
      (t             (error "%s exited with code %s: %s" program (car result) stderr)))))
-
-(defvar parcel-process-newline-regexp "[
-]"
-  "Regexp matching return or newline in process output.")
 
 (provide 'parcel-process)
 ;;; parcel-process.el ends here
