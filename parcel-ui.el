@@ -5,6 +5,10 @@
 (require 'parcel)
 (require 'url)
 (require 'tabulated-list)
+;;@TODO: do these need to be unconditionally required/executed?
+(require 'bookmark)
+(bookmark-maybe-load-default-file)
+
 
 ;;; Code:
 ;;;;Faces:
@@ -130,7 +134,8 @@ If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
   (parcel--ui-init)
   (parcel-ui--update-search-filter (or parcel-ui-initial-query ".*"))
   (hl-line-mode)
-  (add-hook 'minibuffer-setup-hook 'parcel-ui--minibuffer-setup))
+  (add-hook 'minibuffer-setup-hook 'parcel-ui--minibuffer-setup)
+  (setq-local bookmark-make-record-function #'parcel-ui-bookmark-make-record))
 
 ;;;###autoload
 (defun parcel-ui ()
@@ -521,6 +526,28 @@ If TOGGLE is non-nil, invert search." name)
   (if-let ((previous (pop parcel-ui-search-history)))
       (parcel-ui--update-search-filter previous)
     (user-error "End of search history")))
+
+;;;; Bookmark integration
+
+;;;###autoload
+(defun parcel-ui--bookmark-handler (record)
+  "Open a bookmarked search RECORD."
+  (parcel-ui)
+  (setq parcel-ui-search-filter (bookmark-prop-get record 'query))
+  (parcel-ui-search-refresh)
+  (pop-to-buffer (get-buffer-create parcel-ui-buffer)))
+
+
+(defun parcel-ui-bookmark-make-record ()
+  "Return a bookmark record for the current `parcel-ui-search-filter'."
+  (let ((name (replace-regexp-in-string
+               " \(.* packages\):" ""
+               (substring-no-properties (format-mode-line header-line-format)))))
+    (list name
+      (cons 'location name)
+      (cons 'handler #'parcel-ui--bookmark-handler)
+      (cons 'query parcel-ui-search-filter)
+      (cons 'defaults nil))))
 
 ;;;; Key bindings
 (define-key parcel-ui-mode-map (kbd "*")   'parcel-ui-toggle-mark)
