@@ -117,17 +117,17 @@ If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
                                        (or (plist-get data :source) ""))))))))
 (defun parcel--ui-init ()
   "Initialize format of the UI."
-  (setq tabulated-list-format
-        [("Package" 30 t)
-         ("Description" 80 t)
-         ("Source" 20 t)]
-        tabulated-list-entries
-        #'parcel-ui-entries))
+  (setq tabulated-list-use-header-line nil
+        tabulated-list-format [("Package" 30 t)
+                               ("Description" 80 t)
+                               ("Source" 20 t)]
+        tabulated-list-entries #'parcel-ui-entries)
+  (tabulated-list-print)
+  (tabulated-list-init-header))
 
 (define-derived-mode parcel-ui-mode tabulated-list-mode "parcel-ui"
   "Major mode to manage packages."
   (parcel--ui-init)
-  (setq tabulated-list-use-header-line nil)
   (parcel-ui--update-search-filter (or parcel-ui-initial-query ".*"))
   (hl-line-mode)
   (add-hook 'minibuffer-setup-hook 'parcel-ui--minibuffer-setup))
