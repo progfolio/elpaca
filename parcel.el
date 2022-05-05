@@ -1729,7 +1729,8 @@ If HIDE is non-nil don't display `parcel-status-buffer'."
   "Fetch remote commits for every queued order.
 If HIDE is non-nil, do not show `parcel-status-buffer'."
   (interactive "P")
-  (mapc (lambda (queued) (parcel-fetch (car queued) hide)) (parcel--queued-orders)))
+  (cl-loop for (item . _) in (cl-remove-duplicates (parcel--queued-orders) :key #'car)
+           do (parcel-fetch item hide)))
 
 ;;;; STATUS BUFFER
 (defvar parcel-status-mode-map
