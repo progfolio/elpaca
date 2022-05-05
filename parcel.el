@@ -1689,7 +1689,7 @@ If HIDE is non-nil, do not display `parcel-status-buffer'."
   "Fetch ORDER's remote's commits."
   (let ((default-directory (parcel-order-repo-dir order))
         (process (make-process
-                  :name (format "parcel-fetch-update-%s" (parcel-order-package order))
+                  :name (format "parcel-fetch-%s" (parcel-order-package order))
                   :command  '("git" "fetch" "--all")
                   :filter   #'parcel--process-filter
                   :sentinel #'parcel--fetch-process-sentinel)))
