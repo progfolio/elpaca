@@ -730,6 +730,23 @@ If INFO is non-nil, ORDER's info is updated as well."
          (end (nth 1 (car log))))
     (time-subtract end (parcel-order-queue-time order))))
 
+;;;###autoload
+(defun parcel-split-queue ()
+  "Split remaining orders into new queue.
+If current queue is empty, it is reused."
+  (when (parcel-queue-orders (parcel--current-queue))
+    (push (parcel-queue-create :type (unless after-init-time 'init))
+          parcel--queues)))
+
+;;;###autoload
+(defmacro parcel-queue (&rest body)
+  "Execute BODY in its own queue."
+  (declare (debug t))
+  `(progn
+     (parcel-split-queue)
+     ,@body
+     (parcel-split-queue)))
+
 (defun parcel--finalize-queue (queue)
   "Run QUEUE's post isntallation functions:
 - load cached autoloads
@@ -1586,12 +1603,6 @@ ORDER's package is not made available during subsequent sessions."
   "Process entire queue."
   (setq parcel--queue-index 0)
   (parcel--process-queue (parcel--current-queue)))
-
-;;;###autoload
-(defun parcel-split-queue ()
-  "Split remaining orders into new queue."
-  (push (parcel-queue-create :type (unless after-init-time 'init))
-        parcel--queues))
 
 (defun parcel--order-on-disk-p (item)
   "Return t if ITEM has an associated order and a build or repo dir on disk."
