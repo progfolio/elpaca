@@ -1831,6 +1831,27 @@ TYPE is either the symbol `repo` or `build`."
 ;;          ;;git symbolic-ref HEAD  vs :branch
 ;;          ;; (defun parcel-ui--local-branch-behind-p (package)
 
+(defun parcel-unshallow (item)
+  "Convert ITEM's repo to an unshallow repository."
+  (when-let ((order (or (alist-get item (parcel--queued-orders))
+                        (user-error "%s has no queued order." item)))
+             (repo-dir (or (parcel-order-repo-dir order)
+                           (user-error "%s has no associated repo dir" item)))
+             (default-directory repo-dir)
+             ((or (equal
+                   (string-trim
+                    (parcel-process-output "git" "rev-parse" "--is-shallow-repository"))
+                   "true")
+                  (user-error "%s is not a shallwow repository" repo-dir)))
+             (remotes (plist-get (parcel-order-recipe order) :remotes)))
+    (cl-loop for remote in (if (stringp remotes) (list remotes) remotes)
+             for name = (parcel--first remote)
+             do
+             (progn
+               (parcel-process-call "git" "config" (format "remote.%s.fetch" name)
+                                    (format "+refs/heads/*:refs/remotes/%s/*" name))
+               (parcel-process-call "git" "fetch" "--unshallow" name)))))
+
 (defun parcel-load-lockfile (&optional lockfile _force)
   "Load LOCKFILE.
 If FORCE is non-nil,."
