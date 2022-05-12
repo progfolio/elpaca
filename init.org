@@ -48,6 +48,10 @@ Adding a variable watcher can be a useful way to track down initialization and m
                         (message "%s set to %s" symbol newval)))
 #+end_src
 
+#+begin_src emacs-lisp :tangle no
+(setq debug-on-error t)
+#+end_src
+
 *** file-name-handler-alist
 Skipping a bunch of regular expression searching in the =file-name-handler-alist= should improve start time.
 #+begin_src emacs-lisp :lexical t
