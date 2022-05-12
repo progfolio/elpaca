@@ -138,9 +138,13 @@ If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
   (setq-local bookmark-make-record-function #'parcel-ui-bookmark-make-record))
 
 ;;;###autoload
-(defun parcel-ui ()
-  "Display the UI."
-  (interactive)
+(defun parcel-ui (&optional recache)
+  "Display the UI.
+If RECACHE is non-nil, recompute menu items from `parcel-menu-item-functions'."
+  (interactive "P")
+  (when recache
+    (parcel-menu--candidates recache)
+    (parcel-ui-entries recache))
   (with-current-buffer (get-buffer-create parcel-ui-buffer)
     (unless (derived-mode-p 'parcel-ui-mode)
       (parcel-ui-mode))
