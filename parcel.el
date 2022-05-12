@@ -116,6 +116,10 @@ Setting it too high causes prints fewer status updates."
   "Seconds to wait between subprocess outputs before declaring process blocked."
   :type 'number)
 
+(defcustom parcel-use-build-step-short-names t
+  "When non-nil, recipe :build functions are auto-prefixed with `parcel--`."
+  :type 'boolean)
+
 (defcustom parcel-build-steps '(parcel--clone
                                 parcel--add-remotes
                                 parcel--checkout-ref
@@ -475,6 +479,22 @@ ITEM is any of the following values:
 (defsubst parcel--first (obj)
   "Return `car' of OBJ if it is a list, else OBJ."
   (if (listp obj) (car obj) obj))
+
+(defun parcel--build-steps (item)
+  "Return a list of build functions for ITEM."
+  (let* ((order (alist-get item (parcel--queued-orders)))
+         (recipe (or (and order (parcel-order-recipe order))
+                     (parcel-recipe item)))
+         (build (plist-member recipe :build))
+         (steps (cadr build))
+         (removep (and (eq (car-safe steps) :not) (pop steps))))
+    (when (and parcel-use-build-step-short-names (listp steps))
+      (setq steps (cl-loop for step in steps
+                           collect (intern (concat "parcel--" (symbol-name step))))))
+    (cond
+     ((or (not build) (eq steps t)) parcel-build-steps)
+     (removep (cl-set-difference parcel-build-steps steps))
+     ((listp steps) steps))))
 
 (cl-defstruct (parcel-order
                (:constructor parcel-order-create
