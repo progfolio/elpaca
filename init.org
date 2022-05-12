@@ -257,13 +257,13 @@ Bury the status buffer when everything initialized OK.
 This package gets the correct environment variables so parcel can use the ssh protocol.
 
 #+begin_src emacs-lisp :lexical t
-(parcel keychain-environment
-  (keychain-refresh-environment))
 ;; We need this loaded for SSH protocol
-(parcel-split-queue)
-(parcel (parcel-menu-demo :host github :repo "progfolio/parcel-menu-demo" :protocol ssh)
-  (add-to-list 'parcel-menu-functions 'parcel-menu-demo))
-(parcel-split-queue)
+(parcel-queue
+ (parcel keychain-environment
+   (keychain-refresh-environment)))
+(parcel-queue
+ (parcel (parcel-menu-demo :host github :repo "progfolio/parcel-menu-demo" :protocol ssh)
+   (add-to-list 'parcel-menu-functions 'parcel-menu-demo)))
 #+end_src
 
 ** packaging
