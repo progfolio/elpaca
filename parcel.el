@@ -1834,7 +1834,7 @@ TYPE is either the symbol `repo` or `build`."
 (defun parcel-unshallow (item)
   "Convert ITEM's repo to an unshallow repository."
   (when-let ((order (or (alist-get item (parcel--queued-orders))
-                        (user-error "%s has no queued order." item)))
+                        (user-error "%s has no queued order" item)))
              (repo-dir (or (parcel-order-repo-dir order)
                            (user-error "%s has no associated repo dir" item)))
              (default-directory repo-dir)
