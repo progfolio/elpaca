@@ -653,7 +653,7 @@ If PACKAGES is nil, use all available orders."
 
 (defun parcel-status-buffer-entries (&optional queued)
   "Return list of `tabultaed-list-entries' from QUEUED orders."
-  (cl-loop for (item . order) in (or queued (parcel-queue-orders (parcel--current-queue)))
+  (cl-loop for (item . order) in (reverse (or queued (parcel-queue-orders (parcel--current-queue))))
            for status = (parcel-order-status order)
            collect
            (list item (vector (propertize (parcel-order-package order)
