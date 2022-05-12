@@ -544,10 +544,10 @@ If TOGGLE is non-nil, invert search." name)
                " \(.* packages\):" ""
                (substring-no-properties (format-mode-line header-line-format)))))
     (list name
-      (cons 'location name)
-      (cons 'handler #'parcel-ui--bookmark-handler)
-      (cons 'query parcel-ui-search-filter)
-      (cons 'defaults nil))))
+          (cons 'location name)
+          (cons 'handler #'parcel-ui--bookmark-handler)
+          (cons 'query parcel-ui-search-filter)
+          (cons 'defaults nil))))
 
 ;;;; Key bindings
 (define-key parcel-ui-mode-map (kbd "*")   'parcel-ui-toggle-mark)
