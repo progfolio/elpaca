@@ -3293,7 +3293,8 @@ https://github.com/ternjs/tern
 #+begin_src emacs-lisp :lexical t
 (parcel-use-package (speedo :host github :repo "progfolio/speedo"
                             :local-repo "speedo"
-                            :depth nil :protocol ssh)
+                            :depth nil :protocol ssh
+                            :files (:defaults "test"))
   :commands (speedo speedo-load-file akogare)
   :custom
   (speedo-directory "~/.emacs.d/parcel/repos/speedo.progfolio.github/test/")
