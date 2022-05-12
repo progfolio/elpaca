@@ -496,80 +496,67 @@ ITEM is any of the following values:
      (removep (cl-set-difference parcel-build-steps steps))
      ((listp steps) steps))))
 
-(cl-defstruct (parcel-order
-               (:constructor parcel-order-create
-                             (item
-                              &key recipe repo-dir build-dir cached dependencies
-                              files mono-repo
-                              &aux
-                              (status 'queued)
-                              (info "Package queued")
-                              (id (parcel--first item))
-                              (recipe
-                               (or recipe
-                                   (condition-case err
-                                       (parcel-recipe item)
-                                     ((error)
-                                      (setq status 'failed
-                                            info (format "No recipe: %S" err))
-                                      nil))))
-                              (repo-dir (or repo-dir
-                                            (when recipe
-                                              (condition-case err
-                                                  (parcel-repo-dir recipe)
-                                                ((error)
-                                                 (setq status 'failed
-                                                       info (format "Unable to determine repo dir: %S" err))
-                                                 nil)))))
-                              (build-dir (or build-dir (when recipe (parcel-build-dir recipe))))
-                              (package (format "%S" id))
-                              (built-p nil)
-                              (mono-repo
-                               (or mono-repo
-                                   (unless built-p
-                                     (when-let ((mono
-                                                 (cl-some
-                                                  (lambda (cell)
-                                                    (when-let ((queued (cdr cell))
-                                                               ((and repo-dir
-                                                                     (equal repo-dir
-                                                                            (parcel-order-repo-dir queued)))))
-                                                      queued))
-                                                  (reverse (parcel--queued-orders)))))
-                                       (setq status 'blocked
-                                             info (format "Waiting for monorepo %S" repo-dir))
-                                       mono))))
-                              (statuses (list status))
-                              (build-steps
-                               (when recipe
-                                 (if (file-exists-p build-dir)
-                                     (progn (setq built-p t) parcel--pre-built-steps)
-                                   (when-let  ((steps (copy-tree parcel-build-steps)))
-                                     (when (and mono-repo (memq 'ref-checked-out
-                                                                (parcel-order-statuses mono-repo)))
-                                       (setq steps (cl-set-difference
-                                                    steps
-                                                    '(parcel--clone
-                                                      parcel--add-remotes
-                                                      parcel--checkout-ref))))
-                                     (when (file-exists-p repo-dir)
-                                       (setq steps (delq 'parcel--clone steps))
-                                       (when-let ((cached)
-                                                  (cached-recipe (plist-get cached recipe))
-                                                  ((eq recipe cached-recipe)))
-                                         (setq steps (cl-set-difference
-                                                      steps
-                                                      '(parcel--add-remotes
-                                                        parcel--checkout-ref
-                                                        parcel--dispatch-build-commands)))))
-                                     steps))))
-                              (includes (when mono-repo (list mono-repo)))
-                              ;; Not a proper log entry. We just store info here
-                              ;; to catch failures during struct creation and
-                              ;; handle first log entry in `parcel--queue-order'
-                              (log (list info))))
-               (:type list)
-               (:named))
+(cl-defstruct
+    (parcel-order
+     (:constructor
+      parcel-order-create
+      (item
+       &key recipe repo-dir build-dir cached dependencies files mono-repo
+       &aux
+       (status 'queued)
+       (info "Package queued")
+       (id (parcel--first item))
+       (recipe (or recipe (condition-case err (parcel-recipe item)
+                            ((error) (setq status 'failed
+                                           info (format "No recipe: %S" err))
+                             nil))))
+       (repo-dir (or repo-dir
+                     (condition-case err (parcel-repo-dir recipe)
+                       ((error)
+                        (setq status 'failed
+                              info (format "Unable to determine repo dir: %S" err))
+                        nil))))
+       (build-dir (or build-dir (when recipe (parcel-build-dir recipe))))
+       (package (format "%S" id))
+       (builtp (file-exists-p build-dir))
+       (mono-repo
+        (or mono-repo
+            (when-let (((not builtp))
+                       (mono (cl-find-if
+                              (lambda (o) (equal repo-dir (parcel-order-repo-dir o)))
+                              (reverse (parcel--queued-orders))
+                              :key #'cdr)))
+              (setq status 'blocked info (format "Waiting for monorepo %S" repo-dir))
+              mono)))
+       (statuses (list status))
+       (build-steps
+        (when recipe
+          (if builtp
+              parcel--pre-built-steps
+            (when-let ((steps (parcel--build-steps item)))
+              (when (and mono-repo (memq 'ref-checked-out
+                                         (parcel-order-statuses mono-repo)))
+                (setq steps (cl-set-difference steps '(parcel--clone
+                                                       parcel--add-remotes
+                                                       parcel--checkout-ref))))
+              (when (file-exists-p repo-dir)
+                (setq steps (delq 'parcel--clone steps))
+                (when-let ((cached)
+                           (cached-recipe (plist-get cached recipe))
+                           ((eq recipe cached-recipe)))
+                  (setq steps (cl-set-difference
+                               steps
+                               '(parcel--add-remotes
+                                 parcel--checkout-ref
+                                 parcel--dispatch-build-commands)))))
+              steps))))
+       (includes (when mono-repo (list mono-repo)))
+       ;; Not a proper log entry. We just store info here
+       ;; to catch failures during struct creation and
+       ;; handle first log entry in `parcel--queue-order'
+       (log (list info))))
+     (:type list)
+     (:named))
   "Order for queued processing."
   id item log mono-repo package process
   build-dir build-steps dependencies dependents files
