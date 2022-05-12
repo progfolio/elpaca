@@ -839,63 +839,6 @@ https://github.com/jorgenschaefer/emacs-buttercup
 (parcel-use-package (cleanroom :host github :repo "progfolio/cleanroom" :protocol ssh)
   :defer t)
 #+end_src
-** company
-#+begin_quote
-Company is a text completion framework for Emacs.
-The name stands for "complete anything".
-It uses pluggable back-ends and front-ends to retrieve and display completion candidates.
-
-http://company-mode.github.io/
-#+end_quote
-#+begin_src emacs-lisp :lexical t
-(parcel-use-package company
-  :defer 5
-  :commands (company-mode global-company-mode company-yasnippet)
-  :diminish (company-mode . "co")
-  :custom
-  (company-idle-delay nil)
-  (company-minimum-prefix-length 0)
-  (company-echo-delay 0)
-  (company-abort-on-unique-match nil)
-  (company-tooltip-limit 14)
-  (company-tooltip-align-annotations t)
-  (company-tooltip-maximum-width 50)
-  (company-tooltip-minimum-width 50)
-  (company-selection-wrap-around t)
-  (company-require-match 'never)
-  (company-dabbrev-other-buffers nil)
-  (company-dabbrev-ignore-case nil)
-  (company-dabbrev-downcase nil)
-  (company-auto-complete nil)
-  (company-global-modes '(not erc-mode message-mode help-mode gud-mode))
-  (company-format-margin-function #'company-vscode-dark-icons-margin)
-  (company-frontends '(company-pseudo-tooltip-frontend
-                       company-echo-metadata-frontend
-                       company-tng-frontend))
-  :general
-  (:keymaps 'evil-insert-state-map
-            "C-y" 'company-yasnippet)
-  (:keymaps 'company-active-map
-            "C-j"  'company-select-next
-            "C-o"  'company-other-backend)
-  :config
-  (defun +company-toggle-evil-complete ()
-    (setq evil-complete-next-func
-          (if company-mode
-              #'(lambda (&optional _arg) (company-complete))
-            ;; evil stores the default value as a lambda...
-            (eval (car (get 'evil-complete-next-func 'standard-value))))))
-  (add-hook 'company-mode-hook #'+company-toggle-evil-complete)
-
-  ;; necessary for binding escape in `company-active-map'.
-  ;; https://github.com/noctuid/general.el/issues/105
-  (with-eval-after-load 'evil
-    (evil-make-intercept-map company-active-map 'insert)
-    (general-def company-active-map [escape] 'company-abort)
-    (general-def company-active-map "C-k"    'company-select-previous)
-    (general-def company-active-map "RET"    'company-complete-selection))
-  (global-company-mode))
-#+end_src
 ** compile
 #+begin_src emacs-lisp :lexical t
 (use-feature compile
@@ -909,6 +852,25 @@ http://company-mode.github.io/
       (ansi-color-apply-on-region (point-min) (point-max))))
   (add-hook 'compilation-filter-hook #'+compilation-colorize))
 #+end_src
+** corfu
+#+begin_quote
+Completion Overlay Region FUnction
+
+"Corfu enhances completion at point with a small completion popup."
+
+https://github.com/minad/corfu
+#+end_quote
+#+begin_src emacs-lisp :lexical t
+(parcel-use-package (corfu :host github :repo "minad/corfu" :files (:defaults "extensions"))
+  :defer 5
+  :custom
+  (corfu-cycle t)
+  :config
+  (global-corfu-mode)
+  (with-eval-after-load 'evil
+    (setq evil-complete-next-func (lambda (_) (completion-at-point)))))
+#+end_src
+
 ** custom-set-variables
 #+begin_src emacs-lisp :lexical t
 (use-feature cus-edit
