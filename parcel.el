@@ -1016,6 +1016,7 @@ If it matches, the order associated with process has its STATUS updated."
     (parcel--remove-build-steps order '(parcel--install-info parcel--add-info-path))
     (parcel--run-next-build-step order)))
 
+;;@TODO: make async
 (defun parcel--install-info (order)
   "Install ORDER's info files."
   (parcel--update-order-info order "Installing Info files")
