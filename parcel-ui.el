@@ -118,12 +118,16 @@ If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
                                item
                                (vector (format "%S" item)
                                        (or (plist-get data :description) "")
+                                       (if-let ((date (plist-get data :date)))
+                                           (format-time-string "%Y-%m-%d" date)
+                                         "")
                                        (or (plist-get data :source) ""))))))))
 (defun parcel--ui-init ()
   "Initialize format of the UI."
   (setq tabulated-list-use-header-line nil
         tabulated-list-format [("Package" 30 t)
                                ("Description" 80 t)
+                               ("Date" 15 t)
                                ("Source" 20 t)]
         tabulated-list-entries #'parcel-ui-entries)
   (tabulated-list-print)
