@@ -80,8 +80,20 @@
             (setq recipe (plist-put recipe :files parcel-default-files-directive)))
           (let ((candidate (list :source "MELPA" :recipe recipe)))
             (when-let ((data (alist-get package metadata)))
-              (setq candidate (append candidate (list :description (alist-get 'desc data)
-                                                      :url (alist-get 'url (alist-get 'props data))))))
+              (setq candidate
+                    (append candidate
+                            (list :description (alist-get 'desc data)
+                                  :date
+                                  (ignore-errors
+                                    (when-let ((s (number-to-string
+                                                   (aref (alist-get 'ver data) 0))))
+                                      (date-to-time
+                                       (string-join (list
+                                                     (substring s 0 4)
+                                                     (substring s 4 6)
+                                                     (substring s 6))
+                                                    "-"))))
+                                  :url (alist-get 'url (alist-get 'props data))))))
             (cons (intern-soft (file-name-nondirectory file)) candidate)))
       ((error) (message "parcel-menu-melpa couldn't process %S" file) nil))))
 
