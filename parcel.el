@@ -1611,7 +1611,7 @@ ORDER's package is not made available during subsequent sessions."
 
 ;;;###autoload
 (defun parcel-process-init ()
-  "Process entire queue."
+  "Process init file queues."
   (setq parcel--queue-index 0)
   (parcel--process-queue (parcel--current-queue)))
 
