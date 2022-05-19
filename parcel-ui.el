@@ -27,7 +27,7 @@
   :prefix "parcel-ui-")
 
 ;;;; Customizations:
-(defcustom parcel-ui-initial-query ".*"
+(defcustom parcel-ui-default-query ".*"
   "Search query used when enabling `parcel-ui-mode'."
   :type 'string)
 
@@ -110,7 +110,7 @@ It takes an optional argument which, when non-nil, requests entry recache.")
 
 (define-derived-mode parcel-ui-mode tabulated-list-mode "parcel-ui"
   "Major mode to manage packages."
-  (parcel-ui--update-search-filter (or parcel-ui-initial-query ".*"))
+  (parcel-ui--update-search-filter (or parcel-ui-default-query ".*"))
   (add-hook 'minibuffer-setup-hook 'parcel-ui--minibuffer-setup))
 
 (defun parcel-ui--minibuffer-setup ()
