@@ -65,10 +65,8 @@ See `run-at-time' for acceptable values."
 
 ;;;; Variables:
 (defvar-local parcel-ui--search-timer nil "Timer to debounce search input.")
-(defvar-local parcel-ui--entry-cache nil "Cache of all menu items.")
 (defvar-local parcel-ui--marked-packages nil
   "List of marked packages. Each element is a cons of (PACKAGE . ACTION).")
-(defvar parcel-ui--entry-cache nil "Cache of all menu items.")
 (defvar parcel-ui-mode-map (make-sparse-keymap) "Keymap for `parcel-ui-mode'.")
 (defvar-local parcel-ui--previous-minibuffer-contents ""
   "Keep track of minibuffer contents changes.

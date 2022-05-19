@@ -25,6 +25,7 @@
 ;;; Code:
 (require 'parcel-ui)
 (defvar parcel-manager-buffer "*parcel-manager*")
+(defvar-local parcel-manager--entry-cache nil "Cache of all menu items.")
 
 (defcustom parcel-manager-default-search-query ".*"
   "Default search query for `parcel-manager'."
@@ -33,9 +34,9 @@
 
 (defun parcel-manager--entries (&optional recache)
   "Return list of all entries available in `parcel-menu-functions' and init.
-If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
-  (or (and (not recache) parcel-ui--entry-cache)
-      (setq parcel-ui--entry-cache
+If RECACHE is non-nil, recompute `parcel-manager--entry-cache'."
+  (or (and (not recache) parcel-manager--entry-cache)
+      (setq parcel-manager--entry-cache
             (reverse
              (cl-loop for (item . data) in (reverse (append (parcel-menu--candidates)
                                                             (parcel-ui--custom-candidates)))
