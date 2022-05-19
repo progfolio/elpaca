@@ -1093,7 +1093,7 @@ If package's repo is not on disk, error."
          (package (plist-get recipe :package))
          (pkg (expand-file-name (format "%s-pkg.el" package)))
          (defined (file-exists-p pkg))
-         (name (format "%s.el" package))
+         (name (format "%s.el" (file-name-sans-extension package)))
          (main
           (or
            ;;@TODO: Should we have a recipe keyword to explicitly declare this?
@@ -1113,7 +1113,8 @@ If package's repo is not on disk, error."
             (condition-case err
                 ;; Replace comment delimiters in multi-line package-requires metadata.
                 (read (replace-regexp-in-string ";" "" (match-string 1)))
-              (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))
+              ((error)
+               (error "Unable to parse %S Package-Requires metadata: %S" main err)))))))))
 
 ;;@DECOMPOSE: The body of this function is similar to `parcel--clone-dependencies'.
 ;; Refactor into a macro to operate on dependencies?
