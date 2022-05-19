@@ -156,7 +156,7 @@ If RECACHE is non-nil, recompute menu items from `parcel-menu-item-functions'."
 (defun parcel-ui--minibuffer-setup ()
   "Set up the minibuffer for live filtering."
   (when (with-minibuffer-selected-window (derived-mode-p 'parcel-ui-mode))
-      (add-hook 'post-command-hook 'parcel-ui--debounce-search nil :local)))
+    (add-hook 'post-command-hook 'parcel-ui--debounce-search nil :local)))
 
 (defun parcel-ui--parse-search-filter (filter)
   "Return a list of form ((TAGS...) ((COLUMN)...)) for FILTER string."
