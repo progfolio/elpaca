@@ -311,7 +311,7 @@ If QUERY is non-nil, use that instead of the minibuffer."
           (push parcel-ui-search-filter parcel-ui-search-history)
           (setq tabulated-list-entries (eval `(parcel-ui-query-loop ,parsed) t)
                 parcel-ui-search-filter query)
-          (tabulated-list-print 'remember-pos 'update)
+          (tabulated-list-print 'remember-pos)
           (parcel-ui--apply-faces)
           (parcel-ui--search-header parsed))))))
 
