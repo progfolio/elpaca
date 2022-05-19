@@ -513,9 +513,10 @@ ITEM is any of the following values:
        (repo-dir (or repo-dir
                      (condition-case err (parcel-repo-dir recipe)
                        ((error)
-                        (setq status 'failed
-                              info (format "Unable to determine repo dir: %S" err))
-                        nil))))
+                        (when recipe
+                          (setq status 'failed
+                                info (format "Unable to determine repo dir: %S" err))
+                          nil)))))
        (build-dir (or build-dir (when recipe (parcel-build-dir recipe))))
        (package (format "%S" id))
        (builtp (file-exists-p build-dir))
