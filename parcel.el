@@ -663,10 +663,33 @@ If PACKAGES is nil, use all available orders."
                               (symbol-name status)
                               (parcel-order-info order)))))
 
+(defvar parcel-status-buffer-list-format [("Package" 30 t) ("Status" 15 t) ("Info" 100 t)]
+  "Format of `parcel-status-buffer' columns.")
+
+(defun parcel--status-buffer-init (&optional queued display)
+  "Initialize the parcel process buffer for QUEUED orders.
+If QUEUED is nil, display the most recent queue's orders.
+When DISPLAY is non-nil, display the buffer."
+  (with-current-buffer (get-buffer-create parcel-status-buffer)
+    (unless (derived-mode-p 'parcel-status-mode) (parcel-status-mode))
+    (with-silent-modifications (erase-buffer))
+    (setq queued
+          (or queued (parcel-queue-orders
+                      (or (cl-find 'complete parcel--queues :key #'parcel-queue-status)
+                          (parcel--current-queue))))
+          tabulated-list-use-header-line nil
+          tabulated-list-format parcel-status-buffer-list-format
+          tabulated-list-entries (parcel-status-buffer-entries queued))
+    (tabulated-list-init-header)
+    (tabulated-list-print-fake-header)
+    (tabulated-list-print 'remember-pos 'update)
+    (parcel--set-header-line queued)
+    (when display (pop-to-buffer-same-window (current-buffer)))))
+
 (defun parcel--print-order-status (&optional queued)
   "Print status of QUEUED orders in `parcel-status-buffer'."
   (let ((buffer (get-buffer parcel-status-buffer)))
-    (unless buffer (parcel--initialize-process-buffer queued))
+    (unless buffer (parcel--status-buffer-init queued))
     (with-current-buffer (get-buffer-create parcel-status-buffer)
       (setq tabulated-list-entries (parcel-status-buffer-entries queued))
       (tabulated-list-init-header)
@@ -1523,36 +1546,13 @@ RECURSE is used to keep track of recursive calls."
       (goto-char (point-min))
       (special-mode))))
 
-(defvar parcel-status-buffer-list-format [("Package" 30 t) ("Status" 15 t) ("Info" 100 t)]
-  "Format of `parcel-status-buffer' columns.")
-
-(defun parcel--initialize-process-buffer (&optional queued display)
-  "Initialize the parcel process buffer for QUEUED orders.
-If QUEUED is nil, display the most recent queue's orders.
-When DISPLAY is non-nil, display the buffer."
-  (with-current-buffer (get-buffer-create parcel-status-buffer)
-    (unless (derived-mode-p 'parcel-status-mode) (parcel-status-mode))
-    (with-silent-modifications (erase-buffer))
-    (setq queued
-          (or queued (parcel-queue-orders
-                      (or (cl-find 'complete parcel--queues :key #'parcel-queue-status)
-                          (parcel--current-queue))))
-          tabulated-list-use-header-line nil
-          tabulated-list-format parcel-status-buffer-list-format
-          tabulated-list-entries (parcel-status-buffer-entries queued))
-    (tabulated-list-init-header)
-    (tabulated-list-print-fake-header)
-    (tabulated-list-print 'remember-pos 'update)
-    (parcel--set-header-line queued)
-    (when display (pop-to-buffer-same-window (current-buffer)))))
-
 ;;;###autoload
 (defun parcel-display-status-buffer (&optional arg)
   "Diplay `parcel-status-buffer' for latest queue.
 When ARG is non-nil display all queues, else, display only the most recent."
   (interactive "P")
   ;; If this is invoked during init, we want it to be updated.
-  (parcel--initialize-process-buffer
+  (parcel--status-buffer-init
    (when arg (apply #'append (cl-loop for queue in parcel--queues
                                       collect (parcel-queue-orders queue))))
    'display))
