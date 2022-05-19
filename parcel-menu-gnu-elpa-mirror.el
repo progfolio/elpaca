@@ -34,7 +34,7 @@
 
 (defvar parcel-menu-gnu-elpa-mirror--index-cache nil "Cache of index.")
 (defvar parcel-menu-gnu-elpa-mirror-address
-  "https://www.github.com/emacs-straight/gnu-elpa-mirror.git"
+  "https://www.github.com/radian-software/gnu-elpa-mirror.git"
   "Address of the menu repository.")
 
 (defun parcel-menu-gnu-elpa-mirror--clone ()
