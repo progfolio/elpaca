@@ -75,7 +75,6 @@ See `run-at-time' for acceptable values."
   "Keep track of minibuffer contents changes.
 Allows for less debouncing than during `post-command-hook'.")
 (defvar parcel-ui-search-filter nil "Filter for package searches.")
-(defvar parcel-ui-search-active nil "Whether or not a search is in progress.")
 (defvar parcel-ui-search-history nil "List of previous search queries.")
 (defvar parcel-ui-tag-random-chance 300)
 (defvar url-http-end-of-headers)
@@ -156,9 +155,8 @@ If RECACHE is non-nil, recompute menu items from `parcel-menu-item-functions'."
 
 (defun parcel-ui--minibuffer-setup ()
   "Set up the minibuffer for live filtering."
-  (when parcel-ui-search-active
-    (add-hook 'post-command-hook
-              'parcel-ui--debounce-search nil :local)))
+  (when (with-minibuffer-selected-window (derived-mode-p 'parcel-ui-mode))
+      (add-hook 'post-command-hook 'parcel-ui--debounce-search nil :local)))
 
 (defun parcel-ui--parse-search-filter (filter)
   "Return a list of form ((TAGS...) ((COLUMN)...)) for FILTER string."
@@ -334,13 +332,11 @@ If QUERY is non-nil, use that instead of the minibuffer."
 If EDIT is non-nil, edit the last search."
   (interactive)
   (unwind-protect
-      (setq parcel-ui-search-active t
-            parcel-ui-search-filter
+      (setq parcel-ui-search-filter
             (condition-case nil
                 (read-from-minibuffer "Search (empty to clear): "
                                       (when edit parcel-ui-search-filter))
               (quit parcel-ui-search-filter)))
-    (setq parcel-ui-search-active nil)
     (when (string-empty-p parcel-ui-search-filter)
       ;;reset to default view
       (parcel-ui--update-search-filter ".*"))))
