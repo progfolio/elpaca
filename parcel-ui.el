@@ -274,7 +274,7 @@ If EDIT is non-nil, edit the last search."
               (quit parcel-ui-search-filter)))
     (when (string-empty-p parcel-ui-search-filter)
       ;;reset to default view
-      (parcel-ui--update-search-filter ".*"))))
+      (parcel-ui--update-search-filter (current-buffer) ".*"))))
 
 (defun parcel-ui-search-edit ()
   "Edit last search."
