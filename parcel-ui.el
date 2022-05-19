@@ -24,7 +24,7 @@
 
 (defgroup parcel-ui nil
   "Parcel's UI options."
-  :group 'striaght-ui
+  :group 'parcel-ui
   :prefix "parcel-ui-")
 
 ;;;; Customizations:
