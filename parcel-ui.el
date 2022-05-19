@@ -168,7 +168,7 @@ It takes no arguments.")
   "Return t if CANDIDATE is installed."
   (parcel-installed-p (car candidate)))
 
-(defmacro parcel-ui-query-loop (parsed)
+(defmacro parcel-ui--query-loop (parsed)
   "Return `cl-loop' from PARSED query."
   (declare (indent 1) (debug t))
   ;;@FIX: our query parser shouldn't return junk that we have to remove here...
@@ -244,7 +244,7 @@ If QUERY is nil, the contents of the minibuffer are used instead."
       (with-current-buffer (get-buffer-create buffer)
         (let ((parsed (parcel-ui--parse-search-filter query)))
           (push parcel-ui-search-filter parcel-ui-search-history)
-          (setq tabulated-list-entries (eval `(parcel-ui-query-loop ,parsed) t)
+          (setq tabulated-list-entries (eval `(parcel-ui--query-loop ,parsed) t)
                 parcel-ui-search-filter query)
           (tabulated-list-print 'remember-pos)
           (parcel-ui--apply-faces buffer)
