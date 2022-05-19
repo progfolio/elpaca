@@ -65,18 +65,25 @@ See `run-at-time' for acceptable values."
   :type (or 'string 'int 'float))
 
 ;;;; Variables:
-(defvar parcel-ui--search-timer nil "Timer to debounce search input.")
-(defvar parcel-ui--marked-packages nil
+(defvar-local parcel-ui--search-timer nil "Timer to debounce search input.")
+(defvar-local parcel-ui--entry-cache nil "Cache of all menu items.")
+(defvar-local parcel-ui--marked-packages nil
   "List of marked packages. Each element is a cons of (PACKAGE . ACTION).")
-(defvar parcel-ui-buffer "* Parcel-UI *")
 (defvar parcel-ui--entry-cache nil "Cache of all menu items.")
 (defvar parcel-ui-mode-map (make-sparse-keymap) "Keymap for `parcel-ui-mode'.")
-(defvar parcel-ui--previous-minibuffer-contents ""
+(defvar-local parcel-ui--previous-minibuffer-contents ""
   "Keep track of minibuffer contents changes.
 Allows for less debouncing than during `post-command-hook'.")
-(defvar parcel-ui-search-filter nil "Filter for package searches.")
-(defvar parcel-ui-search-history nil "List of previous search queries.")
-(defvar parcel-ui-tag-random-chance 300)
+(defvar-local parcel-ui-search-filter nil "Filter for package searches.")
+(defvar-local parcel-ui-search-history nil "List of previous search queries.")
+(defvar-local parcel-ui-header-line-function nil
+  "Function responsible for setting the UI buffer's `header-line-format'.
+It recieves one argument, the parsed search query list.")
+(defvar-local parcel-ui-entries-function nil
+  "Function responsible for returning the UI buffer's `tabulated-list-entries'.
+It takes no arguments.")
+
+
 (defvar url-http-end-of-headers)
 
 ;;;; Functions:
@@ -104,60 +111,22 @@ Allows for less debouncing than during `post-command-hook'.")
            unless (parcel-menu-item nil item nil nil 'no-descriptions)
            collect (list item :source "init file" :description "Not available in menu functions")))
 
-(defun parcel-ui-entries (&optional recache)
-  "Return list of all entries available in `parcel-menu-functions' and init.
-If RECACHE is non-nil, recompute `parcel-ui--entry-cache."
-  (or (and (not recache) parcel-ui--entry-cache)
-      (setq parcel-ui--entry-cache
-            (reverse
-             (cl-loop for (item . data) in (reverse (append (parcel-menu--candidates)
-                                                            (parcel-ui--custom-candidates)))
-                      when item
-                      collect (list
-                               item
-                               (vector (format "%S" item)
-                                       (or (plist-get data :description) "")
-                                       (if-let ((date (plist-get data :date)))
-                                           (format-time-string "%Y-%m-%d" date)
-                                         "")
-                                       (or (plist-get data :source) ""))))))))
-(defun parcel--ui-init (header entries)
-  "Initialize format of the UI with table HEADER and ENTRIES."
-  (setq tabulated-list-use-header-line nil
-        tabulated-list-format header
-        tabulated-list-entries entries)
-  (tabulated-list-print)
-  (tabulated-list-init-header))
-
 (define-derived-mode parcel-ui-mode tabulated-list-mode "parcel-ui"
   "Major mode to manage packages."
-  (parcel--ui-init [("Package" 30 t)
-                    ("Description" 80 t)
-                    ("Date" 15 t)
-                    ("Source" 20 t)]
-                   #'parcel-ui-entries)
   (parcel-ui--update-search-filter (or parcel-ui-initial-query ".*"))
-  (hl-line-mode)
-  (add-hook 'minibuffer-setup-hook 'parcel-ui--minibuffer-setup)
-  (setq-local bookmark-make-record-function #'parcel-ui-bookmark-make-record))
-
-;;;###autoload
-(defun parcel-ui (&optional recache)
-  "Display the UI.
-If RECACHE is non-nil, recompute menu items from `parcel-menu-item-functions'."
-  (interactive "P")
-  (when recache
-    (parcel-menu--candidates recache)
-    (parcel-ui-entries recache))
-  (with-current-buffer (get-buffer-create parcel-ui-buffer)
-    (unless (derived-mode-p 'parcel-ui-mode)
-      (parcel-ui-mode))
-    (pop-to-buffer parcel-ui-buffer)))
+  (add-hook 'minibuffer-setup-hook 'parcel-ui--minibuffer-setup))
 
 (defun parcel-ui--minibuffer-setup ()
   "Set up the minibuffer for live filtering."
-  (when (with-minibuffer-selected-window (derived-mode-p 'parcel-ui-mode))
-    (add-hook 'post-command-hook 'parcel-ui--debounce-search nil :local)))
+  (let ((continue nil)
+        (buffer nil))
+    (with-minibuffer-selected-window
+      (setq continue (and (derived-mode-p 'parcel-ui-mode)
+                          (member this-command '(parcel-ui-search parcel-ui-search-edit)))
+            buffer   (current-buffer)))
+    (when continue
+      (add-hook 'post-command-hook (lambda () (parcel-ui--debounce-search buffer))
+                nil :local))))
 
 (defun parcel-ui--parse-search-filter (filter)
   "Return a list of form ((TAGS...) ((COLUMN)...)) for FILTER string."
@@ -199,10 +168,6 @@ If RECACHE is non-nil, recompute menu items from `parcel-menu-item-functions'."
   "Return t if CANDIDATE is installed."
   (parcel-installed-p (car candidate)))
 
-(defun parcel-ui-tag-random (_)
-  "1/1000th of a chance candidate is shown."
-  (zerop (random parcel-ui-tag-random-chance)))
-
 (defmacro parcel-ui-query-loop (parsed)
   "Return `cl-loop' from PARSED query."
   (declare (indent 1) (debug t))
@@ -236,76 +201,45 @@ If RECACHE is non-nil, recompute menu items from `parcel-menu-item-functions'."
                               unless (string-empty-p query)
                               collect
                               `(,condition (string-match-p ,query ,target))))))))
-    `(cl-loop for entry in (parcel-ui-entries)
+    `(cl-loop for entry in (funcall parcel-ui-entries-function)
               ,@(when columns '(for metadata = (cadr entry)))
               ,@(apply #'append columns)
               ,@(when tags (apply #'append tags))
               collect entry)))
 
-(defun parcel-ui--search-header (parsed)
-  "Set `header-line-format' to reflect PARSED query."
-  (let* ((tags (car parsed))
-         (cols (cadr parsed))
-         (full-match-p (= (length cols) 1)))
-    (setq header-line-format
-          (concat (propertize (format "Parcel Query (%d packages):"
-                                      (length tabulated-list-entries))
-                              'face '(:weight bold))
-                  " "
-                  (unless (member cols '((nil) nil))
-                    (concat
-                     (propertize
-                      (if full-match-p "Matching:" "Columns Matching:")
-                      'face 'parcel-failed)
-                     " "
-                     (if full-match-p
-                         (string-join (car cols) ", ")
-                       (mapconcat (lambda (col) (format "%s" (or col "(*)")))
-                                  cols
-                                  ", "))))
-                  (when tags
-                    (concat " " (propertize "Tags:" 'face 'parcel-failed) " "
-                            (string-join
-                             (mapcar
-                              (lambda (tag)
-                                (concat (if (string-prefix-p "#" tag) "!" "#") tag))
-                              tags)
-                             ", ")))))))
+(defun parcel-ui--apply-faces (buffer)
+  "Update entry faces for marked, installed packages in BUFFER.
+Assumes BUFFER in `parcel-ui-mode'."
+  (with-current-buffer buffer
+    (cl-loop
+     for (item . order-or-action) in (append parcel-ui--marked-packages (parcel--queued-orders))
+     for markedp = (not (parcel-order-p order-or-action))
+     do
+     (save-excursion
+       (goto-char (point-min))
+       (let ((continue t))
+         (while (and continue (not (eobp)))
+           (if-let ((package (ignore-errors (parcel-ui-current-package)))
+                    ((eq package item))
+                    (start (line-beginning-position))
+                    (o (if markedp
+                           (make-overlay start (line-end-position))
+                         (make-overlay start (+ start (length (symbol-name item)))))))
+               (let ((face   (when markedp (or (nth 2 order-or-action) 'parcel-ui-marked-package)))
+                     (prefix (when markedp (or (nth 1 order-or-action) "*"))))
+                 (setq continue nil)
+                 (when markedp
+                   (overlay-put o 'before-string  (propertize (concat prefix " ") 'face face)))
+                 (overlay-put o 'face (or face 'parcel-finished))
+                 (overlay-put o 'evaporate t)
+                 (overlay-put o 'priority (if markedp 1 0))
+                 (overlay-put o 'type 'parcel-mark))
+             (forward-line))))))))
 
-(defun parcel-ui--apply-faces ()
-  "Update entry faces for marked, installed packages."
-  (when-let ((buffer parcel-ui-buffer))
-    (with-current-buffer buffer
-      (cl-loop
-       for (item . order-or-action) in (append parcel-ui--marked-packages (parcel--queued-orders))
-       for markedp = (not (parcel-order-p order-or-action))
-       do
-       (save-excursion
-         (goto-char (point-min))
-         (let ((continue t))
-           (while (and continue (not (eobp)))
-             (if-let ((package (ignore-errors (parcel-ui-current-package)))
-                      ((eq package item))
-                      (start (line-beginning-position))
-                      (o (if markedp
-                             (make-overlay start (line-end-position))
-                           (make-overlay start (+ start (length (symbol-name item)))))))
-                 (let ((face   (when markedp (or (nth 2 order-or-action) 'parcel-ui-marked-package)))
-                       (prefix (when markedp (or (nth 1 order-or-action) "*"))))
-                   (setq continue nil)
-                   (when markedp
-                     (overlay-put o 'before-string  (propertize (concat prefix " ") 'face face)))
-                   (overlay-put o 'face (or face 'parcel-finished))
-                   (overlay-put o 'evaporate t)
-                   (overlay-put o 'priority (if markedp 1 0))
-                   (overlay-put o 'type 'parcel-mark))
-               (forward-line)))))))))
-
-(defun parcel-ui--update-search-filter (&optional query)
-  "Update the UI to reflect search input.
-If QUERY is non-nil, use that instead of the minibuffer."
-  (when-let ((buffer parcel-ui-buffer)
-             (query (or query (and (minibufferp) (minibuffer-contents-no-properties)))))
+(defun parcel-ui--update-search-filter (buffer &optional query)
+  "Update the BUFFER to reflect search QUERY.
+If QUERY is nil, the contents of the minibuffer are used instead."
+  (when-let ((query (or query (and (minibufferp) (minibuffer-contents-no-properties)))))
     (unless (string-empty-p query)
       (with-current-buffer (get-buffer-create buffer)
         (let ((parsed (parcel-ui--parse-search-filter query)))
@@ -313,11 +247,12 @@ If QUERY is non-nil, use that instead of the minibuffer."
           (setq tabulated-list-entries (eval `(parcel-ui-query-loop ,parsed) t)
                 parcel-ui-search-filter query)
           (tabulated-list-print 'remember-pos)
-          (parcel-ui--apply-faces)
-          (parcel-ui--search-header parsed))))))
+          (parcel-ui--apply-faces buffer)
+          (when parcel-ui-header-line-function
+            (setq header-line-format (funcall parcel-ui-header-line-function parsed))))))))
 
-(defun parcel-ui--debounce-search ()
-  "Update filter from minibuffer."
+(defun parcel-ui--debounce-search (buffer)
+  "Update BUFFER's search filter from minibuffer."
   (let ((input (string-trim (minibuffer-contents-no-properties))))
     (unless (string= input parcel-ui--previous-minibuffer-contents)
       (setq parcel-ui--previous-minibuffer-contents input)
@@ -326,7 +261,8 @@ If QUERY is non-nil, use that instead of the minibuffer."
       (setq parcel-ui--search-timer
             (run-at-time parcel-ui-search-debounce-interval
                          nil
-                         #'parcel-ui--update-search-filter)))))
+                         #'parcel-ui--update-search-filter
+                         buffer)))))
 
 (defun parcel-ui-search (&optional edit)
   "Filter current buffer by string.
@@ -373,18 +309,16 @@ If EDIT is non-nil, edit the last search."
 
 (defun parcel-ui--unmark (package)
   "Unmark PACKAGE."
-  (unless (equal (buffer-name) parcel-ui-buffer)
-    (user-error "Can't unmark package outside of %S" parcel-status-buffer))
-  (setq parcel-ui--marked-packages
-        (cl-remove-if (lambda (cell) (string= (car cell) package))
-                      parcel-ui--marked-packages))
+  (setq-local parcel-ui--marked-packages
+              (cl-remove-if (lambda (cell) (string= (car cell) package))
+                            parcel-ui--marked-packages))
   (with-silent-modifications
     (mapc #'delete-overlay
           (cl-remove-if-not (lambda (o) (eq (overlay-get o 'type) 'parcel-mark))
                             (overlays-at (line-beginning-position))))
     (save-restriction
       (narrow-to-region (line-beginning-position) (line-end-position))
-      (parcel-ui--apply-faces)))
+      (parcel-ui--apply-faces (current-buffer))))
   (forward-line))
 
 (defun parcel-ui-unmark ()
@@ -416,7 +350,7 @@ The action's function is passed the name of the package as its sole argument."
                 :test (lambda (a b) (string= (car a) (car b))))
     (save-restriction
       (narrow-to-region (line-beginning-position) (line-end-position))
-      (parcel-ui--apply-faces)))
+      (parcel-ui--apply-faces (current-buffer))))
   (forward-line))
 
 (defun parcel-ui-toggle-mark (&optional test action)
@@ -424,8 +358,6 @@ The action's function is passed the name of the package as its sole argument."
 TEST is a unary function evaluated prior to toggling the mark.
 The current package is its sole argument."
   (interactive)
-  (unless (string= (buffer-name) parcel-ui-buffer)
-    (user-error "Cannot mark outside of %S" parcel-ui-buffer))
   (if-let ((package (parcel-ui-current-package)))
       (progn
         (when test (funcall test package))
@@ -489,16 +421,15 @@ The current package is its sole argument."
       (when-let ((generics)
                  (action (nth 3 (parcel-ui--choose-deferred-action))))
         (mapc action generics))
-      (setq parcel-ui--marked-packages nil)
-      (when-let ((buffer (get-buffer parcel-ui-buffer)))
-        (with-current-buffer buffer
-          (save-excursion
-            (goto-char (point-min))
-            (while (not (eobp))
-              (condition-case _
-                  (parcel-ui-unmark)
-                ((error) (forward-line)))))))
-      (parcel-ui-entries 'recache)
+      (setq-local parcel-ui--marked-packages nil)
+      (save-excursion
+        (goto-char (point-min))
+        (while (not (eobp))
+          (condition-case _
+              (parcel-ui-unmark)
+            ((error) (forward-line)))))
+      (when (functionp parcel-ui-entries-function)
+        (funcall parcel-ui-entries-function 'recache))
       (parcel-ui-search-refresh))))
 
 (defmacro parcel-ui-defsearch (name query)
@@ -529,28 +460,6 @@ If TOGGLE is non-nil, invert search." name)
   (if-let ((previous (pop parcel-ui-search-history)))
       (parcel-ui--update-search-filter previous)
     (user-error "End of search history")))
-
-;;;; Bookmark integration
-
-;;;###autoload
-(defun parcel-ui--bookmark-handler (record)
-  "Open a bookmarked search RECORD."
-  (parcel-ui)
-  (setq parcel-ui-search-filter (bookmark-prop-get record 'query))
-  (parcel-ui-search-refresh)
-  (pop-to-buffer (get-buffer-create parcel-ui-buffer)))
-
-
-(defun parcel-ui-bookmark-make-record ()
-  "Return a bookmark record for the current `parcel-ui-search-filter'."
-  (let ((name (replace-regexp-in-string
-               " \(.* packages\):" ""
-               (substring-no-properties (format-mode-line header-line-format)))))
-    (list name
-          (cons 'location name)
-          (cons 'handler #'parcel-ui--bookmark-handler)
-          (cons 'query parcel-ui-search-filter)
-          (cons 'defaults nil))))
 
 ;;;; Key bindings
 (define-key parcel-ui-mode-map (kbd "*")   'parcel-ui-toggle-mark)
