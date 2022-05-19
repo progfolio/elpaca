@@ -698,7 +698,7 @@ If DEPENDENCY is non-nil, the return order directly."
     (setf (parcel-order-dependencies order)
           (mapcar (lambda (o) (parcel--cache-entry-to-order o 'dependency))
                   (parcel-order-dependencies order)))
-    (if dependency order (cons (car cached) order))))
+    (if dependency order (cons (parcel-order-id order) order))))
 
 (defsubst parcel--run-next-build-step (order)
   "Run ORDER's next build step with ARGS."
