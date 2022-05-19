@@ -266,8 +266,8 @@ This package gets the correct environment variables so parcel can use the ssh pr
  (parcel keychain-environment
    (keychain-refresh-environment)))
 (parcel-queue
- (parcel (parcel-menu-demo :host github :repo "progfolio/parcel-menu-demo" :protocol ssh)
-   (add-to-list 'parcel-menu-functions 'parcel-menu-demo)))
+ (parcel (melpulls :host github :repo "progfolio/melpulls" :protocol ssh)
+   (add-to-list 'parcel-menu-functions 'melpulls)))
 #+end_src
 
 ** packaging
