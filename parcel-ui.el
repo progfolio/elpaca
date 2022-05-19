@@ -82,8 +82,6 @@ It recieves one argument, the parsed search query list.")
 (defvar-local parcel-ui-entries-function nil
   "Function responsible for returning the UI buffer's `tabulated-list-entries'.
 It takes no arguments.")
-
-
 (defvar url-http-end-of-headers)
 
 ;;;; Functions:
