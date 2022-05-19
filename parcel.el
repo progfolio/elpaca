@@ -686,7 +686,7 @@ If PACKAGES is nil, use all available orders."
   "Write order cache to disk."
   (unless (file-exists-p parcel-cache-directory)
     (make-directory parcel-cache-directory 'parents))
-  (parcel--write-file (expand-file-name "cache/cache.el" parcel-directory)
+  (parcel--write-file (expand-file-name "cache/orders.el" parcel-directory)
     (prin1 (cl-loop for (_ . order) in (parcel--queued-orders)
                     when (eq (parcel-order-status order) 'finished)
                     collect (parcel--clean-order order)))))
@@ -795,7 +795,7 @@ If current queue is empty, it is reused."
 (defun parcel--read-order-cache ()
   "Return cache alist or nil if not available."
   (mapcar #'parcel--cache-entry-to-order
-          (parcel--read-file (expand-file-name "cache.el" parcel-cache-directory))))
+          (parcel--read-file (expand-file-name "orders.el" parcel-cache-directory))))
 
 (defvar parcel--order-cache (when parcel-cache-orders (parcel--read-order-cache))
   "Built package information cache.")
