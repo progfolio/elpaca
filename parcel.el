@@ -1640,13 +1640,14 @@ If FORCE is non-nil do not confirm before deleting."
                        package dependents)
             (when (file-exists-p repo-dir)  (delete-directory repo-dir  'recursive))
             (when (file-exists-p build-dir) (delete-directory build-dir 'recursive))
-            (setq parcel--order-cache
-                  (cl-remove package parcel--order-cache
-                             :key #'parcel-order-package :test #'equal))
             (dolist (queue parcel--queues)
               (setf (parcel-queue-orders queue)
                     (cl-remove package (parcel-queue-orders queue) :key #'car)))
-            (parcel--write-order-cache)
+            ;;@FIX: This is short circuiting somehow without throwing an error.
+            ;; (setq parcel--order-cache
+            ;;       (cl-remove package parcel--order-cache
+            ;;                  :key #'parcel-order-package :test #'equal))
+            ;; (parcel--write-order-cache)
             (when (equal (buffer-name) parcel-status-buffer) (parcel-display-status-buffer))
             (message "Deleted package %S" package)
             (when with-deps
