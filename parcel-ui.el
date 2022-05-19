@@ -278,10 +278,8 @@ If RECACHE is non-nil, recompute menu items from `parcel-menu-item-functions'."
   (when-let ((buffer parcel-ui-buffer))
     (with-current-buffer buffer
       (cl-loop
-       for (item . rest) in (append parcel-ui--marked-packages (parcel--queued-orders))
-       for type = (if (parcel-order-p rest) 'queued 'marked)
-       for marked = (eq type 'marked)
-       for queued = (eq type 'queued)
+       for (item . order-or-action) in (append parcel-ui--marked-packages (parcel--queued-orders))
+       for markedp = (not (parcel-order-p order-or-action))
        do
        (save-excursion
          (goto-char (point-min))
@@ -290,17 +288,17 @@ If RECACHE is non-nil, recompute menu items from `parcel-menu-item-functions'."
              (if-let ((package (ignore-errors (parcel-ui-current-package)))
                       ((eq package item))
                       (start (line-beginning-position))
-                      (o (if queued
-                             (make-overlay start (+ start (length (symbol-name item))))
-                           (make-overlay (line-beginning-position) (line-end-position)))))
-                 (let ((face   (when marked (or (nth 2 rest) 'parcel-ui-marked-package)))
-                       (prefix (when marked (or (nth 1 rest) "*"))))
+                      (o (if markedp
+                             (make-overlay start (line-end-position))
+                           (make-overlay start (+ start (length (symbol-name item)))))))
+                 (let ((face   (when markedp (or (nth 2 order-or-action) 'parcel-ui-marked-package)))
+                       (prefix (when markedp (or (nth 1 order-or-action) "*"))))
                    (setq continue nil)
-                   (when marked
+                   (when markedp
                      (overlay-put o 'before-string  (propertize (concat prefix " ") 'face face)))
                    (overlay-put o 'face (or face 'parcel-finished))
                    (overlay-put o 'evaporate t)
-                   (overlay-put o 'priority (if marked 1 0))
+                   (overlay-put o 'priority (if markedp 1 0))
                    (overlay-put o 'type 'parcel-mark))
                (forward-line)))))))))
 
