@@ -279,7 +279,7 @@ If RECACHE is non-nil, recompute `parcel-menu--candidates-cache'."
                                 (copy-tree
                                  (cl-loop for fn in parcel-menu-functions
                                           ;; Allows adding a symbol prior menu installation.
-                                          collect (and (fboundp fn) (funcall fn 'index)))))
+                                          collect (and (functionp fn) (funcall fn 'index)))))
                          (lambda (a b) (string-lessp (car a) (car b)))))
         (when parcel-cache-menu-items (parcel--write-menu-cache)))))
 
