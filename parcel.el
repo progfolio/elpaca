@@ -1123,7 +1123,7 @@ If package's repo is not on disk, error."
   "Queue ORDER's dependencies."
   (parcel--update-order-info order "Queueing Dependencies" 'queueing-deps)
   (let* ((recipe       (parcel-order-recipe order))
-         (dependencies (parcel--dependencies recipe))
+         (dependencies (or (parcel-order-dependencies order) (parcel--dependencies recipe)))
          (externals    (cl-loop for spec in dependencies
                                 unless (memq (car spec) parcel-ignored-dependencies)
                                 collect spec))
