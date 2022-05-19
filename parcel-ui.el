@@ -9,7 +9,6 @@
 (require 'bookmark)
 (bookmark-maybe-load-default-file)
 
-
 ;;; Code:
 ;;;;Faces:
 (defface parcel-ui-package
@@ -272,8 +271,7 @@ If EDIT is non-nil, edit the last search."
                 (read-from-minibuffer "Search (empty to clear): "
                                       (when edit parcel-ui-search-filter))
               (quit parcel-ui-search-filter)))
-    (when (string-empty-p parcel-ui-search-filter)
-      ;;reset to default view
+    (when (string-empty-p parcel-ui-search-filter) ;;reset to default view
       (parcel-ui--update-search-filter (current-buffer) ".*"))))
 
 (defun parcel-ui-search-edit ()
