@@ -519,7 +519,7 @@ ITEM is any of the following values:
                           nil)))))
        (build-dir (or build-dir (when recipe (parcel-build-dir recipe))))
        (package (format "%S" id))
-       (builtp (file-exists-p build-dir))
+       (builtp (when build-dir (file-exists-p build-dir)))
        (mono-repo
         (or mono-repo
             (when-let (((not builtp))
