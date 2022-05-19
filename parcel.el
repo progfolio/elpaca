@@ -1478,7 +1478,9 @@ Async wrapper for `parcel-generate-autoloads'."
   "Return recursive list of ITEM's dependencies.
 IGNORE may be a list of symbols which are not included in the resulting list.
 RECURSE is used to track recursive calls."
-  (if-let ((order (parcel-alist-get item (parcel--queued-orders)))
+  (if-let ((order (or (parcel-alist-get item (parcel--queued-orders))
+                      (unless (member item parcel-ignored-dependencies)
+                        (parcel-order-create item))))
            (dependencies (parcel--dependencies (parcel-order-recipe order))))
       (let ((transitives (cl-loop for dependency in dependencies
                                   for name = (car dependency)
