@@ -428,6 +428,7 @@ The current package is its sole argument."
 If TOGGLE is non-nil, invert search." name)
      (interactive "P")
      (parcel-ui--update-search-filter
+      (current-buffer)
       (if toggle ,(mapconcat (lambda (token)
                                (if (string-prefix-p "!" token)
                                    (substring token 1)
