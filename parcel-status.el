@@ -75,23 +75,28 @@
                      (or (parcel-alist-get 'failed   counts) 0)))))))
 
 ;;;###autoload
-(defun parcel-status (&optional arg)
+(defun parcel-status (&optional all noselect)
   "Diplay `parcel-status-buffer' for latest queue.
-When ARG is non-nil display all queues, else, display only the most recent."
+When ALL is non-nil display all queues, else, display only the most recent.
+If NOSELECT is non-nil, do not make the status buffer current."
   (interactive "P")
-  ;; If this is invoked during init, we want it to be updated.
-  (when arg (apply #'append (cl-loop for queue in parcel--queues
-                                     collect (parcel-queue-orders queue))))
   (with-current-buffer (get-buffer-create parcel-status-buffer)
+    (setq tabulated-list-entries
+          (if all
+              (lambda (&optional _)
+                (parcel-status--entries
+                 (apply #'append (cl-loop for queue in parcel--queues
+                                          collect (parcel-queue-orders queue)))))
+            #'parcel-status--entries))
     (unless (derived-mode-p 'parcel-ui-mode)
       (parcel-ui-mode)
       (setq tabulated-list-format [("Package" 30 t) ("Status" 15 t) ("Info" 100 t)]
-            parcel-ui-entries-function #'parcel-status--entries
             parcel-ui-header-line-prefix (propertize "Parcel Status" 'face '(:weight bold))
             tabulated-list-use-header-line nil)
       (tabulated-list-init-header)
       (parcel-ui--update-search-filter (current-buffer) parcel-status-default-search-query))
-    (pop-to-buffer parcel-status-buffer)))
+    (tabulated-list-print 'remember-pos)
+    (unless noselect (pop-to-buffer parcel-status-buffer))))
 
 (defvar parcel-status-mode-map
   (let ((map (make-sparse-keymap)))
