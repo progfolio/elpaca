@@ -40,21 +40,20 @@
 
 (defun parcel-log--entries ()
   "Return log's `tabulated-list-entries'."
-  (let ((id 0))
-    (apply
-     #'append
-     (cl-loop for (_ . order) in (parcel--queued-orders)
-              ;;for package = (parcel-order-package order)
-              for log = (reverse (parcel-order-log order))
-              for package = (parcel-order-package order)
-              collect
-              (cl-loop for (status time info) in log
-                       for delta = (format-time-string
-                                    "%02s.%4N"
-                                    (time-subtract time parcel--order-queue-start-time))
-                       for pkg = (propertize package 'face (parcel--status-face  status))
-                       collect (list (cl-incf id)
-                                     (vector pkg delta (symbol-name status) info)))))))
+  (apply
+   #'append
+   (cl-loop for (_ . order) in (parcel--queued-orders)
+            ;;for package = (parcel-order-package order)
+            for log = (reverse (parcel-order-log order))
+            for package = (parcel-order-package order)
+            collect
+            (cl-loop for (status time info) in log
+                     for delta = (format-time-string
+                                  "%02s.%4N"
+                                  (time-subtract time parcel--order-queue-start-time))
+                     for pkg = (propertize package 'face (parcel--status-face  status))
+                     collect (list (time-to-seconds time)
+                                   (vector pkg delta (symbol-name status) info))))))
 ;;;###autoload
 (defun parcel-log (&optional _)
   "Display `parcel-log-buffer'."
@@ -68,7 +67,8 @@
                                    ("Info" 80 t)]
             parcel-ui-entries-function #'parcel-log--entries
             parcel-ui-header-line-function #'parcel-log--header-line
-            tabulated-list-use-header-line nil)
+            tabulated-list-use-header-line nil
+            tabulated-list-sort-key '("Time"))
       (tabulated-list-init-header)
       (parcel-ui--update-search-filter (current-buffer) parcel-log-default-search-query))
     (pop-to-buffer parcel-log-buffer)))
