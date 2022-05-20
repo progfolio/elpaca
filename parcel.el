@@ -520,10 +520,11 @@ ITEM is any of the following values:
        (mono-repo
         (or mono-repo
             (when-let (((not builtp))
-                       (mono (cl-find-if
-                              (lambda (o) (equal repo-dir (parcel-order-repo-dir o)))
-                              (reverse (parcel--queued-orders))
-                              :key #'cdr)))
+                       (mono (cl-some (lambda (queued)
+                                        (and-let* ((order (cdr queued))
+                                                   ((equal repo-dir (parcel-order-repo-dir order)))
+                                                   order)))
+                                      (reverse (parcel--queued-orders)))))
               (setq status 'blocked info (format "Waiting for monorepo %S" repo-dir))
               mono)))
        (statuses (list status))
