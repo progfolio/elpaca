@@ -235,16 +235,19 @@ e.g. elisp forms may be printed via `prin1'."
                                   :post-build :pre-build :protocol :remote :repo)
   "Recognized parcel recipe keywords.")
 
-(defvar parcel--queue-index 0 "Index for tracking current queue.")
+(defvar parcel--queue-index -1 "Index for tracking current queue.")
 
 (cl-defstruct (parcel-queue (:constructor parcel-queue-create)
                             (:type list)
                             (:named))
   "Queue to hold parcel orders."
-  autoloads forms type (id (cl-incf parcel--queue-index))
-  orders (processed 0) (status 'incomplete))
+  (type (unless after-init-time 'init))
+  (id   (cl-incf parcel--queue-index))
+  (processed 0)
+  (status 'incomplete)
+  autoloads forms orders)
 
-(defvar parcel--queues (list (parcel-queue-create :id parcel--queue-index))
+(defvar parcel--queues (list (parcel-queue-create))
   "List of parcel queue objects.")
 
 (defvar parcel--order-queue-start-time nil
@@ -691,8 +694,7 @@ If INFO is non-nil, ORDER's info is updated as well."
   "Split remaining orders into new queue.
 If current queue is empty, it is reused."
   (when (parcel-queue-orders (parcel--current-queue))
-    (push (parcel-queue-create :type (unless after-init-time 'init))
-          parcel--queues)))
+    (push (parcel-queue-create) parcel--queues)))
 
 ;;;###autoload
 (defmacro parcel-queue (&rest body)
@@ -1465,7 +1467,7 @@ ORDER's package is not made available during subsequent sessions."
 ;;;###autoload
 (defun parcel-process-init ()
   "Process init file queues."
-  (setq parcel--queue-index 0)
+  (setf parcel--queue-index 0)
   (parcel--process-queue (parcel--current-queue)))
 
 (defun parcel--order-on-disk-p (item)
