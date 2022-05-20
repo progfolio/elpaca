@@ -974,7 +974,7 @@ If it matches, the order associated with process has its STATUS updated."
 
 (defun parcel--compile-info (order)
   "Compile ORDER's .texi files."
-  (parcel--update-order-info order "Compiling Info files")
+  (parcel--update-order-info order "Compiling Info files" 'info)
   (if-let ((files
             (cl-loop for (repo-file . build-file) in
                      (or (parcel-order-files order)
@@ -1366,13 +1366,13 @@ If FORCE is non-nil, ignore order queue."
   (when (equal event "finished\n")
     (let ((order  (process-get process :order)))
       (unless (eq (parcel-order-status order) 'failed)
-        (parcel--update-order-info order "Autoloads Generated" 'autoloads-generated)
+        (parcel--update-order-info order "Autoloads Generated")
         (parcel--run-next-build-step order)))))
 
 (defun parcel--generate-autoloads-async (order)
   "Generate ORDER's autoloads.
 Async wrapper for `parcel-generate-autoloads'."
-  (parcel--log-event order "Generating autoloads")
+  (parcel--update-order-info order "Generating autoloads" 'autoloads)
   (let* ((emacs             (parcel--emacs-path))
          (package           (parcel-order-package  order))
          (build-dir         (parcel-order-build-dir order))
@@ -1395,7 +1395,7 @@ Async wrapper for `parcel-generate-autoloads'."
 
 (defun parcel--activate-package (order)
   "Activate ORDER's package."
-  (parcel--update-order-info order "Activating package")
+  (parcel--update-order-info order "Activating package" 'activation)
   (let* ((build-dir (parcel-order-build-dir order))
          (default-directory build-dir)
          (package           (parcel-order-package order))
@@ -1433,13 +1433,13 @@ Async wrapper for `parcel-generate-autoloads'."
   (when (equal event "finished\n")
     (let ((order (process-get process :order)))
       (unless (eq (parcel-order-status order) 'failed)
-        (parcel--update-order-info order "Successfully byte compiled" 'byte-compiled)
+        (parcel--update-order-info order "Successfully byte compiled")
         (parcel--run-next-build-step order)))))
 
 (defun parcel--byte-compile (order)
   "Byte compile package from ORDER."
   ;; Assumes all dependencies are 'built
-  (parcel--update-order-info order "Byte compiling")
+  (parcel--update-order-info order "Byte compiling" 'byte-compilation)
   (let* ((build-dir         (parcel-order-build-dir order))
          (default-directory build-dir)
          (emacs             (parcel--emacs-path))
