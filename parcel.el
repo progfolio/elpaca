@@ -1637,6 +1637,7 @@ If HIDE is non-nil, do not show `parcel-status-buffer'."
              (default-directory repo-dir))
     (not (string-empty-p
           (parcel-process-output "git" "-c" "status.branch=false" "status" "--short")))))
+
 ;; @TODO Implement these:
 ;; (defun parcel-on-default-branch-p (item)
 ;;   (if-let ((order (parcel-alist-get item (parcel--queued-orders))))
