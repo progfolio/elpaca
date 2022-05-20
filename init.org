@@ -239,19 +239,21 @@ https://github.com/progfolio/parcel
 I want to see the status buffer when doing an initial install.
 #+begin_src emacs-lisp :lexical t
 (setq +parcel-installed (file-exists-p (expand-file-name "repos" parcel-directory)))
-(add-hook 'emacs-startup-hook (lambda () (unless +parcel-installed (parcel-display-status-buffer))))
+(add-hook 'emacs-startup-hook (lambda () (unless +parcel-installed (parcel-status))))
 #+end_src
 
 Bury the status buffer when everything initialized OK.
 #+begin_src emacs-lisp :lexical t
 (add-hook 'parcel-after-init-hook
-          (lambda () (when-let ((buffer (get-buffer parcel-status-buffer)))
+          (lambda () (when-let (((featurep 'parcel-status))
+                                (buffer (get-buffer parcel-status-buffer)))
                        (with-current-buffer buffer (quit-window)))))
 #+end_src
 
+Use Evil bindings in status and UI maps
 #+begin_src emacs-lisp :lexical t
 (with-eval-after-load 'evil
-  (with-eval-after-load 'parcel
+  (with-eval-after-load 'parcel-status
     (evil-make-intercept-map parcel-status-mode-map))
   (with-eval-after-load 'parcel-ui
     (evil-make-intercept-map parcel-ui-mode-map)))
