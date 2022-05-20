@@ -109,7 +109,8 @@ It takes an optional argument which, when non-nil, requests entry recache.")
 (define-derived-mode parcel-ui-mode tabulated-list-mode "parcel-ui"
   "Major mode to manage packages."
   (parcel-ui--update-search-filter (or parcel-ui-default-query ".*"))
-  (add-hook 'minibuffer-setup-hook 'parcel-ui--minibuffer-setup))
+  (add-hook 'minibuffer-setup-hook 'parcel-ui--minibuffer-setup)
+  (hl-line-mode))
 
 (defun parcel-ui--minibuffer-setup ()
   "Set up the minibuffer for live filtering."
