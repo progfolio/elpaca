@@ -1722,8 +1722,10 @@ A package for miscellaneous functions.
     "u" '(+universal-arg :which-key "universal-arg"))
   (+general-global-buffer
     "a" '(+alternate-buffer   :which-key "alternate-buffer")
+    "B" 'bury-buffer
     "m" '(+kill-other-buffers :which-key "kill-other-buffers")
-    "N" '(+normalize-buffer   :which-key "normalize-buffer"))
+    "N" '(+normalize-buffer   :which-key "normalize-buffer")
+    "u" 'unbury-buffer)
   (+general-global-window
     "f" '(+toggle-maximize-buffer
           :which-key "toggle-maximize-buffer"))
