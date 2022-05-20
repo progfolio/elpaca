@@ -73,7 +73,8 @@ See `run-at-time' for acceptable values."
 Allows for less debouncing than during `post-command-hook'.")
 (defvar-local parcel-ui-search-filter nil "Filter for package searches.")
 (defvar-local parcel-ui-search-history nil "List of previous search queries.")
-(defvar-local parcel-ui-header-line-function nil
+(defvar-local parcel-ui-header-line-prefix nil "Header line prefix.")
+(defvar-local parcel-ui-header-line-function #'parcel-ui--header-line
   "Function responsible for setting the UI buffer's `header-line-format'.
 It recieves one argument, the parsed search query list.")
 (defvar-local parcel-ui-entries-function nil
@@ -82,6 +83,37 @@ It takes an optional argument which, when non-nil, requests entry recache.")
 (defvar url-http-end-of-headers)
 
 ;;;; Functions:
+(defun parcel-ui--header-line (parsed &optional prefix)
+  "Set `header-line-format' to reflect PARSED query.
+If PREFIX is non-nil it is displayed before the rest of the header-line."
+  (let* ((tags (car parsed))
+         (cols (cadr parsed))
+         (full-match-p (= (length cols) 1)))
+    (setq header-line-format
+          (concat (or prefix "")
+                  (propertize (format " (%d matches) " (length tabulated-list-entries))
+                              'face '(:weight bold))
+                  " "
+                  (unless (member cols '((nil) nil))
+                    (concat
+                     (propertize
+                      (if full-match-p "Matching:" "Columns Matching:")
+                      'face 'parcel-failed)
+                     " "
+                     (if full-match-p
+                         (string-join (car cols) ", ")
+                       (mapconcat (lambda (col) (format "%s" (or col "(*)")))
+                                  cols
+                                  ", "))))
+                  (when tags
+                    (concat " " (propertize "Tags:" 'face 'parcel-failed) " "
+                            (string-join
+                             (mapcar
+                              (lambda (tag)
+                                (concat (if (string-prefix-p "#" tag) "!" "#") tag))
+                              tags)
+                             ", ")))))))
+
 (defun parcel-ui--orphan-p (item)
   "Return non-nil if ITEM's repo or build are on disk without having been queued."
   (let ((queued-orders (parcel--queued-orders)))
@@ -245,7 +277,8 @@ If QUERY is nil, the contents of the minibuffer are used instead."
           (tabulated-list-print 'remember-pos)
           (parcel-ui--apply-faces buffer)
           (when parcel-ui-header-line-function
-            (setq header-line-format (funcall parcel-ui-header-line-function parsed))))))))
+            (setq header-line-format (funcall parcel-ui-header-line-function
+                                              parsed parcel-ui-header-line-prefix))))))))
 
 (defun parcel-ui--debounce-search (buffer)
   "Update BUFFER's search filter from minibuffer."

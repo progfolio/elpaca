@@ -50,36 +50,6 @@ If RECACHE is non-nil, recompute `parcel-manager--entry-cache'."
                                          "")
                                        (or (plist-get data :source) ""))))))))
 
-(defun parcel-manager--header-line (parsed)
-  "Set `header-line-format' to reflect PARSED query."
-  (let* ((tags (car parsed))
-         (cols (cadr parsed))
-         (full-match-p (= (length cols) 1)))
-    (setq header-line-format
-          (concat (propertize (format "Parcel Query (%d packages):"
-                                      (length tabulated-list-entries))
-                              'face '(:weight bold))
-                  " "
-                  (unless (member cols '((nil) nil))
-                    (concat
-                     (propertize
-                      (if full-match-p "Matching:" "Columns Matching:")
-                      'face 'parcel-failed)
-                     " "
-                     (if full-match-p
-                         (string-join (car cols) ", ")
-                       (mapconcat (lambda (col) (format "%s" (or col "(*)")))
-                                  cols
-                                  ", "))))
-                  (when tags
-                    (concat " " (propertize "Tags:" 'face 'parcel-failed) " "
-                            (string-join
-                             (mapcar
-                              (lambda (tag)
-                                (concat (if (string-prefix-p "#" tag) "!" "#") tag))
-                              tags)
-                             ", ")))))))
-
 ;;;###autoload
 (defun parcel-manager (&optional recache)
   "Display parcel's package management UI.
@@ -96,7 +66,7 @@ If RECACHE is non-nil, recompute menu items from `parcel-menu-item-functions'."
                                    ("Date" 15 t)
                                    ("Source" 20 t)]
             parcel-ui-entries-function #'parcel-manager--entries
-            parcel-ui-header-line-function #'parcel-manager--header-line
+            parcel-ui-header-line-prefix (propertize "Parcel Manager" 'face '(:weight bold))
             tabulated-list-use-header-line nil)
       (tabulated-list-init-header)
       (parcel-ui--update-search-filter (current-buffer) parcel-manager-default-search-query))

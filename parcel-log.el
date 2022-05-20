@@ -31,13 +31,6 @@
   :type 'string
   :group 'parcel)
 
-(defun parcel-log--header-line (parsed)
-  "Set `header-line-format' to reflect PARSED query."
-  (format " %s events matching: %s"
-          (propertize (number-to-string (length tabulated-list-entries))
-                      'face '(:weight bold))
-          parsed))
-
 (defun parcel-log--entries ()
   "Return log's `tabulated-list-entries'."
   (apply
@@ -66,7 +59,7 @@
                                    ("Status" 20 t)
                                    ("Info" 80 t)]
             parcel-ui-entries-function #'parcel-log--entries
-            parcel-ui-header-line-function #'parcel-log--header-line
+            parcel-ui-header-line-prefix (propertize "Parcel Log" 'face '(:weight bold))
             tabulated-list-use-header-line nil
             tabulated-list-sort-key '("Time"))
       (tabulated-list-init-header)
