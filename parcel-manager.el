@@ -24,6 +24,10 @@
 
 ;;; Code:
 (require 'parcel-ui)
+;;@TODO: do these need to be unconditionally required/executed?
+(require 'bookmark)
+(bookmark-maybe-load-default-file)
+
 (defvar parcel-manager-buffer "*parcel-manager*")
 (defvar-local parcel-manager--entry-cache nil "Cache of all menu items.")
 

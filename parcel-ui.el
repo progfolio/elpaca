@@ -5,9 +5,6 @@
 (require 'parcel)
 (require 'url)
 (require 'tabulated-list)
-;;@TODO: do these need to be unconditionally required/executed?
-(require 'bookmark)
-(bookmark-maybe-load-default-file)
 
 ;;; Code:
 ;;;;Faces:
