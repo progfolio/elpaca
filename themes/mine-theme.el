@@ -273,6 +273,7 @@
   (replacement :background ,gray :foreground ,yellow :extend t))
 
 (mine-add-faces vterm
+  (color-black    :background ,gray)
   (color-blue     :foreground ,blue)
   (color-cyan     :foreground ,blue)
   (color-dark-purple    :foreground ,purple)
