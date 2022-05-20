@@ -1,0 +1,77 @@
+;;; parcel-log.el --- Logging facilities for parcel.  -*- lexical-binding: t; -*-
+
+;; Copyright (C) 2022  Nicholas Vollmer
+
+;; Author:  Nicholas Vollmer
+;; Keywords:
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;;
+
+;;; Code:
+(require 'parcel-ui)
+(defvar parcel-log-buffer "*parcel-log*")
+
+(defcustom parcel-log-default-search-query ".*"
+  "Default query for `parcel-log-buffer'."
+  :type 'string
+  :group 'parcel)
+
+(defun parcel-log--header-line (parsed)
+  "Set `header-line-format' to reflect PARSED query."
+  (format " %s events matching: %s"
+          (propertize (number-to-string (length tabulated-list-entries))
+                      'face '(:weight bold))
+          parsed))
+
+(defun parcel-log--entries ()
+  "Return log's `tabulated-list-entries'."
+  (let ((id 0))
+    (apply
+     #'append
+     (cl-loop for (_ . order) in (parcel--queued-orders)
+              ;;for package = (parcel-order-package order)
+              for log = (reverse (parcel-order-log order))
+              for package = (parcel-order-package order)
+              collect
+              (cl-loop for (status time info) in log
+                       for delta = (format-time-string
+                                    "%02s.%4N"
+                                    (time-subtract time parcel--order-queue-start-time))
+                       for pkg = (propertize package 'face (parcel--status-face  status))
+                       collect (list (cl-incf id)
+                                     (vector pkg delta (symbol-name status) info)))))))
+;;;###autoload
+(defun parcel-log (&optional _)
+  "Display `parcel-log-buffer'."
+  (interactive)
+  (with-current-buffer (get-buffer-create parcel-log-buffer)
+    (unless (derived-mode-p 'parcel-ui-mode)
+      (parcel-ui-mode)
+      (setq tabulated-list-format [("Package" 30 t)
+                                   ("Time" 20 t)
+                                   ("Status" 20 t)
+                                   ("Info" 80 t)]
+            parcel-ui-entries-function #'parcel-log--entries
+            parcel-ui-header-line-function #'parcel-log--header-line
+            tabulated-list-use-header-line nil)
+      (tabulated-list-init-header)
+      (parcel-ui--update-search-filter (current-buffer) parcel-log-default-search-query))
+    (pop-to-buffer parcel-log-buffer)))
+
+(provide 'parcel-log)
+;;; parcel-log.el ends here

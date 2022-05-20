@@ -605,38 +605,6 @@ Otherwise return a list of all queued orders."
    ((eq status 'failed)   'parcel-failed)
    (t                     (or default 'default))))
 
-;;@TODO: integrate with tabulated-list-mode
-(defun parcel--events (&rest packages)
-  "Return sorted event log string for PACKAGES.
-If PACKAGES is nil, use all available orders."
-  (let* ((packages (delete-dups (if packages (mapcar #'intern packages))))
-         (queued (if packages
-                     (cl-remove-if-not (lambda (cell) (member (car cell) packages))
-                                       (parcel--queued-orders))
-                   (parcel--queued-orders)))
-         (logs
-          (mapcar (lambda (cell)
-                    (let* ((package (car cell))
-                           (order   (cdr cell))
-                           (events (parcel-order-log order))
-                           (log nil))
-                      (dolist (event events log)
-                        (let* ((status (nth 0 event))
-                               (time   (nth 1 event))
-                               (text   (nth 2 event))
-                               (name   (propertize (symbol-name package)
-                                                   'face
-                                                   (parcel--status-face status '(:weight bold)))))
-                          (push (cons time
-                                      (format "[%s]%s %s"
-                                              (format-time-string
-                                               "%02s.%3N" (time-subtract time parcel--order-queue-start-time))
-                                              (format "%-30s" (concat "(" name "):"))
-                                              text))
-                                log)))))
-                  queued)))
-    (mapconcat #'cdr (cl-sort (apply #'append logs) #'time-less-p :key #'car) "\n")))
-
 (defun parcel--run-build-commands (commands)
   "Run build COMMANDS."
   (dolist (command (if (listp (car commands)) commands (list commands)))
@@ -1527,25 +1495,6 @@ RECURSE is used to keep track of recursive calls."
     (when recurse item)))
 
 ;;;; COMMANDS/MACROS
-(defun parcel-print-log (&rest packages)
-  "Print log for PACKAGES."
-  (interactive (completing-read-multiple "Log for Packages: "
-                                         (mapcar #'car (parcel--queued-orders))))
-  (let ((queued (if packages
-                    (cl-remove-if-not (lambda (package)
-                                        (parcel-alist-get (intern package) (parcel--queued-orders)))
-                                      packages)
-                  (mapcar (lambda (queued) (symbol-name (car queued)))
-                          (parcel--queued-orders)))))
-    (unless queued (user-error "No queued packages by name: %S"  packages))
-    (with-current-buffer (get-buffer-create "*Parcel Log*")
-      (with-silent-modifications
-        (erase-buffer)
-        (insert (apply #'parcel--events queued))
-        (pop-to-buffer-same-window (current-buffer)))
-      (goto-char (point-min))
-      (special-mode))))
-
 ;;;###autoload
 (defun parcel-display-status-buffer (&optional arg)
   "Diplay `parcel-status-buffer' for latest queue.
