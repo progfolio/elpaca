@@ -132,7 +132,7 @@ It takes an optional argument which, when non-nil, requests entry recache.")
                             (cl-remove-if
                              (lambda (word) (member word tags))
                              (split-string (string-trim col) " " 'omit-nulls)))
-                          (split-string filter "|"))))
+                          (split-string filter "\\(?:[^\\]|\\)"))))
     (list (mapcar (lambda (s) (substring s 1)) tags) columns)))
 
 (defun parcel-ui--query-matches-p (query subject)
