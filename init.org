@@ -1090,6 +1090,7 @@ These settings defined in C code, so we use the ~emacs~ pseudo-package to set th
 (enable-recursive-minibuffers t "Allow minibuffer commands in minibuffer")
 (frame-title-format '(buffer-file-name "%f" ("%b"))
                     "Make frame title current file's name.")
+(find-library-include-other-files nil)
 (indent-tabs-mode nil "Use spaces, not tabs")
 (inhibit-startup-screen t)
 (history-delete-duplicates t "Don't clutter history")
