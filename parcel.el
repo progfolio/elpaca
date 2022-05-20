@@ -658,7 +658,6 @@ If DEPENDENCY is non-nil, the return order directly."
 
 (defvar parcel-status-buffer)
 (declare-function parcel-status "parcel-status")
-(declare-function parcel-status--print "parcel-status")
 (defun parcel--update-order-info (order info &optional status)
   "Update ORDER STATUS.
 Print the order status line in `parcel-status-buffer'.
@@ -677,7 +676,7 @@ If INFO is non-nil, ORDER's info is updated as well."
              (get-buffer-window parcel-status-buffer t)) ;; Status buffer visible
     (when parcel--order-info-timer (cancel-timer parcel--order-info-timer))
     (setq parcel--order-info-timer (run-at-time parcel-order-info-debounce-interval
-                                                nil #'parcel-status--print))))
+                                                nil #'parcel-status))))
 
 (defun parcel--log-duration (order)
   "Return ORDER's log duration."
