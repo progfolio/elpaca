@@ -255,7 +255,9 @@ Assumes BUFFER in `parcel-ui-mode'."
                  (setq continue nil)
                  (when markedp
                    (overlay-put o 'before-string  (propertize (concat prefix " ") 'face face)))
-                 (overlay-put o 'face (or face 'parcel-finished))
+                 (overlay-put o 'face (or face
+                                          (parcel--status-face
+                                           (parcel-order-status order-or-action))))
                  (overlay-put o 'evaporate t)
                  (overlay-put o 'priority (if markedp 1 0))
                  (overlay-put o 'type 'parcel-mark))
