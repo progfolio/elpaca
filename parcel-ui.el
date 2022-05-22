@@ -104,12 +104,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                                   ", "))))
                   (when tags
                     (concat " " (propertize "Tags:" 'face 'parcel-failed) " "
-                            (string-join
-                             (mapcar
-                              (lambda (tag)
-                                (concat (if (string-prefix-p "#" tag) "!" "#") tag))
-                              tags)
-                             ", ")))))))
+                            (string-join tags ", ")))))))
 
 (defun parcel-ui--orphan-p (item)
   "Return non-nil if ITEM's repo or build are on disk without having been queued."
@@ -153,17 +148,47 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
       (add-hook 'post-command-hook (lambda () (parcel-ui--debounce-search buffer))
                 nil :local))))
 
+;;@TODO: make this less ugly.
 (defun parcel-ui--parse-search-filter (filter)
   "Return a list of form ((TAGS...) ((COLUMN)...)) for FILTER string."
-  (let* ((tags (cl-remove-if-not (lambda (s)
-                                   (string-match-p "^!?#" s))
-                                 (split-string filter " " 'omit-nulls)))
-         (columns (mapcar (lambda (col)
-                            (cl-remove-if
-                             (lambda (word) (member word tags))
-                             (split-string (string-trim col) " " 'omit-nulls)))
-                          (split-string filter "\\(?:[^\\]|\\)"))))
-    (list (mapcar (lambda (s) (substring s 1)) tags) columns)))
+  (let (tags cols col escapedp tagp acc previous)
+    (dolist (char (split-string filter "" 'omit-nulls))
+      (setq previous char)
+      (cond
+       (escapedp
+        (push char acc)
+        (setq escapedp nil))
+       ((equal char " ")
+        (when acc
+          (setq acc (string-join (nreverse acc)))
+          (if (not tagp)
+              (progn
+                (push acc col)
+                (setq acc nil))
+            (setq tagp nil)
+            (push acc tags)
+            (setq acc nil))))
+       ((equal char "\\") (setq escapedp t))
+       ((equal char "|")
+        (setq acc (string-join (nreverse acc)))
+        (push acc col)
+        (setq acc nil)
+        (setq col (nreverse col))
+        (push col cols)
+        (setq col nil))
+       ((equal char "#")
+        (setq tagp t)
+        (push char acc))
+       (t (push char acc))))
+    (when (or acc (equal previous "|"))
+      (setq acc (string-join (nreverse acc)))
+      (if tagp
+          (push acc tags)
+        (push acc col))
+      (setq col (nreverse col))
+      (push col cols))
+    (list (nreverse tags)
+          (mapcar (lambda (col) (if (equal col '("")) nil col)) (nreverse cols)))))
 
 (defun parcel-ui--query-matches-p (query subject)
   "Return t if QUERY (negated or otherwise) agrees with SUBJECT."
@@ -196,14 +221,9 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
 (defmacro parcel-ui--query-loop (parsed)
   "Return `cl-loop' from PARSED query."
   (declare (indent 1) (debug t))
-  ;;@FIX: our query parser shouldn't return junk that we have to remove here...
-  (let ((tags (cl-loop for tag in
-                       (cl-remove-if
-                        (lambda (s) (or (string-empty-p s)
-                                        (member s '("#" "!"))))
-                        (car parsed))
-                       for negated = (string-prefix-p "#" tag)
-                       when negated do (setq tag (substring tag 1))
+  (let ((tags (cl-loop for tag in (car parsed)
+                       for negated = (string-prefix-p "!" tag)
+                       do (setq tag (substring tag (if negated 2 1)))
                        for condition = (if negated 'unless 'when)
                        for filter = (alist-get tag parcel-ui-search-tags
                                                nil nil #'string=)
