@@ -77,6 +77,12 @@
                     (cons item (string-join s " "))))
                 rows)))))
 
+(defun parcel-menu-gnu-elpa-mirror--date (file)
+  "Return time of last modification for FILE."
+  (parcel-with-process
+      (parcel-process-call "git" "log" "-1" "--pretty=\"format:%ci\"" file)
+    (when success (date-to-time stdout))))
+
 (defun parcel-menu-gnu-elpa-mirror--index (&optional recache)
   "Return candidate list of available GNU ELPA recipes.
 If RECACHE is non-nil, recompute the cache."
@@ -90,6 +96,7 @@ If RECACHE is non-nil, recompute the cache."
                        collect (cons item
                                      (list :source "GNU ELPA Mirror"
                                            :description (or (alist-get item metadata) "This package has not been released yet.")
+                                           :date (parcel-menu-gnu-elpa-mirror--date file)
                                            :url (format "https://elpa.gnu.org/packages/%s.html" item)
                                            :recipe (list :package file
                                                          :host 'github
