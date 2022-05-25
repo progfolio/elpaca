@@ -100,7 +100,7 @@ If NOSELECT is non-nil, do not make the status buffer current."
             parcel-ui-header-line-prefix (propertize "Parcel Status" 'face '(:weight bold))
             tabulated-list-use-header-line nil))
     (tabulated-list-init-header)
-    (tabulated-list-print)
+    (tabulated-list-print 'remember-pos)
     (unless noselect (pop-to-buffer-same-window parcel-status-buffer))))
 
 (defvar parcel-status-mode-map
