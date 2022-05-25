@@ -74,7 +74,7 @@ If RECACHE is non-nil, recompute menu items from `parcel-menu-item-functions'."
             tabulated-list-use-header-line nil)
       (tabulated-list-init-header)
       (parcel-ui--update-search-filter (current-buffer) parcel-manager-default-search-query))
-    (pop-to-buffer parcel-manager-buffer)))
+    (pop-to-buffer-same-window parcel-manager-buffer)))
 
 ;;;; Bookmark integration
 
@@ -84,7 +84,7 @@ If RECACHE is non-nil, recompute menu items from `parcel-menu-item-functions'."
   (parcel-manager)
   (setq parcel-ui-search-filter (bookmark-prop-get record 'query))
   (parcel-ui-search-refresh)
-  (pop-to-buffer (get-buffer-create parcel-manager-buffer)))
+  (pop-to-buffer-same-window (get-buffer-create parcel-manager-buffer)))
 
 (defun parcel-manager-bookmark-make-record ()
   "Return a bookmark record for the current `parcel-ui-search-filter'."

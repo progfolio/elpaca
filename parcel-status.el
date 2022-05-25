@@ -96,7 +96,7 @@ If NOSELECT is non-nil, do not make the status buffer current."
             tabulated-list-use-header-line nil))
     (tabulated-list-init-header)
     (tabulated-list-print)
-    (unless noselect (pop-to-buffer parcel-status-buffer))))
+    (unless noselect (pop-to-buffer-same-window parcel-status-buffer))))
 
 (defvar parcel-status-mode-map
   (let ((map (make-sparse-keymap)))

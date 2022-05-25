@@ -64,7 +64,7 @@
             tabulated-list-sort-key '("Time"))
       (tabulated-list-init-header)
       (parcel-ui--update-search-filter (current-buffer) parcel-log-default-search-query))
-    (pop-to-buffer parcel-log-buffer)))
+    (pop-to-buffer-same-window parcel-log-buffer)))
 
 (provide 'parcel-log)
 ;;; parcel-log.el ends here
