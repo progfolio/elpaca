@@ -720,6 +720,7 @@ If current queue is empty, it is reused."
       (progn
         (run-hooks 'parcel-after-init-hook)
         (parcel-split-queue))
+    (run-hooks 'parcel-post-queue-hook)
     (cl-incf parcel--queue-index)
     (when-let ((queue (parcel--current-queue)))
       (parcel--process-queue queue))))
@@ -1459,9 +1460,8 @@ ORDER's package is not made available during subsequent sessions."
       (parcel--run-next-build-step order))))
 
 (defun parcel--process-queue (queue)
-  "Process  orders in QUEUE."
-  (mapc #'parcel--process-order (reverse (parcel-queue-orders queue)))
-  (run-hooks 'parcel-post-queue-hook))
+  "Process orders in QUEUE."
+  (mapc #'parcel--process-order (reverse (parcel-queue-orders queue))))
 
 ;;;###autoload
 (defun parcel-process-init ()
