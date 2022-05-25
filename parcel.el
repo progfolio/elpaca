@@ -520,7 +520,8 @@ ITEM is any of the following values:
                           nil)))))
        (build-dir (or build-dir (when recipe (parcel-build-dir recipe))))
        (package (format "%S" id))
-       (builtp (when build-dir (file-exists-p build-dir)))
+       (clonedp (and repo-dir (file-exists-p repo-dir)))
+       (builtp (and clonedp build-dir (file-exists-p build-dir)))
        (mono-repo
         (or mono-repo
             (when-let (((not builtp))
@@ -542,7 +543,7 @@ ITEM is any of the following values:
                 (setq steps (cl-set-difference steps '(parcel--clone
                                                        parcel--add-remotes
                                                        parcel--checkout-ref))))
-              (when (file-exists-p repo-dir)
+              (when clonedp
                 (setq steps (delq 'parcel--clone steps))
                 (when-let ((cached)
                            (cached-recipe (plist-get cached recipe))
