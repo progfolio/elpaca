@@ -242,14 +242,6 @@ I want to see the status buffer when doing an initial install.
 (add-hook 'emacs-startup-hook (lambda () (unless +parcel-installed (parcel-status))))
 #+end_src
 
-Bury the status buffer when everything initialized OK.
-#+begin_src emacs-lisp :lexical t
-(add-hook 'parcel-after-init-hook
-          (lambda () (when-let (((featurep 'parcel-status))
-                                (buffer (get-buffer parcel-status-buffer)))
-                       (with-current-buffer buffer (quit-window)))))
-#+end_src
-
 Use Evil bindings in status and UI maps
 #+begin_src emacs-lisp :lexical t
 (with-eval-after-load 'evil
