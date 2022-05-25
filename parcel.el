@@ -705,6 +705,9 @@ If current queue is empty, it is reused."
      ,@body
      (parcel-split-queue)))
 
+(defvar parcel--finalize-queue-hook nil
+  "Private hook run after a queue has been finalized.")
+
 (defun parcel--finalize-queue (queue)
   "Run QUEUE's post isntallation functions:
 - load cached autoloads
@@ -720,6 +723,7 @@ If current queue is empty, it is reused."
       (progn
         (run-hooks 'parcel-after-init-hook)
         (parcel-split-queue))
+    (run-hooks 'parcel--finalize-queue-hook)
     (run-hooks 'parcel-post-queue-hook)
     (cl-incf parcel--queue-index)
     (when-let ((queue (parcel--current-queue)))
