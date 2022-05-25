@@ -239,6 +239,7 @@ e.g. elisp forms may be printed via `prin1'."
 
 (cl-defstruct (parcel-queue (:constructor parcel-queue-create)
                             (:type list)
+                            (:copier nil)
                             (:named))
   "Queue to hold parcel orders."
   (type (unless after-init-time 'init))
