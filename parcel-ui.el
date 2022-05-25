@@ -75,8 +75,7 @@ Allows for less debouncing than during `post-command-hook'.")
   "Function responsible for setting the UI buffer's `header-line-format'.
 It recieves one argument, the parsed search query list.")
 (defvar-local parcel-ui-entries-function nil
-  "Function responsible for returning the UI buffer's `tabulated-list-entries'.
-It takes an optional argument which, when non-nil, requests entry recache.")
+  "Function responsible for returning the UI buffer's `tabulated-list-entries'.")
 (defvar url-http-end-of-headers)
 
 ;;;; Functions:
