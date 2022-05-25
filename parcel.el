@@ -1041,6 +1041,21 @@ The keyword's value is expected to be one of the following:
   "Run ORDER's :post-build commands."
   (parcel--dispatch-build-commands order :post-build))
 
+;;@HACK: It seems like `directory-files-recursively' is a little slow because it
+;;covers all sorts of general edge cases. e.g. tramp remote files. We shouldn't
+;;need that here.
+(defun parcel--directory-files-recursively (directory regexp)
+  "Return DIRECTORY files matching REGEXP."
+  (let ((default-directory (expand-file-name directory)))
+    (flatten-tree
+     (cl-loop for file in (directory-files ".")
+              collect (if (file-directory-p file)
+                          (unless (or (member file '("." ".."))
+                                      (file-symlink-p file))
+                            (parcel--directory-files-recursively file regexp))
+                        (when (string-match-p regexp file)
+                          (expand-file-name file)))))))
+
 (defun parcel--dependencies (recipe)
   "Using RECIPE, compute package's dependencies.
 If package's repo is not on disk, error."
@@ -1053,7 +1068,7 @@ If package's repo is not on disk, error."
           (or
            ;;@TODO: Should we have a recipe keyword to explicitly declare this?
            ;; e.g. :main, or something special in :files?
-           (car (directory-files-recursively default-directory (format "^%s$" name)))
+           (car (parcel--directory-files-recursively default-directory (format "^%s$" name)))
            ;; Best guess if there is no file matching the package name...
            (car (directory-files default-directory nil "\\.el$" 'nosort)))))
     (unless (file-exists-p default-directory)
