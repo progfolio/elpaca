@@ -133,7 +133,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
   "Return declared candidate list with no recipe in `parcel-menu-functions'."
   (cl-loop for (item . order) in (parcel--queued-orders)
            unless (parcel-menu-item nil item nil nil 'no-descriptions)
-           collect (list item :source "init file"
+           collect (list item :source "Init file"
                          :date (ignore-errors (parcel-ui--fallback-date order))
                          :description "Not available in menu functions")))
 
