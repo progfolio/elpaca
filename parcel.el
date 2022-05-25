@@ -1107,13 +1107,15 @@ If package's repo is not on disk, error."
   (parcel--update-order-info order "Cloning Dependencies" 'cloning-deps)
   (let* ((recipe       (parcel-order-recipe order))
          (dependencies (parcel--dependencies recipe))
-         (emacs        (assoc 'emacs dependencies))
-         ;;@TOOD: optimize with cl-loop
-         (externals    (cl-remove-duplicates
-                        (cl-remove-if (lambda (dependency)
-                                        (memq dependency parcel-ignored-dependencies))
-                                      dependencies :key #'car))))
-    (if (and emacs (version< emacs-version (cadr emacs)))
+         (externals    (let ((seen))
+                         (cl-loop for dependency in dependencies
+                                  for item = (car dependency)
+                                  unless (or (memq item parcel-ignored-dependencies)
+                                             (memq item seen))
+                                  collect dependency
+                                  do (push item seen)))))
+    (if-let ((emacs (assoc 'emacs dependencies))
+             ((version< emacs-version (cadr emacs))))
         (parcel--fail-order order (format "Requires %S; running %S" emacs emacs-version))
       (if externals
           ;;@TODO: Major Version conflict checks?
