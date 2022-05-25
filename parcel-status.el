@@ -32,6 +32,11 @@
   :type  'string
   :group 'parcel)
 
+(defcustom parcel-status-auto-kill t
+  "When non-nil, the status buffer is killed after successfully processed queues."
+  :type 'boolean
+  :group 'parcel)
+
 (defun parcel-status--entries (&optional queued)
   "Return list of `tabultaed-list-entries' from QUEUED orders."
   (cl-loop for (item . order) in (reverse
