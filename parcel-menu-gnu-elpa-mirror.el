@@ -80,7 +80,7 @@
 (defun parcel-menu-gnu-elpa-mirror--date (file)
   "Return time of last modification for FILE."
   (parcel-with-process
-      (parcel-process-call "git" "log" "-1" "--pretty=\"format:%ci\"" file)
+      (parcel-process-call "git" "log" "-1" "--pretty=\"%ci\"" file)
     (when success (date-to-time stdout))))
 
 (defun parcel-menu-gnu-elpa-mirror--index (&optional recache)
