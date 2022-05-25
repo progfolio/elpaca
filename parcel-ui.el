@@ -283,12 +283,12 @@ Assumes BUFFER in `parcel-ui-mode'."
                  (overlay-put o 'type 'parcel-mark))
              (forward-line))))))))
 
-(defun parcel-ui--update-search-filter (buffer &optional query)
+(defun parcel-ui--update-search-filter (&optional buffer query)
   "Update the BUFFER to reflect search QUERY.
 If QUERY is nil, the contents of the minibuffer are used instead."
   (when-let ((query (or query (and (minibufferp) (minibuffer-contents-no-properties)))))
     (unless (string-empty-p query)
-      (with-current-buffer (get-buffer-create buffer)
+      (with-current-buffer (get-buffer-create (or buffer (current-buffer)))
         (let ((parsed (parcel-ui--parse-search-filter query)))
           (push parcel-ui-search-filter parcel-ui-search-history)
           (setq tabulated-list-entries (eval `(parcel-ui--query-loop ,parsed) t)
@@ -331,9 +331,10 @@ If EDIT is non-nil, edit the last search."
   (parcel-ui-search 'edit))
 
 (defun parcel-ui-search-refresh (&optional buffer)
-  "Rerun the current search."
+  "Rerun the current search for BUFFER.
+If BUFFER is non-nil, the current buffer is used."
   (interactive (list (current-buffer)))
-  (parcel-ui--update-search-filter buffer parcel-ui-search-filter)
+  (parcel-ui--update-search-filter (or buffer (current-buffer)) parcel-ui-search-filter)
   (message "Search %S refreshed" parcel-ui-search-filter))
 
 (defun parcel-ui-current-package ()
