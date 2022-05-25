@@ -30,9 +30,9 @@
 
 ;;; Code:
 (eval-and-compile (require 'cl-lib))
+(cl-declaim (optimize (safety 0) (speed 3)))
 (require 'text-property-search)
 (require 'parcel-process)
-
 (declare-function autoload-rubric "autoload")
 (declare-function info-initialize "info")
 (declare-function url-filename    "url-parse")
