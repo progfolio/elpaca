@@ -330,10 +330,10 @@ If EDIT is non-nil, edit the last search."
   (interactive)
   (parcel-ui-search 'edit))
 
-(defun parcel-ui-search-refresh ()
+(defun parcel-ui-search-refresh (&optional buffer)
   "Rerun the current search."
-  (interactive)
-  (parcel-ui--update-search-filter parcel-ui-search-filter)
+  (interactive (list (current-buffer)))
+  (parcel-ui--update-search-filter buffer parcel-ui-search-filter)
   (message "Search %S refreshed" parcel-ui-search-filter))
 
 (defun parcel-ui-current-package ()
@@ -450,23 +450,25 @@ The current package is its sole argument."
 (defun parcel-ui-execute-marks ()
   "Execute each action in `parcel-ui-marked-packages'."
   (interactive)
-  (when parcel-ui--marked-packages
-    (cl-loop for marked in (nreverse parcel-ui--marked-packages)
-             for action = (nth 3 (cdr marked))
-             when action do
-             (condition-case err
-                 (funcall action (car marked))
-               ((error) (message "Executing mark %S failed: %S" marked err))))
-    (setq parcel-ui--marked-packages nil)
-    (save-excursion
-      (goto-char (point-min))
-      (while (not (eobp))
-        (condition-case _
-            (parcel-ui-unmark)
-          ((error) (forward-line)))))
-    (when (functionp parcel-ui-entries-function)
-      (funcall parcel-ui-entries-function 'recache))
-    (parcel-ui-search-refresh)))
+  (let ((buffer (current-buffer)))
+    (parcel-split-queue)
+    (when parcel-ui--marked-packages
+      (cl-loop for marked in (nreverse parcel-ui--marked-packages)
+               for action = (nth 3 (cdr marked))
+               when action do
+               (condition-case err
+                   (funcall action (car marked))
+                 ((error) (message "Executing mark %S failed: %S" marked err))))
+      (setq parcel-ui--marked-packages nil)
+      (save-excursion
+        (goto-char (point-min))
+        (while (not (eobp))
+          (condition-case _
+              (parcel-ui-unmark)
+            ((error) (forward-line)))))
+      (when (functionp parcel-ui-entries-function)
+        (funcall parcel-ui-entries-function 'recache))
+      (parcel-ui-search-refresh buffer))))
 
 (defmacro parcel-ui-defsearch (name query)
   "Define a QUERY toggle command with NAME."
