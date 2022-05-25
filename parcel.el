@@ -737,7 +737,7 @@ If current queue is empty, it is reused."
          order
          (concat  "✓ " (format-time-string "%s.%3N" (parcel--log-duration order)) " secs")
          'finished))
-      (when-let ((queue (nth (min parcel--queue-index (length parcel--queues))
+      (when-let ((queue (nth (min parcel--queue-index (1- (length parcel--queues)))
                              (reverse parcel--queues)))
                  ((= (cl-incf (parcel-queue-processed queue))
                      (length (parcel-queue-orders queue)))))
