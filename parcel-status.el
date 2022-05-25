@@ -91,11 +91,11 @@ If NOSELECT is non-nil, do not make the status buffer current."
                                             collect (parcel-queue-orders queue)))))
               #'parcel-status--entries))
       (setq tabulated-list-format [("Package" 30 t) ("Status" 15 t) ("Info" 100 t)]
+            tabulated-list-entries #'parcel-status--entries
             parcel-ui-header-line-prefix (propertize "Parcel Status" 'face '(:weight bold))
-            tabulated-list-use-header-line nil)
-      (tabulated-list-init-header)
-      (parcel-ui--update-search-filter (current-buffer) parcel-status-default-search-query))
-    (tabulated-list-print 'remember-pos)
+            tabulated-list-use-header-line nil))
+    (tabulated-list-init-header)
+    (tabulated-list-print)
     (unless noselect (pop-to-buffer parcel-status-buffer))))
 
 (defvar parcel-status-mode-map
