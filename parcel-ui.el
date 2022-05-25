@@ -123,11 +123,19 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
   "Return non-nil if CANDIDATE is an oprhaned package."
   (parcel-ui--orphan-p (car candidate)))
 
+(defun parcel-ui--fallback-date (order)
+  "Return time of last modification for ORDER's built elisp, otherwise nil."
+  (file-attribute-modification-time
+   (file-attributes (expand-file-name (concat (parcel-order-package order) ".el")
+                                      (parcel-order-build-dir order)))))
+
 (defun parcel-ui--custom-candidates ()
   "Return declared candidate list with no recipe in `parcel-menu-functions'."
   (cl-loop for (item . order) in (parcel--queued-orders)
            unless (parcel-menu-item nil item nil nil 'no-descriptions)
-           collect (list item :source "init file" :description "Not available in menu functions")))
+           collect (list item :source "init file"
+                         :date (ignore-errors (parcel-ui--fallback-date order))
+                         :description "Not available in menu functions")))
 
 (define-derived-mode parcel-ui-mode tabulated-list-mode "parcel-ui"
   "Major mode to manage packages."
