@@ -829,8 +829,6 @@ RECURSE is used to keep track of recursive calls."
   (setf (parcel-order-build-steps order)
         (cl-set-difference (parcel-order-build-steps order) steplist)))
 
-;;@FIX: when a folder is linked over we're nesting it in itself.
-;; e.g. slime/contrib becomes slime/contrib/contrib/
 (defun parcel--files (order &optional files nocons)
   "Return alist of ORDER :files to be symlinked: (PATH . TARGET PATH).
 FILES and NOCONS are used recursively."
