@@ -139,7 +139,8 @@ Setting it too high causes prints fewer status updates."
   '("*.el" "*.el.in" "dir"
     "*.info" "*.texi" "*.texinfo"
     "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
-    (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"))
+    (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el" "LICENSE"
+              "README*"))
   "Default value for the `:files' directive in recipes.
 It is also spliced in at any point where the `:defaults' keyword
 is used in a `:files' directive.")
