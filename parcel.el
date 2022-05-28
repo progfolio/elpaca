@@ -1067,15 +1067,18 @@ If package's repo is not on disk, error."
          (name (format "%s.el" (file-name-sans-extension package)))
          (main
           (or
+           (and defined pkg)
            ;;@TODO: Should we have a recipe keyword to explicitly declare this?
            ;; e.g. :main, or something special in :files?
+           (car (directory-files default-directory nil (format "^%s$" name)))
            (car (parcel--directory-files-recursively default-directory (format "^%s$" name)))
            ;; Best guess if there is no file matching the package name...
            (car (directory-files default-directory nil "\\.el$" 'nosort)))))
     (unless (file-exists-p default-directory)
       (error "Package repository not on disk: %S" recipe))
+    (unless main (error "Unable to find main elisp file for %S" package))
     (with-temp-buffer
-      (insert-file-contents-literally (if defined pkg main))
+      (insert-file-contents-literally main)
       (goto-char (point-min))
       (if defined
           (eval (nth 4 (read (current-buffer))))
