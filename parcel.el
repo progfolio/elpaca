@@ -1112,15 +1112,10 @@ If package's repo is not on disk, error."
             (let* ((dependency (car spec))
                    (queued     (parcel-alist-get dependency (parcel--queued-orders)))
                    (dep-order  (or queued (parcel--queue-order dependency))))
-              (setf (parcel-order-dependencies order)
-                    ;;@OPTIMIZE: can we do without deleting dups here?
-                    ;;Why are they being added in the first place?
-                    (cl-delete-duplicates
-                     (append (parcel-order-dependencies order) (list dep-order))
-                     :key #'car))
+              (cl-pushnew dep-order (parcel-order-dependencies order))
               (cl-pushnew order (parcel-order-dependents dep-order))
               (push dep-order queued-deps)))
-          (mapc #'parcel--run-next-build-step (nreverse queued-deps)))
+          (mapc #'parcel--run-next-build-step queued-deps))
       (parcel--update-order-info order "No external dependencies detected")
       (parcel--run-next-build-step order))))
 
@@ -1149,10 +1144,7 @@ If package's repo is not on disk, error."
                      (dep-order  (or queued (parcel--queue-order dependency)))
                      (included   (member dep-order (parcel-order-includes order)))
                      (blocked    (eq (parcel-order-status dep-order) 'blocked)))
-                (setf (parcel-order-dependencies order)
-                      (cl-delete-duplicates
-                       (append (parcel-order-dependencies order) (list dep-order))
-                       :key #'car))
+                (cl-pushnew dep-order (parcel-order-dependencies order))
                 (cl-pushnew order (parcel-order-dependents dep-order))
                 (if queued
                     (when (eq (parcel-order-status queued) 'finished) (cl-incf finished))
