@@ -1737,7 +1737,8 @@ An emacs-based e-mail client which uses mu as its back-end.
 https://www.djcbsoftware.nl/code/mu/mu4e.html
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (mu4e :host github :files ("mu4e/*.el" "build/mu4e/mu4e-meta.el") :repo "djcb/mu"
+(parcel-use-package (mu4e :host github :files ("mu4e/*.el" "build/mu4e/mu4e-meta.el" "build/mu4e/mu4e-config.el") :repo "djcb/mu"
+                          :main "mu4e/mu4e.el"
                           :pre-build (("./autogen.sh") ("ninja" "-C" "build")
                                       (make-symbolic-link (expand-file-name "./build/mu/mu")
                                                           (expand-file-name "~/bin/mu") 'ok-if-exists)))
@@ -3276,6 +3277,7 @@ https://github.com/ternjs/tern
 ** joymacs
 #+begin_src emacs-lisp :lexical t
 (parcel-use-package (joymacs :host github :repo "skeeto/joymacs"
+                             :main "joydemo.el"
                              :pre-build ("make")
                              :files (:defaults "joymacs.c" "joymacs.so")
                              :remotes (("fork" :repo "progfolio/joymacs")
