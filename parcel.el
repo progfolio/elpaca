@@ -1058,7 +1058,7 @@ The keyword's value is expected to be one of the following:
 
 (defun parcel--dependencies (order)
   "Return a list of ORDER's dependencies."
-  (or (parcel-order-dependencies order)
+  (or (mapcar (lambda (o) (cons (cadr o) nil)) (parcel-order-dependencies order))
       (let* ((default-directory (parcel-order-repo-dir order))
              (package (file-name-sans-extension (parcel-order-package order)))
              (name (concat package ".el"))
