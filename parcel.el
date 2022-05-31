@@ -1057,38 +1057,38 @@ The keyword's value is expected to be one of the following:
                         (when (string-match-p regexp file)
                           (expand-file-name file)))))))
 
-(defun parcel--dependencies (recipe)
-  "Using RECIPE, compute package's dependencies.
-If package's repo is not on disk, error."
-  (let* ((default-directory (parcel-repo-dir recipe))
-         (package (plist-get recipe :package))
-         (pkg (expand-file-name (concat package "-pkg.el")))
-         (definedp (file-exists-p pkg))
-         (name (concat package ".el"))
-         (regexp (concat "^" name "$"))
-         (main (or
-                (and definedp pkg)
-                ;;@TODO: Should we have a recipe keyword to explicitly declare this?
-                ;; e.g. :main, or something special in :files?
-                (car (directory-files default-directory nil regexp))
-                (car (parcel--directory-files-recursively default-directory regexp))
-                ;; Best guess if there is no file matching the package name...
-                (car (directory-files default-directory nil "\\.el$" 'nosort)))))
-    (unless (file-exists-p default-directory)
-      (error "Package repository not on disk: %S" recipe))
-    (unless main (error "Unable to find main elisp file for %S" package))
-    (with-temp-buffer
-      (insert-file-contents-literally main)
-      (goto-char (point-min))
-      (if definedp
-          (eval (nth 4 (read (current-buffer))))
-        (let ((case-fold-search t))
-          (when (re-search-forward parcel--package-requires-regexp nil 'noerror)
-            (condition-case err
-                ;; Replace comment delimiters in multi-line package-requires metadata.
-                (read (replace-regexp-in-string ";" "" (match-string 1)))
-              ((error)
-               (error "Unable to parse %S Package-Requires metadata: %S" main err)))))))))
+(defun parcel--dependencies (order)
+  "Return a list of ORDER's dependencies."
+  (or (parcel-order-dependencies order)
+      (let* ((default-directory (parcel-order-repo-dir order))
+             (package (parcel-order-package order))
+             (pkg (expand-file-name (concat package "-pkg.el")))
+             (definedp (file-exists-p pkg))
+             (name (concat package ".el"))
+             (regexp (concat "^" name "$"))
+             (main (or
+                    (and definedp pkg)
+                    ;;@TODO: Should we have a recipe keyword to explicitly declare this?
+                    ;; e.g. :main, or something special in :files?
+                    (car (directory-files default-directory nil regexp))
+                    (car (parcel--directory-files-recursively default-directory regexp))
+                    ;; Best guess if there is no file matching the package name...
+                    (car (directory-files default-directory nil "\\.el$" 'nosort))
+                    (error "Unable to find main elisp file for %S" package))))
+        (unless (file-exists-p default-directory)
+          (error "Package repository not on disk: %S" (parcel-order-recipe order)))
+        (with-temp-buffer
+          (insert-file-contents-literally main)
+          (goto-char (point-min))
+          (if definedp
+              (eval (nth 4 (read (current-buffer))))
+            (let ((case-fold-search t))
+              (when (re-search-forward parcel--package-requires-regexp nil 'noerror)
+                (condition-case err
+                    ;; Replace comment delimiters in multi-line package-requires metadata.
+                    (read (replace-regexp-in-string ";" "" (match-string 1)))
+                  ((error)
+                   (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))))
 
 ;;@DECOMPOSE: The body of this function is similar to `parcel--clone-dependencies'.
 ;; Refactor into a macro to operate on dependencies?
@@ -1096,7 +1096,7 @@ If package's repo is not on disk, error."
   "Queue ORDER's dependencies."
   (parcel--update-order-info order "Queueing Dependencies" 'queueing-deps)
   (let* ((dependencies (or (parcel-order-dependencies order)
-                           (parcel--dependencies (parcel-order-recipe order))))
+                           (parcel--dependencies order)))
          (orders       (parcel--queued-orders))
          (queued-deps
           (cl-loop for (dependency . _) in dependencies
@@ -1122,8 +1122,7 @@ If package's repo is not on disk, error."
 (defun parcel--clone-dependencies (order)
   "Clone ORDER's dependencies."
   (parcel--update-order-info order "Cloning Dependencies" 'cloning-deps)
-  (let* ((recipe       (parcel-order-recipe order))
-         (dependencies (parcel--dependencies recipe))
+  (let* ((dependencies (parcel--dependencies order))
          (externals    (let ((seen))
                          (cl-loop for dependency in dependencies
                                   for item = (car dependency)
@@ -1405,7 +1404,7 @@ RECURSE is used to track recursive calls."
   (if-let ((order (or (parcel-alist-get item (parcel--queued-orders))
                       (unless (member item parcel-ignored-dependencies)
                         (parcel-order-create item))))
-           (dependencies (parcel--dependencies (parcel-order-recipe order))))
+           (dependencies (parcel--dependencies order)))
       (let ((transitives (cl-loop for dependency in dependencies
                                   for name = (car dependency)
                                   unless (memq name ignore)
