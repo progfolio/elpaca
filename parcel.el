@@ -1060,15 +1060,17 @@ The keyword's value is expected to be one of the following:
   "Return a list of ORDER's dependencies."
   (or (parcel-order-dependencies order)
       (let* ((default-directory (parcel-order-repo-dir order))
-             (package (parcel-order-package order))
-             (pkg (expand-file-name (concat package "-pkg.el")))
-             (definedp (file-exists-p pkg))
+             (package (file-name-sans-extension (parcel-order-package order)))
              (name (concat package ".el"))
              (regexp (concat "^" name "$"))
              (main (or
-                    (and definedp pkg)
-                    ;;@TODO: Should we have a recipe keyword to explicitly declare this?
-                    ;; e.g. :main, or something special in :files?
+                    (plist-get (parcel-order-recipe order) :main)
+                    (cl-some (lambda (f) (let ((e (expand-file-name f)))
+                                           (and (file-exists-p e) e)))
+                             (list (concat package "-pkg.el")
+                                   name
+                                   (concat "./lisp/" name)
+                                   (concat "./elisp/" name)))
                     (car (directory-files default-directory nil regexp))
                     (car (parcel--directory-files-recursively default-directory regexp))
                     ;; Best guess if there is no file matching the package name...
@@ -1079,7 +1081,7 @@ The keyword's value is expected to be one of the following:
         (with-temp-buffer
           (insert-file-contents-literally main)
           (goto-char (point-min))
-          (if definedp
+          (if (string-suffix-p "-pkg.el" main)
               (eval (nth 4 (read (current-buffer))))
             (let ((case-fold-search t))
               (when (re-search-forward parcel--package-requires-regexp nil 'noerror)
