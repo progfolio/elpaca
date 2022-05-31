@@ -1097,25 +1097,24 @@ If package's repo is not on disk, error."
   (parcel--update-order-info order "Queueing Dependencies" 'queueing-deps)
   (let* ((dependencies (or (parcel-order-dependencies order)
                            (parcel--dependencies (parcel-order-recipe order))))
-         (externals    (cl-loop for spec in dependencies
-                                unless (memq (car spec) parcel-ignored-dependencies)
-                                collect spec))
-         queued-deps)
-    (if externals
-        (progn
-          ;; We do this in two steps so that ORDER is aware of all its
-          ;; dependencies before any single dependency starts its build.
-          ;; Otherwise a dependency may finish prior to other dependencies being
-          ;; registered. This will cause the dependent order to become unblocked
-          ;; multiple times and run its build steps simultaneously/out of order.
-          (dolist (spec externals)
-            (let* ((dependency (car spec))
-                   (queued     (parcel-alist-get dependency (parcel--queued-orders)))
-                   (dep-order  (or queued (parcel--queue-order dependency))))
-              (cl-pushnew dep-order (parcel-order-dependencies order))
-              (cl-pushnew order (parcel-order-dependents dep-order))
-              (push dep-order queued-deps)))
-          (mapc #'parcel--run-next-build-step queued-deps))
+         (orders       (parcel--queued-orders))
+         (queued-deps
+          (cl-loop for (dependency . _) in dependencies
+                   unless (memq dependency parcel-ignored-dependencies)
+                   for dep-order = (or (parcel-alist-get dependency orders)
+                                       (parcel--queue-order dependency))
+                   when dep-order do
+                   (progn
+                     (cl-pushnew dep-order (parcel-order-dependencies order))
+                     (cl-pushnew order (parcel-order-dependents dep-order)))
+                   when dep-order collect dep-order)))
+    (if queued-deps
+        ;; We do this in two steps so that ORDER is aware of all its
+        ;; dependencies before any single dependency starts its build.
+        ;; Otherwise a dependency may finish prior to other dependencies being
+        ;; registered. This will cause the dependent order to become unblocked
+        ;; multiple times and run its build steps simultaneously/out of order.
+        (mapc #'parcel--run-next-build-step queued-deps)
       (parcel--update-order-info order "No external dependencies detected")
       (parcel--run-next-build-step order))))
 
