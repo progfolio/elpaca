@@ -1050,12 +1050,11 @@ The keyword's value is expected to be one of the following:
   (let ((default-directory (expand-file-name directory)))
     (flatten-tree
      (cl-loop for file in (directory-files ".")
+              unless (member file '("." ".." ".git"))
               collect (if (file-directory-p file)
-                          (unless (or (member file '("." ".."))
-                                      (file-symlink-p file))
+                          (unless (file-symlink-p file)
                             (parcel--directory-files-recursively file regexp))
-                        (when (string-match-p regexp file)
-                          (expand-file-name file)))))))
+                        (when (string-match-p regexp file) (expand-file-name file)))))))
 
 (defun parcel--dependencies (order)
   "Return a list of ORDER's dependencies."
