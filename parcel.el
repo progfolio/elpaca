@@ -1260,7 +1260,8 @@ If FORCE is non-nil, ignore order queue."
             :command  `("git" "clone"
                         ;;@TODO: certain refs will necessitate full clone
                         ;; or specific branch...
-                        ,@(when depth (list "--depth" (number-to-string depth)))
+                        ,@(when depth (list "--depth" (number-to-string depth)
+                                            "--no-single-branch"))
                         ,URI ,repodir)
             :filter   (lambda (process output)
                         (parcel--process-filter
