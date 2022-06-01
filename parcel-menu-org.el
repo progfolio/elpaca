@@ -81,7 +81,7 @@
                              :pre-build '(progn (require 'parcel-menu-org)
                                                 (parcel-menu-org--build))
                              :build '(:not autoloads)
-                             :files '(:defaults "lisp/*.el" ("etc/styles/" "etc/styles/*")))))
+                             :files '(:defaults ("etc/styles/" "etc/styles/*")))))
                (cons 'org-contrib
                      (list :source "Org"
                            :description "Contributed Org packages in search of new maintainers"
@@ -90,7 +90,7 @@
                            (list
                             :package "org-contrib"
                             :repo "https://git.sr.ht/~bzg/org-contrib"
-                            :files '(:defaults "lisp/*.el")))))))))
+                            :files '(:defaults)))))))))
 
 (provide 'parcel-menu-org)
 ;;; parcel-menu-org.el ends here
