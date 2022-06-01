@@ -710,11 +710,19 @@ If current queue is empty, it is reused."
 (defvar parcel--finalize-queue-hook nil
   "Private hook run after a queue has been finalized.")
 
+(defcustom parcel-condensed-load-path-dir (expand-file-name "./cache/load-path/" parcel-directory)
+  "Path to directory which contains packages with uniquely named files.
+This reduces the overall length of the `load-path' and library load time."
+  :type 'directory)
+
 (defun parcel--finalize-queue (queue)
   "Run QUEUE's post isntallation functions:
 - load cached autoloads
 - evaluate deferred package configuration forms
 - possibly run `parcel-after-init-hook'."
+  (unless (eq (car load-path) parcel-condensed-load-path-dir)
+    (setq load-path (append (list parcel-condensed-load-path-dir)
+                            (delete parcel-condensed-load-path-dir load-path))))
   (when-let ((autoloads (parcel-queue-autoloads queue)))
     (eval `(progn ,@autoloads) t))
   (when-let ((forms (parcel-queue-forms queue)))
