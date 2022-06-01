@@ -193,18 +193,14 @@ Each function is passed a request, which may be any of the follwoing symbols:
 
 (defvar parcel-overriding-prompt nil "Overriding prompt for interactive functions.")
 
-(defmacro parcel--read-file (path)
+(defun parcel--read-file (path)
   "Read file at PATH into memory."
-  (declare (debug t))
-  (let ((psym (gensym "path")))
-    `(when-let ((,psym ,path)
-                (file (expand-file-name ,psym))
-                ((file-exists-p file)))
-       (condition-case err
-           (with-temp-buffer
-             (insert-file-contents file)
-             (read (current-buffer)))
-         ((error) (warn "Error reading %S into memory: %S" ,psym err))))))
+  (when (file-exists-p path)
+    (condition-case err
+        (with-temp-buffer
+          (insert-file-contents-literally path)
+          (read (current-buffer)))
+      ((error) (warn "Error reading %S into memory: %S" path err)))))
 
 (defmacro parcel--write-file (file &rest body)
   "Write FILE using BODY.
