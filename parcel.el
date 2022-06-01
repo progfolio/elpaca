@@ -276,13 +276,13 @@ Values for each key are that of the right-most plist containing that key."
   "Return alist of `parcel-menu-functions' candidates.
 If RECACHE is non-nil, recompute `parcel-menu--candidates-cache'."
   (or (and (not recache) parcel-menu--candidates-cache)
-      (prog1 (setq parcel-menu--candidates-cache
-                   (sort (apply #'append
-                                (copy-tree
-                                 (cl-loop for fn in parcel-menu-functions
-                                          ;; Allows adding a symbol prior menu installation.
-                                          collect (and (functionp fn) (funcall fn 'index)))))
-                         (lambda (a b) (string-lessp (car a) (car b)))))
+      (prog1
+          (setq parcel-menu--candidates-cache
+                (sort (copy-tree
+                       (cl-loop for fn in parcel-menu-functions
+                                ;; Allows adding a symbol prior menu installation.
+                                append (and (functionp fn) (funcall fn 'index))))
+                      (lambda (a b) (string-lessp (car a) (car b)))))
         (when parcel-cache-menu-items (parcel--write-menu-cache)))))
 
 (defun parcel--current-queue ()
