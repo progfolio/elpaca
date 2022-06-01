@@ -1360,11 +1360,11 @@ Async wrapper for `parcel-generate-autoloads'."
 
 (defun parcel--byte-compile-process-sentinel (process event)
   "PROCESS byte-compilation EVENT."
-  (when (equal event "finished\n")
-    (let ((order (process-get process :order)))
-      (unless (eq (parcel-order-status order) 'failed)
-        (parcel--update-order-info order "Successfully byte compiled")
-        (parcel--run-next-build-step order)))))
+  (when-let (((equal event "finished\n"))
+             (order (process-get process :order))
+             ((not (eq (parcel-order-status order) 'failed))))
+    (parcel--update-order-info order "Successfully byte compiled")
+    (parcel--run-next-build-step order)))
 
 (defun parcel--byte-compile (order)
   "Byte compile package from ORDER."
