@@ -467,6 +467,7 @@ The current package is its sole argument."
 (defun parcel-ui-execute-marks ()
   "Execute each action in `parcel-ui-marked-packages'."
   (interactive)
+  (deactivate-mark)
   (parcel-split-queue)
   (setq parcel--finalize-queue-hook '(parcel-ui--post-execute-marks))
   (when parcel-ui--marked-packages
