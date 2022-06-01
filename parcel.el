@@ -1331,6 +1331,10 @@ Async wrapper for `parcel-generate-autoloads'."
            :sentinel #'parcel--generate-autoloads-async-process-sentinel)))
     (process-put process :order order)))
 
+(defcustom parcel-condense-load-path t
+  "When non-nil, link packages with unique file sets under a single directory."
+  :type 'boolean) 
+
 (defun parcel--activate-package (order)
   "Activate ORDER's package."
   (parcel--update-order-info order "Activating package" 'activation)
@@ -1338,8 +1342,10 @@ Async wrapper for `parcel-generate-autoloads'."
          (default-directory build-dir)
          (package           (parcel-order-package order))
          (autoloads         (expand-file-name (format "%s-autoloads.el" package))))
-    (cl-pushnew default-directory load-path)
-    ;;@TODO: condition on a slot we set on the order to indicate cached recipe?
+    ;;@INCOMPLETE: still need to account for packages which can't be condensed.
+    (unless (and parcel-condense-load-path
+                 (not (member (parcel-order-item order) '(evil org org-contrib helm use-package bind-key))))
+                (push default-directory load-path))
     (parcel--update-order-info order "Package build dir added to load-path")
     (if (and parcel-cache-autoloads (file-exists-p autoloads))
         (let ((forms nil))
