@@ -1157,37 +1157,35 @@ The keyword's value is expected to be one of the following:
 
 (defun parcel--checkout-ref-process-sentinel (process event)
   "PROCESS EVENT."
-  (when (equal event "finished\n")
-    (let* ((order             (process-get process   :order))
-           (recipe            (parcel-order-recipe   order))
-           (default-directory (parcel-order-repo-dir order)))
-      (cl-destructuring-bind ( &key remotes ref tag &allow-other-keys
-                               &aux
-                               (remote (if (stringp remotes) remotes (car remotes)))
-                               (branch (or (plist-get (cdr-safe (car-safe remotes)) :branch)
-                                           (plist-get recipe :branch)))
-                               (target (or ref tag branch)))
-          recipe
-        (when target
-          (parcel-with-process
-              (apply #'parcel-process-call
-                     `("git"
-                       ,@(delq nil
-                               (cond
-                                (ref    (list "checkout" ref))
-                                (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
-                                (branch (list "switch" "-C" branch
-                                              (format "%s/%s" (parcel--first remote)
-                                                      branch)))))))
-            (unless success
-              (parcel--fail-order
-               order (format "Unable to check out ref: %S " (string-trim stderr))))))
-        (unless (eq (parcel-order-status order) 'failed)
-          (parcel--update-order-info
-           order
-           (if target (format "%S ref checked out" target) "Default ref checked out")
-           'ref-checked-out)
-          (parcel--run-next-build-step order))))))
+  (when-let (((equal event "finished\n"))
+             (order             (process-get process   :order))
+             (recipe            (parcel-order-recipe   order))
+             (default-directory (parcel-order-repo-dir order)))
+    (let* ((remotes (plist-get recipe :remotes))
+           (remote (parcel--first remotes))
+           (ref (plist-get recipe :ref))
+           (tag (plist-get recipe :tag))
+           (branch (or (plist-get (cdr-safe (car-safe remotes)) :branch)
+                       (plist-get recipe :branch)))
+           (target (or ref tag branch)))
+      (when target
+        (parcel-with-process
+            (apply #'parcel-process-call
+                   `("git"
+                     ,@(cond
+                        (ref    (list "checkout" ref))
+                        (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
+                        (branch (list "switch" "-C" branch
+                                      (format "%s/%s" (parcel--first remote) branch))))))
+          (unless success
+            (parcel--fail-order
+             order (format "Unable to check out ref: %S " (string-trim stderr))))))
+      (unless (eq (parcel-order-status order) 'failed)
+        (parcel--update-order-info
+         order
+         (if target (format "%S ref checked out" target) "Default ref checked out")
+         'ref-checked-out)
+        (parcel--run-next-build-step order)))))
 
 (defun parcel--checkout-ref (order)
   "Checkout ORDER's :ref.
