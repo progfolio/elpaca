@@ -324,90 +324,6 @@ I keep my sensitive, personal information in a separate file so I can publish th
 :ID:       f8affafe-3a4c-490c-a066-006aeb76f628
 :CUSTOM_ID: init-packages
 :END:
-** evil
-#+begin_quote
-Evil is an extensible vi layer for Emacs. It emulates the main features of Vim, and provides facilities for writing custom extensions.
-
-https://github.com/emacs-evil/evil
-#+end_quote
-#+begin_src emacs-lisp :lexical t
-(parcel-use-package evil
-  :demand t
-  :preface (setq evil-want-keybinding nil)
-  :custom
-  (evil-symbol-word-search t "search by symbol with * and #.")
-  (evil-shift-width 2 "Same behavior for vim's '<' and '>' commands")
-  (evil-want-C-i-jump t)
-  (evil-complete-all-buffers nil)
-  (evil-want-integration t)
-  (evil-want-C-i-jump t)
-  (evil-search-module 'evil-search "use vim-like search instead of 'isearch")
-  (evil-undo-system 'undo-redo)
-  :config
-  ;;I want Emacs regular mouse click behavior
-  (define-key evil-motion-state-map [down-mouse-1] nil)
-  <<+evil-kill-minibuffer>>
-  (evil-mode))
-#+end_src
-*** Evil mini-buffer bug
-:PROPERTIES:
-:header-args: :noweb-ref +evil-kill-minibuffer
-:END:
-Sometimes evil gets stuck and doubles the 'd' and 'c' keys among others.
-This has something to do with the mini-buffer according to this Spacemacs issue:
-
-https://github.com/syl20bnr/spacemacs/issues/10410
-
-Apparently this is a workaround:
-
-#+begin_src emacs-lisp :lexical t
-(defun +evil-kill-minibuffer ()
-  (interactive)
-  (when (windowp (active-minibuffer-window))
-    (evil-ex-search-exit)))
-
-(add-hook 'mouse-leave-buffer-hook #'+evil-kill-minibuffer)
-#+end_src
-
-Not sure why that hook is appropriate, but calling =evil-ex-search-exit= manually solves the issue as well.
-*** TODO evil/general interaction bug
-When loading evil after general Emacs takes roughly 7 times longer to start.
-I've culled both packages down to the bare minimum and can't reproduce.
-Culling evil to its bare minimum still exhibits the problem, so I suspect it lies in general's configuration.
-For now, I'll just load evil before general.
-There are a couple of keybindings that should be in evil's parcel-use-package form that are in general's until I solve the problem.
-
-Keep an eye on: https://github.com/noctuid/general.el/issues/180
-
-*** evil-anzu-mode
-#+begin_quote
-anzu for evil-mode
-
-https://github.com/emacsorphanage/evil-anzu
-#+end_quote
-
-Shows match counts in mode line.
-#+begin_src emacs-lisp :lexical t
-(parcel-use-package evil-anzu
-  :after (evil anzu))
-#+end_src
-*** evil-collection
-:PROPERTIES:
-:ID:       fe31fb46-abb8-4f19-ac06-9f1fd3b90f22
-:END:
-#+begin_quote
-This is a collection of Evil bindings for the parts of Emacs that Evil does not cover properly by default.
-
-https://github.com/emacs-evil/evil-collection
-#+end_quote
-#+begin_src emacs-lisp :lexical t
-(parcel-use-package evil-collection
-  :after (evil)
-  :config (evil-collection-init)
-  :custom
-  (evil-collection-setup-minibuffer t "Add evil bindings to minibuffer")
-  (evil-collection-company-use-tng t))
-#+end_src
 ** general (key-bindings)
 :PROPERTIES:
 :CUSTOM_ID: key-bindings
@@ -435,11 +351,15 @@ Load general before the remaining packages so they can make use of the ~:general
 The global definer allows me to use a leader key in most states.
 
 #+begin_src emacs-lisp :lexical t
+(general-define-key
+ :keymaps 'override
+ :states '(insert normal hybrid motion visual operator emacs)
+ :prefix-map '+prefix-map
+ :prefix "SPC"
+ :global-prefix "S-SPC")
+
 (general-create-definer global-definer
-  :keymaps 'override
-  :states '(insert normal hybrid motion visual operator emacs)
-  :prefix "SPC"
-  :non-normal-prefix "S-SPC")
+  :keymaps '+prefix-map)
 #+end_src
 
 #+begin_src emacs-lisp :lexical t
@@ -601,14 +521,7 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
 #+begin_src emacs-lisp :lexical t
 (+general-global-menu! "quit" "q"
   "q" 'save-buffers-kill-emacs
-  "Q" 'kill-emacs
-  ;;@FIX temp solution until I think of something/somewhere better
-  ;;this is so I can still open the evil command window in modes that have 'q'
-  ;;bound to burry/kill the buffer.
-  ;;seems foolish to keep it here. Might typo and quit...
-  ":" 'evil-command-window-ex
-  "/" 'evil-command-window-search-forward
-  "?" 'evil-command-window-search-backward)
+  "Q" 'kill-emacs)
 #+end_src
 **** spelling
 #+begin_src emacs-lisp :lexical t
@@ -642,10 +555,6 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
   "O" 'delete-other-windows
   "X" '((lambda () (interactive) (call-interactively #'other-window) (kill-buffer-and-window))
         :which-key "kill-other-buffer-and-window")
-  "H" 'evil-window-move-far-left
-  "J" 'evil-window-move-very-bottom
-  "K" 'evil-window-move-very-top
-  "L" 'evil-window-move-far-right
   "d" 'delete-window
   "h" 'windmove-left
   "j" 'windmove-down
@@ -665,6 +574,91 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
   :prefix "C-x")
 #+end_src
 *** TODO org-mode meta-mappings á la Spacemacs. C - F 'clever-insert' in Spacemacs source.
+** evil
+#+begin_quote
+Evil is an extensible vi layer for Emacs. It emulates the main features of Vim, and provides facilities for writing custom extensions.
+
+https://github.com/emacs-evil/evil
+#+end_quote
+#+begin_src emacs-lisp :lexical t
+(parcel-use-package evil
+  :demand t
+  :preface (setq evil-want-keybinding nil)
+  :general
+  (+general-global-window
+    "H" 'evil-window-move-far-left
+    "J" 'evil-window-move-very-bottom
+    "K" 'evil-window-move-very-top
+    "L" 'evil-window-move-far-right)
+  (+general-global-menu! "quit" "q"
+    ":" 'evil-command-window-ex
+    "/" 'evil-command-window-search-forward
+    "?" 'evil-command-window-search-backward)
+  :custom
+  (evil-symbol-word-search t "search by symbol with * and #.")
+  (evil-shift-width 2 "Same behavior for vim's '<' and '>' commands")
+  (evil-want-C-i-jump t)
+  (evil-complete-all-buffers nil)
+  (evil-want-integration t)
+  (evil-want-C-i-jump t)
+  (evil-search-module 'evil-search "use vim-like search instead of 'isearch")
+  (evil-undo-system 'undo-redo)
+  :config
+  ;;I want Emacs regular mouse click behavior
+  (define-key evil-motion-state-map [down-mouse-1] nil)
+  <<+evil-kill-minibuffer>>
+  (evil-mode))
+#+end_src
+*** Evil mini-buffer bug
+:PROPERTIES:
+:header-args: :noweb-ref +evil-kill-minibuffer
+:END:
+Sometimes evil gets stuck and doubles the 'd' and 'c' keys among others.
+This has something to do with the mini-buffer according to this Spacemacs issue:
+
+https://github.com/syl20bnr/spacemacs/issues/10410
+
+Apparently this is a workaround:
+
+#+begin_src emacs-lisp :lexical t
+(defun +evil-kill-minibuffer ()
+  (interactive)
+  (when (windowp (active-minibuffer-window))
+    (evil-ex-search-exit)))
+
+(add-hook 'mouse-leave-buffer-hook #'+evil-kill-minibuffer)
+#+end_src
+
+Not sure why that hook is appropriate, but calling =evil-ex-search-exit= manually solves the issue as well.
+*** evil-anzu-mode
+#+begin_quote
+anzu for evil-mode
+
+https://github.com/emacsorphanage/evil-anzu
+#+end_quote
+
+Shows match counts in mode line.
+#+begin_src emacs-lisp :lexical t
+(parcel-use-package evil-anzu
+  :after (evil anzu))
+#+end_src
+*** evil-collection
+:PROPERTIES:
+:ID:       fe31fb46-abb8-4f19-ac06-9f1fd3b90f22
+:END:
+#+begin_quote
+This is a collection of Evil bindings for the parts of Emacs that Evil does not cover properly by default.
+
+https://github.com/emacs-evil/evil-collection
+#+end_quote
+#+begin_src emacs-lisp :lexical t
+(parcel-use-package evil-collection
+  :after (evil)
+  :config (evil-collection-init)
+  :custom
+  (evil-collection-setup-minibuffer t "Add evil bindings to minibuffer")
+  (evil-collection-company-use-tng t))
+#+end_src
 ** accord
 #+begin_src emacs-lisp :lexical t
 (parcel-use-package (accord :host github :repo "progfolio/accord" :protocol ssh)
