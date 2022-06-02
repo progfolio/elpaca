@@ -1692,20 +1692,18 @@ If FORCE is non-nil,."
   (let* ((seen)
          (revisions
           (nreverse
-           (apply
-            #'append
-            (cl-loop for queue in parcel--queues
-                     collect
-                     (cl-loop for (item . order) in (parcel-queue-orders queue)
-                              unless (member item seen)
-                              for rev =
-                              (let ((default-directory (parcel-order-repo-dir order)))
-                                (parcel-with-process
-                                    (parcel-process-call "git" "rev-parse" "HEAD")
-                                  (when success (string-trim stdout))))
-                              when rev
-                              collect (cons item (plist-put (copy-tree (parcel-order-recipe order)) :ref rev))
-                              do (push item seen)))))))
+           (cl-loop for queue in parcel--queues
+                    append
+                    (cl-loop for (item . order) in (parcel-queue-orders queue)
+                             unless (member item seen)
+                             for rev =
+                             (let ((default-directory (parcel-order-repo-dir order)))
+                               (parcel-with-process
+                                   (parcel-process-call "git" "rev-parse" "HEAD")
+                                 (when success (string-trim stdout))))
+                             when rev
+                             collect (cons item (plist-put (copy-tree (parcel-order-recipe order)) :ref rev))
+                             do (push item seen))))))
     (parcel--write-file path (pp revisions))))
 
 (provide 'parcel)
