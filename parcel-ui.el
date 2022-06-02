@@ -297,7 +297,6 @@ If QUERY is nil, the contents of the minibuffer are used instead."
     (unless (string-empty-p query)
       (with-current-buffer (get-buffer-create (or buffer (current-buffer)))
         (let ((parsed (parcel-ui--parse-search-filter query)))
-          (push parcel-ui-search-filter parcel-ui-search-history)
           (setq tabulated-list-entries (eval `(parcel-ui--query-loop ,parsed) t)
                 parcel-ui-search-filter query)
           (tabulated-list-print 'remember-pos)
@@ -517,8 +516,9 @@ If TOGGLE is non-nil, invert search." name)
 (defun parcel-ui-search-previous ()
   "Restore last search query."
   (interactive)
-  (if-let ((previous (pop parcel-ui-search-history)))
-      (parcel-ui--update-search-filter previous)
+  (if-let ((previous (progn (pop parcel-ui-search-history)
+                            (pop parcel-ui-search-history))))
+      (parcel-ui--update-search-filter (current-buffer) previous)
     (user-error "End of search history")))
 
 ;;;; Key bindings
