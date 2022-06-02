@@ -884,11 +884,15 @@ FILES and NOCONS are used recursively."
 
 (defun parcel--add-info-path (order)
   "Add the ORDER's info to `Info-directory-list'."
-  (parcel--update-order-info order "Adding Info path" 'info)
-  (with-eval-after-load 'info
-    (info-initialize)
-    (cl-pushnew (parcel-order-build-dir order) Info-directory-list))
-  (parcel--run-next-build-step order))
+  (let ((build-dir (parcel-order-build-dir order)))
+    (if (file-exists-p (expand-file-name "dir" build-dir))
+        (progn
+          (parcel--update-order-info order "Adding Info path" 'info)
+          (with-eval-after-load 'info
+            (info-initialize)
+            (cl-pushnew build-dir Info-directory-list)))
+      (parcel--update-order-info order "No Info dir file found" 'info))
+    (parcel--run-next-build-step order)))
 
 (defun parcel--process-busy (process)
   "Update order status when PROCESS has stopped producing output."
