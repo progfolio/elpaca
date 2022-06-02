@@ -323,14 +323,17 @@ If QUERY is nil, the contents of the minibuffer are used instead."
   "Filter current buffer by string.
 If EDIT is non-nil, edit the last search."
   (interactive)
-  (unwind-protect
-      (setq parcel-ui-search-filter
-            (condition-case nil
-                (read-from-minibuffer "Search (empty to clear): "
-                                      (when edit parcel-ui-search-filter))
-              (quit parcel-ui-search-filter)))
-    (when (string-empty-p parcel-ui-search-filter) ;;reset to default view
-      (parcel-ui--update-search-filter (current-buffer) ".*"))))
+  (parcel-ui--update-search-filter
+   (current-buffer)
+   (setq parcel-ui-search-filter
+         (let ((query (condition-case nil
+                          (prog1
+                              (read-from-minibuffer "Search (empty to clear): "
+                                                    (when edit parcel-ui-search-filter))
+                            (push parcel-ui-search-filter parcel-ui-search-history)
+                            (when parcel-ui--search-timer (cancel-timer parcel-ui--search-timer)))
+                        (quit parcel-ui-search-filter))))
+           (if (string-empty-p query) parcel-ui-default-query query)))))
 
 (defun parcel-ui-search-edit ()
   "Edit last search."
