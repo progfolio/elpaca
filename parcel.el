@@ -558,12 +558,14 @@ ITEM is any of the following values:
      (:type list)
      (:named))
   "Order for queued processing."
-  id item log mono-repo package process
-  build-dir build-steps dependencies dependents files
-  includes recipe repo-dir statuses
+  id package item statuses
+  repo-dir build-dir mono-repo
+  files build-steps recipe
+  dependencies dependents includes
   (queue-id parcel--queue-index)
+  (queue-time (current-time))
   (init (not after-init-time))
-  (queue-time (current-time)))
+  process log)
 
 (defun parcel--fail-order (order &optional reason)
   "Fail ORDER for REASON."
