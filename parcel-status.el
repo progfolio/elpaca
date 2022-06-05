@@ -53,7 +53,7 @@
 
 (defun parcel-status--header-line (queued)
   "Set `parcel-buffer' header line to reflect QUEUED order statuses."
-  (let* ((queued (or queued (parcel-queue-orders (parcel--current-queue))))
+  (let* ((queued (or queued (parcel-queue-orders (car parcel--queues))))
          (counts nil)
          (queue-len (length queued)))
     (dolist (q queued)

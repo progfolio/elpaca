@@ -232,7 +232,8 @@ e.g. elisp forms may be printed via `prin1'."
                                   :post-build :pre-build :protocol :remote :repo)
   "Recognized parcel recipe keywords.")
 
-(defvar parcel--queue-index -1 "Index for tracking current queue.")
+(defvar parcel--queues nil
+  "List of parcel queue objects.")
 
 (cl-defstruct (parcel-queue (:constructor parcel-queue-create)
                             (:type list)
@@ -240,13 +241,12 @@ e.g. elisp forms may be printed via `prin1'."
                             (:named))
   "Queue to hold parcel orders."
   (type (unless after-init-time 'init))
-  (id   (cl-incf parcel--queue-index))
+  (id   (length parcel--queues))
   (processed 0)
   (status 'incomplete)
   autoloads forms orders)
 
-(defvar parcel--queues (list (parcel-queue-create))
-  "List of parcel queue objects.")
+(setq parcel--queues (list (parcel-queue-create)))
 
 (defvar parcel--order-queue-start-time nil
   "Time used to keep order logs relative to start of queue.")
@@ -280,10 +280,6 @@ If RECACHE is non-nil, recompute `parcel-menu--candidates-cache'."
                                 append (and (functionp fn) (funcall fn 'index))))
                       (lambda (a b) (string-lessp (car a) (car b)))))
         (when parcel-cache-menu-items (parcel--write-menu-cache)))))
-
-(defun parcel--current-queue ()
-  "Return the current queue."
-  (car (nthcdr (- (1- (length parcel--queues)) parcel--queue-index) parcel--queues)))
 
 (defsubst parcel-alist-get (key alist)
   "Return KEY's value in ALIST.
@@ -562,7 +558,7 @@ ITEM is any of the following values:
   repo-dir build-dir mono-repo
   files build-steps recipe
   dependencies dependents includes
-  (queue-id parcel--queue-index)
+  (queue-id (1- (length parcel--queues)))
   (queue-time (current-time))
   (init (not after-init-time))
   process log)
@@ -588,15 +584,14 @@ Each event is of the form: (STATUS TIME TEXT)"
               text)
         (parcel-order-log order)))
 
-(defun parcel--queued-orders (&optional arg)
-  "Return list of queued orders from ARG.
+(defun parcel--queued-orders (&optional n)
+  "Return list of queued orders from queue N.
 If ARG is a non-negative integer return Nth queue's orders in `parcel--queues'.
 Otherwise return a list of all queued orders."
-  (if arg
-      (parcel-queue-orders (car (nthcdr (- (1- (length parcel--queues)) parcel--queue-index)
-                                        parcel--queues)))
-    (apply #'append (nreverse (cl-loop for queue in parcel--queues
-                                       collect (parcel-queue-orders queue))))))
+  (nreverse
+   (if n
+       (parcel-queue-orders (nth n parcel--queues))
+     (cl-loop for queue in parcel--queues append (parcel-queue-orders queue)))))
 
 (defsubst parcel--status-face (status &optional default)
   "Return face for STATUS or DEFAULT if not found."
@@ -693,7 +688,7 @@ If INFO is non-nil, ORDER's info is updated as well."
 (defun parcel-split-queue ()
   "Split remaining orders into new queue.
 If current queue is empty, it is reused."
-  (when (parcel-queue-orders (parcel--current-queue))
+  (when (parcel-queue-orders (car parcel--queues))
     (push (parcel-queue-create) parcel--queues)))
 
 ;;;###autoload
@@ -718,16 +713,15 @@ If current queue is empty, it is reused."
   (when-let ((forms (parcel-queue-forms queue)))
     (eval `(progn ,@(apply #'append (mapcar #'cdr (nreverse forms)))) t))
   (setf (parcel-queue-status queue) 'complete)
-  (if (and (eq (parcel-queue-type queue) 'init)
-           (= (parcel-queue-id queue) (1- (length parcel--queues))))
-      (progn
-        (run-hooks 'parcel-after-init-hook)
-        (parcel-split-queue))
-    (run-hooks 'parcel--finalize-queue-hook)
-    (run-hooks 'parcel-post-queue-hook)
-    (cl-incf parcel--queue-index)
-    (when-let ((queue (parcel--current-queue)))
-      (parcel--process-queue queue))))
+  (let ((next-queue (nth (1+ (parcel-queue-id queue)) (reverse parcel--queues))))
+    (if (and (eq (parcel-queue-type queue) 'init)
+             (not (eq (parcel-queue-type next-queue) 'init)))
+        (progn
+          (run-hooks 'parcel-after-init-hook)
+          (parcel-split-queue))
+      (run-hooks 'parcel--finalize-queue-hook)
+      (run-hooks 'parcel-post-queue-hook)
+      (when next-queue (parcel--process-queue next-queue)))))
 
 (defun parcel--finalize-order (order)
   "Declare ORDER finished or failed."
@@ -741,8 +735,7 @@ If current queue is empty, it is reused."
          order
          (concat  "✓ " (format-time-string "%s.%3N" (parcel--log-duration order)) " secs")
          'finished))
-      (when-let ((queue (nth (min parcel--queue-index (1- (length parcel--queues)))
-                             (reverse parcel--queues)))
+      (when-let ((queue (car (last parcel--queues (1+ (parcel-order-queue-id order)))))
                  ((= (cl-incf (parcel-queue-processed queue))
                      (length (parcel-queue-orders queue)))))
         (parcel--finalize-queue queue)))))
@@ -775,7 +768,7 @@ RETURNS order structure."
           (parcel--fail-order order info)
         (parcel--update-order-info order info status))
       (push (cons (intern (parcel-order-package order)) order)
-            (parcel-queue-orders (parcel--current-queue)))
+            (parcel-queue-orders (car parcel--queues)))
       order)))
 
 (defun parcel--add-remotes (order &optional recurse)
@@ -1350,7 +1343,7 @@ Async wrapper for `parcel-generate-autoloads'."
                      (condition-case err
                          (eval '(progn ,@(nreverse forms)) t)
                        ((error) (warn "Error loading %S autoloads: %S" package err))))
-                  (parcel-queue-autoloads (parcel--current-queue))))
+                  (parcel-queue-autoloads (car (last parcel--queues (1+ (parcel-order-queue-id order)))))))
           (parcel--update-order-info order "Autoloads cached"))
       (condition-case err
           (progn
@@ -1435,7 +1428,7 @@ If ORDER is `nil`, defer BODY until orders have been processed."
   `(progn
      ,@(when body
          (list `(push ',(cons (parcel--first order) body)
-                      (parcel-queue-forms (parcel--current-queue)))))
+                      (parcel-queue-forms (car parcel--queues)))))
      ,@(unless (null order) (list `(parcel--queue-order ',order)))))
 
 ;;;###autoload
@@ -1479,11 +1472,11 @@ ORDER's package is not made available during subsequent sessions."
   "Process orders in QUEUE."
   (mapc #'parcel--process-order (reverse (parcel-queue-orders queue))))
 
+;;@TODO: This could be generalized to find the first incomplete queue and start there.
 ;;;###autoload
 (defun parcel-process-init ()
   "Process init file queues."
-  (setf parcel--queue-index 0)
-  (parcel--process-queue (parcel--current-queue)))
+  (parcel--process-queue (car (last parcel--queues))))
 
 (defun parcel--order-on-disk-p (item)
   "Return t if ITEM has an associated order and a build or repo dir on disk."
