@@ -244,12 +244,10 @@ e.g. elisp forms may be printed via `prin1'."
   (id   (length parcel--queues))
   (processed 0)
   (status 'incomplete)
+  (time (current-time))
   autoloads forms orders)
 
 (setq parcel--queues (list (parcel-queue-create)))
-
-(defvar parcel--order-queue-start-time nil
-  "Time used to keep order logs relative to start of queue.")
 
 (defun parcel-merge-plists (&rest plists)
   "Return plist with set of unique keys from PLISTS.

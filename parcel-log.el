@@ -33,16 +33,17 @@
 
 (defun parcel-log--entries ()
   "Return log's `tabulated-list-entries'."
-   (cl-loop for (item . order) in (parcel--queued-orders)
-            for log = (reverse (parcel-order-log order))
-            for package = (parcel-order-package order)
-            append
-            (cl-loop for (status time info) in log
-                     for delta = (format-time-string
-                                  "%02s.%4N"
-                                  (time-subtract time parcel--order-queue-start-time))
-                     for pkg = (propertize package 'face (parcel--status-face  status))
-                     collect (list item (vector pkg delta (symbol-name status) info)))))
+  (let ((queue-time (parcel-queue-time (car (last parcel--queues)))))
+    (cl-loop
+     for (item . order) in (parcel--queued-orders)
+     for log = (parcel-order-log order)
+     for package = (parcel-order-package order)
+     append
+     (cl-loop for (status time info) in log
+              for delta = (format-time-string "%02s.%6N" (time-subtract time queue-time))
+              for pkg = (propertize package 'face (parcel--status-face  status))
+              collect (list item (vector pkg delta (symbol-name status) info))))))
+
 ;;;###autoload
 (defun parcel-log (&optional _)
   "Display `parcel-log-buffer'."
