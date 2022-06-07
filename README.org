@@ -51,17 +51,12 @@ From this buffer you can search and act on all the packages parcel knows about.
 
 The following commands are available in the parcel-manager-buffer:
 
-| Command                  | Default Key Binding | Action                                  |
-|--------------------------+---------------------+-----------------------------------------|
-| parcel-ui-mark-install   | i                   | mark package for installation           |
-| parcel-ui-mark-delete    | d                   | mark package for deletion               |
-| parcel-ui-mark-rebuild   | r                   | mark package for rebuilding             |
-| parcel-ui-unmark         | u                   | remove package mark                     |
-| parcel-ui-browse-package | b                   | open package's website in browser       |
-| parcel-ui-execute-marks  | x                   | carries out actions for marked packages |
-
-
-
-
-
+| Command                  | Default Key Binding | Action                               | Region aware? |
+|--------------------------+---------------------+--------------------------------------+---------------|
+| parcel-ui-mark-install   | i                   | mark package for installation        | yes           |
+| parcel-ui-mark-delete    | d                   | mark package for deletion            | yes           |
+| parcel-ui-mark-rebuild   | r                   | mark package for rebuilding          | yes           |
+| parcel-ui-unmark         | u                   | remove package mark                  | yes           |
+| parcel-ui-browse-package | b                   | open package's website in browser    | no            |
+| parcel-ui-execute-marks  | x                   | execute each marked package's action | n/a           |
 
