@@ -9,6 +9,7 @@ It is a replacement for the built-in Emacs package manager, package.el.
 ** Requirements
 - Emacs >= 27.1
 - git (min version TBD)
+- Windows users must be able to create symlinks.
 ** Bootstrap Snippet
 To install parcel, add the following bootstrapping snippet to your init.el.
 It must come before any calls to other parcel functions/macros.
