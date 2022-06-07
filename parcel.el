@@ -1018,7 +1018,7 @@ The keyword's value is expected to be one of the following:
                          :command (list
                                    emacs "-Q"
                                    "-L" "./"
-                                   "-L" (expand-file-name "parcel" parcel-directory)
+                                   "-L" (expand-file-name "repos/parcel/" parcel-directory)
                                    "--batch"
                                    "--eval" (let (print-level print-length)
                                               (format "%S" program)))
@@ -1302,7 +1302,7 @@ Async wrapper for `parcel-generate-autoloads'."
          (package           (parcel-order-package  order))
          (build-dir         (parcel-order-build-dir order))
          (default-directory build-dir)
-         (parcel            (expand-file-name "parcel/" parcel-directory))
+         (parcel            (expand-file-name "repos/parcel/" parcel-directory))
          (command
           (list emacs "-Q"
                 "-L" parcel
