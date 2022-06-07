@@ -42,11 +42,24 @@ It then builds and activates parcel.
   (require 'parcel-autoloads))
 (add-hook 'after-init-hook #'parcel-process-init)
 #+end_src
-  
-* Finding Packages
+
 * Installing Packages
-* Updating Packages
-* Removing Packages
+
+* Finding, Updating, Removing Packages
+The =parcel-manger= command will focus the parcel manager buffer.
+From this buffer you can search and act on all the packages parcel knows about.
+
+The following commands are available in the parcel-manager-buffer:
+
+| Command                  | Default Key Binding | Action                                  |
+|--------------------------+---------------------+-----------------------------------------|
+| parcel-ui-mark-install   | i                   | mark package for installation           |
+| parcel-ui-mark-delete    | d                   | mark package for deletion               |
+| parcel-ui-mark-rebuild   | r                   | mark package for rebuilding             |
+| parcel-ui-unmark         | u                   | remove package mark                     |
+| parcel-ui-browse-package | b                   | open package's website in browser       |
+| parcel-ui-execute-marks  | x                   | carries out actions for marked packages |
+
 
 
 
