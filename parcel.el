@@ -558,7 +558,6 @@ Keys are as follows:
     (when mono-repo (cl-pushnew order (parcel-order-includes mono-repo)))
     order))
 
-
 (defun parcel--fail-order (order &optional reason)
   "Fail ORDER for REASON."
   (let ((item (parcel-order-item order))
@@ -1382,9 +1381,8 @@ If ORDER is `nil`, defer BODY until orders have been processed."
   (when (equal 'quote (car-safe order)) (setq order (cadr order)))
   (declare (indent 1))
   `(progn
-     ,@(when body
-         (list `(push ',(cons (parcel--first order) body)
-                      (parcel-queue-forms (car parcel--queues)))))
+     ,@(when body (list `(push ',(cons (parcel--first order) body)
+                               (parcel-queue-forms (car parcel--queues)))))
      ,@(unless (null order) (list `(parcel--queue-order
                                     ,(if (equal '\` (car-safe order))
                                          order
