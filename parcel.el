@@ -85,10 +85,6 @@ However, loading errors will prevent later package autoloads from loading."
   "When non-nil, menu-items ares cached. Speeds up init load."
   :type 'boolean)
 
-(defcustom parcel-cache-orders t
-  "When non-nil, orders ares cached. Speeds up init load."
-  :type 'boolean)
-
 (defcustom parcel-directory (expand-file-name "parcel" user-emacs-directory)
   "Location of the parcel package store."
   :type 'directory)
@@ -487,70 +483,9 @@ ITEM is any of the following values:
      (removep (cl-set-difference parcel-build-steps steps))
      ((listp steps) steps))))
 
-(cl-defstruct
-    (parcel-order
-     (:constructor
-      parcel-order-create
-      (item
-       &key recipe repo-dir build-dir cached dependencies files mono-repo
-       &aux
-       (status 'queued)
-       (info "Package queued")
-       (id (parcel--first item))
-       (recipe (or recipe (condition-case err (parcel-recipe item)
-                            ((error) (setq status 'failed
-                                           info (format "No recipe: %S" err))
-                             nil))))
-       (repo-dir (or repo-dir
-                     (condition-case err (parcel-repo-dir recipe)
-                       ((error)
-                        (when recipe
-                          (setq status 'failed
-                                info (format "Unable to determine repo dir: %S" err))
-                          nil)))))
-       (build-dir (or build-dir (when recipe (parcel-build-dir recipe))))
-       (package (format "%S" id))
-       (clonedp (and repo-dir (file-exists-p repo-dir)))
-       (builtp (and clonedp build-dir (file-exists-p build-dir)))
-       (mono-repo
-        (or mono-repo
-            (when-let (((not builtp))
-                       (mono (cl-some (lambda (queued)
-                                        (and-let* ((order (cdr queued))
-                                                   ((equal repo-dir (parcel-order-repo-dir order)))
-                                                   order)))
-                                      (reverse (parcel--queued-orders)))))
-              (setq status 'blocked info (format "Waiting for monorepo %S" repo-dir))
-              mono)))
-       (statuses (list status))
-       (build-steps
-        (when recipe
-          (if builtp
-              parcel--pre-built-steps
-            (when-let ((steps (parcel--build-steps item)))
-              (when (and mono-repo (memq 'ref-checked-out
-                                         (parcel-order-statuses mono-repo)))
-                (setq steps (cl-set-difference steps '(parcel--clone
-                                                       parcel--add-remotes
-                                                       parcel--checkout-ref))))
-              (when clonedp
-                (setq steps (delq 'parcel--clone steps))
-                (when-let ((cached)
-                           (cached-recipe (plist-get cached recipe))
-                           ((eq recipe cached-recipe)))
-                  (setq steps (cl-set-difference
-                               steps
-                               '(parcel--add-remotes
-                                 parcel--checkout-ref
-                                 parcel--dispatch-build-commands)))))
-              steps))))
-       (includes (when mono-repo (list mono-repo)))
-       ;; Not a proper log entry. We just store info here
-       ;; to catch failures during struct creation and
-       ;; handle first log entry in `parcel--queue-order'
-       (log (list info))))
-     (:type list)
-     (:named))
+(cl-defstruct (parcel-order (:constructor parcel--order-create)
+                            (:type list)
+                            (:named))
   "Order for queued processing."
   id package item statuses
   repo-dir build-dir mono-repo
@@ -560,6 +495,69 @@ ITEM is any of the following values:
   (queue-time (current-time))
   (init (not after-init-time))
   process log)
+
+(defmacro parcel--required-order-arg (try info)
+  "TRY to set arg. If error, fail order with INFO."
+  (declare (indent 1) (debug t))
+  `(condition-case err ,try
+     ((error) (setq status 'failed info (format ,info err)) nil)))
+
+(defsubst parcel--order-mono-repo (repo-dir)
+  "Return previously queued order with REPO-DIR."
+  (cl-some (lambda (queued)
+             (and-let* ((order (cdr queued))
+                        ((equal repo-dir (parcel-order-repo-dir order)))
+                        order)))
+           (reverse (parcel--queued-orders))))
+
+(defsubst parcel--order-build-steps (item builtp clonedp mono-repo)
+  "Return list of build functions for ITEM.
+BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
+  (if builtp
+      parcel--pre-built-steps
+    (when-let ((steps (parcel--build-steps item)))
+      (when (and mono-repo (memq 'ref-checked-out (parcel-order-statuses mono-repo)))
+        (setq steps (cl-set-difference steps
+                                       '(parcel--clone parcel--add-remotes parcel--checkout-ref))))
+      (when clonedp (setq steps (delq 'parcel--clone steps)))
+      steps)))
+
+(cl-defun parcel-order-create
+    (item &key recipe repo-dir build-dir files mono-repo)
+  "Create a new parcel order struct from ITEM.
+Keys are as follows:
+  RECIPE order recipe
+  REPO-DIR package's build-dir
+  BUILD-DIR package's repo-dir
+  CACHED whether or not the package was read from the cache
+  FILES list of package's linked files
+  MONO-REPO order which is responsible for cloning repo current order is in."
+  (let* ((status 'queued)
+         (info "Package queued")
+         (id (parcel--first item))
+         (recipe (or recipe (parcel--required-order-arg (parcel-recipe item)
+                              "No recipe: %S")))
+         (repo-dir (or repo-dir (and recipe
+                                     (parcel--required-order-arg (parcel-repo-dir recipe)
+                                       "Unable to determine repo dir: %S"))))
+         (build-dir (or build-dir (and recipe (parcel-build-dir recipe))))
+         (clonedp (and repo-dir (file-exists-p repo-dir)))
+         (builtp (and clonedp (and build-dir (file-exists-p build-dir))))
+         (mono-repo (or mono-repo
+                        (when-let (((not builtp))
+                                   (order (parcel--order-mono-repo repo-dir)))
+                          (setq status 'blocked info (format "Waiting for monorepo %S" repo-dir))
+                          order)))
+         (build-steps (parcel--order-build-steps item builtp clonedp mono-repo))
+         (order (parcel--order-create
+                 :id id :package (format "%S" id) :item item :statuses (list status)
+                 :repo-dir repo-dir :build-dir build-dir :mono-repo mono-repo
+                 :files files :build-steps build-steps :recipe recipe
+                 :includes (and mono-repo (list mono-repo))
+                 :log (list (list status nil info)))))
+    (when mono-repo (cl-pushnew order (parcel-order-includes mono-repo)))
+    order))
+
 
 (defun parcel--fail-order (order &optional reason)
   "Fail ORDER for REASON."
@@ -613,34 +611,6 @@ Otherwise return a list of all queued orders."
 (defsubst parcel-order-info (order)
   "Return ORDER's most recent log event info."
   (nth 2 (car (parcel-order-log order))))
-
-(defun parcel--clean-order (order)
-  "Return ORDER plist with cache data."
-  (cons (parcel-order-item order)
-        (list
-         :recipe       (parcel-order-recipe order)
-         :repo-dir     (parcel-order-repo-dir order)
-         :build-dir    (parcel-order-build-dir order)
-         :files        (parcel-order-files order)
-         :dependencies (mapcar #'parcel--clean-order (parcel-order-dependencies order)))))
-
-(defun parcel--write-order-cache ()
-  "Write order cache to disk."
-  (unless (file-exists-p parcel-cache-directory)
-    (make-directory parcel-cache-directory 'parents))
-  (parcel--write-file (expand-file-name "cache/orders.el" parcel-directory)
-    (prin1 (cl-loop for (_ . order) in (parcel--queued-orders)
-                    when (eq (parcel-order-status order) 'finished)
-                    collect (parcel--clean-order order)))))
-
-(defun parcel--cache-entry-to-order (cached &optional dependency)
-  "Return decoded CACHED plist as order.
-If DEPENDENCY is non-nil, the return order directly."
-  (let ((order (apply #'parcel-order-create cached)))
-    (setf (parcel-order-dependencies order)
-          (mapcar (lambda (o) (parcel--cache-entry-to-order o 'dependency))
-                  (parcel-order-dependencies order)))
-    (if dependency order (cons (parcel-order-id order) order))))
 
 (defsubst parcel--run-next-build-step (order)
   "Run ORDER's next build step with ARGS."
@@ -738,31 +708,17 @@ If current queue is empty, it is reused."
                      (length (parcel-queue-orders queue)))))
         (parcel--finalize-queue queue)))))
 
-(defun parcel--read-order-cache ()
-  "Return cache alist or nil if not available."
-  (mapcar #'parcel--cache-entry-to-order
-          (parcel--read-file (expand-file-name "orders.el" parcel-cache-directory))))
-
-(defvar parcel--order-cache (when parcel-cache-orders (parcel--read-order-cache))
-  "Built package information cache.")
-
 (defun parcel--queue-order (item)
   "Queue (ITEM . ORDER) in `parcel--queued-orders'.
 If STATUS is non-nil, the order is given that initial status.
-RETURNS order structure."
+Return order structure."
   (if (and (not after-init-time) (parcel-alist-get item (parcel--queued-orders)))
       (warn "Duplicate item declaration: %S" item)
-    (let* ((order (or (parcel-alist-get item parcel--order-cache)
-                      (parcel-order-create item)))
-           (mono-repo (parcel-order-mono-repo order))
-           (info (pop (parcel-order-log order)))
-           (status (pop (parcel-order-statuses order))))
-      ;;@TODO: can this be moved to order constructor somehow?
-      ;; The problem is we need a reference to the entire order.
-      ;; Unless we change our "includes" slot to contain a list of item symbols.
-      ;; I don't know if this will be slower over all...
-      (when mono-repo (cl-pushnew order (parcel-order-includes mono-repo)))
-      (push (cons (intern (parcel-order-package order)) order)
+    (let* ((order (parcel-order-create item))
+           (log (pop (parcel-order-log order)))
+           (status (car log))
+           (info (nth 2 log)))
+      (push (cons (parcel-order-id order) order)
             (parcel-queue-orders (car parcel--queues)))
       (if (eq status 'failed)
           (parcel--fail-order order info)
@@ -1504,11 +1460,6 @@ If FORCE is non-nil do not confirm before deleting."
             (dolist (queue parcel--queues)
               (setf (parcel-queue-orders queue)
                     (cl-remove package (parcel-queue-orders queue) :key #'car)))
-            ;;@FIX: This is short circuiting somehow without throwing an error.
-            ;; (setq parcel--order-cache
-            ;;       (cl-remove package parcel--order-cache
-            ;;                  :key #'parcel-order-package :test #'equal))
-            ;; (parcel--write-order-cache)
             (when (equal (buffer-name) parcel-status-buffer) (parcel-status))
             (message "Deleted package %S" package)
             (when with-deps

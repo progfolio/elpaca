@@ -28,7 +28,6 @@
 
 ;;prevent user cache corruption
 (setq parcel-cache-menu-items nil)
-(setq parcel-cache-orders nil)
 (setq parcel-cache-autoloads nil)
 
 (defun parcel-test--plist-equal-p (&rest plists)
