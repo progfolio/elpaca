@@ -1379,12 +1379,16 @@ RECURSE is used to keep track of recursive calls."
 (defmacro parcel (order &rest body)
   "Install ORDER, then execute BODY.
 If ORDER is `nil`, defer BODY until orders have been processed."
+  (when (equal 'quote (car-safe order)) (setq order (cadr order)))
   (declare (indent 1))
   `(progn
      ,@(when body
          (list `(push ',(cons (parcel--first order) body)
                       (parcel-queue-forms (car parcel--queues)))))
-     ,@(unless (null order) (list `(parcel--queue-order ',order)))))
+     ,@(unless (null order) (list `(parcel--queue-order
+                                    ,(if (equal '\` (car-safe order))
+                                         order
+                                       (list 'quote order)))))))
 
 ;;;###autoload
 (defmacro parcel-use-package (order &rest body)
