@@ -683,7 +683,8 @@ If current queue is empty, it is reused."
   (setf (parcel-queue-status queue) 'complete)
   (let ((next-queue (nth (1+ (parcel-queue-id queue)) (reverse parcel--queues))))
     (if (and (eq (parcel-queue-type queue) 'init)
-             (not (eq (parcel-queue-type next-queue) 'init)))
+             (or (null next-queue)
+                 (not (eq (parcel-queue-type next-queue) 'init))))
         (progn
           (run-hooks 'parcel-after-init-hook)
           (parcel-split-queue))
