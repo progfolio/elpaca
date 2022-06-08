@@ -762,11 +762,11 @@ RETURNS order structure."
       ;; Unless we change our "includes" slot to contain a list of item symbols.
       ;; I don't know if this will be slower over all...
       (when mono-repo (cl-pushnew order (parcel-order-includes mono-repo)))
+      (push (cons (intern (parcel-order-package order)) order)
+            (parcel-queue-orders (car parcel--queues)))
       (if (eq status 'failed)
           (parcel--fail-order order info)
         (parcel--update-order-info order info status))
-      (push (cons (intern (parcel-order-package order)) order)
-            (parcel-queue-orders (car parcel--queues)))
       order)))
 
 (defun parcel--add-remotes (order &optional recurse)
