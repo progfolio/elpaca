@@ -585,7 +585,7 @@ If ARG is a non-negative integer return Nth queue's orders in `parcel--queues'.
 Otherwise return a list of all queued orders."
   (nreverse
    (if n
-       (parcel-queue-orders (nth n parcel--queues))
+       (copy-sequence (parcel-queue-orders (nth n (reverse parcel--queues))))
      (cl-loop for queue in parcel--queues append (parcel-queue-orders queue)))))
 
 (defsubst parcel--status-face (status &optional default)
