@@ -508,7 +508,7 @@ ITEM is any of the following values:
              (and-let* ((order (cdr queued))
                         ((equal repo-dir (parcel-order-repo-dir order)))
                         order)))
-           (reverse (parcel--queued-orders))))
+           (parcel--queued-orders)))
 
 (defsubst parcel--order-build-steps (item builtp clonedp mono-repo)
   "Return list of build functions for ITEM.
