@@ -631,7 +631,7 @@ Print the order status line in `parcel-status-buffer'.
 If STATUS is non-nil and differs from ORDER's current STATUS,
 signal ORDER's depedentents to check (and possibly change) their status.
 If INFO is non-nil, ORDER's info is updated as well."
-  (when status
+  (when (and status (not (equal status (parcel-order-status order))))
     (push status (parcel-order-statuses order))
     (when (memq status '(finished failed blocked))
       (mapc #'parcel--order-check-status (parcel-order-dependents order)))
