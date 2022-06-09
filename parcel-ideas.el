@@ -23,6 +23,11 @@
 ;; 
 
 ;;; Code:
+(require 'parcel)
+(defvar parcel-directory)
+(defvar parcel--finalize-queue-hook)
+(defvar parcel-status-auto-kill)
+(defvar parcel-status-buffer)
 
 (defmacro parcel-with-dir (type item &rest body)
   "Set `default-directory' for duration of BODY.
@@ -32,6 +37,28 @@ TYPE is either `:repo' or `:build' for ITEM's repo or build directory."
           (,(intern (format "parcel-%s-dir" (substring (symbol-name type) 1)))
            (parcel-recipe ,item))))
      ,@body))
+
+
+(defun parcel-package-file-p ()
+  "Return t if current buffer's file is part of a repo."
+  (interactive)
+  (and-let* ((name (buffer-file-name))
+             ((string-prefix-p (expand-file-name "./repos" parcel-directory) name))
+             ((cl-find-if (lambda (q) (member name
+                                              (mapcar #'car (parcel--files (cdr q)))))
+                          (parcel--queued-orders))))))
+
+(defun parcel-ui--post-maybe-rebuild ()
+  (setq parcel--finalize-queue-hook nil)
+  (when parcel-status-auto-kill (kill-buffer parcel-status-buffer)))
+
+(defun parcel-maybe-rebuild-package ()
+  "Rebuild package associated with BUFFER."
+  (interactive)
+  (when-let ((queued (parcel-package-file-p)))
+    (parcel-split-queue)
+    (setq parcel--finalize-queue-hook '(parcel-ui--post-maybe-rebuild))
+    (parcel-rebuild-package (car queued))))
 
 (provide 'parcel-ideas)
 ;;; parcel-ideas.el ends here
