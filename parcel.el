@@ -678,7 +678,7 @@ If current queue is empty, it is reused."
   (when-let ((autoloads (parcel-queue-autoloads queue)))
     (eval `(progn ,@autoloads) t))
   (when-let ((forms (parcel-queue-forms queue)))
-    (eval `(progn ,@(apply #'append (mapcar #'cdr (nreverse forms)))) t))
+    (eval `(progn ,@(apply #'append (mapcar #'cdr (reverse forms)))) t))
   (setf (parcel-queue-status queue) 'complete)
   (let ((next-queue (nth (1+ (parcel-queue-id queue)) (reverse parcel--queues))))
     (if (and (eq (parcel-queue-type queue) 'init)
