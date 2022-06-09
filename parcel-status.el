@@ -107,10 +107,10 @@ If NOSELECT is non-nil, do not make the status buffer current."
 
 (defvar parcel-status-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "I")  'parcel-status-mode-send-input)
-    (define-key map (kbd "R")  'parcel-status-mode-visit-repo)
-    (define-key map (kbd "B")  'parcel-status-mode-visit-build)
-    (define-key map (kbd "D")  'parcel-status-delete-package)
+    (define-key map (kbd "I") 'parcel-status-mode-send-input)
+    (define-key map (kbd "R") 'parcel-status-mode-visit-repo)
+    (define-key map (kbd "B") 'parcel-status-mode-visit-build)
+    (define-key map (kbd "D") 'parcel-status-delete-package)
     map))
 
 (define-derived-mode parcel-status-mode parcel-ui-mode "Parcel Status Mode"
