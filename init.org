@@ -252,10 +252,10 @@ This package gets the correct environment variables so parcel can use the ssh pr
 ;; We need this loaded for SSH protocol
 (parcel-queue
  (parcel keychain-environment
-   (keychain-refresh-environment)))
+         (keychain-refresh-environment)))
 (parcel-queue
  (parcel (melpulls :host github :repo "progfolio/melpulls" :protocol ssh)
-   (add-to-list 'parcel-menu-functions 'melpulls)))
+         (add-to-list 'parcel-menu-functions 'melpulls)))
 #+end_src
 
 ** packaging
@@ -265,10 +265,9 @@ This package gets the correct environment variables so parcel can use the ssh pr
   "Like `use-package' but accounting for asynchronous installation.
 NAME and ARGS are in `use-package'."
   (declare (indent defun))
-  `(parcel nil
-     (use-package ,name
-       :ensure nil
-       ,@args)))
+  `(parcel nil (use-package ,name
+                 :ensure nil
+                 ,@args)))
 #+end_src
 
 #+begin_src emacs-lisp :lexical t
