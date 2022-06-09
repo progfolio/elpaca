@@ -41,7 +41,7 @@
      append
      (cl-loop for (status time info) in log
               for delta = (format-time-string "%02s.%6N" (time-subtract time queue-time))
-              for pkg = (propertize package 'face (parcel--status-face  status))
+              for pkg = (propertize package 'face (parcel--status-face status) 'order order)
               collect (list item (vector pkg delta (symbol-name status) info))))))
 
 ;;;###autoload

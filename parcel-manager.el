@@ -40,19 +40,19 @@
   "Return list of all entries available in `parcel-menu-functions' and init.
 If RECACHE is non-nil, recompute `parcel-manager--entry-cache'."
   (or (and (not recache) parcel-manager--entry-cache)
-      (setq parcel-manager--entry-cache
-            (reverse
-             (cl-loop for (item . data) in (reverse (append (parcel-menu--candidates)
-                                                            (parcel-ui--custom-candidates)))
-                      when item
-                      collect (list
-                               item
-                               (vector (format "%S" item)
-                                       (or (plist-get data :description) "")
-                                       (if-let ((date (plist-get data :date)))
-                                           (format-time-string "%Y-%m-%d" date)
-                                         "")
-                                       (or (plist-get data :source) ""))))))))
+      (let ((queued (parcel--queued-orders)))
+        (setq parcel-manager--entry-cache
+              (reverse
+               (cl-loop for (item . data) in (reverse (append (parcel-menu--candidates)
+                                                              (parcel-ui--custom-candidates)))
+                        collect (list
+                                 item
+                                 (vector (propertize (format "%S" item) 'order (alist-get item queued))
+                                         (or (plist-get data :description) "")
+                                         (if-let ((date (plist-get data :date)))
+                                             (format-time-string "%Y-%m-%d" date)
+                                           "")
+                                         (or (plist-get data :source) "")))))))))
 
 ;;;###autoload
 (defun parcel-manager (&optional recache)

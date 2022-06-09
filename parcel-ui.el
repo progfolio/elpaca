@@ -521,6 +521,35 @@ If TOGGLE is non-nil, invert search." name)
       (parcel-ui--update-search-filter (current-buffer) previous)
     (user-error "End of search history")))
 
+(defun parcel-ui-send-input ()
+  "Send input string to current process."
+  (interactive)
+  (if-let ((order (get-text-property (line-beginning-position) 'order))
+           (process (parcel-order-process order))
+           ((process-live-p process)))
+      (let* ((input (read-string (format "Send input to %S: " (process-name process)))))
+        (process-send-string process (concat input "\n")))
+    (user-error "No running process associated with %S" (parcel-order-package order))))
+
+(defun parcel-ui--visit (type)
+  "Visit current order's TYPE dir.
+TYPE is either the symbol `repo` or `build`."
+  (if-let ((order (get-text-property (line-beginning-position) 'order))
+           (dir   (funcall (intern (format "parcel-order-%s-dir" type)) order))
+           ((file-exists-p dir)))
+      (dired dir)
+    (user-error "No %s dir associated with current line" type)))
+
+(defun parcel-ui-visit-repo ()
+  "Visit repo associated with current process."
+  (interactive)
+  (parcel-ui--visit 'repo))
+
+(defun parcel-ui-visit-build ()
+  "Visit builds dir associated with current process."
+  (interactive)
+  (parcel-ui--visit 'build))
+
 ;;;; Key bindings
 (define-key parcel-ui-mode-map (kbd "*")   'parcel-ui-toggle-mark)
 (define-key parcel-ui-mode-map (kbd "F")   'parcel-ui-toggle-follow-mode)
@@ -532,13 +561,16 @@ If TOGGLE is non-nil, invert search." name)
 (define-key parcel-ui-mode-map (kbd "U")   'parcel-ui-search-undeclared)
 (define-key parcel-ui-mode-map (kbd "RET") 'parcel-ui-describe-package)
 (define-key parcel-ui-mode-map (kbd "S")   'parcel-ui-search-edit)
-(define-key parcel-ui-mode-map (kbd "b")   'parcel-ui-browse-package)
+(define-key parcel-ui-mode-map (kbd "B")   'parcel-ui-browse-package)
 (define-key parcel-ui-mode-map (kbd "d")   'parcel-ui-mark-delete)
 (define-key parcel-ui-mode-map (kbd "i")   'parcel-ui-mark-install)
 (define-key parcel-ui-mode-map (kbd "r")   'parcel-ui-mark-rebuild)
 (define-key parcel-ui-mode-map (kbd "s")   'parcel-ui-search)
 (define-key parcel-ui-mode-map (kbd "u")   'parcel-ui-unmark)
 (define-key parcel-ui-mode-map (kbd "x")   'parcel-ui-execute-marks)
+(define-key parcel-ui-mode-map (kbd ":")   'parcel-ui-send-input)
+(define-key parcel-ui-mode-map (kbd "v")   'parcel-ui-visit-repo)
+(define-key parcel-ui-mode-map (kbd "b")   'parcel-ui-visit-build)
 
 (provide 'parcel-ui)
 ;;; parcel-ui.el ends here

@@ -27,6 +27,7 @@
 (require 'parcel-ui)
 
 (defconst parcel-status-buffer "*parcel-status*")
+
 (defcustom parcel-status-default-search-query ".*"
   "Default search query for parcel status buffer."
   :type  'string
@@ -104,55 +105,6 @@ If NOSELECT is non-nil, do not make the status buffer current."
     (tabulated-list-init-header)
     (tabulated-list-print 'remember-pos)
     (unless noselect (pop-to-buffer-same-window parcel-status-buffer))))
-
-(defvar parcel-status-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "I") 'parcel-status-mode-send-input)
-    (define-key map (kbd "R") 'parcel-status-mode-visit-repo)
-    (define-key map (kbd "B") 'parcel-status-mode-visit-build)
-    (define-key map (kbd "D") 'parcel-status-delete-package)
-    map))
-
-(define-derived-mode parcel-status-mode parcel-ui-mode "Parcel Status Mode"
-  "Mode for interacting with the parcel status buffer.
-
-  \\{parcel-status-mode-map}")
-
-(defun parcel-status-mode-send-input ()
-  "Send input string to current process."
-  (interactive)
-  (if-let ((order (get-text-property (line-beginning-position) 'order))
-           (process (parcel-order-process order))
-           ((process-live-p process)))
-      (let* ((input (read-string (format "Send input to %S: " (process-name process)))))
-        (process-send-string process (concat input "\n")))
-    (user-error "No running process associated with %S" (parcel-order-package order))))
-
-(defun parcel-status-mode--visit (type)
-  "Visit current order's TYPE dir.
-TYPE is either the symbol `repo` or `build`."
-  (if-let ((order (get-text-property (line-beginning-position) 'order))
-           (dir   (funcall (intern (format "parcel-order-%s-dir" type)) order))
-           ((file-exists-p dir)))
-      (dired dir)
-    (user-error "No %s dir associated with current line" type)))
-
-(defun parcel-status-mode-visit-repo ()
-  "Visit repo associated with current process."
-  (interactive)
-  (parcel-status-mode--visit 'repo))
-
-(defun parcel-status-mode-visit-build ()
-  "Visit builds dir associated with current process."
-  (interactive)
-  (parcel-status-mode--visit 'build))
-
-(defun parcel-status-delete-package (&optional force)
-  "Delete package at point. If FORCE is non-nil, do not confirm."
-  (interactive)
-  (if-let ((package (intern (parcel-order-package
-                             (get-text-property (line-beginning-position) 'order)))))
-      (parcel-delete-package force nil package)))
 
 (provide 'parcel-status)
 ;;; parcel-status.el ends here
