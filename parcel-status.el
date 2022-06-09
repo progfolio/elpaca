@@ -51,9 +51,10 @@
                               (symbol-name status)
                               (parcel-order-info order)))))
 
-(defun parcel-status--header-line (queued)
+(defun parcel-status--header-line (&optional queued)
   "Set `parcel-buffer' header line to reflect QUEUED order statuses."
-  (let* ((queued (or queued (parcel-queue-orders (car parcel--queues))))
+  (let* ((queued (or queued (parcel-queue-orders
+                             (cl-find-if #'parcel-queue-orders parcel--queues))))
          (counts nil)
          (queue-len (length queued)))
     (dolist (q queued)
@@ -98,7 +99,8 @@ If NOSELECT is non-nil, do not make the status buffer current."
       (setq tabulated-list-format [("Package" 30 t) ("Status" 15 t) ("Info" 100 t)]
             tabulated-list-entries #'parcel-status--entries
             parcel-ui-header-line-prefix (propertize "Parcel Status" 'face '(:weight bold))
-            tabulated-list-use-header-line nil))
+            tabulated-list-use-header-line nil
+            header-line-format (parcel-status--header-line)))
     (tabulated-list-init-header)
     (tabulated-list-print 'remember-pos)
     (unless noselect (pop-to-buffer-same-window parcel-status-buffer))))
