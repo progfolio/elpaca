@@ -19,27 +19,26 @@ It then builds and activates parcel.
 #+begin_src emacs-lisp :lexical t
 (declare-function parcel-generate-autoloads "parcel")
 (defvar parcel-directory (expand-file-name "parcel/" user-emacs-directory))
-(let ((parcel-repo (expand-file-name "repos/parcel/" parcel-directory)))
-  (add-to-list 'load-path parcel-repo)
-  (when-let (((not (file-exists-p parcel-repo)))
-             (buffer (get-buffer-create "*parcel-bootstrap*")))
-    (condition-case-unless-debug err
-        (progn
-          (unless (zerop (call-process "git" nil buffer t
-                                       "clone" "git@github.com:progfolio/parcel.git"
-                                       parcel-repo))
-            (error "%s" (list (with-current-buffer buffer (buffer-string)))))
-          (byte-recompile-directory parcel-repo 0 'force)
-          (require 'parcel)
-          (parcel-generate-autoloads "parcel" parcel-repo)
-          (kill-buffer buffer))
-      ((error)
-       (delete-directory parcel-directory 'recursive)
-       (with-current-buffer buffer
-         (goto-char (point-max))
-         (insert (format "\n%S" err))
-         (display-buffer buffer)))))
-  (require 'parcel-autoloads))
+(when-let ((parcel-repo (expand-file-name "repos/parcel/" parcel-directory))
+           (parcel-url  "https://github.com/progfolio/parcel.git")
+           ((add-to-list 'load-path parcel-repo))
+           ((not (file-exists-p parcel-repo)))
+           (buffer (get-buffer-create "*parcel-bootstrap*")))
+  (condition-case-unless-debug err
+      (progn
+        (unless (zerop (call-process "git" nil buffer t "clone" parcel-url parcel-repo))
+          (error "%s" (list (with-current-buffer buffer (buffer-string)))))
+        (byte-recompile-directory parcel-repo 0 'force)
+        (require 'parcel)
+        (parcel-generate-autoloads "parcel" parcel-repo)
+        (kill-buffer buffer))
+    ((error)
+     (delete-directory parcel-directory 'recursive)
+     (with-current-buffer buffer
+       (goto-char (point-max))
+       (insert (format "\n%S" err))
+       (display-buffer buffer)))))
+(require 'parcel-autoloads)
 (add-hook 'after-init-hook #'parcel-process-init)
 #+end_src
 
