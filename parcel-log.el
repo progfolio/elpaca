@@ -55,6 +55,7 @@
                                    ("Time" 20 t)
                                    ("Status" 20 t)
                                    ("Info" 80 t)]
+            parcel-ui--want-faces nil
             parcel-ui-entries-function #'parcel-log--entries
             parcel-ui-header-line-prefix (propertize "Parcel Log" 'face '(:weight bold))
             tabulated-list-use-header-line nil

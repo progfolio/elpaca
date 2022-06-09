@@ -68,6 +68,7 @@ See `run-at-time' for acceptable values."
 (defvar-local parcel-ui--previous-minibuffer-contents ""
   "Keep track of minibuffer contents changes.
 Allows for less debouncing than during `post-command-hook'.")
+(defvar-local parcel-ui--want-faces t "When non-nil, faces are applied to packages.")
 (defvar-local parcel-ui-search-filter nil "Filter for package searches.")
 (defvar-local parcel-ui-search-history nil "List of previous search queries.")
 (defvar-local parcel-ui-header-line-prefix nil "Header line prefix.")
@@ -260,33 +261,34 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
 (defun parcel-ui--apply-faces (buffer)
   "Update entry faces for marked, installed packages in BUFFER.
 Assumes BUFFER in `parcel-ui-mode'."
-  (with-current-buffer buffer
-    (cl-loop
-     for (item . order-or-action) in (append parcel-ui--marked-packages (parcel--queued-orders))
-     for markedp = (not (parcel-order-p order-or-action))
-     do
-     (save-excursion
-       (goto-char (point-min))
-       (let ((continue t))
-         (while (and continue (not (eobp)))
-           (if-let ((package (ignore-errors (parcel-ui-current-package)))
-                    ((eq package item))
-                    (start (line-beginning-position))
-                    (o (if markedp
-                           (make-overlay start (line-end-position))
-                         (make-overlay start (+ start (length (symbol-name item)))))))
-               (let ((face   (when markedp (or (nth 2 order-or-action) 'parcel-ui-marked-package)))
-                     (prefix (when markedp (or (nth 1 order-or-action) "*"))))
-                 (setq continue nil)
-                 (when markedp
-                   (overlay-put o 'before-string  (propertize (concat prefix " ") 'face face)))
-                 (overlay-put o 'face (or face
-                                          (parcel--status-face
-                                           (parcel-order-status order-or-action))))
-                 (overlay-put o 'evaporate t)
-                 (overlay-put o 'priority (if markedp 1 0))
-                 (overlay-put o 'type 'parcel-mark))
-             (forward-line))))))))
+  (when parcel-ui--want-faces
+    (with-current-buffer buffer
+      (cl-loop
+       for (item . order-or-action) in (append parcel-ui--marked-packages (parcel--queued-orders))
+       for markedp = (not (parcel-order-p order-or-action))
+       do
+       (save-excursion
+         (goto-char (point-min))
+         (let ((continue t))
+           (while (and continue (not (eobp)))
+             (if-let ((package (ignore-errors (parcel-ui-current-package)))
+                      ((eq package item))
+                      (start (line-beginning-position))
+                      (o (if markedp
+                             (make-overlay start (line-end-position))
+                           (make-overlay start (+ start (length (symbol-name item)))))))
+                 (let ((face   (when markedp (or (nth 2 order-or-action) 'parcel-ui-marked-package)))
+                       (prefix (when markedp (or (nth 1 order-or-action) "*"))))
+                   (setq continue nil)
+                   (when markedp
+                     (overlay-put o 'before-string  (propertize (concat prefix " ") 'face face)))
+                   (overlay-put o 'face (or face
+                                            (parcel--status-face
+                                             (parcel-order-status order-or-action))))
+                   (overlay-put o 'evaporate t)
+                   (overlay-put o 'priority (if markedp 1 0))
+                   (overlay-put o 'type 'parcel-mark))
+               (forward-line)))))))))
 
 (defun parcel-ui--update-search-filter (&optional buffer query)
   "Update the BUFFER to reflect search QUERY.
