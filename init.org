@@ -191,7 +191,7 @@ I prefer to keep my themes in a sub-folder of =~/.emacs.d=
 I'm working on a theme that is readable and attractive.
 
 #+begin_src emacs-lisp :lexical t
-(setq +theme 'mine)
+(defvar +theme 'mine "Default theme.")
 (require 'cl-lib)
 (require 'custom)
 ;; remove synthetic use-package theme
