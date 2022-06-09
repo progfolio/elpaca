@@ -242,8 +242,6 @@ I want to see the status buffer when doing an initial install.
 Use Evil bindings in status and UI maps
 #+begin_src emacs-lisp :lexical t
 (with-eval-after-load 'evil
-  (with-eval-after-load 'parcel-status
-    (evil-make-intercept-map parcel-status-mode-map))
   (with-eval-after-load 'parcel-ui
     (evil-make-intercept-map parcel-ui-mode-map)))
 #+end_src
