@@ -237,22 +237,20 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                        when filter
                        collect `(,condition (,filter entry))))
         (columns
-         (apply
-          #'append
-          (let* ((cols (cadr parsed))
-                 (match-all-p (= (length cols) 1)))
-            (cl-loop for i from 0 to (length cols)
-                     for column = (delq nil (nth i cols))
-                     collect
-                     (cl-loop for query in column
-                              for negated = (string-prefix-p "!" query)
-                              for condition = (if negated 'unless 'when)
-                              when negated do (setq query (substring query 1))
-                              for target = (if match-all-p '(string-join metadata)
-                                             `(aref metadata ,i))
-                              unless (string-empty-p query)
-                              collect
-                              `(,condition (string-match-p ,query ,target))))))))
+         (let* ((cols (cadr parsed))
+                (match-all-p (= (length cols) 1)))
+           (cl-loop for i from 0 to (length cols)
+                    for column = (delq nil (nth i cols))
+                    append
+                    (cl-loop for query in column
+                             for negated = (string-prefix-p "!" query)
+                             for condition = (if negated 'unless 'when)
+                             when negated do (setq query (substring query 1))
+                             for target = (if match-all-p '(string-join metadata)
+                                            `(aref metadata ,i))
+                             unless (string-empty-p query)
+                             collect
+                             `(,condition (string-match-p ,query ,target)))))))
     `(cl-loop for entry in (funcall parcel-ui-entries-function)
               ,@(when columns '(for metadata = (cadr entry)))
               ,@(apply #'append columns)
