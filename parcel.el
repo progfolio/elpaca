@@ -1402,13 +1402,15 @@ Install the repo/build files on disk.
 Activate the corresponding package for the current session.
 ORDER's package is not made available during subsequent sessions."
   (interactive (list
-                (let ((recipe (parcel-menu-item
-                               nil nil nil
-                               (lambda (candidate)
-                                 (not (parcel-alist-get (car candidate)
-                                                        (parcel--queued-orders)))))))
-                  (append (list (intern (plist-get recipe :package)))
-                          recipe))))
+                (if (equal current-prefix-arg '(4))
+                    (read (format "(%s)" (read-string "parcel-try-package: ")))
+                  (let ((recipe (parcel-menu-item
+                                 nil nil nil
+                                 (lambda (candidate)
+                                   (not (parcel-alist-get (car candidate)
+                                                          (parcel--queued-orders)))))))
+                    (append (list (intern (plist-get recipe :package)))
+                            recipe)))))
   (setq parcel-cache-autoloads nil)
   (parcel-status)
   (dolist (order orders)
