@@ -29,7 +29,7 @@ PROPS is a plist with any of the following recipe keywords:
 (example :host "www.example.com")
   #+end_src
 
-- :repo :: A string of the form ="USER/REPO"=.
+- :repo :: A string of the form =USER/REPO=.
 
 #+begin_src emacs-lisp :lexical t
 (example :host github :repo "user/example")
