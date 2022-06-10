@@ -5,6 +5,87 @@ Parcel is an elisp package manager.
 It allows the user to find, install, update, and remove third-party packages for Emacs.
 It is a replacement for the built-in Emacs package manager, package.el.
 
+* Basic concepts
+** Recipe Format
+:PROPERTIES:
+:CUSTOM_ID: recipe-format
+:END:
+A recipe is a data structure which provides parcel with the metadata necessary to install a package.
+It is represented as a list of the form:
+
+#+begin_src emacs-lisp :lexical t
+(ITEM . PROPS...)
+#+end_src
+
+/ITEM/ is a symbol uniquely identifying the package.
+PROPS is a plist with any of the following recipe keywords:
+
+
+- :host | :fetcher :: A symbol representing the hosting service of the repository.
+
+  #+begin_src emacs-lisp :lexical t
+(example :host github)
+(example :fetcher gitlab)
+(example :host "www.example.com")
+  #+end_src
+
+- :repo :: A string of the form ="USER/REPO"=.
+
+#+begin_src emacs-lisp :lexical t
+(example :host github :repo "user/example")
+#+end_src
+
+- :branch :: The repository branch to check out when installing the package.
+
+#+begin_src emacs-lisp :lexical t
+(example :host github :repo "user/example" :branch "main")
+#+end_src
+
+- :tag :: The tag to check out when installing the package.
+
+#+begin_src emacs-lisp :lexical t
+(example :host github :repo "user/example" :tag "v1.0")
+#+end_src
+
+- :ref :: The [[https://git-scm.com/book/en/v2/Git-Internals-Git-References][git ref]] to check out when installing the package.
+
+  #+begin_src emacs-lisp :lexical t
+(example :host github :repo "user/example" :ref "a76ca0a") ;; Check out a specific commit.
+  #+end_src
+
+- :depth :: Package repository's history depth.
+
+  #+begin_src emacs-lisp :lexical t
+(example :depth 1) ;; Shallow clone with history truncated to 1 commit.
+(example :depth nil) ;; Full repository clone.
+  #+end_src
+
+- :remotes :: A list of repository [[https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes][remotes]].
+The first element is the default remote when installing package.
+If it is a string, it is used to name the default remote.
+The remaining elements are lists of the form:
+
+#+begin_src emacs-lisp :lexical t
+(NAME PROPS...)
+#+end_src
+
+/NAME/ is a string used to name the remote.
+/PROPS/ are recipe keyword/value pairs used to override values previously declared in the recipe.
+
+#+begin_src emacs-lisp :lexical t
+(example :remotes ("origin"))
+#+end_src
+
+#+begin_src emacs-lisp :lexical t
+(example :host github :repo "original/example"
+         :remotes ("origin"
+                   ("fork" :host gitlab :repo "user/example-fork.el")))
+#+end_src
+
+
+** Menus
+** Order
+** Queues
 * Installation
 ** Requirements
 - Emacs >= 27.1
@@ -44,18 +125,65 @@ It then builds and activates parcel.
 
 * Installing Packages
 
+- parcel :: =(order &rest body)=
+Installs /ORDER/ and executes /BODY/ after processing the order queue.
+
+/ORDER/ is a symbol for which a menu =parcel-menu-functions= will provide a recipe,
+or a recipe of the form:
+
+#+begin_src emacs-lisp :lexical t
+(ITEM PROPS...)
+#+end_src
+
+/ITEM/ is a unique symbol to identify the order and PROPS are recipe key/val pairs.
+See [[#recipe-format][recipe format]] for a full list of the recipe keywords.
+
+This macro is for programmatic use in one's init file.
+Any of the following will install the "example" package:
+
+#+begin_src emacs-lisp :lexical t
+(parcel example) ;; recipe looked up in `parcel-menu-functions'.
+#+end_src
+
+#+begin_src emacs-lisp :lexical t
+(parcel example (message "Messaged after the order's queue has processed."))
+#+end_src
+
+#+begin_src emacs-lisp :lexical t
+(parcel (example :host github :repo "user/example"))
+#+end_src
+
+#+begin_src emacs-lisp :lexical t
+(parcel `(example :host github :repo "user/example"
+                  ,@(when (eq system-type 'darwin) ;; backqouting supported
+                      (list :pre-build ((message "Mac specific pre-build"))))))
+
+#+end_src
+
+
+
 * Finding, Updating, Removing Packages
 The =parcel-manger= command will focus the parcel manager buffer.
 From this buffer you can search and act on all the packages parcel knows about.
 
 The following commands are available in the parcel-manager-buffer:
 
-| Command                  | Default Key Binding | Action                               | Region aware? |
-|--------------------------+---------------------+--------------------------------------+---------------|
-| parcel-ui-mark-install   | i                   | mark package for installation        | yes           |
-| parcel-ui-mark-delete    | d                   | mark package for deletion            | yes           |
-| parcel-ui-mark-rebuild   | r                   | mark package for rebuilding          | yes           |
-| parcel-ui-unmark         | u                   | remove package mark                  | yes           |
-| parcel-ui-browse-package | b                   | open package's website in browser    | no            |
-| parcel-ui-execute-marks  | x                   | execute each marked package's action | n/a           |
-
+| Command                     | Default Binding | Action                                                                           | Region aware? |
+|-----------------------------+-----------------+----------------------------------------------------------------------------------+---------------|
+| parcel-ui-send-input        | :               | Prompt for input to send to package's current subprocess                         | no            |
+| parcel-ui-browse-package    | B               | Open package's website via =browse-url=                                          | no            |
+| parcel-ui-search-installed  | I               | Show all Installed packages                                                      | no            |
+| parcel-ui-search-marked     | M               | Show all currently marked packages                                               | no            |
+| parcel-ui-search-orphans    | O               | Show packages which are on disk but not in use during the current Emacs session  | no            |
+| parcel-ui-search-previous   | P               | Search for the last search entered in the minibuffer                             | no            |
+| parcel-ui-search-refresh    | R               | Refresh the view for the current search                                          | no            |
+| parcel-ui-search-edit       | S               | Edit the current search                                                          | no            |
+| parcel-ui-search-undeclared | U               | Show packages installed packages which were not declared in the user's init file | no            |
+| parcel-ui-visit-build       | b               | Visit the current package's build directory via =dired=                          | no            |
+| parcel-ui-mark-delete       | d               | Mark the current package for deletion                                            | yes           |
+| parcel-ui-mark-install      | i               | Mark the current package for installation                                        | yes           |
+| parcel-ui-mark-rebuild      | r               | Mark the current package for rebuilding                                          | yes           |
+| parcel-ui-search            | s               | Filter the current table via a minibuffer search                                 | no            |
+| parcel-ui-unmark            | u               | Unmark the current package                                                       | yes           |
+| parcel-ui-visit-repo        | v               | Visit the current package's repository via =dired=                               | no            |
+| parcel-ui-execute-marks     | x               | Execute marked package's actions                                                 | no            |
