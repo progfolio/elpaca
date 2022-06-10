@@ -410,11 +410,10 @@ The action's function is passed the name of the package as its sole argument."
       (parcel-ui--apply-faces (current-buffer))))
   (forward-line))
 
-(defun parcel-ui-toggle-mark (&optional test action)
+(defun parcel-ui--toggle-mark (&optional test action)
   "Toggle ACTION mark for current package.
 TEST is a unary function evaluated prior to toggling the mark.
 The current package is its sole argument."
-  (interactive)
   (if-let ((package (parcel-ui-current-package)))
       (progn
         (when test (funcall test package))
@@ -430,7 +429,7 @@ The current package is its sole argument."
      ,(format "Mark package for %s." name)
      (interactive)
      (if (not (use-region-p))
-         (parcel-ui-toggle-mark ,test ,name)
+         (parcel-ui--toggle-mark ,test ,name)
        (save-excursion
          (save-restriction
            (narrow-to-region (save-excursion (goto-char (region-beginning))
@@ -439,7 +438,7 @@ The current package is its sole argument."
            (goto-char (point-min))
            (while (not (eobp))
              (condition-case _
-                 (parcel-ui-toggle-mark ,test ,name)
+                 (parcel-ui--toggle-mark ,test ,name)
                ((error) (forward-line)))))))))
 
 (parcel-ui-defmark "rebuild"
@@ -551,7 +550,6 @@ TYPE is either the symbol `repo` or `build`."
   (parcel-ui--visit 'build))
 
 ;;;; Key bindings
-(define-key parcel-ui-mode-map (kbd "*")   'parcel-ui-toggle-mark)
 (define-key parcel-ui-mode-map (kbd "F")   'parcel-ui-toggle-follow-mode)
 (define-key parcel-ui-mode-map (kbd "I")   'parcel-ui-search-installed)
 (define-key parcel-ui-mode-map (kbd "M")   'parcel-ui-search-marked)
