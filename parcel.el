@@ -224,10 +224,6 @@ e.g. elisp forms may be printed via `prin1'."
   "\\(?:[[:space:]]*;+[[:space:]]*Package-Requires:[[:space:]]*\\(([^z-a]*?))\\)\\)"
   "Regexp matching the Package-Requires metadata in an elisp source file.")
 
-(defvar parcel-recipe-keywords '( :branch :depth :fork :host :nonrecursive :package
-                                  :post-build :pre-build :protocol :remote :repo)
-  "Recognized parcel recipe keywords.")
-
 (defvar parcel--queues nil
   "List of parcel queue objects.")
 
