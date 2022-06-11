@@ -352,6 +352,7 @@ The global definer allows me to use a leader key in most states.
  :global-prefix "S-SPC")
 
 (general-create-definer global-definer
+  :wk-full-keys nil
   :keymaps '+prefix-map)
 #+end_src
 
@@ -384,15 +385,16 @@ And a macro to ease the creation of nested menu bindings:
   "Create a definer named +general-global-NAME wrapping global-definer.
 Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY."
   (declare (indent 2))
-  `(progn
-     (general-create-definer ,(intern (concat "+general-global-" name))
-       :wrapping global-definer
-       :prefix-map (quote ,(intern (concat "+general-global-" name "-map")))
-       :infix ,infix-key
-       :wk-full-keys nil
-       "" '(:ignore t :which-key ,name))
-     (,(intern (concat "+general-global-" name))
-      ,@body)))
+  (let* ((n (concat "+general-global-" name))
+         (prefix (intern (concat n "-map"))))
+    `(progn
+       (general-create-definer ,(intern n)
+         :wrapping global-definer
+         :prefix-map (quote ,prefix)
+         :infix ,infix-key
+         :wk-full-keys nil
+         "" '(:ignore t :which-key ,name))
+       (,(intern n) ,@body))))
 #+end_src
 **** applications
 #+begin_src emacs-lisp :lexical t
