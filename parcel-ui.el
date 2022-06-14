@@ -106,6 +106,9 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                     (concat " " (propertize "Tags:" 'face 'parcel-failed) " "
                             (string-join tags ", ")))))))
 
+;;@TODO: Should be invereted.
+;; Take all build/repo dirs and search against known orders.
+;; ...but this does not operate off of the ITEM API...
 (defun parcel-ui--orphan-p (item)
   "Return non-nil if ITEM's repo or build are on disk without having been queued."
   (let ((queued-orders (parcel--queued-orders)))
