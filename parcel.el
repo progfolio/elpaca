@@ -1634,25 +1634,22 @@ If FORCE is non-nil,."
   (interactive "fLockfile: ")
   (message "%S" lockfile))
 
-(defun parcel-write-lockfile (&optional path)
+(defun parcel-write-lockfile (path)
   "Write lockfile to PATH for current state of package repositories."
   (interactive "FWrite lockfile to: ")
-  (unless path (user-error "Need file PATH"))
   (let* ((seen)
          (revisions
           (nreverse
-           (cl-loop for queue in parcel--queues
-                    append
-                    (cl-loop for (item . order) in (parcel-queue-orders queue)
-                             unless (member item seen)
-                             for rev =
-                             (let ((default-directory (parcel-order-repo-dir order)))
-                               (parcel-with-process
-                                   (parcel-process-call "git" "rev-parse" "HEAD")
-                                 (when success (string-trim stdout))))
-                             when rev
-                             collect (cons item (plist-put (copy-tree (parcel-order-recipe order)) :ref rev))
-                             do (push item seen))))))
+           (cl-loop for (item . order) in (parcel--queued-orders)
+                    unless (member item seen)
+                    for rev =
+                    (let ((default-directory (parcel-order-repo-dir order)))
+                      (parcel-with-process
+                          (parcel-process-call "git" "rev-parse" "HEAD")
+                        (when success (string-trim stdout))))
+                    when rev
+                    collect (cons item (plist-put (copy-tree (parcel-order-recipe order)) :ref rev))
+                    do (push item seen)))))
     (parcel--write-file path (pp revisions))))
 
 (provide 'parcel)
