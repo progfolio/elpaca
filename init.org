@@ -398,7 +398,12 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
 #+end_src
 **** applications
 #+begin_src emacs-lisp :lexical t
-(+general-global-menu! "application" "a")
+(+general-global-menu! "application" "a"
+  "p" '(:ignore t "parcel")
+  "pm" 'parcel-manager
+  "pl" 'parcel-log
+  "ps" 'parcel-status
+  "pt" 'parcel-try-package)
 #+end_src
 **** buffers
 #+begin_src emacs-lisp :lexical t
