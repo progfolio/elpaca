@@ -72,6 +72,7 @@ If RECACHE is non-nil, recompute menu items from `parcel-menu-item-functions'."
             parcel-ui-entries-function #'parcel-manager--entries
             parcel-ui-header-line-prefix (propertize "Parcel Manager" 'face '(:weight bold))
             tabulated-list-use-header-line nil)
+      (setq-local bookmark-make-record-function #'parcel-manager-bookmark-make-record)
       (tabulated-list-init-header)
       (parcel-ui--update-search-filter (current-buffer) parcel-manager-default-search-query))
     (pop-to-buffer-same-window parcel-manager-buffer)))
@@ -82,9 +83,9 @@ If RECACHE is non-nil, recompute menu items from `parcel-menu-item-functions'."
 (defun parcel-manager--bookmark-handler (record)
   "Open a bookmarked search RECORD."
   (parcel-manager)
+  (pop-to-buffer-same-window parcel-manager-buffer)
   (setq parcel-ui-search-filter (bookmark-prop-get record 'query))
-  (parcel-ui-search-refresh)
-  (pop-to-buffer-same-window (get-buffer-create parcel-manager-buffer)))
+  (parcel-ui-search-refresh))
 
 (defun parcel-manager-bookmark-make-record ()
   "Return a bookmark record for the current `parcel-ui-search-filter'."
@@ -97,8 +98,6 @@ If RECACHE is non-nil, recompute menu items from `parcel-menu-item-functions'."
           (cons 'query parcel-ui-search-filter)
           (cons 'defaults nil))))
 
-;;@TODO: enable in manager minor mode...
-;;(setq-local bookmark-make-record-function #'parcel-ui-bookmark-make-record)
 
 (provide 'parcel-manager)
 ;;; parcel-manager.el ends here
