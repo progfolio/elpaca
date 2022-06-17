@@ -341,56 +341,45 @@ This is faster (what you want with non-interactive calls)."
     (run-hook-with-args 'parcel-menu-functions 'update))
   (parcel-menu--candidates 'recache))
 
-(defsubst parcel--inheritance-disabled-p (plist)
-  "Return t if PLIST explicitly has :inherit nil key val, nil otherwise."
-  (when-let ((member (plist-member plist :inherit)))
+(defsubst parcel--inheritance-disabled-p (obj)
+  "Return t if OBJ explicitly has :inherit nil key val, nil otherwise."
+  (when-let (((listp obj))
+             (member (plist-member obj :inherit)))
     (not (cadr member))))
 
 ;;;###autoload
-(defun parcel-recipe (&optional item)
-  "Return recipe computed from ITEM.
-ITEM is any of the following values:
+(defun parcel-recipe (order)
+  "Return recipe computed from ORDER.
+ORDER is any of the following values:
   - nil. The order is prompted for.
-  - a symbol which will be looked up via `parcel-menu-functions'
-  - an order list."
-  (interactive)
-  (let ((parcel-overriding-prompt "Recipe: ")
-        (interactive (called-interactively-p 'interactive))
-        package
-        ingredients)
-    (cond
-     ((or (null item) (symbolp item))
-      (let ((menu-item (parcel-menu-item nil item nil nil (not interactive))))
-        (unless menu-item (user-error "No menu-item for %S" item))
-        (when parcel-order-functions
-          (push (run-hook-with-args-until-success 'parcel-order-functions item)
-                ingredients))
-        (push menu-item ingredients)))
-     ((listp item)
-      (setq package (pop item))
-      (unless (parcel--inheritance-disabled-p item)
-        (when-let ((parcel-order-functions)
-                   (mods (run-hook-with-args-until-success 'parcel-order-functions item)))
-          (push mods ingredients)
-          (when (or (plist-get item :inherit) (plist-get mods :inherit))
-            (push (parcel-menu-item nil package nil nil 'no-descriptions) ingredients))))
-      (push item ingredients)
-      (setq ingredients (nreverse ingredients)))
-     (t (signal 'wrong-type-argument `((null symbolp listp) . ,item))))
-    (if-let ((recipe (apply #'parcel-merge-plists ingredients)))
-        (progn
-          (unless (plist-get recipe :package)
-            (setq recipe (plist-put recipe :package (format "%S" package))))
-          (when-let ((parcel-recipe-functions)
-                     (recipe-mods (run-hook-with-args-until-success
-                                   'parcel-recipe-functions recipe)))
-            (setq recipe (parcel-merge-plists recipe recipe-mods)))
-          (if interactive
-              (progn
-                (kill-new (format "%S" recipe))
-                (message "%S recipe copied to kill-ring:\n%S" (plist-get recipe :package) recipe))
-            recipe))
-      (when interactive (user-error "No recipe for %S" package)))))
+  - an item symbol which will be looked up via `parcel-menu-functions'
+  - an order list of the form: //='(ITEM . PROPS)."
+  (interactive (list (if-let ((parcel-overriding-prompt "Recipe: ")
+                              (recipe (parcel-menu-item)))
+                         (push (intern (plist-get recipe :package)) recipe)
+                       (user-error "No recipe selected"))))
+  (let* ((interactive (called-interactively-p 'interactive))
+         (props (cdr-safe order))
+         (item (if (listp order) (car order) order))
+         (nonheritablep (parcel--inheritance-disabled-p props))
+         (mods (unless nonheritablep (run-hook-with-args-until-success
+                                      'parcel-order-functions order)))
+         (menu-item (unless (or interactive ;; we already queried for this.
+                                (parcel--inheritance-disabled-p
+                                 (parcel-merge-plists
+                                  mods (plist-member props :inherit))))
+                      (parcel-menu-item nil item nil nil 'no-descriptions)))
+         (recipe (parcel-merge-plists menu-item mods props)))
+    (unless (plist-get recipe :package)
+      (setq recipe (plist-put recipe :package (symbol-name item))))
+    (when-let ((recipe-mods (run-hook-with-args-until-success
+                             'parcel-recipe-functions recipe)))
+      (setq recipe (parcel-merge-plists recipe recipe-mods)))
+    (if (not interactive)
+        recipe
+      (kill-new (format "%S" recipe))
+      (message "%S recipe copied to kill-ring:\n%S"
+               (plist-get recipe :package) recipe))))
 
 (defsubst parcel--emacs-path ()
   "Return path to running Emacs."
