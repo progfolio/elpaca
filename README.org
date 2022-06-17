@@ -1,27 +1,94 @@
-#+title: Parcel: An Elisp Package Manager
+#+title: Elpaca: An Elisp Package Manager
 #+author: Nicholas Vollmer
-* What is Parcel?
-Parcel is an elisp package manager.
+#+options: exports:both
+[[./elpaca.gif]]
+* What is Elpaca?
+Elpaca is an elisp package manager.
 It allows the user to find, install, update, and remove third-party packages for Emacs.
 It is a replacement for the built-in Emacs package manager, package.el.
-
-* Basic concepts
-** Recipe Format
-:PROPERTIES:
-:CUSTOM_ID: recipe-format
-:END:
-A recipe is a data structure which provides parcel with the metadata necessary to install a package.
-It is represented as a list of the form:
+* Installation
+** Requirements
+- Emacs >= 27.1
+- git (min version TBD)
+- Windows users must be able to create symlinks.
+** Bootstrap Snippet
+To install elpaca, add the following bootstrapping snippet to your init.el.
+It must come before any calls to other elpaca functions/macros.
+This will clone elpaca into your =user-emacs-directory= under the =elpaca= subdirectory.
+It then builds and activates elpaca.
 
 #+begin_src emacs-lisp :lexical t
-(ITEM . PROPS...)
+(declare-function elpaca-generate-autoloads "elpaca")
+(defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
+(when-let ((elpaca-repo (expand-file-name "repos/elpaca/" elpaca-directory))
+           (elpaca-url  "https://github.com/progfolio/elpaca.git")
+           ((add-to-list 'load-path elpaca-repo))
+           ((not (file-exists-p elpaca-repo)))
+           (buffer (get-buffer-create "*elpaca-bootstrap*")))
+  (condition-case-unless-debug err
+      (progn
+        (unless (zerop (call-process "git" nil buffer t "clone" elpaca-url elpaca-repo))
+          (error "%s" (list (with-current-buffer buffer (buffer-string)))))
+        (byte-recompile-directory elpaca-repo 0 'force)
+        (require 'elpaca)
+        (elpaca-generate-autoloads "elpaca" elpaca-repo)
+        (kill-buffer buffer))
+    ((error)
+     (delete-directory elpaca-directory 'recursive)
+     (with-current-buffer buffer
+       (goto-char (point-max))
+       (insert (format "\n%S" err))
+       (display-buffer buffer)))))
+(require 'elpaca-autoloads)
+(add-hook 'after-init-hook #'elpaca-process-init)
+#+end_src
+
+* Basic concepts
+** Notes
+
+The =elpaca-example= macro in the following examples reduces verbosity.
+It is not part of elpaca.
+
+#+begin_src emacs-lisp :lexical t :exports none :results silent
+(defun elpaca-example-sort-plist (plist)
+  "Return copy of PLIST with :package followed by lexically sorted kew/val pairs."
+  `(:package ,(plist-get plist :package)
+             ,@(cl-loop for k in (cl-sort (cl-loop for key in plist by #'cddr
+                                                   unless (eq key :package) collect key)
+                                          #'string< :key #'symbol-name)
+                        append (list k (plist-get plist k)))))
+
+(defmacro elpaca-example (&rest body)
+  "Execute BODY with a clean elpaca environment."
+  `(let (elpaca-cache-menu-items
+         elpaca-order-functions
+         elpaca-recipe-functions
+         (elpaca-menu-functions '(elpaca-example-menu)))
+     (elpaca-example-sort-plist ,@body)))
+#+end_src
+
+Examples will use the following [[#menus][recipe menu]], which offers a "burger" package recipe:
+
+#+begin_src emacs-lisp :lexical t :results silent
+(defun elpaca-example-menu (_)
+  '((burger . (:recipe (:buns 2 :lettuce t :tomato t :beef t :cheese t :cook well-done)))))
+#+end_src
+
+** Recipes
+:PROPERTIES:
+:CUSTOM_ID: recipes
+:END:
+A recipe provides elpaca with the metadata necessary to build and install a package.
+It is a list of the form:
+
+#+begin_src emacs-lisp :lexical t
+(ITEM . PROPS)
 #+end_src
 
 /ITEM/ is a symbol uniquely identifying the package.
-PROPS is a plist with any of the following recipe keywords:
+/PROPS/ is a plist with any of the following recipe keywords:
 
-
-- :host | :fetcher :: A symbol representing the hosting service of the repository.
+- :host | :fetcher :: A symbol or string representing the hosting service of the repository.
 
   #+begin_src emacs-lisp :lexical t
 (example :host github)
@@ -61,12 +128,12 @@ PROPS is a plist with any of the following recipe keywords:
   #+end_src
 
 - :remotes :: A list of repository [[https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes][remotes]].
-The first element is the default remote when installing package.
-If it is a string, it is used to name the default remote.
+The first element is the default remote when installing the package.
+If it is a string, it names the default remote.
 The remaining elements are lists of the form:
 
 #+begin_src emacs-lisp :lexical t
-(NAME PROPS...)
+(NAME . PROPS)
 #+end_src
 
 /NAME/ is a string used to name the remote.
@@ -82,108 +149,208 @@ The remaining elements are lists of the form:
                    ("fork" :host gitlab :repo "user/example-fork.el")))
 #+end_src
 
+- :main :: The name of the main elisp file.
+  When provided this can speed up the process of cloning and loading a package's dependencies.
+
+  #+begin_src emacs-lisp :lexical t
+(example :main "example.el")
+  #+end_src
+
+- :build :: A list of build steps, nil or t.
+  If the list starts with the symbol =:not=. The set difference of =elpaca-default-build-steps= and the remaining elements of the list are used.
+
+  #+begin_src emacs-lisp :lexical t
+(example :build (:not autoloads))
+  #+end_src
+
+- :inherit :: When non-nil, inherit /PROPS/ from =elpaca-order-functions= and possibly =elpaca-menu-functions=.
+  For example, without inheritance:
+#+name: recipe-inheritance-nil
+#+begin_src emacs-lisp :lexical t :results raw code :exports both
+(elpaca-example (elpaca-recipe '(burger :inherit nil)))
+#+end_src
+
+returns the recipe as declared:
+
+#+results: recipe-inheritance-nil
+#+begin_src emacs-lisp
+(:package "burger" :inherit nil)
+#+end_src
+
+With inheritance enabled:
+#+name: recipe-inheritance-menu
+#+begin_src emacs-lisp :lexical t :results raw code :exports both
+(elpaca-example (elpaca-recipe '(burger :inherit t)))
+#+end_src
+
+The elpaca-example-menu provides the rest of the "burger" recipe.
+
+#+results: recipe-inheritance-menu
+#+begin_src emacs-lisp
+(:package "burger" :beef t :buns 2 :cheese t :cook well-done :inherit t :lettuce t :tomato t)
+#+end_src
+
+The declared recipe's keywords take precedence over the inherited keywords.
+#+name: recipe-inheritance-precedence
+#+begin_src emacs-lisp :lexical t :results raw code :exports both
+(elpaca-example (elpaca-recipe '(burger :inherit t :beef nil :turkey t)))
+#+end_src
+
+#+results: recipe-inheritance-precedence
+#+begin_src emacs-lisp
+(:package "burger" :beef nil :buns 2 :cheese t :cook well-done :inherit t :lettuce t :tomato t :turkey t)
+#+end_src
+
+*** elpaca-recipe-functions
+:PROPERTIES:
+:CUSTOM_ID: elpaca-recipe-functions
+:END:
+The abnormal hook =elpaca-recipe-functions= runs via =run-hook-with-args-until-success= just before installing the package.
+Each function in the list should accept the current recipe as its sole argument and return either nil or a plist.
+The first function to return a plist has its return value merged with the current recipe.
+
+This is useful if you want to guarantee the values of certain keywords despite allowing recipe inheritance.
+
+#+name: recipe-functions-example
+#+begin_src emacs-lisp :lexical t :exports both :results raw code
+(elpaca-example
+ (let ((elpaca-recipe-functions
+        '((lambda (recipe)
+            "If a recipe calls for cheese, I always want extra."
+            (when (plist-get recipe :cheese) (list :cheese 'extra))))))
+   (elpaca-recipe '(burger))))
+#+end_src
+
+#+results: recipe-functions-example
+#+begin_src emacs-lisp
+(:package "burger" :beef t :buns 2 :cheese extra :cook well-done :lettuce t :tomato t)
+#+end_src
 
 ** Menus
-** Order
-** Queues
-* Installation
-** Requirements
-- Emacs >= 27.1
-- git (min version TBD)
-- Windows users must be able to create symlinks.
-** Bootstrap Snippet
-To install parcel, add the following bootstrapping snippet to your init.el.
-It must come before any calls to other parcel functions/macros.
-This will clone parcel into your =user-emacs-directory= under the =parcel= subdirectory.
-It then builds and activates parcel.
-
+:PROPERTIES:
+:CUSTOM_ID: menus
+:END:
+A menu is a function which returns an alist of the form:
 #+begin_src emacs-lisp :lexical t
-(declare-function parcel-generate-autoloads "parcel")
-(defvar parcel-directory (expand-file-name "parcel/" user-emacs-directory))
-(when-let ((parcel-repo (expand-file-name "repos/parcel/" parcel-directory))
-           (parcel-url  "https://github.com/progfolio/parcel.git")
-           ((add-to-list 'load-path parcel-repo))
-           ((not (file-exists-p parcel-repo)))
-           (buffer (get-buffer-create "*parcel-bootstrap*")))
-  (condition-case-unless-debug err
-      (progn
-        (unless (zerop (call-process "git" nil buffer t "clone" parcel-url parcel-repo))
-          (error "%s" (list (with-current-buffer buffer (buffer-string)))))
-        (byte-recompile-directory parcel-repo 0 'force)
-        (require 'parcel)
-        (parcel-generate-autoloads "parcel" parcel-repo)
-        (kill-buffer buffer))
-    ((error)
-     (delete-directory parcel-directory 'recursive)
-     (with-current-buffer buffer
-       (goto-char (point-max))
-       (insert (format "\n%S" err))
-       (display-buffer buffer)))))
-(require 'parcel-autoloads)
-(add-hook 'after-init-hook #'parcel-process-init)
+((ITEM . DATA)...)
 #+end_src
 
+/ITEM/ is a symbol uniquely identifying a package.
+/DATA/ is a plist of metadata about the package.
+/DATA/ must contain the following keywords:
+
+- :recipe :: A package [[#recipes][recipe.]]
+- :source :: A string naming the menu.
+
+It may also additionally provide keywords to provide more information about a package.
+For example, Elpaca's UI utilizes the following keywords when present:
+
+- :url :: A URL to the package's website.
+- :description :: A description of the package.
+- :date :: Time of the last update to the package.
+
+The function must accept one the following /REQUEST/ symbols as an argument:
+
+- index :: Return the alist described above
+- update :: update the menu's alist.
+
+#+begin_src emacs-lisp :lexical t
+(defun elpaca-menu-minimal (request_)
+  "A minimal menu example.
+Ignore REQUEST, as this is a static, curated list of packages."
+  '((example :source "EXAMPLE" :recipe (example :host github :repo "user/example"))
+    (two :source "EXAMPLE" :recipe (two :host gitlab :repo "user/two"))))
+#+end_src
+
+Menus allow one to offer Elpaca users
+
+*** elpaca-menu-functions
+The =elpaca-menu-functions= variable contains menus for the following package sources by default:
+
+- [[https://www.github.com/melpa/melpa][MELPA]]
+- [[https://git.savannah.gnu.org/cgit/emacs/org-mode.git/][Org]]
+- [[https://git.sr.ht/~bzg/org-contrib][Org-contrib]]
+- [[https://www.github.com/emacs-straight/gnu-elpa-mirror][GNU ELPA Mirror]]
+- [[https://elpa.nongnu.org][NonGNU Elpa]]
+
+Menus are checked until one returns a menu item or the list is exhausted. 
+
+** Orders
+:PROPERTIES:
+:CUSTOM_ID: orders
+:END:
+
+An order is a partial or full recipe provided to elpaca.
+At a minimum, an order is a symbol:
+
+#+begin_src emacs-lisp :lexical t
+(elpaca 'example)
+#+end_src
+
+In this case, the
+*** elpaca-order-functions
+The abnormal hook =elpaca-order-functions= runs via =run-hook-with-args-until-success= before
+Each function in the list should accept the current recipe as its sole argument and return either nil or a plist.
+The first function to return a plist has its return value merged with the current recipe.
+
+This is useful if you want to guarantee the values of certain keywords despite allowing recipe inheritance.
+
+** Queues
 * Installing Packages
 
-- parcel :: =(order &rest body)=
+- elpaca :: =(order &rest body)=
 Installs /ORDER/ and executes /BODY/ after processing the order queue.
 
-/ORDER/ is a symbol for which a menu =parcel-menu-functions= will provide a recipe,
+/ORDER/ is a symbol for which a menu =elpaca-menu-functions= will provide a recipe,
 or a recipe of the form:
 
-#+begin_src emacs-lisp :lexical t
-(ITEM PROPS...)
-#+end_src
 
 /ITEM/ is a unique symbol to identify the order and PROPS are recipe key/val pairs.
-See [[#recipe-format][recipe format]] for a full list of the recipe keywords.
+See [[#recipes][recipe format]] for a full list of the recipe keywords.
 
 This macro is for programmatic use in one's init file.
 Any of the following will install the "example" package:
 
 #+begin_src emacs-lisp :lexical t
-(parcel example) ;; recipe looked up in `parcel-menu-functions'.
+(elpaca example) ;; recipe looked up in `elpaca-menu-functions'.
 #+end_src
 
 #+begin_src emacs-lisp :lexical t
-(parcel example (message "Messaged after the order's queue has processed."))
+(elpaca example (message "Messaged after the order's queue has processed."))
 #+end_src
 
 #+begin_src emacs-lisp :lexical t
-(parcel (example :host github :repo "user/example"))
+(elpaca (example :host github :repo "user/example"))
 #+end_src
 
 #+begin_src emacs-lisp :lexical t
-(parcel `(example :host github :repo "user/example"
+(elpaca `(example :host github :repo "user/example"
                   ,@(when (eq system-type 'darwin) ;; backqouting supported
                       (list :pre-build ((message "Mac specific pre-build"))))))
-
 #+end_src
 
-
-
 * Finding, Updating, Removing Packages
-The =parcel-manger= command will focus the parcel manager buffer.
-From this buffer you can search and act on all the packages parcel knows about.
+The =elpaca-manger= command will focus the elpaca manager buffer.
+From this buffer you can search and act on all the packages elpaca knows about.
 
-The following commands are available in the parcel-manager-buffer:
+The following commands are available in the elpaca-manager-buffer:
 
 | Command                     | Default Binding | Action                                                                           | Region aware? |
 |-----------------------------+-----------------+----------------------------------------------------------------------------------+---------------|
-| parcel-ui-send-input        | :               | Prompt for input to send to package's current subprocess                         | no            |
-| parcel-ui-browse-package    | B               | Open package's website via =browse-url=                                          | no            |
-| parcel-ui-search-installed  | I               | Show all Installed packages                                                      | no            |
-| parcel-ui-search-marked     | M               | Show all currently marked packages                                               | no            |
-| parcel-ui-search-orphans    | O               | Show packages which are on disk but not in use during the current Emacs session  | no            |
-| parcel-ui-search-previous   | P               | Search for the last search entered in the minibuffer                             | no            |
-| parcel-ui-search-refresh    | R               | Refresh the view for the current search                                          | no            |
-| parcel-ui-search-edit       | S               | Edit the current search                                                          | no            |
-| parcel-ui-search-undeclared | U               | Show packages installed packages which were not declared in the user's init file | no            |
-| parcel-ui-visit-build       | b               | Visit the current package's build directory via =dired=                          | no            |
-| parcel-ui-mark-delete       | d               | Mark the current package for deletion                                            | yes           |
-| parcel-ui-mark-install      | i               | Mark the current package for installation                                        | yes           |
-| parcel-ui-mark-rebuild      | r               | Mark the current package for rebuilding                                          | yes           |
-| parcel-ui-search            | s               | Filter the current table via a minibuffer search                                 | no            |
-| parcel-ui-unmark            | u               | Unmark the current package                                                       | yes           |
-| parcel-ui-visit-repo        | v               | Visit the current package's repository via =dired=                               | no            |
-| parcel-ui-execute-marks     | x               | Execute marked package's actions                                                 | no            |
+| elpaca-ui-send-input        | :               | Prompt for input to send to package's current subprocess                         | no            |
+| elpaca-ui-browse-package    | B               | Open package's website via =browse-url=                                            | no            |
+| elpaca-ui-search-installed  | I               | Show all Installed packages                                                      | no            |
+| elpaca-ui-search-marked     | M               | Show all currently marked packages                                               | no            |
+| elpaca-ui-search-orphans    | O               | Show packages which are on disk but not in use during the current Emacs session  | no            |
+| elpaca-ui-search-previous   | P               | Search for the last search entered in the minibuffer                             | no            |
+| elpaca-ui-search-refresh    | R               | Refresh the view for the current search                                          | no            |
+| elpaca-ui-search-edit       | S               | Edit the current search                                                          | no            |
+| elpaca-ui-search-undeclared | U               | Show packages installed packages which were not declared in the user's init file | no            |
+| elpaca-ui-visit-build       | b               | Visit the current package's build directory via =dired=                            | no            |
+| elpaca-ui-mark-delete       | d               | Mark the current package for deletion                                            | yes           |
+| elpaca-ui-mark-install      | i               | Mark the current package for installation                                        | yes           |
+| elpaca-ui-mark-rebuild      | r               | Mark the current package for rebuilding                                          | yes           |
+| elpaca-ui-search            | s               | Filter the current table via a minibuffer search                                 | no            |
+| elpaca-ui-unmark            | u               | Unmark the current package                                                       | yes           |
+| elpaca-ui-visit-repo        | v               | Visit the current package's repository via =dired=                                 | no            |
+| elpaca-ui-execute-marks     | x               | Execute marked package's actions                                                 | no            |
