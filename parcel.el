@@ -260,13 +260,10 @@ Values for each key are that of the right-most plist containing that key."
 
 ;;@TODO:
 ;;- allow passing in menu functions.
-;;- changing parcel-menu-functions should invalidate the cache.
-;;  Otherwise lexically binding it will not work as expected.
-;;  unless we bind that as well...
 (defun parcel-menu--candidates (&optional recache)
   "Return alist of `parcel-menu-functions' candidates.
 If RECACHE is non-nil, recompute `parcel-menu--candidates-cache'."
-  (or (and (not recache) parcel-menu--candidates-cache)
+  (or (and (not recache) parcel-cache-menu-items parcel-menu--candidates-cache)
       (prog1
           (setq parcel-menu--candidates-cache
                 (sort (copy-tree
