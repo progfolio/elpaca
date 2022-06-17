@@ -287,7 +287,7 @@ If it returns nil, the candidate is not considered for selection.
 If NO-DESCRIPTIONS is non-nil, candidate descriptions are not included.
 This is faster (what you want with non-interactive calls)."
   (interactive "P")
-  (let* ((menus (if interactive
+  (let* ((menus (if (eq interactive '(4))
                     (mapcar #'intern-soft
                             (cl-remove-duplicates
                              (completing-read-multiple
