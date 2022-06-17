@@ -39,27 +39,26 @@
   :group 'parcel)
 
 (defun parcel-status--entries (&optional queued)
-  "Return list of `tabultaed-list-entries' from QUEUED orders."
-  (cl-loop for (item . order) in (reverse
-                                  (or queued
-                                      (parcel-queue-orders
-                                       (cl-find-if #'parcel-queue-orders parcel--queues))))
-           for status = (parcel-order-status order)
+  "Return list of `tabultaed-list-entries' from QUEUED P's."
+  (cl-loop for (item . p) in (reverse (or queued
+                                          (parcel-q<-parcels
+                                           (cl-find-if #'parcel-q<-parcels parcel--queues))))
+           for status = (parcel--status p)
            collect
-           (list item (vector (propertize (parcel-order-package order)
+           (list item (vector (propertize (parcel<-package p)
                                           'face (parcel--status-face status)
-                                          'order order)
+                                          'parcel p)
                               (symbol-name status)
-                              (parcel-order-info order)))))
+                              (parcel--info p)))))
 
 (defun parcel-status--header-line (&optional queued)
-  "Set `parcel-buffer' header line to reflect QUEUED order statuses."
-  (let* ((queued (or queued (parcel-queue-orders
-                             (cl-find-if #'parcel-queue-orders parcel--queues))))
+  "Set `parcel-buffer' header line to reflect QUEUED P's statuses."
+  (let* ((queued (or queued (parcel-q<-parcels
+                             (cl-find-if #'parcel-q<-parcels parcel--queues))))
          (counts nil)
          (queue-len (length queued)))
     (dolist (q queued)
-      (let ((status (parcel-order-status (cdr q))))
+      (let ((status (parcel--status (cdr q))))
         (if (parcel-alist-get status counts)
             ;; Avoid `parcel-alist-get'. doesn't return PLACE.
             (cl-incf (alist-get status counts))
@@ -95,7 +94,7 @@ If NOSELECT is non-nil, do not make the status buffer current."
                 (lambda (&optional _)
                   (parcel-status--entries
                    (apply #'append (cl-loop for queue in parcel--queues
-                                            collect (parcel-queue-orders queue)))))
+                                            collect (parcel-q<-parcels queue)))))
               #'parcel-status--entries))
       (setq tabulated-list-format [("Package" 30 t) ("Status" 15 t) ("Info" 100 t)]
             tabulated-list-entries #'parcel-status--entries

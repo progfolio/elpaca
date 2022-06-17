@@ -107,19 +107,19 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                             (string-join tags ", ")))))))
 
 ;;@TODO: Should be invereted.
-;; Take all build/repo dirs and search against known orders.
+;; Take all build/repo dirs and search against known parcels.
 ;; ...but this does not operate off of the ITEM API...
 (defun parcel-ui--orphan-p (item)
   "Return non-nil if ITEM's repo or build are on disk without having been queued."
-  (let ((queued-orders (parcel--queued-orders)))
-    (unless (alist-get item queued-orders)
+  (let ((queued (parcel--queued)))
+    (unless (alist-get item queued)
       (let* ((recipe (parcel-recipe item))
              (repo   (parcel-repo-dir recipe)))
         (unless (cl-some (lambda (cell)
-                           (when-let ((queued (cdr cell))
-                                      ((equal repo (parcel-order-repo-dir queued))))
-                             queued))
-                         queued-orders)
+                           (when-let ((p (cdr cell))
+                                      ((equal repo (parcel<-repo-dir p))))
+                             p))
+                         queued)
           (or (file-exists-p (parcel-build-dir recipe))
               (file-exists-p (parcel-repo-dir  recipe))))))))
 
@@ -127,18 +127,18 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
   "Return non-nil if CANDIDATE is an oprhaned package."
   (parcel-ui--orphan-p (car candidate)))
 
-(defun parcel-ui--fallback-date (order)
-  "Return time of last modification for ORDER's built elisp, otherwise nil."
+(defun parcel-ui--fallback-date (p)
+  "Return time of last modification for P's built elisp, otherwise nil."
   (file-attribute-modification-time
-   (file-attributes (expand-file-name (concat (parcel-order-package order) ".el")
-                                      (parcel-order-build-dir order)))))
+   (file-attributes (expand-file-name (concat (parcel<-package p) ".el")
+                                      (parcel<-build-dir p)))))
 
 (defun parcel-ui--custom-candidates ()
   "Return declared candidate list with no recipe in `parcel-menu-functions'."
-  (cl-loop for (item . order) in (parcel--queued-orders)
+  (cl-loop for (item . p) in (parcel--queued)
            unless (parcel-menu-item nil item nil nil 'no-descriptions)
            collect (list item :source "Init file"
-                         :date (ignore-errors (parcel-ui--fallback-date order))
+                         :date (ignore-errors (parcel-ui--fallback-date p))
                          :description "Not available in menu functions")))
 
 (define-derived-mode parcel-ui-mode tabulated-list-mode "parcel-ui"
@@ -267,8 +267,8 @@ Assumes BUFFER in `parcel-ui-mode'."
   (when parcel-ui--want-faces
     (with-current-buffer buffer
       (cl-loop
-       for (item . order-or-action) in (append parcel-ui--marked-packages (parcel--queued-orders))
-       for markedp = (not (parcel-order-p order-or-action))
+       for (item . parcel-or-action) in (append parcel-ui--marked-packages (parcel--queued))
+       for markedp = (not (parcel<-p parcel-or-action))
        do
        (save-excursion
          (goto-char (point-min))
@@ -280,14 +280,14 @@ Assumes BUFFER in `parcel-ui-mode'."
                       (o (if markedp
                              (make-overlay start (line-end-position))
                            (make-overlay start (+ start (length (symbol-name item)))))))
-                 (let ((face   (when markedp (or (nth 2 order-or-action) 'parcel-ui-marked-package)))
-                       (prefix (when markedp (or (nth 1 order-or-action) "*"))))
+                 (let ((face   (when markedp (or (nth 2 parcel-or-action) 'parcel-ui-marked-package)))
+                       (prefix (when markedp (or (nth 1 parcel-or-action) "*"))))
                    (setq continue nil)
                    (when markedp
                      (overlay-put o 'before-string  (propertize (concat prefix " ") 'face face)))
                    (overlay-put o 'face (or face
                                             (parcel--status-face
-                                             (parcel-order-status order-or-action))))
+                                             (parcel--status parcel-or-action))))
                    (overlay-put o 'evaporate t)
                    (overlay-put o 'priority (if markedp 1 0))
                    (overlay-put o 'type 'parcel-mark))
@@ -526,18 +526,18 @@ If TOGGLE is non-nil, invert search." name)
 (defun parcel-ui-send-input ()
   "Send input string to current process."
   (interactive)
-  (if-let ((order (get-text-property (line-beginning-position) 'order))
-           (process (parcel-order-process order))
+  (if-let ((p (get-text-property (line-beginning-position) 'parcel))
+           (process (parcel<-process p))
            ((process-live-p process)))
       (let* ((input (read-string (format "Send input to %S: " (process-name process)))))
         (process-send-string process (concat input "\n")))
-    (user-error "No running process associated with %S" (parcel-order-package order))))
+    (user-error "No running process associated with %S" (parcel<-package p))))
 
 (defun parcel-ui--visit (type)
-  "Visit current order's TYPE dir.
+  "Visit current P's TYPE dir.
 TYPE is either the symbol `repo` or `build`."
-  (if-let ((order (get-text-property (line-beginning-position) 'order))
-           (dir   (funcall (intern (format "parcel-order-%s-dir" type)) order))
+  (if-let ((p (get-text-property (line-beginning-position) 'parcel))
+           (dir   (funcall (intern (format "parcel<-%s-dir" type)) p))
            ((file-exists-p dir)))
       (dired dir)
     (user-error "No %s dir associated with current line" type)))

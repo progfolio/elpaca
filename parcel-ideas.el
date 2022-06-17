@@ -46,7 +46,7 @@ TYPE is either `:repo' or `:build' for ITEM's repo or build directory."
              ((string-prefix-p (expand-file-name "./repos" parcel-directory) name))
              ((cl-find-if (lambda (q) (member name
                                               (mapcar #'car (parcel--files (cdr q)))))
-                          (parcel--queued-orders))))))
+                          (parcel--queued))))))
 
 (defun parcel-ui--post-maybe-rebuild ()
   (setq parcel--finalize-queue-hook nil)

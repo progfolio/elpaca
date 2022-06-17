@@ -33,15 +33,15 @@
 
 (defun parcel-log--entries ()
   "Return log's `tabulated-list-entries'."
-  (let ((queue-time (parcel-queue-time (car (last parcel--queues)))))
+  (let ((queue-time (parcel-q<-time (car (last parcel--queues)))))
     (cl-loop
-     for (item . order) in (parcel--queued-orders)
-     for log = (parcel-order-log order)
-     for package = (parcel-order-package order)
+     for (item . p) in (parcel--queued)
+     for log = (parcel<-log p)
+     for package = (parcel<-package p)
      append
      (cl-loop for (status time info) in log
               for delta = (format-time-string "%02s.%6N" (time-subtract time queue-time))
-              for pkg = (propertize package 'face (parcel--status-face status) 'order order)
+              for pkg = (propertize package 'face (parcel--status-face status) 'parcel p)
               collect (list item (vector pkg delta (symbol-name status) info))))))
 
 ;;;###autoload
