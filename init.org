@@ -1222,7 +1222,9 @@ https://www.flycheck.org/en/latest/
     :major-modes '(emacs-lisp-mode lisp-interaction-mode t)
     :keymaps     '(emacs-lisp-mode-map lisp-interaction-mode-map)
     "f" '(:ignore t :which-key "flymake")
-    "ff" '((lambda () (interactive) (flymake-mode 'toggle)) :which-key "toggle flymake-mode"))
+    "ff" '((lambda () (interactive) (flymake-mode 'toggle)) :which-key "toggle flymake-mode")
+    "fn" 'flymake-goto-next-error
+    "fp" 'flymake-goto-prev-error)
   :hook (flymake-mode . +flymake-toggle-diagnostics-buffer)
   :config
   (defun +flymake-toggle-diagnostics-buffer ()
