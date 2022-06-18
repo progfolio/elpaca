@@ -89,6 +89,8 @@
 
 (defun parcel-menu-non-gnu-elpa--write-cache ()
   "Write NonGNU ELPA menu item cache."
+  (unless (file-exists-p parcel-cache-directory)
+    (make-directory parcel-cache-directory))
   (parcel--write-file parcel-menu-non-gnu-elpa-cache-path
     (prin1 (parcel-menu-non-gnu-elpa--index))))
 
