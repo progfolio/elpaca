@@ -26,7 +26,27 @@
 
 ;;; Commentary:
 
-;; An elisp package manager
+;; Would-be Developers:
+;; This package has a few idiosyncracies I'm experimenting with.
+;; I've defined all structs to end with the character "<", such that slots are
+;; accessed via an faux "arrow" like syntax. e.g.
+;;
+;; (let ((p (parcel<-create)))
+;;   (parcel<-queue-time p)) ;; access p's queue-time slot
+;;
+;; I've also abbreviated the two main structs in this program, parcels and queues,
+;; when they are parameters of functions. e.g.
+;;
+;; (defun parcel-mind-your (p q)
+;;  "Mind your Ps and Qs."
+;;  ;; do something with Parcel P and Queue Q.
+;; )
+;;
+;; These are both in the name of avoiding semantic satiation when reading the source
+;; of this program. I may change the name of the "parcel" struct if I think of a better
+;; one. Even so, elisp's faux name-spacing requirements lead to a lot of instances
+;; of the word "parcel" throughout the program. I'm attempting to reduce that,
+;; or at least better distinguish the struct from the namespace prefix.
 
 ;;; Code:
 (eval-and-compile (require 'cl-lib))
