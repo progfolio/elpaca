@@ -95,8 +95,8 @@ table of values from popular Emacs configurations.
      (when (boundp 'after-focus-change-function)
        (add-function :after after-focus-change-function #'+gc-after-focus-change)))))
 
-(with-eval-after-load 'parcel
-  (add-hook 'parcel-after-init-hook '+reset-init-values))
+(with-eval-after-load 'elpaca
+  (add-hook 'elpaca-after-init-hook '+reset-init-values))
 #+end_src
 
 *** UI
@@ -157,7 +157,7 @@ The following line turns on lexical binding for performance reasons.
 This function displays how long Emacs took to start.
 It's a rough way of knowing when/if I need to optimize my init file.
 #+begin_src emacs-lisp :lexical t
-(add-hook 'parcel-after-init-hook
+(add-hook 'elpaca-after-init-hook
           (lambda ()
             (message "Emacs loaded in %s with %d garbage collecitons."
                      (format "%.2f seconds"
@@ -168,15 +168,15 @@ It's a rough way of knowing when/if I need to optimize my init file.
 We can also enable the profiler to view a report after init.
 #+begin_src emacs-lisp :lexical t :tangle no
 (profiler-start 'cpu+mem)
-(add-hook 'parcel-after-init-hook (lambda () (profiler-stop) (profiler-report)))
+(add-hook 'elpaca-after-init-hook (lambda () (profiler-stop) (profiler-report)))
 #+end_src
 ELP is useful for seeing which functions in a package are "hot".
 #+begin_src emacs-lisp :lexical t :tangle no
 (require 'elp)
-(with-eval-after-load 'parcel
-  (elp-instrument-package "parcel"))
-(add-hook 'parcel-after-init-hook
-          (lambda () (elp-results) (elp-restore-package 'parcel)))
+(with-eval-after-load 'elpaca
+  (elp-instrument-package "elpaca"))
+(add-hook 'elpaca-after-init-hook
+          (lambda () (elp-results) (elp-restore-package 'elpaca)))
 #+end_src
 ** initial-buffer-choice
 #+begin_src emacs-lisp :lexical t
@@ -198,64 +198,64 @@ I'm working on a theme that is readable and attractive.
 (unless (remq 'use-package custom-enabled-themes) (load-theme +theme t))
 #+end_src
 
-** Parcel
+** Elpaca
 #+begin_quote
 An elisp package manager
 
-https://github.com/progfolio/parcel
+https://github.com/progfolio/elpaca
 #+end_quote
 
 *** Bootstrap snippet
 #+begin_src emacs-lisp :lexical t
-(declare-function parcel-generate-autoloads "parcel")
-(defvar parcel-directory (expand-file-name "parcel/" user-emacs-directory))
-(when-let ((parcel-repo (expand-file-name "repos/parcel/" parcel-directory))
-           (parcel-url  "git@github.com:progfolio/parcel.git")
-           ((add-to-list 'load-path parcel-repo))
-           ((not (file-exists-p parcel-repo)))
-           (buffer (get-buffer-create "*parcel-bootstrap*")))
+(declare-function elpaca-generate-autoloads "elpaca")
+(defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
+(when-let ((elpaca-repo (expand-file-name "repos/elpaca/" elpaca-directory))
+           (elpaca-url  "git@github.com:progfolio/elpaca.git")
+           ((add-to-list 'load-path elpaca-repo))
+           ((not (file-exists-p elpaca-repo)))
+           (buffer (get-buffer-create "*elpaca-bootstrap*")))
   (condition-case-unless-debug err
       (progn
-        (unless (zerop (call-process "git" nil buffer t "clone" parcel-url parcel-repo))
+        (unless (zerop (call-process "git" nil buffer t "clone" elpaca-url elpaca-repo))
           (error "%s" (list (with-current-buffer buffer (buffer-string)))))
-        (byte-recompile-directory parcel-repo 0 'force)
-        (require 'parcel)
-        (parcel-generate-autoloads "parcel" parcel-repo)
+        (byte-recompile-directory elpaca-repo 0 'force)
+        (require 'elpaca)
+        (elpaca-generate-autoloads "elpaca" elpaca-repo)
         (kill-buffer buffer))
     ((error)
-     (delete-directory parcel-directory 'recursive)
+     (delete-directory elpaca-directory 'recursive)
      (with-current-buffer buffer
        (goto-char (point-max))
        (insert (format "\n%S" err))
        (display-buffer buffer)))))
-(require 'parcel-autoloads)
-(add-hook 'after-init-hook #'parcel-process-init)
+(require 'elpaca-autoloads)
+(add-hook 'after-init-hook #'elpaca-process-queues)
 #+end_src
 
 I want to see the status buffer when doing an initial install.
 #+begin_src emacs-lisp :lexical t
-(setq +parcel-installed (file-exists-p (expand-file-name "repos" parcel-directory)))
-(add-hook 'emacs-startup-hook (lambda () (unless +parcel-installed (parcel-status))))
+(setq +elpaca-installed (file-exists-p (expand-file-name "repos" elpaca-directory)))
+(add-hook 'emacs-startup-hook (lambda () (unless +elpaca-installed (elpaca-status))))
 #+end_src
 
 Use Evil bindings in status and UI maps
 #+begin_src emacs-lisp :lexical t
 (with-eval-after-load 'evil
-  (with-eval-after-load 'parcel-ui
-    (evil-make-intercept-map parcel-ui-mode-map)))
+  (with-eval-after-load 'elpaca-ui
+    (evil-make-intercept-map elpaca-ui-mode-map)))
 #+end_src
 
 [[https://www.funtoo.org/Keychain][Keychain]] is a gpg/ssh agent that allows me to cache my credentials.
-This package gets the correct environment variables so parcel can use the ssh protocol.
+This package gets the correct environment variables so elpaca can use the ssh protocol.
 
 #+begin_src emacs-lisp :lexical t
 ;; We need this loaded for SSH protocol
-(parcel-queue
- (parcel keychain-environment
+(elpaca-queue
+ (elpaca keychain-environment
          (keychain-refresh-environment)))
-(parcel-queue
- (parcel (melpulls :host github :repo "progfolio/melpulls" :protocol ssh)
-         (add-to-list 'parcel-menu-functions 'melpulls)))
+(elpaca-queue
+ (elpaca (melpulls :host github :repo "progfolio/melpulls" :protocol ssh)
+         (add-to-list 'elpaca-menu-functions 'melpulls)))
 #+end_src
 
 ** packaging
@@ -265,13 +265,13 @@ This package gets the correct environment variables so parcel can use the ssh pr
   "Like `use-package' but accounting for asynchronous installation.
 NAME and ARGS are in `use-package'."
   (declare (indent defun))
-  `(parcel nil (use-package ,name
+  `(elpaca nil (use-package ,name
                  :ensure nil
                  ,@args)))
 #+end_src
 
 #+begin_src emacs-lisp :lexical t
-(parcel use-package (require 'use-package))
+(elpaca use-package (require 'use-package))
 #+end_src
 
 #+begin_src emacs-lisp :lexical t
@@ -330,7 +330,7 @@ https://github.com/noctuid/general.el#about
 Load general before the remaining packages so they can make use of the ~:general~ keyword in their declarations.
 
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package general
+(elpaca-use-package general
   :demand t
   :config
   (general-override-mode)
@@ -399,11 +399,11 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
 **** applications
 #+begin_src emacs-lisp :lexical t
 (+general-global-menu! "application" "a"
-  "p" '(:ignore t "parcel")
-  "pm" 'parcel-manager
-  "pl" 'parcel-log
-  "ps" 'parcel-status
-  "pt" 'parcel-try-package)
+  "p" '(:ignore t "elpaca")
+  "pm" 'elpaca-manager
+  "pl" 'elpaca-log
+  "ps" 'elpaca-status
+  "pt" 'elpaca-try-package)
 #+end_src
 **** buffers
 #+begin_src emacs-lisp :lexical t
@@ -581,7 +581,7 @@ Evil is an extensible vi layer for Emacs. It emulates the main features of Vim, 
 https://github.com/emacs-evil/evil
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package evil
+(elpaca-use-package evil
   :demand t
   :preface (setq evil-want-keybinding nil)
   :general
@@ -639,7 +639,7 @@ https://github.com/emacsorphanage/evil-anzu
 
 Shows match counts in mode line.
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package evil-anzu
+(elpaca-use-package evil-anzu
   :after (evil anzu))
 #+end_src
 *** evil-collection
@@ -652,7 +652,7 @@ This is a collection of Evil bindings for the parts of Emacs that Evil does not 
 https://github.com/emacs-evil/evil-collection
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package evil-collection
+(elpaca-use-package evil-collection
   :after (evil)
   :config (evil-collection-init)
   :custom
@@ -661,7 +661,7 @@ https://github.com/emacs-evil/evil-collection
 #+end_src
 ** accord
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (accord :host github :repo "progfolio/accord" :protocol ssh)
+(elpaca-use-package (accord :host github :repo "progfolio/accord" :protocol ssh)
   :general
   (+general-global-application
     "a" '(:ignore t :which-key "accord")
@@ -719,7 +719,7 @@ Dark color theme with a deep blue background
 https://github.com/osener/emacs-afternoon-theme
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package afternoon-theme :defer t)
+(elpaca-use-package afternoon-theme :defer t)
 #+end_src
 ** almost-mono-themes
 #+begin_quote
@@ -727,7 +727,7 @@ A collection of almost monochrome emacs themes in a couple of variants.
 https://github.com/cryon/almost-mono-themes
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package almost-mono-themes :defer t)
+(elpaca-use-package almost-mono-themes :defer t)
 #+end_src
 ** asm-mode
 #+begin_src emacs-lisp :lexical t
@@ -765,7 +765,7 @@ for your search query.
 #+end_quote
 
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package anzu
+(elpaca-use-package anzu
   :defer 10
   :config (global-anzu-mode))
 #+end_src
@@ -796,7 +796,7 @@ It also helps if multiple instances of Emacs are editing the same file.
 #+end_src
 ** auto-tangle-mode
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (auto-tangle-mode
+(elpaca-use-package (auto-tangle-mode
                      :host github
                      :repo "progfolio/auto-tangle-mode.el"
                      :local-repo "auto-tangle-mode")
@@ -819,12 +819,12 @@ Buttercup is a behavior-driven development framework for testing Emacs Lisp code
 https://github.com/jorgenschaefer/emacs-buttercup
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package buttercup
+(elpaca-use-package buttercup
   :commands (buttercup-run-at-point))
 #+end_src
 ** cleanroom
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (cleanroom :host github :repo "progfolio/cleanroom" :protocol ssh)
+(elpaca-use-package (cleanroom :host github :repo "progfolio/cleanroom" :protocol ssh)
   :defer t)
 #+end_src
 ** compile
@@ -849,7 +849,7 @@ Completion Overlay Region FUnction
 https://github.com/minad/corfu
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (corfu :host github :repo "minad/corfu" :files (:defaults "extensions"))
+(elpaca-use-package (corfu :host github :repo "minad/corfu" :files (:defaults "extensions"))
   :defer 5
   :custom
   (corfu-cycle t)
@@ -872,7 +872,7 @@ Easily adjust the font size in all Emacs frames
 https://github.com/purcell/default-text-scale
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package default-text-scale
+(elpaca-use-package default-text-scale
   :commands ( default-text-scale-increase
               default-text-scale-decrease
               default-text-scale-reset
@@ -885,7 +885,7 @@ This package implements hiding or abbreviation of the mode line displays (lighte
 https://github.com/emacsmirror/diminish
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package diminish
+(elpaca-use-package diminish
   :defer 10)
 #+end_src
 ** dimmer
@@ -895,7 +895,7 @@ Visually highlight the selected buffer.
 https://github.com/gonewest818/dimmer.el
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package dimmer
+(elpaca-use-package dimmer
   :defer 5
   :after (helm which-key)
   :custom
@@ -931,7 +931,7 @@ doct is a function that provides an alternative, declarative syntax for describi
 https://github.com/progfolio/doct
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (doct :branch "development" :protocol ssh :depth nil)
+(elpaca-use-package (doct :branch "development" :protocol ssh :depth nil)
   :commands (doct))
 #+end_src
 ** doom-modeline
@@ -941,7 +941,7 @@ A fancy and fast mode-line inspired by minimalism design.
 https://github.com/seagle0128/doom-modeline
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package doom-modeline
+(elpaca-use-package doom-modeline
   :config
   (column-number-mode 1)
   (doom-modeline-mode)
@@ -956,7 +956,7 @@ DOOM Themes is an opinionated UI plugin and pack of themes extracted from [hliss
 https://github.com/hlissner/emacs-doom-themes
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package doom-themes :defer t)
+(elpaca-use-package doom-themes :defer t)
 #+end_src
 ** edebug
 #+begin_quote
@@ -994,7 +994,7 @@ https://github.com/skeeto/elfeed
 I've put my elfeed database in under version control.
 I may move it from its default location (=~/.elfeed=), in =elfeed-db-directory=.
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package elfeed
+(elpaca-use-package elfeed
   :commands (elfeed)
   :config
   (defun +elfeed-play-in-mpv ()
@@ -1037,7 +1037,7 @@ I may move it from its default location (=~/.elfeed=), in =elfeed-db-directory=.
 #+end_src
 *** elfeed-org
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package elfeed-org
+(elpaca-use-package elfeed-org
   :after (elfeed org)
   :config (elfeed-org)
   :custom
@@ -1091,7 +1091,7 @@ These settings defined in C code, so we use the ~emacs~ pseudo-package to set th
 MPV integration
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (emp :host github :repo "progfolio/emp")
+(elpaca-use-package (emp :host github :repo "progfolio/emp")
   :config
   :general
   (+general-global-application
@@ -1126,7 +1126,7 @@ MPV integration
 #+end_src
 ** epoch
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (epoch :host github :repo "progfolio/epoch")
+(elpaca-use-package (epoch :host github :repo "progfolio/epoch")
   :after (org)
   :commands (epoch-todo epoch-agenda-todo))
 #+end_src
@@ -1203,14 +1203,14 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 https://www.flycheck.org/en/latest/
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package flycheck
+(elpaca-use-package flycheck
   :commands (flycheck-mode)
   :custom (flycheck-emacs-lisp-load-path 'inherit "necessary with straight.el"))
 #+end_src
 *** flycheck-package
 =package-lint= integration for flycheck.
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package flycheck-package
+(elpaca-use-package flycheck-package
   :after (flychceck)
   :config (flycheck-package-setup))
 #+end_src
@@ -1265,7 +1265,7 @@ https://www.flycheck.org/en/latest/
 https://d12frosted.io/posts/2016-05-09-flyspell-correct-intro.html
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package flyspell-correct
+(elpaca-use-package flyspell-correct
   :after (flyspell)
   :general
   (+general-global-spelling
@@ -1280,7 +1280,7 @@ https://github.com/Fuco1/fontify-face
 #+end_quote
 
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package fontify-face
+(elpaca-use-package fontify-face
   :commands (fontify-face-mode))
 #+end_src
 ** fountain-mode
@@ -1290,7 +1290,7 @@ Fountain Mode is a screenwriting program for GNU Emacs using the Fountain plain 
 https://github.com/rnkn/fountain-mode
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package fountain-mode
+(elpaca-use-package fountain-mode
   :mode "\\.fountain\\'")
 #+end_src
 ** helm
@@ -1300,7 +1300,7 @@ Helm is an Emacs framework for incremental completions and narrowing selections.
 https://github.com/emacs-helm/helm
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package helm
+(elpaca-use-package helm
   :init (require 'helm-config)
   :defer 1
   :custom
@@ -1350,7 +1350,7 @@ helm-ag.el provides interfaces of The Silver Searcher with helm.
 https://github.com/emacsorphanage/helm-ag
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package helm-ag
+(elpaca-use-package helm-ag
   :commands (helm-ag helm-projectile-ag))
 #+end_src
 *** helm-describe-modes
@@ -1360,7 +1360,7 @@ helm-describe-modes provides a Helm interface to Emacs’s describe-mode.
 https://github.com/emacs-helm/helm-describe-modes
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package helm-describe-modes
+(elpaca-use-package helm-describe-modes
   :commands (helm-describe-modes)
   :diminish helm-describe-mode
   :after (helm)
@@ -1375,7 +1375,7 @@ Helm Descbinds provides an interface to emacs’ describe-bindings making the cu
 https://github.com/emacs-helm/helm-descbinds
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package helm-descbinds
+(elpaca-use-package helm-descbinds
   :after (helm)
   :commands (helm-descbinds-mode)
   :diminish helm-descbinds-mode
@@ -1391,7 +1391,7 @@ Helm integration for org headlines and keywords.
 #+end_quote
 Necessary for completion of multiple tags with Helm.
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package helm-org
+(elpaca-use-package helm-org
   :after (helm)
   :config
   (add-to-list 'helm-completing-read-handlers-alist '(org-set-tags-command . helm-org-completing-read-tags))
@@ -1399,7 +1399,7 @@ Necessary for completion of multiple tags with Helm.
 #+end_src
 *** helm-projectile
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package helm-projectile
+(elpaca-use-package helm-projectile
   :after (helm)
   :general
   (+general-global-project
@@ -1419,7 +1419,7 @@ At the same time, the original buffer's cursor is jumping line to line according
 https://github.com/emacsorphanage/helm-swoop
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package helm-swoop
+(elpaca-use-package helm-swoop
   :after (helm)
   :commands
   (helm-swoop))
@@ -1438,7 +1438,7 @@ This minor mode highlights indentation levels via font-lock.
 https://github.com/DarthFennec/highlight-indent-guides
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package highlight-indent-guides
+(elpaca-use-package highlight-indent-guides
   :commands
   (highlight-indent-guides-mode)
   :hook (prog-mode . highlight-indent-guides-mode)
@@ -1472,7 +1472,7 @@ https://github.com/hniksic/emacs-htmlize
 #+end_quote
 This is necessary for exporting Org files to HTML.
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package htmlize
+(elpaca-use-package htmlize
   :defer t)
 #+end_src
 ** hydra
@@ -1482,7 +1482,7 @@ This is a package for GNU Emacs that can be used to tie related commands into a 
 https://github.com/abo-abo/hydra
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package hydra
+(elpaca-use-package hydra
   :after (general)
   :config
   (defhydra +hydra-zoom (:pre (setq which-key-inhibit t)
@@ -1556,7 +1556,7 @@ An expansion of conf-mode to bring proper syntax highlighting to your i3wm confi
 #+end_quote
 
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (i3wm-config-mode
+(elpaca-use-package (i3wm-config-mode
                      :host github :repo "Alexander-Miller/i3wm-Config-Mode")
   :commands (i3wm-config-mode))
 #+end_src
@@ -1567,7 +1567,7 @@ Improved JavaScript editing mode for GNU Emacs
 https://github.com/mooz/js2-mode
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package js2-mode
+(elpaca-use-package js2-mode
   :commands (js2-mode)
   :mode "\\.js\\'"
   :interpreter (("nodejs" . js2-mode) ("node" . js2-mode))
@@ -1582,7 +1582,7 @@ Need to investigate, but js-mode might have been fixed/updated.
 Major mode for Lilypond music engraver.
 Installing Lilypond puts these in =/usr/share/Emacs/site-lisp=, but I plan on editing these.
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (lilypond-mode :host gitlab :repo "lilypond/lilypond"
+(elpaca-use-package (lilypond-mode :host gitlab :repo "lilypond/lilypond"
                                    :remotes (("fork" :host github :repo "progfolio/lilypond" :protocol ssh)
                                              "origin")
                                    :branch "fix/lilypond-mode"
@@ -1609,7 +1609,7 @@ It provides commands for using avy to open, copy, or take a user-defined action 
 https://github.com/noctuid/link-hint.el
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package link-hint
+(elpaca-use-package link-hint
   :general
   (+general-global-link
     "a" 'link-hint-open-all-links
@@ -1627,7 +1627,7 @@ macrostep is an Emacs minor mode for interactively stepping through the expansio
 https://github.com/joddie/macrostep
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package macrostep
+(elpaca-use-package macrostep
   :general
   (global-leader
     :major-modes '(emacs-lisp-mode lisp-interaction-mode t)
@@ -1645,7 +1645,7 @@ Magit is an interface to the version control system Git, implemented as an Emacs
 https://magit.vc/
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package magit
+(elpaca-use-package magit
   :defer t
   :after (general)
   :general
@@ -1672,7 +1672,7 @@ markdown-mode is a major mode for editing Markdown-formatted text.
 https://jblevins.org/projects/markdown-mode/
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package markdown-mode
+(elpaca-use-package markdown-mode
   :commands (markdown-mode gfm-mode)
   :mode
   (("README\\.md\\'" . gfm-mode)
@@ -1684,7 +1684,7 @@ https://jblevins.org/projects/markdown-mode/
 ** miscellany
 A package for miscellaneous functions.
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (miscellany
+(elpaca-use-package (miscellany
                      :host github
                      :repo "progfolio/miscellany.el"
                      :local-repo "miscellany"
@@ -1733,7 +1733,7 @@ An emacs-based e-mail client which uses mu as its back-end.
 https://www.djcbsoftware.nl/code/mu/mu4e.html
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (mu4e :host github :files ("mu4e/*.el" "build/mu4e/mu4e-meta.el" "build/mu4e/mu4e-config.el") :repo "djcb/mu"
+(elpaca-use-package (mu4e :host github :files ("mu4e/*.el" "build/mu4e/mu4e-meta.el" "build/mu4e/mu4e-config.el") :repo "djcb/mu"
                           :main "mu4e/mu4e.el"
                           :pre-build (("./autogen.sh") ("ninja" "-C" "build")
                                       (make-symbolic-link (expand-file-name "./build/mu/mu")
@@ -1839,7 +1839,7 @@ Additionally it can display the number of unread emails in the mode-line.
 https://github.com/iqbalansari/mu4e-alert
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (mu4e-alert
+(elpaca-use-package (mu4e-alert
                      :host github
                      :remotes (("fork"
                                 :repo "progfolio/mu4e-alert"
@@ -1862,7 +1862,7 @@ Major mode for reading EPUB files in Emacs
 https://depp.brause.cc/nov.el/
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (nov :depth nil)
+(elpaca-use-package (nov :depth nil)
   :custom
   (nov-text-width 80)
   :mode
@@ -1885,12 +1885,12 @@ A simple Emacs minor mode for a nice writing environment.
 https://github.com/rnkn/olivetti
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package olivetti
+(elpaca-use-package olivetti
   :commands (olivetti-mode))
 #+end_src
 ** org
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package org
+(elpaca-use-package org
   :defer t
   :general
   (general-define-key :states '(normal) :keymaps 'org-mode-map
@@ -2402,7 +2402,7 @@ delete the =*.el(c)= files and restart
 #+end_src
 ** org-better-repeat
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (org-better-repeat-mode :host github :repo "progfolio/org-better-repeat-mode" :protocol ssh)
+(elpaca-use-package (org-better-repeat-mode :host github :repo "progfolio/org-better-repeat-mode" :protocol ssh)
   :after (org)
   :config
   (defun +org-delete-after-prop-drawer ()
@@ -2447,7 +2447,7 @@ I use this so that archived copies of repeating tasks will show in org-agenda-ar
 ** org-bullets
 Purely cosmetic. I may ditch this at some point.
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package org-bullets
+(elpaca-use-package org-bullets
   :after (org)
   :config (add-hook 'org-mode-hook #'org-bullets-mode)
   :custom (org-bullets-bullet-list
@@ -2752,7 +2752,7 @@ emacsclient --create-frame \
 #+end_src
 ** org-chronicle
 #+begin_src emacs-lisp :lexical t :tangle no
-(parcel-use-package org-chronicle
+(elpaca-use-package org-chronicle
   :straight (org-chronicle :host github :repo "progfolio/org-chronicle")
   :commands (org-chronicle)
   :custom (org-chronicle-directory "~/Documents/journal/")
@@ -2760,7 +2760,7 @@ emacsclient --create-frame \
 #+end_src
 ** org-clean-refile
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (org-clean-refile :host github :repo "progfolio/org-clean-refile" :protocol ssh)
+(elpaca-use-package (org-clean-refile :host github :repo "progfolio/org-clean-refile" :protocol ssh)
   :commands (org-clean-refile)
   :after (org)
   :general
@@ -2770,7 +2770,7 @@ emacsclient --create-frame \
 #+end_src
 ** org-contrib
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package org-contrib)
+(elpaca-use-package org-contrib)
 #+end_src
 ** org-fancy-priorities
 #+begin_quote
@@ -2779,7 +2779,7 @@ A minor mode that displays org priorities as custom strings.
 https://github.com/harrybournis/org-fancy-priorities
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package org-fancy-priorities
+(elpaca-use-package org-fancy-priorities
   :commands (org-fancy-priorities-mode)
   :hook (org-mode . org-fancy-priorities-mode)
   :diminish ""
@@ -2966,17 +2966,17 @@ Links to headings are created compatible with GitHub’s Org renderer.
 https://github.com/alphapapa/org-make-toc
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package org-make-toc
+(elpaca-use-package org-make-toc
   :commands (org-make-toc))
 #+end_src
 ** org-region-link
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (org-region-link :host github :repo "progfolio/org-region-link" :protocol ssh)
+(elpaca-use-package (org-region-link :host github :repo "progfolio/org-region-link" :protocol ssh)
   :after (org))
 #+end_src
 ** org-roam
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (org-roam :host github :repo "org-roam/org-roam")
+(elpaca-use-package (org-roam :host github :repo "org-roam/org-roam")
   :disabled t
   :general
   (+general-global-application
@@ -2985,7 +2985,7 @@ https://github.com/alphapapa/org-make-toc
 #+end_src
 ** org-relativity
 #+begin_src emacs-lisp :lexical t :tangle no
-(parcel-use-package org-relativity
+(elpaca-use-package org-relativity
   :after (org)
   :straight (:type git :host github :repo "progfolio/org-relativity"))
 #+end_src
@@ -2996,7 +2996,7 @@ Prettify headings and plain lists in Org mode. This package is a direct descenda
 https://github.com/integral-dw/org-superstar-mode
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (org-superstar :host github :repo "integral-dw/org-superstar-mode")
+(elpaca-use-package (org-superstar :host github :repo "integral-dw/org-superstar-mode")
   :after (org))
 #+end_src
 ** ox-twbs
@@ -3006,7 +3006,7 @@ Export org-mode docs as HTML compatible with Twitter Bootstrap.
 https://github.com/marsmining/ox-twbs
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package ox-twbs
+(elpaca-use-package ox-twbs
   :disabled t
   :after (org)
   :defer t)
@@ -3020,23 +3020,23 @@ You can integrate it into your build process.
 https://github.com/purcell/package-lint
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package package-lint
+(elpaca-use-package package-lint
   :defer t
-  :commands (package-lint-current-buffer +package-lint-parcel)
+  :commands (package-lint-current-buffer +package-lint-elpaca)
   :config
-  <<+package-lint-parcel>>)
+  <<+package-lint-elpaca>>)
 #+end_src
-*** +package-lint-parcel
+*** +package-lint-elpaca
 :PROPERTIES:
-:header-args: :noweb-ref +package-lint-parcel
+:header-args: :noweb-ref +package-lint-elpaca
 :END:
 package-lint assumes package.el is the package manager.
-I use parcel.el, so I get spurious warnings about uninstallable packages.
+I use elpaca.el, so I get spurious warnings about uninstallable packages.
 This workaround creates a temporary package archive and enables package.el to appease package-lint.
 
 #+begin_src emacs-lisp :lexical t
-(defun +package-lint-parcel ()
-  "Help package-lint deal with parcel."
+(defun +package-lint-elpaca ()
+  "Help package-lint deal with elpaca."
   (interactive)
   (require 'package)
   (setq package-user-dir "/tmp/elpa")
@@ -3044,7 +3044,7 @@ This workaround creates a temporary package archive and enables package.el to ap
   (package-initialize)
   (package-refresh-contents))
 
-(+package-lint-parcel)
+(+package-lint-elpaca)
 #+end_src
 ** paren
 I want to have matching delimiters highlighted when point is on them so that I
@@ -3062,7 +3062,7 @@ Its goal is to provide a nice set of features operating on a project level witho
 https://github.com/bbatsov/projectile
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package projectile
+(elpaca-use-package projectile
   :after (general)
   :general
   (+general-global-project
@@ -3096,9 +3096,9 @@ https://github.com/politza/pdf-tools#about-this-package
 #+end_quote
 This  allows me to customize the color of the generated pdf.
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (pdf-tools :post-build ((condition-case err
+(elpaca-use-package (pdf-tools :post-build ((condition-case err
                                                 (let* ((repo-dir default-directory)
-                                                       (build-dir (expand-file-name "builds/pdf-tools" parcel-directory))
+                                                       (build-dir (expand-file-name "builds/pdf-tools" elpaca-directory))
                                                        (default-directory build-dir)
                                                        (epdfinfo (expand-file-name "./lisp/epdfinfo" repo-dir)))
                                                   (require 'pdf-tools)
@@ -3134,7 +3134,7 @@ Colorize color names in buffers
 https://elpa.gnu.org/packages/rainbow-mode.html
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package rainbow-mode
+(elpaca-use-package rainbow-mode
   :commands (rainbow-mode))
 #+end_src
 ** re-builder (regular expressions)
@@ -3171,7 +3171,7 @@ shackle gives you the means to put an end to popped up buffers not behaving they
 https://depp.brause.cc/shackle/
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (shackle :depth nil)
+(elpaca-use-package (shackle :depth nil)
   :commands (shackle-mode)
   :custom (shackle-rules '(("*Flycheck errors*"  :align below :size 0.15)
                            ("\\`\\*Flymake diagnostics.*?\\*\\'" :align below :size 0.15 :regexp t :same nil)
@@ -3188,7 +3188,7 @@ https://depp.brause.cc/shackle/
 #+end_src
 ** skip-buffers
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (skip-buffers :host github :repo "progfolio/skip-buffers" :protocol ssh)
+(elpaca-use-package (skip-buffers :host github :repo "progfolio/skip-buffers" :protocol ssh)
   :defer 10
   :config
   (add-to-list 'skip-buffers-blacklist "*Help*")
@@ -3203,7 +3203,7 @@ https://depp.brause.cc/shackle/
 #+end_src
 ** stardict-utils
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (stardict-utils :host github :repo "progfolio/stardict-utils" :protocol ssh)
+(elpaca-use-package (stardict-utils :host github :repo "progfolio/stardict-utils" :protocol ssh)
   :after (general helm)
   :commands (stardict-define)
   :general
@@ -3216,7 +3216,7 @@ https://depp.brause.cc/shackle/
 #+end_src
 ** straight.el
 #+begin_src emacs-lisp :lexical t
-(parcel (straight.el :host github
+(elpaca (straight.el :host github
                      :depth nil
                      :repo "raxod502/straight.el"
                      :branch "develop"
@@ -3267,14 +3267,14 @@ Tern is a stand-alone, editor-independent JavaScript analyzer that can be used t
 https://github.com/ternjs/tern
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package tern
+(elpaca-use-package tern
   :disabled t
   :commands (tern-mode)
   :hook (js2-mode . tern-mode))
 #+end_src
 ** joymacs
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (joymacs :host github :repo "skeeto/joymacs"
+(elpaca-use-package (joymacs :host github :repo "skeeto/joymacs"
                              :main "joydemo.el"
                              :pre-build ("make")
                              :files (:defaults "joymacs.c" "joymacs.so")
@@ -3284,18 +3284,18 @@ https://github.com/ternjs/tern
 #+end_src
 ** padscape
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (padscape :host github :repo "progfolio/padscape" :protocol ssh)
+(elpaca-use-package (padscape :host github :repo "progfolio/padscape" :protocol ssh)
   :commands (padscape))
 #+end_src
 ** speedo
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (speedo :host github :repo "progfolio/speedo"
+(elpaca-use-package (speedo :host github :repo "progfolio/speedo"
                             :local-repo "speedo"
                             :depth nil :protocol ssh
                             :files (:defaults "test"))
   :commands (speedo speedo-load-file akogare)
   :custom
-  (speedo-directory "~/.emacs.d/parcel/repos/speedo.progfolio.github/test/")
+  (speedo-directory "~/.emacs.d/elpaca/repos/speedo.progfolio.github/test/")
   (speedo-default-splits-file "./Akogare-Mario-World.spd")
   (speedo-confirm-evaluate nil)
   :general
@@ -3383,11 +3383,11 @@ Emacs-libvterm (vterm) is fully-fledged terminal emulator inside GNU Emacs based
 https://github.com/akermu/emacs-libvterm
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (vterm :post-build
+(elpaca-use-package (vterm :post-build
                            (progn
                              (setq vterm-always-compile-module t)
                              (require 'vterm)
-                             ;;print compilation info for parcel
+                             ;;print compilation info for elpaca
                              (with-current-buffer (get-buffer-create vterm-install-buffer-name)
                                (goto-char (point-min))
                                (while (not (eobp))
@@ -3417,7 +3417,7 @@ which-key is a minor mode for Emacs that displays the key bindings following you
 https://github.com/justbur/emacs-which-key
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package which-key
+(elpaca-use-package which-key
   :demand t
   :init
   (setq which-key-enable-extended-define-key t)
@@ -3432,12 +3432,12 @@ https://github.com/justbur/emacs-which-key
 #+end_src
 ** wikinforg
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (wikinfo :host github :repo "progfolio/wikinfo"
+(elpaca-use-package (wikinfo :host github :repo "progfolio/wikinfo"
                              :branch "develop" :protocol ssh :depth nil)
   :defer t)
 #+end_src
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (wikinforg :host github :repo "progfolio/wikinforg"
+(elpaca-use-package (wikinforg :host github :repo "progfolio/wikinforg"
                                :protocol ssh :depth nil)
   :commands (wikinforg wikinforg-capture)
   :custom
@@ -3464,7 +3464,7 @@ https://github.com/justbur/emacs-which-key
 #+end_src
 ** wordel
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (wordel :host github :repo "progfolio/wordel"
+(elpaca-use-package (wordel :host github :repo "progfolio/wordel"
                             :files (:defaults "words") :depth nil :protocol ssh)
   :defer t
   :config
@@ -3480,7 +3480,7 @@ An Emacs interface to the wordnet (wn) command line tool.
 https://github.com/gromnitsky/wordnut
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package wordnut
+(elpaca-use-package wordnut
   :general
   (+general-global-application
     "w"    '(:ignore t :which-key "wordnut")
@@ -3494,7 +3494,7 @@ This is a minor mode to aid in finding common writing problems.
 https://github.com/bnbeckwith/writegood-mode
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package writegood-mode
+(elpaca-use-package writegood-mode
   :commands (writegood-mode)
   :hook (org-mode))
 #+end_src
@@ -3506,7 +3506,7 @@ It allows you to type an abbreviation and automatically expand it into function 
 https://github.com/joaotavora/yasnippet
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package yasnippet
+(elpaca-use-package yasnippet
   :commands (yas-global-mode)
   :custom
   (yas-snippet-dirs '("~/.emacs.d/snippets")))
@@ -3518,10 +3518,10 @@ A dark theme for Emacs, inspired from Niflheim and One Dark
 https://github.com/NicolasPetton/zerodark-theme
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package zerodark-theme :defer t)
+(elpaca-use-package zerodark-theme :defer t)
 #+end_src
 ** yodel
 #+begin_src emacs-lisp :lexical t
-(parcel-use-package (yodel :host github :repo "progfolio/yodel" :depth nil :protocol ssh)
+(elpaca-use-package (yodel :host github :repo "progfolio/yodel" :depth nil :protocol ssh)
   :defer t)
 #+end_src
