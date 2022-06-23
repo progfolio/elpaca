@@ -9,7 +9,7 @@ It is a replacement for the built-in Emacs package manager, package.el.
 * Installation
 ** Requirements
 - Emacs >= 27.1
-- git (min version TBD)
+- git (minimum version TBD)
 - Windows users must be able to create symlinks.
 ** Bootstrap Snippet
 To install elpaca, add the following bootstrapping snippet to your init.el.
@@ -71,7 +71,7 @@ Examples will use the following [[#menus][recipe menu]], which offers a "burger"
 
 #+begin_src emacs-lisp :lexical t :results silent
 (defun elpaca-example-menu (_)
-  '((burger . (:recipe (:buns 2 :lettuce t :tomato t :beef t :cheese t :cook well-done)))))
+  '((burger . (:recipe (:buns 2 :lettuce t :tomato t :beef t :cheese t :cook well-done :from elpaca-example-menu)))))
 #+end_src
 
 ** Recipes
@@ -183,22 +183,32 @@ With inheritance enabled:
 (elpaca-example (elpaca-recipe '(burger :inherit t)))
 #+end_src
 
-The elpaca-example-menu provides the rest of the "burger" recipe.
+the elpaca-example-menu provides the rest of the "burger" recipe.
 
 #+results: recipe-inheritance-menu
 #+begin_src emacs-lisp
-(:package "burger" :beef t :buns 2 :cheese t :cook well-done :inherit t :lettuce t :tomato t)
+(:package "burger" :beef t :buns 2 :cheese t :cook well-done :from elpaca-example-menu :inherit t :lettuce t :tomato t)
 #+end_src
 
-The declared recipe's keywords take precedence over the inherited keywords.
+The following list shows the order of precedence for inheritance.
+Each item takes precedence over the items which follow it.
+
+- elpaca-recipe-functions
+- declared recipe
+- elpaca-order-functions
+- elpaca-menu-functions
+
 #+name: recipe-inheritance-precedence
 #+begin_src emacs-lisp :lexical t :results raw code :exports both
-(elpaca-example (elpaca-recipe '(burger :inherit t :beef nil :turkey t)))
+(elpaca-example
+ (let ((elpaca-recipe-functions (lambda (recipe) '(:from recipe-functions :cheese extra)))
+       (elpaca-order-functions (lambda (order) '(:from 'order-functions :tomato nil))))
+   (elpaca-recipe '(burger))))
 #+end_src
 
 #+results: recipe-inheritance-precedence
 #+begin_src emacs-lisp
-(:package "burger" :beef nil :buns 2 :cheese t :cook well-done :inherit t :lettuce t :tomato t :turkey t)
+(:package "burger" :beef t :buns 2 :cheese extra :cook well-done :from recipe-functions :lettuce t :tomato nil)
 #+end_src
 
 *** elpaca-recipe-functions
@@ -223,7 +233,7 @@ This is useful if you want to guarantee the values of certain keywords despite a
 
 #+results: recipe-functions-example
 #+begin_src emacs-lisp
-(:package "burger" :beef t :buns 2 :cheese extra :cook well-done :lettuce t :tomato t)
+(:package "burger" :beef t :buns 2 :cheese extra :cook well-done :from elpaca-example-menu :lettuce t :tomato t)
 #+end_src
 
 ** Menus
@@ -243,7 +253,7 @@ A menu is a function which returns an alist of the form:
 - :source :: A string naming the menu.
 
 It may also additionally provide keywords to provide more information about a package.
-For example, Elpaca's UI utilizes the following keywords when present:
+For example, the Elpaca UI utilizes the following keywords when present:
 
 - :url :: A URL to the package's website.
 - :description :: A description of the package.
@@ -262,10 +272,11 @@ Ignore REQUEST, as this is a static, curated list of packages."
     (two :source "EXAMPLE" :recipe (two :host gitlab :repo "user/two"))))
 #+end_src
 
-Menus allow one to offer Elpaca users
+Menus allow one to offer Elpaca users curated lists of package recipes.
+For example, [[https://www.github.com/progfolio/melpulls][melpulls]] implements an Elpaca menu for pending MELPA packages.
 
 *** elpaca-menu-functions
-The =elpaca-menu-functions= variable contains menus for the following package sources by default:
+The =elpaca-menu-functions= variable contains menu functions for the following package sources by default:
 
 - [[https://www.github.com/melpa/melpa][MELPA]]
 - [[https://git.savannah.gnu.org/cgit/emacs/org-mode.git/][Org]]
@@ -273,7 +284,7 @@ The =elpaca-menu-functions= variable contains menus for the following package so
 - [[https://www.github.com/emacs-straight/gnu-elpa-mirror][GNU ELPA Mirror]]
 - [[https://elpa.nongnu.org][NonGNU Elpa]]
 
-Menus are checked until one returns a menu item or the list is exhausted. 
+Menus are checked in order until one returns the requested menu item or the menu list is exhausted.
 
 ** Orders
 :PROPERTIES:
@@ -354,3 +365,5 @@ The following commands are available in the elpaca-manager-buffer:
 | elpaca-ui-unmark            | u               | Unmark the current package                                                       | yes           |
 | elpaca-ui-visit-repo        | v               | Visit the current package's repository via =dired=                                 | no            |
 | elpaca-ui-execute-marks     | x               | Execute marked package's actions                                                 | no            |
+
+#  LocalWords:  elpaca Elpaca elisp repo minibuffer website init ui UI unmark Unmark plist alist MELPA programmatic
