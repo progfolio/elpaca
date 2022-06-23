@@ -1,40 +1,40 @@
 ;; -*- mode: emacs-lisp; lexical-binding: t; -*-
-(declare-function parcel-generate-autoloads "parcel")
-(defvar parcel-directory (expand-file-name "parcel/" user-emacs-directory))
+(declare-function elpaca-generate-autoloads "elpaca")
+(defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 
 ;;@TEST: clean repo
 (when t
-  (when (file-exists-p parcel-directory)
-    (delete-directory parcel-directory 'recursive))
-  (when (featurep 'parcel) (unload-feature 'parcel t)
-        (defvar parcel-directory (expand-file-name "parcel/" user-emacs-directory))))
+  (when (file-exists-p elpaca-directory)
+    (delete-directory elpaca-directory 'recursive))
+  (when (featurep 'elpaca) (unload-feature 'elpaca t)
+        (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))))
 
-(defun parcel--bootstrap ()
-  (let ((parcel-repo (expand-file-name "parcel/" parcel-directory)))
-    (add-to-list 'load-path parcel-repo)
-    (unless (file-exists-p parcel-repo)
-      (let ((buffer (get-buffer-create "*parcel-bootstrap*")))
+(defun elpaca--bootstrap ()
+  (let ((elpaca-repo (expand-file-name "elpaca/" elpaca-directory)))
+    (add-to-list 'load-path elpaca-repo)
+    (unless (file-exists-p elpaca-repo)
+      (let ((buffer (get-buffer-create "*elpaca-bootstrap*")))
         (condition-case-unless-debug err
             (progn
-              ;;clone parcel
+              ;;clone elpaca
               (unless (zerop (call-process "git" nil (list buffer t) t
-                                           "clone" "git@github.com:progfolio/parcel.git"
-                                           parcel-repo))
+                                           "clone" "git@github.com:progfolio/elpaca.git"
+                                           elpaca-repo))
                 (error "%s" (list (with-current-buffer buffer (buffer-string)))))
-              ;;@TODO: checkout parcel using parcel?
-              ;;@TODO: build parcel using parcel?
-              (byte-recompile-directory parcel-repo 0 'force)
-              (require 'parcel)
-              (parcel-generate-autoloads "parcel" parcel-repo))
+              ;;@TODO: checkout elpaca using elpaca?
+              ;;@TODO: build elpaca using elpaca?
+              (byte-recompile-directory elpaca-repo 0 'force)
+              (require 'elpaca)
+              (elpaca-generate-autoloads "elpaca" elpaca-repo))
           ((error)
-           (when (file-exists-p parcel-directory)
-             (delete-directory parcel-directory 'recursive))
+           (when (file-exists-p elpaca-directory)
+             (delete-directory elpaca-directory 'recursive))
            (with-current-buffer buffer
              (goto-char (point-max))
              (insert (format "\n%S" err))
              (display-buffer buffer)
              (kill-buffer buffer))))))
-    (let ((default-directory parcel-repo))
-      (load "parcel-autoloads.el"))))
+    (let ((default-directory elpaca-repo))
+      (load "elpaca-autoloads.el"))))
 
-(parcel--bootstrap)
+(elpaca--bootstrap)

@@ -1,4 +1,4 @@
-;;; parcel-menu-melpa.el --- MELPA menu support for parcel  -*- lexical-binding: t; -*-
+;;; elpaca-menu-melpa.el --- MELPA menu support for elpaca  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2022  Nicholas Vollmer
 
@@ -20,23 +20,23 @@
 
 ;;; Commentary:
 
-;;  MELPA support for parcel.
+;;  MELPA support for elpaca.
 
 ;;; Code:
 (require 'cl-lib)
 (require 'url)
 (defvar url-http-end-of-headers)
 
-(defcustom parcel-menu-melpa-path
+(defcustom elpaca-menu-melpa-path
   (expand-file-name "melpa/" (temporary-file-directory))
   "Path where MELPA repository is cloned."
   :type 'directory
-  :group 'parcel)
+  :group 'elpaca)
 
-(defvar parcel-menu-melpa--index-cache nil "Cache of index.")
-(defvar parcel-default-files-directive) ;defined in parcel.el
+(defvar elpaca-menu-melpa--index-cache nil "Cache of index.")
+(defvar elpaca-default-files-directive) ;defined in elpaca.el
 
-(defun parcel-menu-melpa--metadata ()
+(defun elpaca-menu-melpa--metadata ()
   "Return an alist of MELPA package metadata."
   (with-current-buffer (url-retrieve-synchronously
                         "https://melpa.org/archive.json")
@@ -45,7 +45,7 @@
     (json-read)))
 
 ;;@TODO: needs to be more robust if processes error
-(defun parcel-menu-melpa--clone (path)
+(defun elpaca-menu-melpa--clone (path)
   "Clone MELPA recipes repo to PATH."
   (make-directory path)
   (message "Downloading MELPA recipes...")
@@ -57,7 +57,7 @@
   (call-process "git" nil nil nil "checkout" "master")
   (message "MELPA recipes downloaded."))
 
-(defun parcel-menu-melpa--update ()
+(defun elpaca-menu-melpa--update ()
   "Update recipes in MELPA menu."
   (message "Checking Melpa for updates...")
   (condition-case _
@@ -66,7 +66,7 @@
         (message "MELPA updates downloaded"))
     ((error) (message "Unable to pull MELPA recipes"))))
 
-(defun parcel-menu-melpa--convert (file metadata)
+(defun elpaca-menu-melpa--convert (file metadata)
   "Return menu item candidate for FILE's MELPA recipe and METADATA."
   (with-temp-buffer
     (insert-file-contents file)
@@ -77,7 +77,7 @@
           (setq recipe
                 (append (list :package (symbol-name package)) recipe))
           (unless (plist-member recipe :files)
-            (setq recipe (plist-put recipe :files parcel-default-files-directive)))
+            (setq recipe (plist-put recipe :files elpaca-default-files-directive)))
           (let ((candidate (list :source "MELPA" :recipe recipe)))
             (when-let ((data (alist-get package metadata)))
               (setq candidate
@@ -95,29 +95,29 @@
                                                     "-"))))
                                   :url (alist-get 'url (alist-get 'props data))))))
             (cons (intern-soft (file-name-nondirectory file)) candidate)))
-      ((error) (message "parcel-menu-melpa couldn't process %S" file) nil))))
+      ((error) (message "elpaca-menu-melpa couldn't process %S" file) nil))))
 
-(defun parcel-menu-melpa--index ()
+(defun elpaca-menu-melpa--index ()
   "Return candidate list of available MELPA recipes."
-  (or parcel-menu-melpa--index-cache
-      (let ((metadata (parcel-menu-melpa--metadata)))
-        (setq parcel-menu-melpa--index-cache
+  (or elpaca-menu-melpa--index-cache
+      (let ((metadata (elpaca-menu-melpa--metadata)))
+        (setq elpaca-menu-melpa--index-cache
               (cl-loop for file in (directory-files "./recipes/" 'full "\\(?:^[^.]\\)")
-                       for candidate = (parcel-menu-melpa--convert file metadata)
+                       for candidate = (elpaca-menu-melpa--convert file metadata)
                        when candidate collect candidate)))))
 
 ;;;###autoload
-(defun parcel-menu-melpa (request)
+(defun elpaca-menu-melpa (request)
   "Delegate REQUEST.
 If REQUEST is `index`, return a recipe candidate alist.
 If REQUEST is `update`, update the MELPA recipe cache."
-  (let* ((repo (file-name-as-directory parcel-menu-melpa-path))
+  (let* ((repo (file-name-as-directory elpaca-menu-melpa-path))
          (default-directory repo))
-    (unless (file-exists-p repo) (parcel-menu-melpa--clone repo))
+    (unless (file-exists-p repo) (elpaca-menu-melpa--clone repo))
     (pcase request
-      ('index  (parcel-menu-melpa--index))
-      ('update (setq parcel-menu-melpa--index-cache nil)
-               (parcel-menu-melpa--update)))))
+      ('index  (elpaca-menu-melpa--index))
+      ('update (setq elpaca-menu-melpa--index-cache nil)
+               (elpaca-menu-melpa--update)))))
 
-(provide 'parcel-menu-melpa)
-;;; parcel-menu-melpa.el ends here
+(provide 'elpaca-menu-melpa)
+;;; elpaca-menu-melpa.el ends here

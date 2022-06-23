@@ -1,4 +1,4 @@
-;;; parcel-log.el --- Logging facilities for parcel.  -*- lexical-binding: t; -*-
+;;; elpaca-log.el --- Logging facilities for elpaca.  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2022  Nicholas Vollmer
 
@@ -23,46 +23,46 @@
 ;;
 
 ;;; Code:
-(require 'parcel-ui)
-(defvar parcel-log-buffer "*parcel-log*")
+(require 'elpaca-ui)
+(defvar elpaca-log-buffer "*elpaca-log*")
 
-(defcustom parcel-log-default-search-query ".*"
-  "Default query for `parcel-log-buffer'."
+(defcustom elpaca-log-default-search-query ".*"
+  "Default query for `elpaca-log-buffer'."
   :type 'string
-  :group 'parcel)
+  :group 'elpaca)
 
-(defun parcel-log--entries ()
+(defun elpaca-log--entries ()
   "Return log's `tabulated-list-entries'."
-  (let ((queue-time (parcel-q<-time (car (last parcel--queues)))))
+  (let ((queue-time (elpaca-q<-time (car (last elpaca--queues)))))
     (cl-loop
-     for (item . p) in (parcel--queued)
-     for log = (parcel<-log p)
-     for package = (parcel<-package p)
+     for (item . p) in (elpaca--queued)
+     for log = (elpaca<-log p)
+     for package = (elpaca<-package p)
      append
      (cl-loop for (status time info) in log
               for delta = (format-time-string "%02s.%6N" (time-subtract time queue-time))
-              for pkg = (propertize package 'face (parcel--status-face status) 'parcel p)
+              for pkg = (propertize package 'face (elpaca--status-face status) 'elpaca p)
               collect (list item (vector pkg delta (symbol-name status) info))))))
 
 ;;;###autoload
-(defun parcel-log (&optional _)
-  "Display `parcel-log-buffer'."
+(defun elpaca-log (&optional _)
+  "Display `elpaca-log-buffer'."
   (interactive)
-  (with-current-buffer (get-buffer-create parcel-log-buffer)
-    (unless (derived-mode-p 'parcel-ui-mode)
-      (parcel-ui-mode)
+  (with-current-buffer (get-buffer-create elpaca-log-buffer)
+    (unless (derived-mode-p 'elpaca-ui-mode)
+      (elpaca-ui-mode)
       (setq tabulated-list-format [("Package" 30 t)
                                    ("Time" 20 t)
                                    ("Status" 20 t)
                                    ("Info" 80 t)]
-            parcel-ui--want-faces nil
-            parcel-ui-entries-function #'parcel-log--entries
-            parcel-ui-header-line-prefix (propertize "Parcel Log" 'face '(:weight bold))
+            elpaca-ui--want-faces nil
+            elpaca-ui-entries-function #'elpaca-log--entries
+            elpaca-ui-header-line-prefix (propertize "Elpaca Log" 'face '(:weight bold))
             tabulated-list-use-header-line nil
             tabulated-list-sort-key '("Time"))
       (tabulated-list-init-header)
-      (parcel-ui--update-search-filter (current-buffer) parcel-log-default-search-query))
-    (pop-to-buffer-same-window parcel-log-buffer)))
+      (elpaca-ui--update-search-filter (current-buffer) elpaca-log-default-search-query))
+    (pop-to-buffer-same-window elpaca-log-buffer)))
 
-(provide 'parcel-log)
-;;; parcel-log.el ends here
+(provide 'elpaca-log)
+;;; elpaca-log.el ends here

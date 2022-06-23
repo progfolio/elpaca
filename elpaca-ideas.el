@@ -1,4 +1,4 @@
-;;; parcel-ideas.el --- ideas which may be incorporated into parcel at some point  -*- lexical-binding: t; -*-
+;;; elpaca-ideas.el --- ideas which may be incorporated into elpaca at some point  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2022  Nicholas Vollmer
 
@@ -23,42 +23,42 @@
 ;; 
 
 ;;; Code:
-(require 'parcel)
-(defvar parcel-directory)
-(defvar parcel--finalize-queue-hook)
-(defvar parcel-status-auto-kill)
-(defvar parcel-status-buffer)
+(require 'elpaca)
+(defvar elpaca-directory)
+(defvar elpaca--finalize-queue-hook)
+(defvar elpaca-status-auto-kill)
+(defvar elpaca-status-buffer)
 
-(defmacro parcel-with-dir (type item &rest body)
+(defmacro elpaca-with-dir (type item &rest body)
   "Set `default-directory' for duration of BODY.
 TYPE is either `:repo' or `:build' for ITEM's repo or build directory."
   (declare (indent 2) (debug t))
   `(let ((default-directory
-          (,(intern (format "parcel-%s-dir" (substring (symbol-name type) 1)))
-           (parcel-recipe ,item))))
+          (,(intern (format "elpaca-%s-dir" (substring (symbol-name type) 1)))
+           (elpaca-recipe ,item))))
      ,@body))
 
 
-(defun parcel-package-file-p ()
+(defun elpaca-package-file-p ()
   "Return t if current buffer's file is part of a repo."
   (interactive)
   (and-let* ((name (buffer-file-name))
-             ((string-prefix-p (expand-file-name "./repos" parcel-directory) name))
+             ((string-prefix-p (expand-file-name "./repos" elpaca-directory) name))
              ((cl-find-if (lambda (q) (member name
-                                              (mapcar #'car (parcel--files (cdr q)))))
-                          (parcel--queued))))))
+                                              (mapcar #'car (elpaca--files (cdr q)))))
+                          (elpaca--queued))))))
 
-(defun parcel-ui--post-maybe-rebuild ()
-  (setq parcel--finalize-queue-hook nil)
-  (when parcel-status-auto-kill (kill-buffer parcel-status-buffer)))
+(defun elpaca-ui--post-maybe-rebuild ()
+  (setq elpaca--finalize-queue-hook nil)
+  (when elpaca-status-auto-kill (kill-buffer elpaca-status-buffer)))
 
-(defun parcel-maybe-rebuild-package ()
+(defun elpaca-maybe-rebuild-package ()
   "Rebuild package associated with BUFFER."
   (interactive)
-  (when-let ((queued (parcel-package-file-p)))
-    (parcel-split-queue)
-    (setq parcel--finalize-queue-hook '(parcel-ui--post-maybe-rebuild))
-    (parcel-rebuild-package (car queued))))
+  (when-let ((queued (elpaca-package-file-p)))
+    (elpaca-split-queue)
+    (setq elpaca--finalize-queue-hook '(elpaca-ui--post-maybe-rebuild))
+    (elpaca-rebuild-package (car queued))))
 
-(provide 'parcel-ideas)
-;;; parcel-ideas.el ends here
+(provide 'elpaca-ideas)
+;;; elpaca-ideas.el ends here

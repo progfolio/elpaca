@@ -1,4 +1,4 @@
-;;; parcel-menu-org.el --- Parcel menu for Org packages  -*- lexical-binding: t; -*-
+;;; elpaca-menu-org.el --- Elpaca menu for Org packages  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2022  Nicholas Vollmer
 
@@ -20,24 +20,24 @@
 
 ;;; Commentary:
 
-;; A parcel menu for Org packages
+;; A elpaca menu for Org packages
 
 ;;; Code:
-(defvar parcel-menu-org--index-cache nil "Cache of Org menu index.")
-(require 'parcel-process)
+(defvar elpaca-menu-org--index-cache nil "Cache of Org menu index.")
+(require 'elpaca-process)
 
-(defvar parcel-directory)
-(defun parcel-menu-org--build ()
+(defvar elpaca-directory)
+(defun elpaca-menu-org--build ()
   "Generate `org-version.el`.
 `default-directory' is assumed to be org's repo dir."
   (let* ((default-directory (expand-file-name "lisp/"))
          (orgversion
-          (parcel-with-process
-              (parcel-process-call "git" "describe" "--match" "release*" "--abbrev=0" "HEAD")
+          (elpaca-with-process
+              (elpaca-process-call "git" "describe" "--match" "release*" "--abbrev=0" "HEAD")
             (if failure
                 ;; Backup in case where Org repo has no tags
-                (parcel-with-process
-                    (parcel-process-call
+                (elpaca-with-process
+                    (elpaca-process-call
                      "emacs" "-Q" "--batch"
                      "--eval" "(require 'lisp-mnt)"
                      "--visit" "org.el"
@@ -48,10 +48,10 @@
               (string-trim (replace-regexp-in-string "release_" "" stdout)))))
          (gitversion
           (concat orgversion "-g"
-                  (string-trim (parcel-process-output "git" "rev-parse" "--short=6" "HEAD"))))
+                  (string-trim (elpaca-process-output "git" "rev-parse" "--short=6" "HEAD"))))
          (emacs (concat invocation-directory invocation-name)))
     (call-process
-     emacs nil "*parcel-byte-compilation*" nil
+     emacs nil "*elpaca-byte-compilation*" nil
      "-Q" "--batch"
      "--eval" "(setq vc-handled-backends nil org-startup-folded nil)"
      "--eval" "(add-to-list 'load-path \".\")"
@@ -63,11 +63,11 @@
      "--eval" "(org-make-manuals)")))
 
 ;;;###autoload
-(defun parcel-menu-org (request)
+(defun elpaca-menu-org (request)
   "If REQUEST is `index`, return Org recipe candidate list."
   (when (eq request 'index)
-    (or parcel-menu-org--index-cache
-        (setq parcel-menu-org--index-cache
+    (or elpaca-menu-org--index-cache
+        (setq elpaca-menu-org--index-cache
               (list
                (cons 'org
                      (list  :source "Org"
@@ -78,8 +78,8 @@
                              :package "org"
                              :repo "https://git.savannah.gnu.org/git/emacs/org-mode.git"
                              :depth 'full ; `org-version' depends on repository tags.
-                             :pre-build '(progn (require 'parcel-menu-org)
-                                                (parcel-menu-org--build))
+                             :pre-build '(progn (require 'elpaca-menu-org)
+                                                (elpaca-menu-org--build))
                              :build '(:not autoloads)
                              :files '(:defaults ("etc/styles/" "etc/styles/*")))))
                (cons 'org-contrib
@@ -92,5 +92,5 @@
                             :repo "https://git.sr.ht/~bzg/org-contrib"
                             :files '(:defaults)))))))))
 
-(provide 'parcel-menu-org)
-;;; parcel-menu-org.el ends here
+(provide 'elpaca-menu-org)
+;;; elpaca-menu-org.el ends here

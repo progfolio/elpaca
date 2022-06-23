@@ -1,4 +1,4 @@
-;;; parcel-process.el -- Functions for calling processes  -*- lexical-binding: t; -*-
+;;; elpaca-process.el -- Functions for calling processes  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2022  Nicholas Vollmer
 
@@ -25,24 +25,24 @@
 ;;; Code:
 (eval-when-compile (require 'subr-x))
 
-(defvar parcel-process-newline-regexp "[
+(defvar elpaca-process-newline-regexp "[
 ]"
   "Regexp matching return or newline in process output.")
 
-(defconst parcel-process--stderr
-  (expand-file-name (format "parcel-stderr-%s" (emacs-pid))
+(defconst elpaca-process--stderr
+  (expand-file-name (format "elpaca-stderr-%s" (emacs-pid))
                     temporary-file-directory)
   "File for storing proccesses' stderr.")
 
-(defun parcel--delete-stderr-file ()
-  "Remove `parcel-process--stderr' file."
-  (when (and (boundp 'parcel-process--stderr)
-             (file-exists-p parcel-process--stderr))
-    (delete-file parcel-process--stderr)))
+(defun elpaca--delete-stderr-file ()
+  "Remove `elpaca-process--stderr' file."
+  (when (and (boundp 'elpaca-process--stderr)
+             (file-exists-p elpaca-process--stderr))
+    (delete-file elpaca-process--stderr)))
 
-(add-hook 'kill-emacs-hook #'parcel--delete-stderr-file)
+(add-hook 'kill-emacs-hook #'elpaca--delete-stderr-file)
 
-(defun parcel-process-call (program &rest args)
+(defun elpaca-process-call (program &rest args)
   "Run PROGRAM syncrhonously with ARGS.
 Return a list of form: (EXITCODE STDOUT STDERR).
 If the process is unable to start, return an elisp error object."
@@ -50,16 +50,16 @@ If the process is unable to start, return an elisp error object."
     (condition-case err
         (with-temp-buffer
           (list (apply #'call-process program nil
-                       (list (current-buffer) parcel-process--stderr)
+                       (list (current-buffer) elpaca-process--stderr)
                        nil args)
                 (let ((s (buffer-string))) (unless (string-empty-p s) s))
-                (with-current-buffer (find-file-noselect parcel-process--stderr
+                (with-current-buffer (find-file-noselect elpaca-process--stderr
                                                          'nowarn 'raw)
                   (prog1 (let ((s (buffer-string))) (unless (string-empty-p s) s))
                     (kill-buffer)))))
       (error err))))
 
-(defmacro parcel-with-process (result &rest body)
+(defmacro elpaca-with-process (result &rest body)
   "Provide anaphoric RESULT bindings for duration of BODY.
 RESULT must be an expression which evaluates to a list of form:
   (EXITCODE STDOUT STDERR)
@@ -83,34 +83,34 @@ Anaphroic bindings provided:
      (ignore result exit invoked success failure stdout stderr)
      ,@body))
 
-(defmacro parcel-with-async-process (process &rest body)
+(defmacro elpaca-with-async-process (process &rest body)
   "Execute BODY after PROCESS is run asynchronously."
   (declare (indent 1) (debug t))
   `(let ((result))
      (make-process
-      :name "parcel-async"
+      :name "elpaca-async"
       :filter (lambda (proc output) (setq result (cons result output)))
       :sentinel (lambda (proc event)
                   (when (equal event "finished\n")
-                    (eval `(parcel-with-process ',(read (cdr result))
+                    (eval `(elpaca-with-process ',(read (cdr result))
                              ,@',body)
                           t)))
       :command (list (concat invocation-directory invocation-name)
-                     "-L" parcel-directory
-                     "-l" (expand-file-name "parcel/parcel-process.el" parcel-directory)
+                     "-L" elpaca-directory
+                     "-l" (expand-file-name "elpaca/elpaca-process.el" elpaca-directory)
                      "--batch"
                      "--eval"
-                     ,(format "(message \"%%S\" (apply #'parcel-process-call '%S))" process)))))
+                     ,(format "(message \"%%S\" (apply #'elpaca-process-call '%S))" process)))))
 
-(defun parcel-process-output (program &rest args)
+(defun elpaca-process-output (program &rest args)
   "Return result of running PROGRAM with ARGS.
 If the command cannot be run or returns a nonzero exit code, throw an error."
-  (parcel-with-process
-      (apply #'parcel-process-call program args)
+  (elpaca-with-process
+      (apply #'elpaca-process-call program args)
     (cond
      (success       (concat stdout stderr)) ; Programs may exit normally and print to stderr
      ((not invoked) (error "%S" result))
      (t             (error "%s exited with code %s: %s" program (car result) stderr)))))
 
-(provide 'parcel-process)
-;;; parcel-process.el ends here
+(provide 'elpaca-process)
+;;; elpaca-process.el ends here

@@ -1,4 +1,4 @@
-;;; parcel-menu-non-gnu-elpa.el --- NonGNU ELPA recipe menu  -*- lexical-binding: t; -*-
+;;; elpaca-menu-non-gnu-elpa.el --- NonGNU ELPA recipe menu  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2022  Nicholas Vollme
 
@@ -24,27 +24,27 @@
 
 ;;; Code:
 (require 'cl-lib)
-(require 'parcel)
+(require 'elpaca)
 
-(defcustom parcel-menu-non-gnu-elpa-cache-path
-  (expand-file-name "cache/non-gnu-elpa.eld" parcel-directory)
+(defcustom elpaca-menu-non-gnu-elpa-cache-path
+  (expand-file-name "cache/non-gnu-elpa.eld" elpaca-directory)
   "File name for NonGNU ELPA recipe cache."
   :type 'file
-  :group 'parcel)
+  :group 'elpaca)
 
-(defvar parcel-menu-non-gnu-elpa-url
+(defvar elpaca-menu-non-gnu-elpa-url
   "https://git.savannah.gnu.org/cgit/emacs/nongnu.git/plain/elpa-packages"
   "URL for NonGNU ELPA package list.")
 
-(defvar parcel-menu-non-gnu-elpa--index-cache
-  (when (file-exists-p parcel-menu-non-gnu-elpa-cache-path)
-    (parcel--read-file parcel-menu-non-gnu-elpa-cache-path))
+(defvar elpaca-menu-non-gnu-elpa--index-cache
+  (when (file-exists-p elpaca-menu-non-gnu-elpa-cache-path)
+    (elpaca--read-file elpaca-menu-non-gnu-elpa-cache-path))
   "Cache of NonGNU ELPA recipes.")
 
 (defvar url-http-end-of-headers)
-(defun parcel-menu-non-gnu-elpa--recipes ()
-  "Return list of recipes from `parcel-menu-non-gnu-elpa-url'."
-  (with-current-buffer (url-retrieve-synchronously parcel-menu-non-gnu-elpa-url)
+(defun elpaca-menu-non-gnu-elpa--recipes ()
+  "Return list of recipes from `elpaca-menu-non-gnu-elpa-url'."
+  (with-current-buffer (url-retrieve-synchronously elpaca-menu-non-gnu-elpa-url)
     (goto-char url-http-end-of-headers)
     (condition-case err
         (read (current-buffer))
@@ -52,7 +52,7 @@
 
 (declare-function dom-by-tag "dom")
 (declare-function dom-texts  "dom")
-(defun parcel-menu-non-gnu-elpa--metadata ()
+(defun elpaca-menu-non-gnu-elpa--metadata ()
   "Return alist of package metadata."
   (when (libxml-available-p)
     (require 'url)
@@ -68,10 +68,10 @@
                     (cons item (string-join s " "))))
                 rows)))))
 
-(defun parcel-menu-non-gnu-elpa--index ()
+(defun elpaca-menu-non-gnu-elpa--index ()
   "Return candidate list of available NonGNU ELPA recipes."
-  (let ((metadata (parcel-menu-non-gnu-elpa--metadata)))
-    (cl-loop for recipe in (parcel-menu-non-gnu-elpa--recipes)
+  (let ((metadata (elpaca-menu-non-gnu-elpa--metadata)))
+    (cl-loop for recipe in (elpaca-menu-non-gnu-elpa--recipes)
              for name = (pop recipe)
              for item = (intern name)
              for url = (plist-get recipe :url)
@@ -87,32 +87,32 @@
                       ,@(when-let ((ignored (plist-get recipe :ignored-files)))
                           `(:files (:defaults (:not ,@ignored)))))))))
 
-(defun parcel-menu-non-gnu-elpa--write-cache ()
+(defun elpaca-menu-non-gnu-elpa--write-cache ()
   "Write NonGNU ELPA menu item cache."
-  (unless (file-exists-p parcel-cache-directory)
-    (make-directory parcel-cache-directory))
-  (parcel--write-file parcel-menu-non-gnu-elpa-cache-path
-    (prin1 (parcel-menu-non-gnu-elpa--index))))
+  (unless (file-exists-p elpaca-cache-directory)
+    (make-directory elpaca-cache-directory))
+  (elpaca--write-file elpaca-menu-non-gnu-elpa-cache-path
+    (prin1 (elpaca-menu-non-gnu-elpa--index))))
 
 ;;;###autoload
-(defun parcel-menu-non-gnu-elpa (request &optional recurse)
+(defun elpaca-menu-non-gnu-elpa (request &optional recurse)
   "Delegate REQUEST.
 If REQUEST is `index`, return a recipe candidate alist.
 If REQUEST is `update`, update the NonGNU ELPA recipe cache.
 If RECURSE is non-nil, message that update succeeded."
   (cond
    ((eq request 'index)
-    (or parcel-menu-non-gnu-elpa--index-cache
+    (or elpaca-menu-non-gnu-elpa--index-cache
         (progn
-          (parcel-menu-non-gnu-elpa--write-cache)
+          (elpaca-menu-non-gnu-elpa--write-cache)
           (prog1
-              (setq parcel-menu-non-gnu-elpa--index-cache
-                    (parcel-menu-non-gnu-elpa--index))
+              (setq elpaca-menu-non-gnu-elpa--index-cache
+                    (elpaca-menu-non-gnu-elpa--index))
             (when recurse (message "NonGNU ELPA menu updated."))))))
    ((eq request 'update)
-    (delete-file parcel-menu-non-gnu-elpa-cache-path)
-    (setq parcel-menu-non-gnu-elpa--index-cache nil)
-    (parcel-menu-non-gnu-elpa 'index))))
+    (delete-file elpaca-menu-non-gnu-elpa-cache-path)
+    (setq elpaca-menu-non-gnu-elpa--index-cache nil)
+    (elpaca-menu-non-gnu-elpa 'index))))
 
-(provide 'parcel-menu-non-gnu-elpa)
-;;; parcel-menu-non-gnu-elpa.el ends here
+(provide 'elpaca-menu-non-gnu-elpa)
+;;; elpaca-menu-non-gnu-elpa.el ends here
