@@ -3,19 +3,21 @@
 #+options: exports:both
 
 #+html: <p align="center"><img src="./elpaca.gif" /></p>
+
 Elpaca is an elisp package manager.
 It allows the user to find, install, update, and remove third-party packages for Emacs.
 It is a replacement for the built-in Emacs package manager, package.el.
+
 * Installation
 ** Requirements
 - Emacs >= 27.1
 - git (minimum version TBD)
 - Windows users must be able to create symlinks.
 ** Bootstrap Snippet
-To install elpaca, add the following bootstrapping snippet to your init.el.
-It must come before any calls to other elpaca functions/macros.
-This will clone elpaca into your =user-emacs-directory= under the =elpaca= subdirectory.
-It then builds and activates elpaca.
+To install Elpaca, add the following bootstrapping snippet to your init.el.
+It must come before any calls to other Elpaca functions/macros.
+This will clone Elpaca into your =user-emacs-directory= under the =elpaca= subdirectory.
+It then builds and activates Elpaca.
 
 #+begin_src emacs-lisp :lexical t
 (declare-function elpaca-generate-autoloads "elpaca")
@@ -47,7 +49,7 @@ It then builds and activates elpaca.
 ** Notes
 
 The =elpaca-example= macro in the following examples reduces verbosity.
-It is not part of elpaca.
+It is not part of Elpaca.
 
 #+begin_src emacs-lisp :lexical t :exports none :results silent
 (defun elpaca-example-sort-plist (plist)
@@ -78,7 +80,7 @@ Examples will use the following [[#menus][recipe menu]], which offers a "burger"
 :PROPERTIES:
 :CUSTOM_ID: recipes
 :END:
-A recipe provides elpaca with the metadata necessary to build and install a package.
+A recipe provides Elpaca with the metadata necessary to build and install a package.
 It is a list of the form:
 
 #+begin_src emacs-lisp :lexical t
@@ -190,27 +192,6 @@ the elpaca-example-menu provides the rest of the "burger" recipe.
 (:package "burger" :beef t :buns 2 :cheese t :cook well-done :from elpaca-example-menu :inherit t :lettuce t :tomato t)
 #+end_src
 
-The following list shows the order of precedence for inheritance.
-Each item takes precedence over the items which follow it.
-
-- elpaca-recipe-functions
-- declared recipe
-- elpaca-order-functions
-- elpaca-menu-functions
-
-#+name: recipe-inheritance-precedence
-#+begin_src emacs-lisp :lexical t :results raw code :exports both
-(elpaca-example
- (let ((elpaca-recipe-functions (lambda (recipe) '(:from recipe-functions :cheese extra)))
-       (elpaca-order-functions (lambda (order) '(:from 'order-functions :tomato nil))))
-   (elpaca-recipe '(burger))))
-#+end_src
-
-#+results: recipe-inheritance-precedence
-#+begin_src emacs-lisp
-(:package "burger" :beef t :buns 2 :cheese extra :cook well-done :from recipe-functions :lettuce t :tomato nil)
-#+end_src
-
 *** elpaca-recipe-functions
 :PROPERTIES:
 :CUSTOM_ID: elpaca-recipe-functions
@@ -234,6 +215,31 @@ This is useful if you want to guarantee the values of certain keywords despite a
 #+results: recipe-functions-example
 #+begin_src emacs-lisp
 (:package "burger" :beef t :buns 2 :cheese extra :cook well-done :from elpaca-example-menu :lettuce t :tomato t)
+#+end_src
+
+*** Inheritance precedence
+:PROPERTIES:
+:CUSTOM_ID: inheritance-precedence
+:END:
+The following list shows the order of precedence for inheritance.
+Each item takes precedence over the items which follow it.
+
+- elpaca-recipe-functions
+- declared recipe
+- elpaca-order-functions
+- elpaca-menu-functions
+
+#+name: recipe-inheritance-precedence
+#+begin_src emacs-lisp :lexical t :results raw code :exports both
+(elpaca-example
+ (let ((elpaca-recipe-functions (lambda (recipe) '(:from recipe-functions :cheese extra)))
+       (elpaca-order-functions (lambda (order) '(:from 'order-functions :tomato nil))))
+   (elpaca-recipe '(burger))))
+#+end_src
+
+#+results: recipe-inheritance-precedence
+#+begin_src emacs-lisp
+(:package "burger" :beef t :buns 2 :cheese extra :cook well-done :from recipe-functions :lettuce t :tomato nil)
 #+end_src
 
 ** Menus
@@ -291,33 +297,64 @@ Menus are checked in order until one returns the requested menu item or the menu
 :CUSTOM_ID: orders
 :END:
 
-An order is a partial or full recipe provided to elpaca.
-At a minimum, an order is a symbol:
+At a minimum, an order is a symbol which represents the name of a [[#menus][menu]] item:
 
 #+begin_src emacs-lisp :lexical t
 (elpaca 'example)
 #+end_src
 
-In this case, the
+An order may also be a partial or full recipe:
+
+#+begin_src emacs-lisp :lexical t
+(elpaca '(example :host gitlab))
+(elpaca '(example :host gitlab :repo "user/example" :inherit nil))
+#+end_src
+
 *** elpaca-order-functions
-The abnormal hook =elpaca-order-functions= runs via =run-hook-with-args-until-success= before
+The abnormal hook =elpaca-order-functions= runs via =run-hook-with-args-until-success= before =elpaca-menu-functions=.
 Each function in the list should accept the current recipe as its sole argument and return either nil or a plist.
 The first function to return a plist has its return value merged with the current recipe.
 
-This is useful if you want to guarantee the values of certain keywords despite allowing recipe inheritance.
+This is useful for declaring default order properties.
+For example, the following function disables recipe inheritance by default:
+
+#+begin_src emacs-lisp :lexical t :results raw code :exports both
+(elpaca-example
+ (let ((elpaca-order-functions '((lambda (_) '(:inherit nil)))))
+   (elpaca-recipe 'burger)))
+#+end_src
+
+#+RESULTS:
+#+begin_src emacs-lisp
+(:package "burger" :inherit nil)
+#+end_src
 
 ** Queues
+:PROPERTIES:
+:CUSTOM_ID: queues
+:END:
+Elpaca installs packages asynchronously.
+[[#orders][Orders]] are automatically queued in a list.
+A queue is considered "processed" when all of its orders have either finished or failed.
+
+Queues make it possible to ensure a package is installed prior to other packages.
+The =elpaca-queue= macro wraps calls to =elpaca=, ensuring those orders are processed in their own queue.
+This is especially useful when one wants to install a package to use later on in their init file.
+For example, a package which implements an Elpaca [[#menus][menu]]:
+
+#+begin_src emacs-lisp :lexical t
+(elpaca-queue (elpaca '(melpulls :host github :repo "progfolio/melpulls"))
+              (add-to-list 'elpaca-menu-functions #'melpulls))
+;; Implicitly queued into a new queue.
+(elpaca 'menu-item-available-in-melpulls)
+#+end_src
+
 * Installing Packages
 
 - elpaca :: =(order &rest body)=
-Installs /ORDER/ and executes /BODY/ after processing the order queue.
+Installs /ORDER/ and executes /BODY/ after processing ORDER's [[#queues][queue]].
 
-/ORDER/ is a symbol for which a menu =elpaca-menu-functions= will provide a recipe,
-or a recipe of the form:
-
-
-/ITEM/ is a unique symbol to identify the order and PROPS are recipe key/val pairs.
-See [[#recipes][recipe format]] for a full list of the recipe keywords.
+/ORDER/ is an [[#orders][order]] as described above.
 
 This macro is for programmatic use in one's init file.
 Any of the following will install the "example" package:
@@ -340,11 +377,13 @@ Any of the following will install the "example" package:
                       (list :pre-build ((message "Mac specific pre-build"))))))
 #+end_src
 
-* Finding, Updating, Removing Packages
-The =elpaca-manger= command will focus the elpaca manager buffer.
-From this buffer you can search and act on all the packages elpaca knows about.
+If /ORDER/ is nil, /BODY/ is still executed after processing the current [[#queues][queue]].
 
-The following commands are available in the elpaca-manager-buffer:
+* Finding, Updating, Removing Packages
+The =elpaca-manger= command will pop to the Elpaca manager buffer.
+From this buffer you can search and act on all the packages Elpaca knows about.
+
+The following commands are available in the Elpaca manager buffer:
 
 | Command                     | Default Binding | Action                                                                           | Region aware? |
 |-----------------------------+-----------------+----------------------------------------------------------------------------------+---------------|
