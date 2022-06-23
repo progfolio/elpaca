@@ -124,7 +124,7 @@ It is a list of the form:
 (example :host github :repo "user/example" :ref "a76ca0a") ;; Check out a specific commit.
   #+end_src
 
-- :depth :: Package repository's history depth.
+- :depth :: The package repository's history depth.
 
   #+begin_src emacs-lisp :lexical t
 (example :depth 1) ;; Shallow clone with history truncated to 1 commit.
@@ -235,7 +235,7 @@ Each item takes precedence over the items which follow it.
 #+begin_src emacs-lisp :lexical t :results raw code :exports both
 (elpaca-example
  (let ((elpaca-recipe-functions (lambda (recipe) '(:from recipe-functions :cheese extra)))
-       (elpaca-order-functions (lambda (order) '(:from 'order-functions :tomato nil))))
+       (elpaca-order-functions (lambda (order) '(:from order-functions :tomato nil))))
    (elpaca-recipe '(burger))))
 #+end_src
 
