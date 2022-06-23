@@ -1,7 +1,8 @@
 #+title: Elpaca: An Elisp Package Manager
 #+author: Nicholas Vollmer
 #+options: exports:both
-[[./elpaca.gif]]
+
+#+html: <p align="center"><img src="./elpaca.gif" /></p>
 * What is Elpaca?
 Elpaca is an elisp package manager.
 It allows the user to find, install, update, and remove third-party packages for Emacs.
