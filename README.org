@@ -381,6 +381,25 @@ Any of the following will install the "example" package:
 
 If /ORDER/ is nil, /BODY/ is still executed after processing the current [[#queues][queue]].
 
+#+begin_src emacs-lisp :lexical t
+(elpaca 'first (message "First configured"))
+;; If this weren't wrapped in an `elpaca' call, it would be executed FIRST
+;; Due to the "first" and "third" package installing asynchronously.
+(elpaca nil (message "Second"))
+(elpaca 'third (message "Third configured"))
+#+end_src
+
+- elpaca-use-package :: (order &rest body)
+  A wrapper for the [[https://www.github.com/jweigley/use-package][use-package]] macro.
+  /ORDER/ is the same as above.
+  /BODY/ must conform to use-package's /ARGS/.
+
+  #+begin_src emacs-lisp :lexical t
+(elpaca use-package (require 'use-package)) ; install use-package
+(elpaca-use-package (example :host github :repo "user/example")
+  :config (message "Example configured"))
+  #+end_src
+
 * Finding, Updating, Removing Packages
 The =elpaca-manger= command will pop to the Elpaca manager buffer.
 From this buffer you can search and act on all the packages Elpaca knows about.
