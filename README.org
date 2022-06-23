@@ -45,7 +45,7 @@ It then builds and activates Elpaca.
        (insert (format "\n%S" err))
        (display-buffer buffer)))))
 (require 'elpaca-autoloads)
-(add-hook 'after-init-hook #'elpaca-process-init)
+(add-hook 'after-init-hook #'elpaca-process-queues)
 #+end_src
 
 * Basic concepts
@@ -458,7 +458,7 @@ The following is an example init.el using Elpaca:
        (insert (format "\n%S" err))
        (display-buffer buffer)))))
 (require 'elpaca-autoloads)
-(add-hook 'after-init-hook #'elpaca-process-init)
+(add-hook 'after-init-hook #'elpaca-process-queues)
 
 ;; Install use-package
 (elpaca use-package (require 'use-package))

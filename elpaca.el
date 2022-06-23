@@ -1386,11 +1386,12 @@ ORDER's package is not made available during subsequent sessions."
   "Process elpacas in Q."
   (mapc #'elpaca--process (reverse (elpaca-q<-elpacas q))))
 
-;;@TODO: This could be generalized to find the first incomplete queue and start there.
 ;;;###autoload
-(defun elpaca-process-init ()
-  "Process init file queues."
-  (elpaca--process-queue (car (last elpaca--queues))))
+(defun elpaca-process-queues ()
+  "Process the incomplete queues."
+  (if-let ((incomplete (cl-find 'incomplete (reverse elpaca--queues) :key #'elpaca-q<-status)))
+      (elpaca--process-queue incomplete)
+    (message "No incomplete queues to process")))
 
 (defun elpaca--on-disk-p (item)
   "Return t if ITEM has an associated P and a build or repo dir on disk."
