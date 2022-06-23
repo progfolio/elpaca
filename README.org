@@ -11,6 +11,7 @@ It allows the user to find, install, update, and remove third-party packages for
 It is a replacement for the built-in Emacs package manager, package.el.
 
 * Installation
+If you're impatient, take a look at the [[#example-configuration][example configuration]]
 ** Requirements
 - Emacs >= 27.1
 - git (minimum version TBD)
@@ -426,4 +427,44 @@ The following commands are available in the Elpaca manager buffer:
 | elpaca-ui-visit-repo        | v               | Visit the current package's repository via =dired=                                 | no            |
 | elpaca-ui-execute-marks     | x               | Execute marked package's actions                                                 | no            |
 
+* Example configuration
+:PROPERTIES:
+:CUSTOM_ID: example-configuration
+:END:
+
+The following is an example init.el using Elpaca:
+
+#+begin_src emacs-lisp :lexical t
+;; Bootstrap Elpaca
+(declare-function elpaca-generate-autoloads "elpaca")
+(defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
+(when-let ((elpaca-repo (expand-file-name "repos/elpaca/" elpaca-directory))
+           (elpaca-url  "https://github.com/progfolio/elpaca.git")
+           ((add-to-list 'load-path elpaca-repo))
+           ((not (file-exists-p elpaca-repo)))
+           (buffer (get-buffer-create "*elpaca-bootstrap*")))
+  (condition-case-unless-debug err
+      (progn
+        (unless (zerop (call-process "git" nil buffer t "clone" elpaca-url elpaca-repo))
+          (error "%s" (list (with-current-buffer buffer (buffer-string)))))
+        (byte-recompile-directory elpaca-repo 0 'force)
+        (require 'elpaca)
+        (elpaca-generate-autoloads "elpaca" elpaca-repo)
+        (kill-buffer buffer))
+    ((error)
+     (delete-directory elpaca-directory 'recursive)
+     (with-current-buffer buffer
+       (goto-char (point-max))
+       (insert (format "\n%S" err))
+       (display-buffer buffer)))))
+(require 'elpaca-autoloads)
+(add-hook 'after-init-hook #'elpaca-process-init)
+
+;; Install use-package
+(elpaca use-package (require 'use-package))
+;; Install evil and configure via `use-package'
+(elpaca-use-package evil :demand t)
+;; Install a package from a user-provided recipe
+(elpaca (yodel :host github :repo "progfolio/yodel"))
+#+end_src
 #  LocalWords:  elpaca Elpaca elisp repo minibuffer website init ui UI unmark Unmark plist alist MELPA programmatic
