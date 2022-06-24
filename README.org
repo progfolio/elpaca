@@ -254,13 +254,13 @@ A menu is a function which returns an alist of the form:
 #+end_src
 
 /ITEM/ is a symbol uniquely identifying a package.
-/DATA/ is a plist of metadata about the package.
+/DATA/ is a plist of package metadata.
 /DATA/ must contain the following keywords:
 
 - :recipe :: A package [[#recipes][recipe.]]
 - :source :: A string naming the menu.
 
-It may also additionally provide keywords to provide more information about a package.
+It may also provide additional information about a package.
 For example, the Elpaca UI utilizes the following keywords when present:
 
 - :url :: The package's website URL.
