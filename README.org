@@ -264,11 +264,11 @@ A menu is a function which returns an alist of the form:
 It may also additionally provide keywords to provide more information about a package.
 For example, the Elpaca UI utilizes the following keywords when present:
 
-- :url :: A URL to the package's website.
+- :url :: The package's website URL.
 - :description :: A description of the package.
-- :date :: Time of the last update to the package.
+- :date :: The time of package's last update.
 
-The function must accept one the following /REQUEST/ symbols as an argument:
+The function must accept one of the following /REQUEST/ symbols as an argument:
 
 - index :: Return the alist described above
 - update :: update the menu's alist.
