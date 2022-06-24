@@ -314,8 +314,8 @@ An order may also be a partial or full recipe:
 
 *** elpaca-order-functions
 The abnormal hook =elpaca-order-functions= runs via =run-hook-with-args-until-success= before =elpaca-menu-functions=.
-Each function in the list should accept the current recipe as its sole argument and return either nil or a plist.
-The first function to return a plist has its return value merged with the current recipe.
+Each function in the list should accept the current order as its sole argument and return either nil or a plist.
+The first function to return a plist has its return value merged with the current order.
 
 This is useful for declaring default order properties.
 For example, the following function disables recipe inheritance by default:
