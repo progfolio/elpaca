@@ -49,7 +49,6 @@ It then builds and activates Elpaca.
 #+end_src
 
 * Basic concepts
-** Notes
 
 The =elpaca-example= macro in the following examples reduces verbosity.
 It is not part of Elpaca.
