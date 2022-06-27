@@ -1710,7 +1710,7 @@ A package for miscellaneous functions.
     "u" '(+universal-arg :which-key "universal-arg"))
   (+general-global-buffer
     "a" '(+alternate-buffer   :which-key "alternate-buffer")
-    "B" 'bury-buffer
+    "q" 'bury-buffer
     "m" '(+kill-other-buffers :which-key "kill-other-buffers")
     "N" '(+normalize-buffer   :which-key "normalize-buffer")
     "u" 'unbury-buffer)
