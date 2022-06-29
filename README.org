@@ -339,7 +339,7 @@ Elpaca installs packages asynchronously.
 [[#orders][Orders]] are automatically queued in a list.
 A queue is considered "processed" when all of its orders have either finished or failed.
 
-Queues make it possible to ensure a package is installed prior to other packages.
+Queues make it possible to ensure a package is installed, activated, and configured prior to other packages.
 The =elpaca-queue= macro wraps calls to =elpaca=, ensuring those orders are processed in their own queue.
 This is especially useful when one wants to install a package to use later on in their init file.
 For example, a package which implements an Elpaca [[#menus][menu]]:
