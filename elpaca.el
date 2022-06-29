@@ -297,10 +297,8 @@ This is faster (what you want with non-interactive calls)."
   (let* ((menus (if (eq interactive '(4))
                     (mapcar #'intern-soft
                             (cl-remove-duplicates
-                             (completing-read-multiple
-                              "Menus: "
-                              elpaca-menu-functions
-                              nil 'require-match)
+                             (completing-read-multiple "Menus: " elpaca-menu-functions
+                                                       nil 'require-match)
                              :test #'equal))
                   (or menus elpaca-menu-functions (user-error "No menus found"))))
          (elpaca-menu-functions menus)
