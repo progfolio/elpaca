@@ -29,6 +29,8 @@
 (defvar elpaca-status-auto-kill)
 (defvar elpaca-status-buffer)
 
+
+;;;###autoload
 (defmacro elpaca-with-dir (type item &rest body)
   "Set `default-directory' for duration of BODY.
 TYPE is either `:repo' or `:build' for ITEM's repo or build directory."
