@@ -116,9 +116,9 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
       (let* ((recipe (elpaca-recipe item))
              (repo   (elpaca-repo-dir recipe)))
         (unless (cl-some (lambda (cell)
-                           (when-let ((p (cdr cell))
-                                      ((equal repo (elpaca<-repo-dir p))))
-                             p))
+                           (when-let ((e (cdr cell))
+                                      ((equal repo (elpaca<-repo-dir e))))
+                             e))
                          queued)
           (or (file-exists-p (elpaca-build-dir recipe))
               (file-exists-p (elpaca-repo-dir  recipe))))))))
@@ -127,11 +127,11 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
   "Return non-nil if CANDIDATE is an oprhaned package."
   (elpaca-ui--orphan-p (car candidate)))
 
-(defun elpaca-ui--fallback-date (p)
-  "Return time of last modification for P's built elisp, otherwise nil."
+(defun elpaca-ui--fallback-date (e)
+  "Return time of last modification for E's built elisp, otherwise nil."
   (file-attribute-modification-time
-   (file-attributes (expand-file-name (concat (elpaca<-package p) ".el")
-                                      (elpaca<-build-dir p)))))
+   (file-attributes (expand-file-name (concat (elpaca<-package e) ".el")
+                                      (elpaca<-build-dir e)))))
 
 (defun elpaca-ui--custom-candidates ()
   "Return declared candidate list with no recipe in `elpaca-menu-functions'."
@@ -534,10 +534,10 @@ If TOGGLE is non-nil, invert search." name)
     (user-error "No running process associated with %S" (elpaca<-package p))))
 
 (defun elpaca-ui--visit (type)
-  "Visit current P's TYPE dir.
+  "Visit current E's TYPE dir.
 TYPE is either the symbol `repo` or `build`."
-  (if-let ((p (get-text-property (line-beginning-position) 'elpaca))
-           (dir   (funcall (intern (format "elpaca<-%s-dir" type)) p))
+  (if-let ((e (get-text-property (line-beginning-position) 'elpaca))
+           (dir   (funcall (intern (format "elpaca<-%s-dir" type)) e))
            ((file-exists-p dir)))
       (dired dir)
     (user-error "No %s dir associated with current line" type)))

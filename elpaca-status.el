@@ -39,20 +39,20 @@
   :group 'elpaca)
 
 (defun elpaca-status--entries (&optional queued)
-  "Return list of `tabultaed-list-entries' from QUEUED P's."
-  (cl-loop for (item . p) in (reverse (or queued
+  "Return list of `tabultaed-list-entries' from QUEUED E's."
+  (cl-loop for (item . e) in (reverse (or queued
                                           (elpaca-q<-elpacas
                                            (cl-find-if #'elpaca-q<-elpacas elpaca--queues))))
-           for status = (elpaca--status p)
+           for status = (elpaca--status e)
            collect
-           (list item (vector (propertize (elpaca<-package p)
+           (list item (vector (propertize (elpaca<-package e)
                                           'face (elpaca--status-face status)
-                                          'elpaca p)
+                                          'elpaca e)
                               (symbol-name status)
-                              (elpaca--info p)))))
+                              (elpaca--info e)))))
 
 (defun elpaca-status--header-line (&optional queued)
-  "Set `elpaca-buffer' header line to reflect QUEUED P's statuses."
+  "Set `elpaca-buffer' header line to reflect QUEUED Elpaca statuses."
   (let* ((queued (or queued (elpaca-q<-elpacas
                              (cl-find-if #'elpaca-q<-elpacas elpaca--queues))))
          (counts nil)
