@@ -389,7 +389,8 @@ If /ORDER/ is nil, /BODY/ is still executed after processing the current [[#queu
 (elpaca 'third (message "Third configured"))
 #+end_src
 
-- elpaca-use-package :: (order &rest body)
+- elpaca-use-package :: =(order &rest body)=
+
   A wrapper for the [[https://www.github.com/jweigley/use-package][use-package]] macro.
   /ORDER/ is the same as above.
   /BODY/ must conform to use-package's /ARGS/.
