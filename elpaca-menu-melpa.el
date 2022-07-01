@@ -40,9 +40,9 @@
   "Return an alist of MELPA package metadata."
   (with-current-buffer (url-retrieve-synchronously
                         "https://melpa.org/archive.json")
-    (goto-char url-http-end-of-headers)
-    ;;@COMPAT: Emacs<28
-    (json-read)))
+    (json-parse-string
+     (decode-coding-region url-http-end-of-headers (point-max) 'utf-8 t)
+     :object-type 'alist)))
 
 ;;@TODO: needs to be more robust if processes error
 (defun elpaca-menu-melpa--clone (path)
