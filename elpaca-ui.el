@@ -38,12 +38,23 @@ Each element is of the form: (DESCRIPTION PREFIX FACE FUNCTION)."
   :type 'list)
 
 (defcustom elpaca-ui-search-tags
-  '(("dirty"     . elpaca-ui-tag-dirty)
-    ("declared"  . elpaca-ui-tag-declared)
-    ("orphan"    . elpaca-ui-tag-orphan)
-    ("random"    . elpaca-ui-tag-random)
-    ("installed" . elpaca-ui-tag-installed)
-    ("marked"    . elpaca-ui-tag-marked))
+  '((dirty     . (lambda (entires) (cl-remove-if-not #'elpaca-worktree-dirty-p :key #'car)))
+    (declared  . (lambda (entries) (cl-remove-if-not #'elpaca-declared-p :key #'car)))
+    (orphan    . (lambda (entries) (cl-remove-if-not #'elpaca-ui--orphan-p entries) :key #'car))
+    (random    . (lambda (entries)
+                   (if (< (length entries) 10)
+                       entries
+                     (let ((results nil)
+                           (seen nil))
+                       (while (< (length results) 10)
+                         (when-let ((n (random (length entries)))
+                                    ((not (memq n seen))))
+                           (push (nth n entries) results)
+                           (push n seen)))
+                       results))))
+    (installed . (lambda (entries) (cl-remove-if-not #'elpaca-installed-p entries :key #'car)))
+    (marked    . (lambda (entries) (cl-loop for (item . rest) in elpaca-ui--marked-packages
+                                            collect (assoc item entries)))))
   "Alist of search tags.
 Each cell is of form (NAME FILTER).
 If FILTER is a function it must accept a single candidate as its sole
@@ -85,30 +96,39 @@ It recieves one argument, the parsed search query list.")
 If PREFIX is non-nil it is displayed before the rest of the header-line."
   (let* ((tags (car parsed))
          (cols (cadr parsed))
-         (full-match-p (= (length cols) 1)))
+         (full-match-p (= (length cols) 1))
+         (queries (and full-match-p (car cols))))
     (setq header-line-format
-          (concat (or prefix "")
-                  (propertize (format " (%d matches) " (length tabulated-list-entries))
-                              'face '(:weight bold))
-                  " "
-                  (unless (member cols '((nil) nil))
-                    (concat
-                     (propertize
-                      (if full-match-p "Matching:" "Columns Matching:")
-                      'face 'elpaca-failed)
-                     " "
-                     (if full-match-p
-                         (string-join (car cols) ", ")
-                       (mapconcat (lambda (col) (format "%s" (or col "(*)")))
-                                  cols
-                                  ", "))))
-                  (when tags
-                    (concat " " (propertize "Tags:" 'face 'elpaca-failed) " "
-                            (string-join tags ", ")))))))
+          (concat
+           (or prefix "")
+           (propertize (format " (%d matches) " (length tabulated-list-entries))
+                       'face '(:weight bold))
+           " "
+           (concat
+            (propertize
+             (if full-match-p "Matching:" "Columns Matching:")
+             'face 'elpaca-failed)
+            " "
+            (if full-match-p
+                (mapconcat (lambda (cell) (concat (when (cdr cell) "!") (car cell)))
+                           queries ", ")
+              (mapconcat
+               (lambda (col)
+                 (format "|%s"
+                         (if col
+                             (mapconcat
+                              (lambda (cell)
+                                (concat (when (cdr cell) "!") (car cell)))
+                              col ", ")
+                           "*")))
+               cols)))
+           (when tags
+             (concat " " (propertize "Tags:" 'face 'elpaca-failed) " "
+                     (mapconcat (lambda (tag)
+                                  (let ((name (car tag)))
+                                    (concat (when (cdr tag) "!") "#" name)))
+                                tags ", ")))))))
 
-;;@TODO: Should be invereted.
-;; Take all build/repo dirs and search against known elpacas.
-;; ...but this does not operate off of the ITEM API...
 (defun elpaca-ui--orphan-p (item)
   "Return non-nil if ITEM's repo or build are on disk without having been queued."
   (let ((queued (elpaca--queued)))
@@ -143,7 +163,6 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
 
 (define-derived-mode elpaca-ui-mode tabulated-list-mode "elpaca-ui"
   "Major mode to manage packages."
-  (elpaca-ui--update-search-filter (or elpaca-ui-default-query ".*"))
   (add-hook 'minibuffer-setup-hook 'elpaca-ui--minibuffer-setup)
   (hl-line-mode))
 
@@ -161,85 +180,60 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
 
 (defun elpaca-ui--parse-search-filter (filter)
   "Return a list of form ((TAGS...) ((COLUMN)...)) for FILTER string."
-  (let (tags cols col escapedp tagp acc last)
-    (dolist (char (mapcar #'string-to-char (split-string filter "" 'omit-nulls)))
+  (let ((chars (mapcar #'string-to-char (split-string filter "" 'omit-nulls)))
+        acc col cols escapedp last negatedp tagp tags)
+    (dolist (char chars)
       (setq last char)
       (cond
        (escapedp (setq escapedp nil))
-       ((eq char ?\ )
-        (when acc
-          (push (apply #'string (nreverse acc)) (if tagp tags col)))
-          (setq acc nil tagp nil char nil))
-       ((eq char ?|)
-        (push (apply #'string (nreverse acc)) (if tagp tags col))
-        (push (nreverse col) cols)
-        (setq acc nil col nil tagp nil char nil))
-       ((eq char ?#) (setq tagp t))
+       ((memq char '(?\ ?|))
+        (when acc (push (cons (apply #'string (nreverse acc)) negatedp) (if tagp tags col)))
+        (when (eq char ?|) (push (nreverse col) cols) (setq col nil))
+        (setq acc nil tagp nil char nil negatedp nil))
+       ((eq char ?#)  (setq tagp t char nil))
+       ((eq char ?!)  (setq negatedp t char nil))
        ((eq char ?\\) (setq escapedp t)))
       (when char (push char acc)))
-    (when acc (push (apply #'string (nreverse acc)) (if tagp tags col)))
-    (push (if (eq last ?|) '("") (nreverse col)) cols)
+    (when acc (push (cons (apply #'string (nreverse acc)) negatedp) (if tagp tags col)))
+    (push (if (eq last ?|) '(("")) (nreverse col)) cols)
     (list (nreverse tags) (nreverse cols))))
 
-(defun elpaca-ui--query-matches-p (query subject)
-  "Return t if QUERY (negated or otherwise) agrees with SUBJECT."
-  (let* ((negated (and (string-prefix-p "!" query)
-                       (setq query (substring query 1))))
-         (match (ignore-errors (string-match-p query subject))))
-    (cond
-     ;; Ignore negation operator by itself.
-     ((string-empty-p query) t)
-     (negated (not match))
-     (t match))))
-
-(defun elpaca-ui-tag-marked (candidate)
-  "Return non-nil if CANDIDATE is a marked package."
-  (cl-member (car candidate) elpaca-ui--marked-packages :key #'car))
-
-(defun elpaca-ui-tag-dirty (candidate)
-  "Return t if CANDIDATE's worktree is ditry."
-  (elpaca-worktree-dirty-p (car candidate)))
-
-(defun elpaca-ui-tag-declared (candidate)
-  "Return t if CANDIDATE declared in init or an init declaration dependency."
-  (when-let ((item (car candidate)))
-    (elpaca-declared-p item)))
-
-(defun elpaca-ui-tag-installed (candidate)
-  "Return t if CANDIDATE is installed."
-  (elpaca-installed-p (car candidate)))
-
-(defmacro elpaca-ui--query-loop (parsed)
-  "Return `cl-loop' from PARSED query."
+(defmacro elpaca-ui--query-entries (parsed)
+  "Return `cl-loop' from PARSED."
   (declare (indent 1) (debug t))
-  (let ((tags (cl-loop for tag in (car parsed)
-                       for negated = (string-prefix-p "!" tag)
-                       do (setq tag (substring tag (if negated 2 1)))
-                       for condition = (if negated 'unless 'when)
-                       for filter = (alist-get tag elpaca-ui-search-tags
-                                               nil nil #'string=)
-                       when filter
-                       collect `(,condition (,filter entry))))
-        (columns
-         (let* ((cols (cadr parsed))
-                (match-all-p (= (length cols) 1)))
-           (cl-loop for i from 0 to (length cols)
-                    for column = (delq nil (nth i cols))
-                    append
-                    (cl-loop for query in column
-                             for negated = (string-prefix-p "!" query)
-                             for condition = (if negated 'unless 'when)
-                             when negated do (setq query (substring query 1))
-                             for target = (if match-all-p '(string-join metadata)
-                                            `(aref metadata ,i))
-                             unless (string-empty-p query)
-                             collect
-                             `(,condition (string-match-p ,query ,target)))))))
-    `(cl-loop for entry in (funcall elpaca-ui-entries-function)
-              ,@(when columns '(for metadata = (cadr entry)))
-              ,@(apply #'append columns)
-              ,@(when tags (apply #'append tags))
-              collect entry)))
+  (let* ((tags (car parsed))
+         (cols (cadr parsed))
+         (match-all-p (= (length cols) 1))
+         (columns
+          (cl-loop
+           for i from 0 to (length cols)
+           for column = (delq nil (nth i cols))
+           append
+           (cl-loop for (query . negated) in column
+                    for condition =
+                    (when-let (((not (string-empty-p query)))
+                               (target (if match-all-p
+                                           '(string-join data " ")
+                                         `(aref data ,i))))
+                      `(string-match-p ,query ,target))
+                    when (and condition negated) do (setq condition `(not ,condition))
+                    when condition collect condition))))
+    `(let ((filtered ,(if columns
+                          `(cl-loop for entry in (funcall elpaca-ui-entries-function)
+                                    for data = (cadr entry)
+                                    when (and ,@columns)
+                                    collect entry)
+                        '(funcall elpaca-ui-entries-function))))
+       ,@(when tags
+           `((cl-loop for (tag . negated) in ',tags
+                      for tag = (intern tag)
+                      for fn = (or (alist-get tag elpaca-ui-search-tags) tag)
+                      when (functionp fn)
+                      do (setq filtered
+                               (if negated
+                                   (cl-set-difference filtered (funcall fn filtered))
+                                 (funcall fn filtered))))))
+       filtered)))
 
 (defun elpaca-ui--apply-faces (buffer)
   "Update entry faces for marked, installed packages in BUFFER.
@@ -276,11 +270,12 @@ Assumes BUFFER in `elpaca-ui-mode'."
 (defun elpaca-ui--update-search-filter (&optional buffer query)
   "Update the BUFFER to reflect search QUERY.
 If QUERY is nil, the contents of the minibuffer are used instead."
-  (when-let ((query (or query (and (minibufferp) (minibuffer-contents-no-properties)))))
-    (unless (string-empty-p query)
-      (with-current-buffer (get-buffer-create (or buffer (current-buffer)))
+  (let ((query (or query (and (minibufferp) (minibuffer-contents-no-properties)))))
+    (with-current-buffer (get-buffer-create (or buffer (current-buffer)))
+      (if (string-empty-p query)
+          (setq tabulated-list-entries (funcall elpaca-ui-entries-function))
         (let ((parsed (elpaca-ui--parse-search-filter query)))
-          (setq tabulated-list-entries (eval `(elpaca-ui--query-loop ,parsed) t)
+          (setq tabulated-list-entries (eval `(elpaca-ui--query-entries ,parsed) t)
                 elpaca-ui-search-filter query)
           (tabulated-list-print 'remember-pos)
           (elpaca-ui--apply-faces buffer)
@@ -295,32 +290,27 @@ If QUERY is nil, the contents of the minibuffer are used instead."
       (setq elpaca-ui--previous-minibuffer-contents input)
       (if elpaca-ui--search-timer
           (cancel-timer elpaca-ui--search-timer))
-      (setq elpaca-ui--search-timer
-            (run-at-time elpaca-ui-search-debounce-interval
-                         nil
-                         #'elpaca-ui--update-search-filter
-                         buffer)))))
+      (setq elpaca-ui--search-timer (run-at-time elpaca-ui-search-debounce-interval
+                                                 nil
+                                                 #'elpaca-ui--update-search-filter
+                                                 buffer)))))
 
 (defun elpaca-ui-search (&optional edit)
   "Filter current buffer by string.
 If EDIT is non-nil, edit the last search."
-  (interactive)
-  (elpaca-ui--update-search-filter
-   (current-buffer)
-   (setq elpaca-ui-search-filter
-         (let ((query (condition-case nil
-                          (prog1
-                              (read-from-minibuffer "Search (empty to clear): "
-                                                    (when edit elpaca-ui-search-filter))
-                            (push elpaca-ui-search-filter elpaca-ui-search-history)
-                            (when elpaca-ui--search-timer (cancel-timer elpaca-ui--search-timer)))
-                        (quit elpaca-ui-search-filter))))
-           (if (string-empty-p query) elpaca-ui-default-query query)))))
-
-(defun elpaca-ui-search-edit ()
-  "Edit last search."
-  (interactive)
-  (elpaca-ui-search 'edit))
+  (interactive "P")
+  (if edit
+      (read-from-minibuffer "Search (empty to clear): " elpaca-ui-search-filter)
+    (elpaca-ui--update-search-filter
+     (current-buffer)
+     (setq elpaca-ui-search-filter
+           (let ((query (condition-case nil
+                            (prog1
+                                (read-from-minibuffer "Search (empty to clear): ")
+                              (push elpaca-ui-search-filter elpaca-ui-search-history)
+                              (when elpaca-ui--search-timer (cancel-timer elpaca-ui--search-timer)))
+                          (quit elpaca-ui-search-filter))))
+             (if (string-empty-p query) elpaca-ui-default-query query))))))
 
 (defun elpaca-ui-search-refresh (&optional buffer)
   "Rerun the current search for BUFFER.
@@ -540,7 +530,6 @@ TYPE is either the symbol `repo` or `build`."
 (define-key elpaca-ui-mode-map (kbd "O")   'elpaca-ui-search-orphans)
 (define-key elpaca-ui-mode-map (kbd "P")   'elpaca-ui-search-previous)
 (define-key elpaca-ui-mode-map (kbd "R")   'elpaca-ui-search-refresh)
-(define-key elpaca-ui-mode-map (kbd "S")   'elpaca-ui-search-edit)
 (define-key elpaca-ui-mode-map (kbd "U")   'elpaca-ui-search-undeclared)
 (define-key elpaca-ui-mode-map (kbd "b")   'elpaca-ui-visit-build)
 (define-key elpaca-ui-mode-map (kbd "d")   'elpaca-ui-mark-delete)
