@@ -29,7 +29,7 @@
 ;; Would-be Developers:
 ;; This package has a few idiosyncracies I'm experimenting with.
 ;; I've defined all structs to end with the character "<", such that slots are
-;; accessed via an faux "arrow" like syntax. e.g.
+;; accessed via an faux "arrow" like syntax. e.g. elpaca<-repo-dir
 ;; The main data structures of this program are "elpacas" and "queues".
 ;; They are abbreviated as "e" and "q" when used as function parameters.
 
