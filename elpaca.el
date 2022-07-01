@@ -200,7 +200,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
   (when (file-exists-p path)
     (condition-case err
         (with-temp-buffer
-          (insert-file-contents-literally path)
+          (insert-file-contents path)
           (read (current-buffer)))
       ((error) (warn "Error reading %S into memory: %S" path err)))))
 
