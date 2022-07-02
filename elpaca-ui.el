@@ -77,7 +77,26 @@ See `run-at-time' for acceptable values."
 (defvar-local elpaca-ui--search-timer nil "Timer to debounce search input.")
 (defvar-local elpaca-ui--marked-packages nil
   "List of marked packages. Each element is a cons of (PACKAGE . ACTION).")
-(defvar elpaca-ui-mode-map (make-sparse-keymap) "Keymap for `elpaca-ui-mode'.")
+(defvar elpaca-ui-mode-map (let ((m (make-sparse-keymap)))
+                             (define-key m (kbd ":") 'elpaca-ui-send-input)
+                             (define-key m (kbd "B") 'elpaca-ui-browse-package)
+                             (define-key m (kbd "I") 'elpaca-ui-search-installed)
+                             (define-key m (kbd "M") 'elpaca-ui-search-marked)
+                             (define-key m (kbd "O") 'elpaca-ui-search-orphans)
+                             (define-key m (kbd "P") 'elpaca-ui-search-previous)
+                             (define-key m (kbd "R") 'elpaca-ui-search-refresh)
+                             (define-key m (kbd "U") 'elpaca-ui-search-undeclared)
+                             (define-key m (kbd "b") 'elpaca-ui-visit-build)
+                             (define-key m (kbd "d") 'elpaca-ui-mark-delete)
+                             (define-key m (kbd "i") 'elpaca-ui-mark-install)
+                             (define-key m (kbd "r") 'elpaca-ui-mark-rebuild)
+                             (define-key m (kbd "s") 'elpaca-ui-search)
+                             (define-key m (kbd "u") 'elpaca-ui-unmark)
+                             (define-key m (kbd "v") 'elpaca-ui-visit-repo)
+                             (define-key m (kbd "x") 'elpaca-ui-execute-marks)
+                             m)
+  "Keymap for `elpaca-ui-mode'.")
+
 (defvar-local elpaca-ui--previous-minibuffer-contents ""
   "Keep track of minibuffer contents changes.
 Allows for less debouncing than during `post-command-hook'.")
@@ -523,24 +542,6 @@ TYPE is either the symbol `repo` or `build`."
   "Visit builds dir associated with current process."
   (interactive)
   (elpaca-ui--visit 'build))
-
-;;;; Key bindings
-(define-key elpaca-ui-mode-map (kbd ":")   'elpaca-ui-send-input)
-(define-key elpaca-ui-mode-map (kbd "B")   'elpaca-ui-browse-package)
-(define-key elpaca-ui-mode-map (kbd "I")   'elpaca-ui-search-installed)
-(define-key elpaca-ui-mode-map (kbd "M")   'elpaca-ui-search-marked)
-(define-key elpaca-ui-mode-map (kbd "O")   'elpaca-ui-search-orphans)
-(define-key elpaca-ui-mode-map (kbd "P")   'elpaca-ui-search-previous)
-(define-key elpaca-ui-mode-map (kbd "R")   'elpaca-ui-search-refresh)
-(define-key elpaca-ui-mode-map (kbd "U")   'elpaca-ui-search-undeclared)
-(define-key elpaca-ui-mode-map (kbd "b")   'elpaca-ui-visit-build)
-(define-key elpaca-ui-mode-map (kbd "d")   'elpaca-ui-mark-delete)
-(define-key elpaca-ui-mode-map (kbd "i")   'elpaca-ui-mark-install)
-(define-key elpaca-ui-mode-map (kbd "r")   'elpaca-ui-mark-rebuild)
-(define-key elpaca-ui-mode-map (kbd "s")   'elpaca-ui-search)
-(define-key elpaca-ui-mode-map (kbd "u")   'elpaca-ui-unmark)
-(define-key elpaca-ui-mode-map (kbd "v")   'elpaca-ui-visit-repo)
-(define-key elpaca-ui-mode-map (kbd "x")   'elpaca-ui-execute-marks)
 
 (provide 'elpaca-ui)
 ;;; elpaca-ui.el ends here
