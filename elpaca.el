@@ -190,7 +190,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
   :type 'hook)
 
 (defvar elpaca-ignored-dependencies
-  '(emacs cl-lib cl-generic nadvice org org-mode map seq json elpaca)
+  '(emacs cl-lib cl-generic nadvice org org-mode map seq json)
   "Ignore these unless the user explicitly requests they be installed.")
 
 (defvar elpaca-overriding-prompt nil "Overriding prompt for interactive functions.")
@@ -1607,6 +1607,12 @@ If FORCE is non-nil,."
                     collect (cons item (plist-put (copy-tree (elpaca<-recipe p)) :ref rev))
                     do (push item seen)))))
     (elpaca--write-file path (pp revisions))))
+
+;;@TODO: Allow user to reload elpaca with their custom recipe?
+;; Or does this belong in the bootstrap snippet?
+;; This also adds an extra entry to `load-path', because we've added
+;; elpaca's repo directly during bootstrapping.
+(elpaca (elpaca :host github :repo "progfolio/elpaca" :protocol https))
 
 (provide 'elpaca)
 ;;; elpaca.el ends here
