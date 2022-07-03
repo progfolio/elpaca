@@ -1086,6 +1086,15 @@ These settings defined in C code, so we use the ~emacs~ pseudo-package to set th
 (tab-width 2 "Shorter tab widths")
 (completion-styles '(flex basic partial-completion emacs22))
 #+end_src
+** ement.el
+#+begin_quote
+Ement.el is a new Matrix client for Emacs. It aims to be simple, fast, featureful, and reliable.
+~ https://github.com/alphapapa/ement.el
+#+end_quote
+
+#+begin_src emacs-lisp :lexical t
+(elpaca-use-package (ement :host github :repo "alphapapa/ement.el"))
+#+end_src
 ** emp
 #+begin_quote
 MPV integration
