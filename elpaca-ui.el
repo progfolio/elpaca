@@ -38,11 +38,10 @@ Each element is of the form: (DESCRIPTION PREFIX FACE FUNCTION)."
   :type 'list)
 
 (defcustom elpaca-ui-search-tags
-  '((dirty     . (lambda (entires) (cl-remove-if-not #'elpaca-worktree-dirty-p :key #'car)))
-    (declared  . (lambda (entries) (cl-remove-if-not #'elpaca-declared-p :key #'car)))
-    (orphan    . (lambda (entries) (cl-remove-if-not #'elpaca-ui--orphan-p entries) :key #'car))
+  '((dirty     . (lambda (entires) (cl-remove-if-not #'elpaca-worktree-dirty-p entries :key #'car)))
+    (declared  . (lambda (entries) (cl-remove-if-not #'elpaca-declared-p entries :key #'car)))
+    (orphan    . (lambda (entries) (cl-remove-if-not #'elpaca-ui--orphan-p entries :key #'car)))
     (unique    . (lambda (entries) (cl-remove-duplicates entries :key #'car :from-end t)))
-
     (random    . (lambda (entries)
                    (if (< (length entries) 10)
                        entries
