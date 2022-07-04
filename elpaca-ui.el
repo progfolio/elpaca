@@ -504,9 +504,9 @@ If TOGGLE is non-nil, invert search." name)
         ,query))))
 
 (elpaca-ui-defsearch "marked"     "#marked")
-(elpaca-ui-defsearch "installed"  "#installed")
-(elpaca-ui-defsearch "undeclared" "#installed !#declared")
-(elpaca-ui-defsearch "orphans"    "#orphan")
+(elpaca-ui-defsearch "installed"  "#installed #unique")
+(elpaca-ui-defsearch "undeclared" "#installed !#declared #unique")
+(elpaca-ui-defsearch "orphans"    "#orphan #unique")
 
 (defun elpaca-ui-search-previous ()
   "Restore last search query."
