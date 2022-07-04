@@ -89,7 +89,7 @@ See `run-at-time' for acceptable values."
                              (define-key m (kbd "b") 'elpaca-ui-visit-build)
                              (define-key m (kbd "d") 'elpaca-ui-mark-delete)
                              (define-key m (kbd "i") 'elpaca-ui-mark-install)
-                             (define-key m (kbd "L") 'elpaca-visit-log)
+                             (define-key m (kbd "l") 'elpaca-log)
                              (define-key m (kbd "r") 'elpaca-ui-mark-rebuild)
                              (define-key m (kbd "s") 'elpaca-ui-search)
                              (define-key m (kbd "u") 'elpaca-ui-unmark)
