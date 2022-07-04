@@ -64,5 +64,17 @@
       (elpaca-ui--update-search-filter (current-buffer) elpaca-log-default-search-query))
     (pop-to-buffer-same-window elpaca-log-buffer)))
 
+;;;###autoload
+(defun elpaca-visit-log ()
+  "Visit the log for associated with current package."
+  (interactive)
+  (if-let ((e (get-text-property (line-beginning-position) 'elpaca))
+           (package (elpaca<-package e)))
+      (progn
+        (elpaca-log)
+        (with-current-buffer elpaca-log-buffer
+          (elpaca-ui--update-search-filter nil (format "^%s$|" package))))
+    (user-error "No log associated with current line")))
+
 (provide 'elpaca-log)
 ;;; elpaca-log.el ends here
