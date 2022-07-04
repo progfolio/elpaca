@@ -42,7 +42,7 @@
      (cl-loop for (status time info) in log
               for delta = (format-time-string "%02s.%6N" (time-subtract time queue-time))
               for pkg = (propertize package 'face (elpaca--status-face status) 'elpaca p)
-              collect (list item (vector pkg delta (symbol-name status) info))))))
+              collect (list item (vector pkg (symbol-name status) info delta))))))
 
 ;;;###autoload
 (defun elpaca-log (&optional _)
@@ -52,9 +52,9 @@
     (unless (derived-mode-p 'elpaca-ui-mode)
       (elpaca-ui-mode)
       (setq tabulated-list-format [("Package" 30 t)
-                                   ("Time" 20 t)
                                    ("Status" 20 t)
-                                   ("Info" 80 t)]
+                                   ("Info" 40 t)
+                                   ("Time" 20 t)]
             elpaca-ui--want-faces nil
             elpaca-ui-entries-function #'elpaca-log--entries
             elpaca-ui-header-line-prefix (propertize "Elpaca Log" 'face '(:weight bold))
