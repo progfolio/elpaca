@@ -534,12 +534,12 @@ TYPE is either the symbol `repo` or `build`."
     (user-error "No %s dir associated with current line" type)))
 
 (defun elpaca-ui-visit-repo ()
-  "Visit repo associated with current process."
+  "Visit repo associated with current package."
   (interactive)
   (elpaca-ui--visit 'repo))
 
 (defun elpaca-ui-visit-build ()
-  "Visit builds dir associated with current process."
+  "Visit builds dir associated with current package."
   (interactive)
   (elpaca-ui--visit 'build))
 
