@@ -219,7 +219,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
        ((eq char ?\\) (setq escapedp t)))
       (when char (push char acc)))
     (when acc (push (cons (apply #'string (nreverse acc)) negatedp) (if tagp tags col)))
-    (push (if (eq last ?|) '(("")) (nreverse col)) cols)
+    (when col (push (if (eq last ?|) '(("")) (nreverse col)) cols))
     (list (nreverse tags) (nreverse cols))))
 
 (defmacro elpaca-ui--query-entries (parsed)
