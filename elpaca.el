@@ -220,7 +220,7 @@ e.g. elisp forms may be printed via `prin1'."
 
 (defun elpaca--read-menu-cache ()
   "Read the menu-cache."
-  (elpaca--read-file (expand-file-name "menu-items.el" elpaca-cache-directory)))
+  (elpaca--read-file (expand-file-name "menu-items.eld" elpaca-cache-directory)))
 
 (defvar elpaca--menu-items-cache
   (when elpaca-cache-menu-items (elpaca--read-menu-cache))
@@ -260,7 +260,7 @@ Values for each key are that of the right-most plist containing that key."
   "Write menu item cache to disk."
   (unless (file-exists-p elpaca-cache-directory)
     (make-directory elpaca-cache-directory))
-  (elpaca--write-file (expand-file-name "menu-items.el" elpaca-cache-directory)
+  (elpaca--write-file (expand-file-name "menu-items.eld" elpaca-cache-directory)
     (prin1 elpaca--menu-items-cache)))
 
 ;;@TODO:
