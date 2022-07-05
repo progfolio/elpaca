@@ -65,32 +65,33 @@
 ;;;###autoload
 (defun elpaca-menu-org (request)
   "If REQUEST is `index`, return Org recipe candidate list."
-  (when (eq request 'index)
-    (or elpaca-menu-org--index-cache
-        (setq elpaca-menu-org--index-cache
-              (list
-               (cons 'org
-                     (list  :source "Org"
-                            :description "Outline-based notes management and organizer"
-                            :url "https:/orgmode.org"
-                            :recipe
-                            (list
-                             :package "org"
-                             :repo "https://git.savannah.gnu.org/git/emacs/org-mode.git"
-                             :depth 'full ; `org-version' depends on repository tags.
-                             :pre-build '(progn (require 'elpaca-menu-org)
-                                                (elpaca-menu-org--build))
-                             :build '(:not autoloads)
-                             :files '(:defaults ("etc/styles/" "etc/styles/*")))))
-               (cons 'org-contrib
-                     (list :source "Org"
-                           :description "Contributed Org packages in search of new maintainers"
-                           :url "https://git.sr.ht/~bzg/org-contrib"
-                           :recipe
-                           (list
-                            :package "org-contrib"
-                            :repo "https://git.sr.ht/~bzg/org-contrib"
-                            :files '(:defaults)))))))))
+  (or (and (not (eq request 'update)) elpaca-menu-org--index-cache)
+      (setq elpaca-menu-org--index-cache
+            (list
+             (cons 'org
+                   (list :source "Org"
+                         :description "Outline-based notes management and organizer"
+                         :url "https:/orgmode.org"
+                         :recipe
+                         (list
+                          :package "org"
+                          :local-repo "org"
+                          :repo "https://git.savannah.gnu.org/git/emacs/org-mode.git"
+                          :depth 'full ; `org-version' depends on repository tags.
+                          :pre-build '(progn (require 'elpaca-menu-org)
+                                             (elpaca-menu-org--build))
+                          :build '(:not autoloads)
+                          :files '(:defaults ("etc/styles/" "etc/styles/*")))))
+             (cons 'org-contrib
+                   (list :source "Org"
+                         :description "Contributed Org packages in search of new maintainers"
+                         :url "https://git.sr.ht/~bzg/org-contrib"
+                         :recipe
+                         (list
+                          :package "org-contrib"
+                          :local-repo "org-contrib"
+                          :repo "https://git.sr.ht/~bzg/org-contrib"
+                          :files '(:defaults))))))))
 
 (provide 'elpaca-menu-org)
 ;;; elpaca-menu-org.el ends here
