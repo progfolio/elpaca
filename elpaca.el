@@ -403,27 +403,33 @@ ORDER is any of the following values:
   ;;@TODO: this needs to be more robust.
   (and (string-match-p ":" string) t))
 
+(defvar elpaca--repo-dirs nil "List of registered repository directories.")
 (defun elpaca-repo-dir (recipe)
   "Return path to repo given RECIPE."
-  (let* ((url (plist-get recipe :url))
-         (repo (or (plist-get recipe :repo) url))
-         (local-repo (plist-get recipe :local-repo))
+  (let* ((local-repo (plist-get recipe :local-repo))
+         (url (plist-get recipe :url))
+         (repo (plist-get recipe :repo))
          (host (or (plist-get recipe :host) (plist-get recipe :fetcher)))
-         (dir (if (elpaca--full-repo-protocol-p repo)
-                  (progn
-                    (unless (featurep 'url-parse) (require 'url-parse))
-                    (let ((url (url-generic-parse-url repo)))
-                      (format "%s._.%s" ; repo._.host
-                              (or local-repo
-                                  (file-name-sans-extension
-                                   (replace-regexp-in-string ".*/" "" (url-filename url))))
-                              (url-host url))))
-                ;;repo-or-local-repo.user.host
-                (concat (or local-repo (elpaca--repo-name repo))
-                        "."
-                        (elpaca--repo-user repo)
-                        "."
-                        (symbol-name host)))))
+         (user nil)
+         (info (list :repo repo :host host :url url))
+         (mono-repo (alist-get info elpaca--repo-dirs nil nil #'equal))
+         (name (cond
+                (local-repo
+                 (if mono-repo (error "Duplicate :local-repo %S" local-repo) local-repo))
+                (mono-repo mono-repo)
+                (url
+                 (unless (featurep 'url-parse) (require 'url-parse))
+                 (let ((parsed (url-generic-parse-url url)))
+                   (file-name-sans-extension
+                    (replace-regexp-in-string ".*/" "" (url-filename parsed)))))
+                (repo
+                 (setq user (elpaca--repo-user repo))
+                 (elpaca--repo-name repo))))
+         (dir (if (and (not mono-repo)
+                       (member name (mapcar #'cdr elpaca--repo-dirs)))
+                  (string-join (list name (format "%s" host) user) ".")
+                (file-name-sans-extension name))))
+    (push (cons (list :repo repo :host host :url url) dir) elpaca--repo-dirs)
     (expand-file-name (concat "repos/" dir) elpaca-directory)))
 
 (defun elpaca-build-dir (recipe)
