@@ -222,7 +222,7 @@ e.g. elisp forms may be printed via `prin1'."
   "Read the menu-cache."
   (elpaca--read-file (expand-file-name "menu-items.el" elpaca-cache-directory)))
 
-(defvar elpaca-menu--candidates-cache
+(defvar elpaca--menu-items-cache
   (when elpaca-cache-menu-items (elpaca--read-menu-cache))
   "Cache for menu candidates.")
 
@@ -261,16 +261,16 @@ Values for each key are that of the right-most plist containing that key."
   (unless (file-exists-p elpaca-cache-directory)
     (make-directory elpaca-cache-directory))
   (elpaca--write-file (expand-file-name "menu-items.el" elpaca-cache-directory)
-    (prin1 elpaca-menu--candidates-cache)))
+    (prin1 elpaca--menu-items-cache)))
 
 ;;@TODO:
 ;;- allow passing in menu functions.
-(defun elpaca-menu--candidates (&optional recache)
+(defun elpaca--menu-items (&optional recache)
   "Return alist of `elpaca-menu-functions' candidates.
-If RECACHE is non-nil, recompute `elpaca-menu--candidates-cache'."
-  (or (and (not recache) elpaca-cache-menu-items elpaca-menu--candidates-cache)
+If RECACHE is non-nil, recompute `elpaca--menu-items-cache'."
+  (or (and (not recache) elpaca-cache-menu-items elpaca--menu-items-cache)
       (prog1
-          (setq elpaca-menu--candidates-cache
+          (setq elpaca--menu-items-cache
                 (sort (copy-tree
                        (cl-loop for fn in elpaca-menu-functions
                                 ;; Allows adding a symbol prior menu installation.
@@ -304,8 +304,8 @@ This is faster (what you want with non-interactive calls)."
          (elpaca-menu-functions menus)
          (candidates
           (let ((c (if filter
-                       (cl-remove-if-not filter (elpaca-menu--candidates))
-                     (elpaca-menu--candidates))))
+                       (cl-remove-if-not filter (elpaca--menu-items))
+                     (elpaca--menu-items))))
             (if no-descriptions
                 c
               (mapcar (lambda (candidate)
@@ -344,7 +344,7 @@ This is faster (what you want with non-interactive calls)."
                               "Update Menus: " elpaca-menu-functions))))
   (let ((elpaca-menu-functions (or sources elpaca-menu-functions)))
     (run-hook-with-args 'elpaca-menu-functions 'update))
-  (elpaca-menu--candidates 'recache))
+  (elpaca--menu-items 'recache))
 
 (defsubst elpaca--inheritance-disabled-p (obj)
   "Return t if OBJ explicitly has :inherit nil key val, nil otherwise."

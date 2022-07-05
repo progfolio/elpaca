@@ -43,7 +43,7 @@ If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
       (let ((queued (elpaca--queued)))
         (setq elpaca-manager--entry-cache
               (reverse
-               (cl-loop for (item . data) in (reverse (append (elpaca-menu--candidates)
+               (cl-loop for (item . data) in (reverse (append (elpaca--menu-items)
                                                               (elpaca-ui--custom-candidates)))
                         collect (list
                                  item
@@ -60,7 +60,7 @@ If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
 If RECACHE is non-nil, recompute menu items from `elpaca-menu-item-functions'."
   (interactive "P")
   (when recache
-    (elpaca-menu--candidates recache)
+    (elpaca--menu-items recache)
     (elpaca-manager--entries recache))
   (with-current-buffer (get-buffer-create elpaca-manager-buffer)
     (unless (derived-mode-p 'elpaca-ui-mode)

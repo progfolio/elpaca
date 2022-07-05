@@ -349,7 +349,7 @@ If BUFFER is non-nil, the current buffer is used."
   "Display general info for package on current line."
   (interactive)
   (if-let ((item (elpaca-ui-current-package))
-           (candidate (elpaca-alist-get item (elpaca-menu--candidates)))
+           (candidate (elpaca-alist-get item (elpaca--menu-items)))
            (url (plist-get candidate :url)))
       (browse-url url)
     (user-error "No URL associated with current line")))
