@@ -38,28 +38,28 @@ Each element is of the form: (DESCRIPTION PREFIX FACE FUNCTION)."
   :type 'list)
 
 (defcustom elpaca-ui-search-tags
-  '((dirty     . (lambda (entires) (cl-remove-if-not #'elpaca-worktree-dirty-p entries :key #'car)))
-    (declared  . (lambda (entries) (cl-remove-if-not #'elpaca-declared-p entries :key #'car)))
-    (orphan    . (lambda (entries) (cl-remove-if-not #'elpaca-ui--orphan-p entries :key #'car)))
-    (unique    . (lambda (entries) (cl-remove-duplicates entries :key #'car :from-end t)))
-    (random    . (lambda (entries)
-                   (if (< (length entries) 10)
-                       entries
+  '((dirty     . (lambda (items) (cl-remove-if-not #'elpaca-worktree-dirty-p items :key #'car)))
+    (declared  . (lambda (items) (cl-remove-if-not #'elpaca-declared-p items :key #'car)))
+    (orphan    . (lambda (items) (cl-remove-if-not #'elpaca-ui--orphan-p items :key #'car)))
+    (unique    . (lambda (items) (cl-remove-duplicates items :key #'car :from-end t)))
+    (random    . (lambda (items)
+                   (if (< (length items) 10)
+                       items
                      (let ((results nil)
                            (seen nil))
                        (while (< (length results) 10)
-                         (when-let ((n (random (length entries)))
+                         (when-let ((n (random (length items)))
                                     ((not (memq n seen))))
-                           (push (nth n entries) results)
+                           (push (nth n items) results)
                            (push n seen)))
                        results))))
-    (installed . (lambda (entries) (cl-remove-if-not #'elpaca-installed-p entries :key #'car)))
-    (marked    . (lambda (entries) (cl-loop for (item . rest) in elpaca-ui--marked-packages
-                                            collect (assoc item entries)))))
+    (installed . (lambda (items) (cl-remove-if-not #'elpaca-installed-p items :key #'car)))
+    (marked    . (lambda (items) (cl-loop for (item . rest) in elpaca-ui--marked-packages
+                                            collect (assoc item items)))))
   "Alist of search tags.
 Each cell is of form (NAME FILTER).
-If FILTER is a function it must accept a single candidate as its sole
-argument and return non-nil if the package is to be kept.
+FILTER must be a unary function which takes a list of menu items and returns a
+list of menu items.
 
 Each tag can be inverted in the minibuffer by prepending an
 exclamation point to it. e.g. #!installed."
