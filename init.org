@@ -230,6 +230,7 @@ https://github.com/progfolio/elpaca
        (display-buffer buffer)))))
 (require 'elpaca-autoloads)
 (add-hook 'after-init-hook #'elpaca-process-queues)
+(elpaca (elpaca :host github :repo "progfolio/elpaca"))
 #+end_src
 
 I want to see the status buffer when doing an initial install.
