@@ -1036,13 +1036,13 @@ The keyword's value is expected to be one of the following:
   "Clone E's dependencies."
   (elpaca--update-info e "Cloning Dependencies" 'cloning-deps)
   (let* ((dependencies (elpaca--dependencies e))
-         (externals    (let ((seen))
-                         (cl-loop for dependency in dependencies
-                                  for item = (car dependency)
-                                  unless (or (memq item elpaca-ignored-dependencies)
-                                             (memq item seen))
-                                  collect dependency
-                                  do (push item seen)))))
+         (externals (cl-loop with seen
+                             for dependency in dependencies
+                             for item = (car dependency)
+                             unless (or (memq item elpaca-ignored-dependencies)
+                                        (memq item seen))
+                             collect dependency
+                             do (push item seen))))
     (if-let ((emacs (assoc 'emacs dependencies))
              ((version< emacs-version (cadr emacs))))
         (elpaca--fail e (format "Requires %S; running %S" emacs emacs-version))
@@ -1593,20 +1593,19 @@ If FORCE is non-nil,."
 (defun elpaca-write-lockfile (path)
   "Write lockfile to PATH for current state of package repositories."
   (interactive "FWrite lockfile to: ")
-  (let* ((seen)
-         (revisions
-          (nreverse
-           (cl-loop for (item . p) in (elpaca--queued)
-                    unless (member item seen)
-                    for rev =
-                    (let ((default-directory (elpaca<-repo-dir p)))
-                      (elpaca-with-process
-                          (elpaca-process-call "git" "rev-parse" "HEAD")
-                        (when success (string-trim stdout))))
-                    when rev
-                    collect (cons item (plist-put (copy-tree (elpaca<-recipe p)) :ref rev))
-                    do (push item seen)))))
-    (elpaca--write-file path (pp revisions))))
+  (elpaca--write-file path
+    (pp (nreverse
+         (cl-loop with seen
+                  for (item . p) in (elpaca--queued)
+                  unless (member item seen)
+                  for rev =
+                  (let ((default-directory (elpaca<-repo-dir p)))
+                    (elpaca-with-process
+                        (elpaca-process-call "git" "rev-parse" "HEAD")
+                      (when success (string-trim stdout))))
+                  when rev
+                  collect (cons item (plist-put (copy-tree (elpaca<-recipe p)) :ref rev))
+                  do (push item seen))))))
 
 ;;@TODO: Allow user to reload elpaca with their custom recipe?
 ;; Or does this belong in the bootstrap snippet?

@@ -93,8 +93,7 @@ If NOSELECT is non-nil, do not make the status buffer current."
             (if all
                 (lambda (&optional _)
                   (elpaca-status--entries
-                   (apply #'append (cl-loop for queue in elpaca--queues
-                                            collect (elpaca-q<-elpacas queue)))))
+                   (cl-loop for q in elpaca--queues append (elpaca-q<-elpacas q))))
               #'elpaca-status--entries))
       (setq tabulated-list-format [("Package" 30 t) ("Status" 15 t) ("Info" 100 t)]
             tabulated-list-entries #'elpaca-status--entries

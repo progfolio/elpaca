@@ -33,16 +33,15 @@
 
 (defun elpaca-log--entries ()
   "Return log's `tabulated-list-entries'."
-  (let ((queue-time (elpaca-q<-time (car (last elpaca--queues)))))
-    (cl-loop
-     for (item . p) in (elpaca--queued)
-     for log = (elpaca<-log p)
-     for package = (elpaca<-package p)
-     append
-     (cl-loop for (status time info) in log
-              for delta = (format-time-string "%02s.%6N" (time-subtract time queue-time))
-              for pkg = (propertize package 'face (elpaca--status-face status) 'elpaca p)
-              collect (list item (vector pkg (symbol-name status) info delta))))))
+  (cl-loop with queue-time = (elpaca-q<-time (car (last elpaca--queues)))
+           for (item . p) in (elpaca--queued)
+           for log = (elpaca<-log p)
+           for package = (elpaca<-package p)
+           append
+           (cl-loop for (status time info) in log
+                    for delta = (format-time-string "%02s.%6N" (time-subtract time queue-time))
+                    for pkg = (propertize package 'face (elpaca--status-face status) 'elpaca p)
+                    collect (list item (vector pkg (symbol-name status) info delta)))))
 
 ;;;###autoload
 (defun elpaca-log (&optional filter)
