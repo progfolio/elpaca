@@ -1134,9 +1134,8 @@ Kick off next build step, and/or change E's status."
       (cl-loop for dependency in (elpaca<-dependencies e)
                for status = (elpaca--status dependency)
                unless (eq status 'finished)
-               do (if (eq status 'failed)
-                      (push (elpaca<-package dependency) failed)
-                    (push (elpaca<-package dependency) blocked)))
+               do (push (elpaca<-package dependency)
+                        (if (eq status 'failed) failed blocked)))
       (cond
        (failed (elpaca--fail e (format "Failed dependencies: %S" failed)))
        (blocked (elpaca--update-info
