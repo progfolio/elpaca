@@ -46,6 +46,7 @@ It then builds and activates Elpaca.
        (display-buffer buffer)))))
 (require 'elpaca-autoloads)
 (add-hook 'after-init-hook #'elpaca-process-queues)
+(elpaca (elpaca :host github :repo "progfolio/elpaca"))
 #+end_src
 
 * Basic concepts

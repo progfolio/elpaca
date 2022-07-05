@@ -1606,11 +1606,5 @@ If FORCE is non-nil,."
                   collect (cons item (plist-put (copy-tree (elpaca<-recipe p)) :ref rev))
                   do (push item seen))))))
 
-;;@TODO: Allow user to reload elpaca with their custom recipe?
-;; Or does this belong in the bootstrap snippet?
-;; This also adds an extra entry to `load-path', because we've added
-;; elpaca's repo directly during bootstrapping.
-(elpaca (elpaca :host github :repo "progfolio/elpaca" :protocol https))
-
 (provide 'elpaca)
 ;;; elpaca.el ends here
