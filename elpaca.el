@@ -202,7 +202,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
         (with-temp-buffer
           (insert-file-contents path)
           (read (current-buffer)))
-      ((error) (warn "Error reading %S into memory: %S" path err)))))
+      ((error) (warn "Error reading %S into memory: %S" path err) nil))))
 
 (defmacro elpaca--write-file (file &rest body)
   "Write FILE using BODY.
