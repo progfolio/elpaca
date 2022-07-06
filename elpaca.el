@@ -35,6 +35,7 @@
 
 ;;; Code:
 (eval-and-compile (require 'cl-lib))
+(eval-when-compile (require 'subr-x))
 (cl-declaim (optimize (safety 0) (speed 3)))
 (require 'text-property-search)
 (require 'elpaca-process)
