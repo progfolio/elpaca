@@ -259,34 +259,34 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
 (defun elpaca-ui--apply-faces (buffer)
   "Update entry faces for marked, installed packages in BUFFER.
 Assumes BUFFER in `elpaca-ui-mode'."
-  (when elpaca-ui--want-faces
-    (with-current-buffer buffer
-      (cl-loop
-       for (item . elpaca-or-action) in (append elpaca-ui--marked-packages (elpaca--queued))
-       for markedp = (not (elpaca<-p elpaca-or-action))
-       do
-       (save-excursion
-         (goto-char (point-min))
-         (let ((continue t))
-           (while (and continue (not (eobp)))
-             (if-let ((package (ignore-errors (elpaca-ui-current-package)))
-                      ((eq package item))
-                      (start (line-beginning-position))
-                      (o (if markedp
-                             (make-overlay start (line-end-position))
-                           (make-overlay start (+ start (length (symbol-name item)))))))
-                 (let ((face   (when markedp (or (nth 2 elpaca-or-action) 'elpaca-ui-marked-package)))
-                       (prefix (when markedp (or (nth 1 elpaca-or-action) "*"))))
-                   (setq continue nil)
-                   (when markedp
-                     (overlay-put o 'before-string  (propertize (concat prefix " ") 'face face)))
-                   (overlay-put o 'face (or face
-                                            (elpaca--status-face
-                                             (elpaca--status elpaca-or-action))))
-                   (overlay-put o 'evaporate t)
-                   (overlay-put o 'priority (if markedp 1 0))
-                   (overlay-put o 'type 'elpaca-mark))
-               (forward-line)))))))))
+  (with-current-buffer buffer
+    (cl-loop
+     for (item . elpaca-or-action) in (append elpaca-ui--marked-packages (elpaca--queued))
+     for markedp = (not (elpaca<-p elpaca-or-action))
+     do
+     (save-excursion
+       (goto-char (point-min))
+       (let ((continue t))
+         (while (and continue (not (eobp)))
+           (if-let (((or markedp elpaca-ui--want-faces))
+                    (package (ignore-errors (elpaca-ui-current-package)))
+                    ((eq package item))
+                    (start (line-beginning-position))
+                    (o (if markedp
+                           (make-overlay start (line-end-position))
+                         (make-overlay start (+ start (length (symbol-name item)))))))
+               (let ((face   (when markedp (or (nth 2 elpaca-or-action) 'elpaca-ui-marked-package)))
+                     (prefix (when markedp (or (nth 1 elpaca-or-action) "*"))))
+                 (setq continue nil)
+                 (when markedp
+                   (overlay-put o 'before-string  (propertize (concat prefix " ") 'face face)))
+                 (overlay-put o 'face (or face
+                                          (elpaca--status-face
+                                           (elpaca--status elpaca-or-action))))
+                 (overlay-put o 'evaporate t)
+                 (overlay-put o 'priority (if markedp 1 0))
+                 (overlay-put o 'type 'elpaca-mark))
+             (forward-line))))))))
 
 (defun elpaca-ui--update-search-filter (&optional buffer query)
   "Update the BUFFER to reflect search QUERY.
