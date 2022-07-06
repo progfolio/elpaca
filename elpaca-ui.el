@@ -291,7 +291,8 @@ Assumes BUFFER in `elpaca-ui-mode'."
 (defun elpaca-ui--update-search-filter (&optional buffer query)
   "Update the BUFFER to reflect search QUERY.
 If QUERY is nil, the contents of the minibuffer are used instead."
-  (let ((query (or query (and (minibufferp) (minibuffer-contents-no-properties)))))
+  (let ((query (or query (and (minibufferp) (minibuffer-contents-no-properties))
+                   elpaca-ui-search-filter)))
     (with-current-buffer (get-buffer-create (or buffer (current-buffer)))
       (if (string-empty-p query)
           (setq tabulated-list-entries (funcall elpaca-ui-entries-function))
