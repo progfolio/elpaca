@@ -43,6 +43,11 @@
                     for pkg = (propertize package 'face (elpaca--status-face status) 'elpaca p)
                     collect (list item (vector pkg (symbol-name status) info delta)))))
 
+(defun elpaca-log--sort-chronologically (a b)
+  "Sort entries A and B chronologically."
+  (< (string-to-number (aref (cadr a) 3))
+     (string-to-number (aref (cadr b) 3))))
+
 ;;;###autoload
 (defun elpaca-log (&optional filter)
   "Display `elpaca-log-buffer'.
@@ -56,7 +61,7 @@ If FILTER is non-nil, it is used as the initial search query."
       (setq tabulated-list-format [("Package" 30 t)
                                    ("Status" 20 t)
                                    ("Info" 80 t)
-                                   ("Time" 20 t)]
+                                   ("Time" 20 elpaca-log--sort-chronologically)]
             elpaca-ui--want-faces nil
             elpaca-ui-entries-function #'elpaca-log--entries
             elpaca-ui-header-line-prefix (propertize "Elpaca Log" 'face '(:weight bold))
