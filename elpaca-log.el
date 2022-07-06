@@ -55,7 +55,7 @@ If FILTER is non-nil, it is used as the initial search query."
       (elpaca-ui-mode)
       (setq tabulated-list-format [("Package" 30 t)
                                    ("Status" 20 t)
-                                   ("Info" 40 t)
+                                   ("Info" 80 t)
                                    ("Time" 20 t)]
             elpaca-ui--want-faces nil
             elpaca-ui-entries-function #'elpaca-log--entries
