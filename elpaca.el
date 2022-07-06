@@ -414,17 +414,16 @@ ORDER is any of the following values:
          (repo (plist-get recipe :repo))
          (host (or (plist-get recipe :host) (plist-get recipe :fetcher)))
          (user nil)
-         (info (list :repo repo :host host :url url))
-         (mono-repo (alist-get info elpaca--repo-dirs nil nil #'equal))
+         (info (intern (concat url repo (symbol-name host))))
+         (mono-repo (alist-get info elpaca--repo-dirs))
          (name (cond
                 (local-repo
                  (if mono-repo (error "Duplicate :local-repo %S" local-repo) local-repo))
                 (mono-repo mono-repo)
                 (url
                  (unless (featurep 'url-parse) (require 'url-parse))
-                 (let ((parsed (url-generic-parse-url url)))
-                   (file-name-sans-extension
-                    (replace-regexp-in-string ".*/" "" (url-filename parsed)))))
+                 (file-name-base (directory-file-name (url-filename
+                                                       (url-generic-parse-url url)))))
                 (repo
                  (setq user (elpaca--repo-user repo))
                  (elpaca--repo-name repo))))
@@ -432,7 +431,7 @@ ORDER is any of the following values:
                        (member name (mapcar #'cdr elpaca--repo-dirs)))
                   (string-join (list name (format "%s" host) user) ".")
                 (file-name-sans-extension name))))
-    (push (cons (list :repo repo :host host :url url) dir) elpaca--repo-dirs)
+    (push (cons info dir) elpaca--repo-dirs)
     (expand-file-name (concat "repos/" dir) elpaca-directory)))
 
 (defun elpaca-build-dir (recipe)
