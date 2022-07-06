@@ -47,9 +47,9 @@
 (defun elpaca-log (&optional filter)
   "Display `elpaca-log-buffer'.
 If FILTER is non-nil, it is used as the initial search query."
-  (interactive (list (when-let ((e (get-text-property (line-beginning-position) 'elpaca))
-                                (package (elpaca<-package e)))
-                       (format "^%s$|" package))))
+  (interactive (list (when-let ((pkg (ignore-errors (elpaca-ui-current-package)))
+                                ((alist-get pkg (elpaca--queued))))
+                       (format "^%s$|" (symbol-name pkg)))))
   (with-current-buffer (get-buffer-create elpaca-log-buffer)
     (unless (derived-mode-p 'elpaca-ui-mode)
       (elpaca-ui-mode)
