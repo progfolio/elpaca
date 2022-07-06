@@ -31,7 +31,7 @@
 (defvar elpaca-manager-buffer "*elpaca-manager*")
 (defvar-local elpaca-manager--entry-cache nil "Cache of all menu items.")
 
-(defcustom elpaca-manager-default-search-query ".*"
+(defcustom elpaca-manager-default-search-query "#unique"
   "Default search query for `elpaca-manager'."
   :type 'string
   :group 'elpaca)
@@ -72,7 +72,8 @@ If RECACHE is non-nil, recompute menu items from `elpaca-menu-item-functions'."
             elpaca-ui-entries-function #'elpaca-manager--entries
             elpaca-ui-header-line-prefix (propertize "Elpaca Manager" 'face '(:weight bold))
             tabulated-list-use-header-line nil)
-      (setq-local bookmark-make-record-function #'elpaca-manager-bookmark-make-record)
+      (setq-local bookmark-make-record-function #'elpaca-manager-bookmark-make-record
+                  elpaca-ui-default-query elpaca-manager-default-search-query)
       (tabulated-list-init-header)
       (elpaca-ui--update-search-filter (current-buffer) elpaca-manager-default-search-query))
     (pop-to-buffer-same-window elpaca-manager-buffer)))
