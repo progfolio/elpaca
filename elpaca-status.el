@@ -87,14 +87,14 @@ When ALL is non-nil display all queues, else, display only the most recent.
 If NOSELECT is non-nil, do not make the status buffer current."
   (interactive "P")
   (with-current-buffer (get-buffer-create elpaca-status-buffer)
+    (setq elpaca-ui-entries-function
+          (if all
+              (lambda (&optional _)
+                (elpaca-status--entries
+                 (cl-loop for q in elpaca--queues append (elpaca-q<-elpacas q))))
+            #'elpaca-status--entries))
     (unless (derived-mode-p 'elpaca-ui-mode)
       (elpaca-ui-mode)
-      (setq elpaca-ui-entries-function
-            (if all
-                (lambda (&optional _)
-                  (elpaca-status--entries
-                   (cl-loop for q in elpaca--queues append (elpaca-q<-elpacas q))))
-              #'elpaca-status--entries))
       (setq tabulated-list-format [("Package" 30 t) ("Status" 15 t) ("Info" 100 t)]
             tabulated-list-entries #'elpaca-status--entries
             elpaca-ui-header-line-prefix (propertize "Elpaca Status" 'face '(:weight bold))
