@@ -333,12 +333,15 @@ If EDIT is non-nil, edit the last search."
                           (quit elpaca-ui-search-filter))))
              (if (string-empty-p query) elpaca-ui-default-query query))))))
 
-(defun elpaca-ui-search-refresh (&optional buffer)
+(defun elpaca-ui-search-refresh (&optional buffer silent)
   "Rerun the current search for BUFFER.
-If BUFFER is non-nil, the current buffer is used."
+If BUFFER is non-nil, the current buffer is used.
+If SILENT is non-nil, supress update message."
   (interactive (list (current-buffer)))
-  (elpaca-ui--update-search-filter (or buffer (current-buffer)) elpaca-ui-search-filter)
-  (message "Search %S refreshed" elpaca-ui-search-filter))
+  (elpaca-ui--update-search-filter (or buffer (current-buffer))
+                                   (or elpaca-ui-search-filter
+                                       elpaca-ui-default-query))
+  (unless silent (message "Search %S refreshed" elpaca-ui-search-filter)))
 
 (defun elpaca-ui-current-package ()
   "Return current package of UI line."
