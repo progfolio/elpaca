@@ -146,9 +146,12 @@ Setting it too high causes prints fewer status updates."
 It is also spliced in at any point where the `:defaults' keyword
 is used in a `:files' directive.")
 
+(defvar elpaca-order-defaults
+  (list :protocol 'https :remotes "origin" :inherit t :depth 1)
+  "Default order modifications.")
 (defun elpaca-order-defaults (_order)
-  "Default order modifications. Matches any order."
-  (list :protocol 'https :remotes "origin" :inherit t :depth 1))
+  "Matches any order."
+  elpaca-order-defaults)
 
 (defcustom elpaca-order-functions '(elpaca-order-defaults)
   "Abnormal hook run to alter orders.
