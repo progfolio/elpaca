@@ -466,10 +466,11 @@ The current package is its sole argument."
 (defun elpaca-ui-execute-marks ()
   "Execute each action in `elpaca-ui-marked-packages'."
   (interactive)
-  (deactivate-mark)
-  (elpaca-split-queue)
-  (setq elpaca--finalize-queue-hook '(elpaca-ui--post-execute-marks))
-  (when elpaca-ui--marked-packages
+  (if (not elpaca-ui--marked-packages)
+      (user-error "No packages marked")
+    (deactivate-mark)
+    (elpaca-split-queue)
+    (setq elpaca--finalize-queue-hook '(elpaca-ui--post-execute-marks))
     (cl-loop for marked in (nreverse elpaca-ui--marked-packages)
              for action = (nth 3 (cdr marked))
              when action do
