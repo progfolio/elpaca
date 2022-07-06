@@ -1218,7 +1218,6 @@ Kick off next build step, and/or change E's status."
 (defun elpaca--generate-autoloads-async (e)
   "Generate E's autoloads.
 Async wrapper for `elpaca-generate-autoloads'."
-  (elpaca--update-info e "Generating autoloads" 'autoloads)
   (let* ((emacs             (elpaca--emacs-path))
          (package           (elpaca<-package  e))
          (build-dir         (elpaca<-build-dir e))
@@ -1237,7 +1236,8 @@ Async wrapper for `elpaca-generate-autoloads'."
            :command  command
            :filter   #'elpaca--process-filter
            :sentinel #'elpaca--generate-autoloads-async-process-sentinel)))
-    (process-put process :elpaca e)))
+    (process-put process :elpaca e)
+    (elpaca--update-info e (format "Generating autoloads: %s" default-directory) 'autoloads)))
 
 (defun elpaca--activate-package (e)
   "Activate E's package."
