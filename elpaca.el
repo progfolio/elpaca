@@ -1440,10 +1440,11 @@ If FORCE is non-nil do not confirm before deleting."
             (when-let ((build-dir (elpaca-build-dir recipe))) (delete-directory build-dir 'recursive)))
         (user-error "%S is not queued" package)))))
 
+(declare-function elpaca-log "elpaca-log")
 ;;;###autoload
 (defun elpaca-rebuild-package (item &optional hide)
   "Rebuild ITEM's associated package.
-If HIDE is non-nil, do not display `elpaca-status-buffer'."
+If HIDE is non-nil, do not display `elpaca-log-buffer'."
   (interactive
    (list (let ((item (completing-read "Rebuild package: "
                                       (sort (mapcar #'car (elpaca--queued)) #'string<)
@@ -1460,7 +1461,10 @@ If HIDE is non-nil, do not display `elpaca-status-buffer'."
         (setf (elpaca<-queue-time e) (current-time))
         (setf (elpaca<-statuses e) '(queued))
         (elpaca--process queued)
-        (unless hide (elpaca-status)))
+        (unless hide
+          (with-current-buffer (get-buffer-create elpaca-log-buffer)
+            (setq tabulated-list-sort-key (cons "Time" t)))
+          (elpaca-log (format "^%s$|" item))))
     (user-error "Package %S is not queued" item)))
 
 (defun elpaca--log-updates-process-sentinel (process event)
