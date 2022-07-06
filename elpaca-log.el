@@ -64,7 +64,9 @@ If FILTER is non-nil, it is used as the initial search query."
             tabulated-list-sort-key '("Time"))
       (tabulated-list-init-header))
     (elpaca-ui--update-search-filter (current-buffer)
-                                     (or filter elpaca-log-default-search-query))
+                                     (or filter
+                                         elpaca-ui-search-filter
+                                         elpaca-log-default-search-query))
     (pop-to-buffer-same-window elpaca-log-buffer)))
 
 (provide 'elpaca-log)
