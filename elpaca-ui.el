@@ -42,6 +42,12 @@ Each element is of the form: (DESCRIPTION PREFIX FACE FUNCTION)."
     (declared  . (lambda (items) (cl-remove-if-not #'elpaca-declared-p items :key #'car)))
     (orphan    . (lambda (items) (cl-remove-if-not #'elpaca-ui--orphan-p items :key #'car)))
     (unique    . (lambda (items) (cl-remove-duplicates items :key #'car :from-end t)))
+    (rebuild   . (lambda (items) (cl-loop with build
+                                          for item in items
+                                          for cols = (cadr item)
+                                          until (equal (aref cols 1) "rebuilding")
+                                          do (push item build)
+                                          finally return build)))
     (random    . (lambda (items)
                    (if (< (length items) 10)
                        items
