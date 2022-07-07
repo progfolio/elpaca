@@ -74,5 +74,46 @@ If FILTER is non-nil, it is used as the initial search query."
                                          elpaca-log-default-search-query))
     (pop-to-buffer-same-window elpaca-log-buffer)))
 
+(defcustom elpaca-log-auto-kill t
+  "When non-nil, the status buffer is killed after successfully processed queues."
+  :type 'boolean
+  :group 'elpaca)
+
+;;;###autoload
+(defun elpaca-status ()
+  "Log most recent events for packages."
+  (interactive)
+  (elpaca-log "#unique"))
+
+;;@TOOD: fix this
+;; (defun elpaca-status--header-line (&optional queued)
+;;   "Set `elpaca-buffer' header line to reflect QUEUED Elpaca statuses."
+;;   (let* ((queued (or queued (elpaca-q<-elpacas
+;;                              (cl-find-if #'elpaca-q<-elpacas elpaca--queues))))
+;;          (counts nil)
+;;          (queue-len (length queued)))
+;;     (dolist (q queued)
+;;       (let ((status (elpaca--status (cdr q))))
+;;         (if (elpaca-alist-get status counts)
+;;             ;; Avoid `elpaca-alist-get'. doesn't return PLACE.
+;;             (cl-incf (alist-get status counts))
+;;           (push (cons status 1) counts))))
+;;     (with-current-buffer (get-buffer-create elpaca-log-buffer)
+;;       (setq header-line-format
+;;             (concat
+;;              (propertize " Elpaca " 'face '(:weight bold))
+;;              " "
+;;              (format "Queued: %d | %s(%.2f%%%%): %d | %s: %d | %s: %d"
+;;                      queue-len
+;;                      (propertize "Finished" 'face 'elpaca-finished)
+;;                      (if-let ((finished (elpaca-alist-get 'finished counts)))
+;;                          (* (/ (float finished) queue-len) 100)
+;;                        0.00)
+;;                      (or (elpaca-alist-get 'finished counts) 0)
+;;                      (propertize "Blocked" 'face 'elpaca-blocked)
+;;                      (or (elpaca-alist-get 'blocked  counts) 0)
+;;                      (propertize "Failed" 'face 'elpaca-failed)
+;;                      (or (elpaca-alist-get 'failed   counts) 0)))))))
+
 (provide 'elpaca-log)
 ;;; elpaca-log.el ends here

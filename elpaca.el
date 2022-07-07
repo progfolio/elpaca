@@ -614,14 +614,20 @@ If N is nil return a list of all queued elpacas."
     (elpaca--remove-build-steps e '(elpaca--clone elpaca--add-remotes elpaca--checkout-ref))
     (elpaca--continue-build e)))
 
-(defvar elpaca-status-buffer)
+(defvar elpaca-log-buffer)
 (declare-function elpaca-status "elpaca-status")
+(declare-function elpaca-ui--update-search-filter "elpaca-ui")
+(defun elpaca--update-info-buffers ()
+  "Update views in `elpaca-log-buffer'."
+  (when (and (boundp 'elpaca-log-buffer)
+             (get-buffer-window elpaca-log-buffer t)) ;; log buffer visible
+    (elpaca-ui--update-search-filter elpaca-log-buffer)))
+
 (defun elpaca--update-info (e info &optional status)
-  "Update E's STATUS.
-Print the elpaca status line in `elpaca-status-buffer'.
+  "Update E's INFO.
+Print the elpaca status line in `elpaca-log-buffer'.
 If STATUS is non-nil and differs from E's current STATUS,
-signal PARCEL's depedentents to check (and possibly change) their status.
-If INFO is non-nil, E's info is updated as well."
+signal E's depedentents to check (and possibly change) their statuses."
   (when (and status (not (equal status (elpaca--status e))))
     (push status (elpaca<-statuses e))
     (when (memq status '(finished failed blocked))
@@ -630,11 +636,9 @@ If INFO is non-nil, E's info is updated as well."
       (mapc #'elpaca--continue-mono-repo-dependency (elpaca<-includes e)))
     (when (eq status 'failed) (elpaca-status)))
   (when info (elpaca--log-event e info))
-  (when (and (boundp 'elpaca-status-buffer)
-             (get-buffer-window elpaca-status-buffer t)) ;; Status buffer visible
-    (when elpaca--info-timer (cancel-timer elpaca--info-timer))
-    (setq elpaca--info-timer (run-at-time elpaca-info-timer-interval
-                                          nil (lambda () (elpaca-status 'all 'noselect))))))
+  (when elpaca--info-timer (cancel-timer elpaca--info-timer))
+  (setq elpaca--info-timer
+        (run-at-time elpaca-info-timer-interval nil #'elpaca--update-info-buffers)))
 
 (defun elpaca--log-duration (e)
   "Return E's log duration."
@@ -1429,7 +1433,7 @@ If FORCE is non-nil do not confirm before deleting."
             (dolist (queue elpaca--queues)
               (setf (elpaca-q<-elpacas queue)
                     (cl-remove package (elpaca-q<-elpacas queue) :key #'car)))
-            (when (equal (buffer-name) elpaca-status-buffer) (elpaca-status))
+            (when (equal (buffer-name) elpaca-log-buffer) (elpaca-status))
             (message "Deleted package %S" package)
             (when with-deps
               (dolist (dependency dependencies)
@@ -1441,6 +1445,7 @@ If FORCE is non-nil do not confirm before deleting."
         (user-error "%S is not queued" package)))))
 
 (declare-function elpaca-log "elpaca-log")
+(defvar elpaca-log-buffer)
 ;;;###autoload
 (defun elpaca-rebuild-package (item &optional hide)
   "Rebuild ITEM's associated package.
@@ -1461,10 +1466,7 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
         (setf (elpaca<-queue-time e) (current-time))
         (setf (elpaca<-statuses e) '(queued))
         (elpaca--process queued)
-        (unless hide
-          (with-current-buffer (get-buffer-create elpaca-log-buffer)
-            (setq tabulated-list-sort-key (cons "Time" t)))
-          (elpaca-log (format "^%s$|" item))))
+        (unless hide (elpaca-log (format "^%s$| #rebuild" item))))
     (user-error "Package %S is not queued" item)))
 
 (defun elpaca--log-updates-process-sentinel (process event)
@@ -1517,7 +1519,7 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
 (defun elpaca-fetch (item &optional hide)
   "Fetch ITEM's associated package remote commits.
 This does not merge changes or rebuild the packages.
-If HIDE is non-nil don't display `elpaca-status-buffer'."
+If HIDE is non-nil don't display `elpaca-log-buffer'."
   (interactive
    (list (let ((item (completing-read "Fetch updates: "
                                       (sort (mapcar #'car (elpaca--queued)) #'string<)
@@ -1537,7 +1539,7 @@ If HIDE is non-nil don't display `elpaca-status-buffer'."
 ;;;###autoload
 (defun elpaca-fetch-all (&optional hide)
   "Fetch remote commits for queued elpacas.
-If HIDE is non-nil, do not show `elpaca-status-buffer'."
+If HIDE is non-nil, do not show `elpaca-log-buffer'."
   (interactive "P")
   (cl-loop for (item . _) in (cl-remove-duplicates (elpaca--queued) :key #'car)
            do (elpaca-fetch item hide)))

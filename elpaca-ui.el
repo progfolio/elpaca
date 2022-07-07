@@ -454,14 +454,14 @@ The current package is its sole argument."
                                 (file-exists-p (elpaca-repo-dir recipe)))))
                 (user-error "Package %S is not installed" p))))
 
+(defvar elpaca-log-auto-kill)
 (defvar elpaca-manager-buffer)
-(defvar elpaca-status-buffer)
-(defvar elpaca-status-auto-kill)
+(defvar elpaca-log-buffer)
 (defun elpaca-ui--post-execute-marks ()
   "Executed after `elpaca-ui-execute-marks'."
   (setq elpaca--finalize-queue-hook nil)
   (with-current-buffer elpaca-manager-buffer (elpaca-ui-search-refresh))
-  (when elpaca-status-auto-kill (kill-buffer elpaca-status-buffer)))
+  (when elpaca-log-auto-kill (kill-buffer elpaca-log-buffer)))
 
 (defun elpaca-ui-execute-marks ()
   "Execute each action in `elpaca-ui-marked-packages'."

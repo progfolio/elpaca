@@ -27,7 +27,7 @@
 (defvar elpaca-directory)
 (defvar elpaca--finalize-queue-hook)
 (defvar elpaca-status-auto-kill)
-(defvar elpaca-status-buffer)
+(defvar elpaca-log-buffer)
 
 
 ;;;###autoload
@@ -52,7 +52,7 @@ TYPE is either `:repo' or `:build' for ITEM's repo or build directory."
 
 (defun elpaca-ui--post-maybe-rebuild ()
   (setq elpaca--finalize-queue-hook nil)
-  (when elpaca-status-auto-kill (kill-buffer elpaca-status-buffer)))
+  (when elpaca-status-auto-kill (kill-buffer elpaca-log-buffer)))
 
 (defun elpaca-maybe-rebuild-package ()
   "Rebuild package associated with BUFFER."
