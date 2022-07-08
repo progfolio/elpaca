@@ -225,8 +225,8 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
     (push (if (eq last ?|) '(("")) (nreverse col)) cols)
     (list (nreverse tags) (nreverse cols))))
 
-(defmacro elpaca-ui--query-entries (parsed)
-  "Return `cl-loop' from PARSED."
+(defmacro elpaca-ui--query-fn (parsed)
+  "Return query function from PARSED."
   (declare (indent 1) (debug t))
   (let* ((tags (car parsed))
          (cols (cadr parsed))
@@ -245,22 +245,22 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                       `(string-match-p ,query ,target))
                     when (and condition negated) do (setq condition `(not ,condition))
                     when condition collect condition))))
-    `(let ((filtered ,(if columns
-                          `(cl-loop for entry in (funcall elpaca-ui-entries-function)
-                                    for data = (cadr entry)
-                                    when (and ,@columns)
-                                    collect entry)
-                        '(funcall elpaca-ui-entries-function))))
-       ,@(when tags
-           `((cl-loop for (tag . negated) in ',tags
-                      for tag = (intern tag)
+    `(lambda ()
+       (let ((filtered ,(if columns
+                            `(cl-loop for entry in (funcall elpaca-ui-entries-function)
+                                      for data = (cadr entry)
+                                      when (and ,@columns)
+                                      collect entry)
+                          '(funcall elpaca-ui-entries-function))))
+         ,@(when tags
+             (cl-loop for (name . negated) in tags
+                      for tag = (intern name)
                       for fn = (or (alist-get tag elpaca-ui-search-tags) tag)
                       when (functionp fn)
-                      do (setq filtered
-                               (if negated
-                                   (cl-set-difference filtered (funcall fn filtered))
-                                 (funcall fn filtered))))))
-       filtered)))
+                      collect `(setq filtered ,(if negated
+                                                   `(cl-set-difference filtered (funcall #',fn filtered))
+                                                 `(funcall #',fn filtered)))))
+         filtered))))
 
 (defun elpaca-ui--apply-faces (buffer)
   "Update entry faces for marked, installed packages in BUFFER.
@@ -302,8 +302,9 @@ If QUERY is nil, the contents of the minibuffer are used instead."
     (with-current-buffer (get-buffer-create (or buffer (current-buffer)))
       (if (string-empty-p query)
           (setq tabulated-list-entries (funcall elpaca-ui-entries-function))
-        (let ((parsed (elpaca-ui--parse-search-filter query)))
-          (setq tabulated-list-entries (eval `(elpaca-ui--query-entries ,parsed) t)
+        (let* ((parsed (elpaca-ui--parse-search-filter query))
+               (fn (macroexpand `(elpaca-ui--query-fn ,parsed))))
+          (setq tabulated-list-entries (funcall (byte-compile fn))
                 elpaca-ui-search-filter query)
           (tabulated-list-print 'remember-pos)
           (elpaca-ui--apply-faces buffer)
