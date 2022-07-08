@@ -40,19 +40,17 @@
   "Return list of all entries available in `elpaca-menu-functions' and init.
 If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
   (or (and (not recache) elpaca-manager--entry-cache)
-      (let ((queued (elpaca--queued)))
-        (setq elpaca-manager--entry-cache
-              (reverse
-               (cl-loop for (item . data) in (reverse (append (elpaca--menu-items)
-                                                              (elpaca-ui--custom-candidates)))
-                        collect (list
-                                 item
-                                 (vector (propertize (format "%S" item) 'elpaca (alist-get item queued))
-                                         (or (plist-get data :description) "")
-                                         (if-let ((date (plist-get data :date)))
-                                             (format-time-string "%Y-%m-%d" date)
-                                           "")
-                                         (or (plist-get data :source) "")))))))))
+      (setq elpaca-manager--entry-cache
+             (cl-loop for (item . data) in (append (elpaca--menu-items)
+                                                   (elpaca-ui--custom-candidates))
+                      collect (list
+                               item
+                               (vector (symbol-name item)
+                                       (or (plist-get data :description) "")
+                                       (if-let ((date (plist-get data :date)))
+                                           (format-time-string "%Y-%m-%d" date)
+                                         "")
+                                       (or (plist-get data :source) "")))))))
 
 ;;;###autoload
 (defun elpaca-manager (&optional recache)

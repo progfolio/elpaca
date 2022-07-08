@@ -528,17 +528,19 @@ If TOGGLE is non-nil, invert search." name)
 (defun elpaca-ui-send-input ()
   "Send input string to current process."
   (interactive)
-  (if-let ((p (get-text-property (line-beginning-position) 'elpaca))
-           (process (elpaca<-process p))
+  (if-let ((id (get-text-property (point) 'tabulated-list-id))
+           (e (alist-get id (elpaca--queued)))
+           (process (elpaca<-process e))
            ((process-live-p process)))
       (let* ((input (read-string (format "Send input to %S: " (process-name process)))))
         (process-send-string process (concat input "\n")))
-    (user-error "No running process associated with %S" (elpaca<-package p))))
+    (user-error "No running process associated with %S" (elpaca<-package e))))
 
 (defun elpaca-ui--visit (type)
   "Visit current E's TYPE dir.
 TYPE is either the symbol `repo` or `build`."
-  (if-let ((e (get-text-property (line-beginning-position) 'elpaca))
+  (if-let ((id (get-text-property (point) 'tabulated-list-id))
+           (e (alist-get id (elpaca--queued)))
            (dir   (funcall (intern (format "elpaca<-%s-dir" type)) e))
            ((file-exists-p dir)))
       (dired dir)
