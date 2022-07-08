@@ -528,7 +528,7 @@ Keys are as follows:
   :BUILD-DIR package's repo-dir
   :CACHED whether or not the package was read from the cache
   :FILES list of package's linked files
-  :MONO-REPO P which is responsible for cloning repo current P is in."
+  :MONO-REPO E which is responsible for cloning repo current E is in."
   (let* ((status 'queued)
          (info "Package queued")
          (id (elpaca--first item))

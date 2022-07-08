@@ -51,6 +51,7 @@ TYPE is either `:repo' or `:build' for ITEM's repo or build directory."
                           (elpaca--queued))))))
 
 (defun elpaca-ui--post-maybe-rebuild ()
+  "Executed after rebuild finalized."
   (setq elpaca--finalize-queue-hook nil)
   (when elpaca-status-auto-kill (kill-buffer elpaca-log-buffer)))
 
