@@ -176,61 +176,85 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                 nil :local))))
 
 (defun elpaca-ui--parse-search-filter (filter)
-  "Return a list of form ((TAGS...) ((COLUMN)...)) for FILTER string."
-  (let ((chars (mapcar #'string-to-char (split-string filter "" 'omit-nulls)))
-        acc col cols escapedp last negatedp tagp tags)
-    (dolist (char chars)
-      (setq last char)
+  "Return a list of form ((TYPE (QUERY NEGATED))...) for FILTER string."
+  (let* ((chars (mapcar #'string-to-char (split-string (string-trim filter) "" 'omit-nulls)))
+         (limit (1- (length chars)))
+         (colcount -1)
+         query queries cols escapedp negatedp tagp skip lastp char)
+    (dotimes (i (length chars))
+      (setq char (nth i chars) lastp (eq i limit) skip nil)
       (cond
-       (escapedp (setq escapedp nil))
-       ((memq char '(?\ ?|))
-        (when acc (push (cons (apply #'string (nreverse acc)) negatedp) (if tagp tags col)))
-        (when (eq char ?|) (push (nreverse col) cols) (setq col nil))
-        (setq acc nil tagp nil char nil negatedp nil))
-       ((eq char ?#)  (setq tagp t char nil))
-       ((eq char ?!)  (setq negatedp t char nil))
-       ((eq char ?\\) (setq escapedp t)))
-      (when char (push char acc)))
-    (when acc (push (cons (apply #'string (nreverse acc)) negatedp) (if tagp tags col)))
-    (push (if (eq last ?|) '(("")) (nreverse col)) cols)
-    (list (nreverse tags) (nreverse cols))))
+       (escapedp      (setq escapedp nil))
+       ((and (not (zerop i)) (eq (nth (1- i) chars) ?\\)) (setq escapedp t))
+       ((eq char ?\ ) (setq skip t))
+       ((eq char ?|)  (setq skip t) (unless tagp (cl-incf colcount)))
+       ((eq char ?#)  (setq skip t  tagp     (not lastp)))
+       ((eq char ?!)  (setq skip t  negatedp (not lastp))))
+      (unless skip (push char query))
+      (when (or (not escapedp) lastp)
+        (when-let ((query)
+                   ((or (member char '(?\ ?|)) lastp))
+                   (data (list (apply #'string (nreverse query)) negatedp)))
+          (push (if tagp (push 'tag data) data) (if tagp queries cols))
+          (setq query nil tagp nil negatedp nil))
+        (when-let ((cols)
+                   ((or (member char '(?| ?#)) lastp)))
+          (when (and lastp (>= colcount 0)) (cl-incf colcount))
+          (push (if (eq colcount -1)
+                    `(full-text ,@(nreverse cols))
+                  `(col ,colcount ,@(nreverse cols)))
+                queries)
+          (setq char nil cols nil))))
+    (nreverse queries)))
 
-(defmacro elpaca-ui--query-fn (parsed)
-  "Return query function from PARSED."
-  (declare (indent 1) (debug t))
-  (let* ((tags (car parsed))
-         (cols (cadr parsed))
-         (match-all-p (= (length cols) 1))
-         (columns
-          (cl-loop
-           for i from 0 to (length cols)
-           for column = (delq nil (nth i cols))
-           append
-           (cl-loop for (query . negated) in column
-                    for condition =
-                    (when-let (((not (string-empty-p query)))
-                               (target (if match-all-p
-                                           '(string-join data " ")
-                                         `(aref data ,i))))
-                      `(string-match-p ,query ,target))
-                    when (and condition negated) do (setq condition `(not ,condition))
-                    when condition collect condition))))
-    `(lambda ()
-       (let ((filtered ,(if columns
-                            `(cl-loop for entry in (funcall elpaca-ui-entries-function)
-                                      for data = (cadr entry)
-                                      when (and ,@columns)
-                                      collect entry)
-                          '(funcall elpaca-ui-entries-function))))
-         ,@(when tags
-             (cl-loop for (name . negated) in tags
-                      for tag = (intern name)
-                      for fn = (or (alist-get tag elpaca-ui-search-tags) tag)
-                      when (functionp fn)
-                      collect `(setq filtered ,(if negated
-                                                   `(cl-set-difference filtered (funcall #',fn filtered))
-                                                 `(funcall #',fn filtered)))))
-         filtered))))
+(defun elpaca-ui--search-fn (parsed)
+  "Return query function from PARSED." ;;@TODO: Clean this up. Reptition.
+  (when parsed
+    (let ((body nil)
+          (i 0))
+      (while (< i (length parsed))
+        (let* ((op (nth i parsed))
+               (type (car op))
+               (props (cdr op)))
+          (cond
+           ((eq type 'tag)
+            (when-let ((fn (alist-get (intern (car props)) elpaca-ui-search-tags))
+                       ((functionp fn)))
+              (push (if (cadr props)
+                        `(cl-set-difference entries (,fn entries))
+                      `(,fn entries))
+                    body)))
+           ((eq type 'full-text)
+            (push `(cl-loop for entry in entries
+                            for data = (string-join (cadr entry) " ")
+                            when (and
+                                  ,@(cl-loop for (query negated) in props
+                                             collect (if negated
+                                                         `(not (string-match-p ,query data))
+                                                       `(string-match-p ,query data))))
+                            collect entry)
+                  body))
+           ((eq type 'col)
+            (let ((cols (cl-loop for p in (nthcdr i parsed)
+                                 when (eq (car p) 'col)
+                                 collect (and (cl-incf i) p))))
+              (cl-decf i)
+              (push `(cl-loop for entry in entries
+                              for data = (cadr entry)
+                              when (and
+                                    ,@(cl-loop for (_ n query) in cols
+                                               for negated = (cadr query)
+                                               for q = (car query)
+                                               collect
+                                               (if negated
+                                                   `(not (string-match-p ,q (aref data ,n)))
+                                                 `(string-match-p ,q (aref data ,n)))))
+                              collect entry)
+                    body))))
+          (cl-incf i)))
+      `(lambda ()
+         (let ((entries (funcall elpaca-ui-entries-function)))
+           ,@(mapcar (lambda (form) `(setq entries ,form)) (nreverse body)))))))
 
 (defun elpaca-ui--apply-faces (buffer)
   "Update entry faces for marked, installed packages in BUFFER.
@@ -272,8 +296,8 @@ If QUERY is nil, the contents of the minibuffer are used instead."
     (with-current-buffer (get-buffer-create (or buffer (current-buffer)))
       (if (string-empty-p query)
           (setq tabulated-list-entries (funcall elpaca-ui-entries-function))
-        (let* ((parsed (elpaca-ui--parse-search-filter query))
-               (fn (macroexpand `(elpaca-ui--query-fn ,parsed))))
+        (when-let ((parsed (elpaca-ui--parse-search-filter query))
+                   (fn (elpaca-ui--search-fn parsed)))
           (setq tabulated-list-entries (funcall (byte-compile fn))
                 elpaca-ui-search-filter query)
           (tabulated-list-print 'remember-pos)
