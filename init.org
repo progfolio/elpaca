@@ -209,8 +209,8 @@ https://github.com/progfolio/elpaca
 #+begin_src emacs-lisp :lexical t
 (declare-function elpaca-generate-autoloads "elpaca")
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
-(when-let ((elpaca-repo (expand-file-name "repos/elpaca.progfolio.github/" elpaca-directory))
-           (elpaca-url  "git@github.com:progfolio/elpaca.git")
+(when-let ((elpaca-repo (expand-file-name "repos/elpaca/" elpaca-directory))
+           (elpaca-url  "https://www.github.com/progfolio/elpaca.git")
            ((add-to-list 'load-path elpaca-repo))
            ((not (file-exists-p elpaca-repo)))
            (buffer (get-buffer-create "*elpaca-bootstrap*")))
