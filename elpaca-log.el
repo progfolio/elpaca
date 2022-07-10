@@ -44,6 +44,28 @@
             for pkg = (propertize package 'face (elpaca--status-face status) 'elpaca p)
             collect (list item (vector pkg (symbol-name status) info delta)))))
 
+(defun elpaca-log--build-entries (entries)
+  "Return a list of ENTRIES filtered to last builds."
+  (cl-loop with ids = (delete-dups (mapcar #'car entries))
+           with queue-time = (elpaca-q<-time (car (last elpaca--queues)))
+           with queued = (elpaca--queued)
+           for id in ids
+           for package = (symbol-name id)
+           for e = (alist-get id queued)
+           for log = (elpaca<-log e)
+           for events =
+           (cl-loop
+            for (status time info) in log
+            until (eq status 'rebuilding)
+            for pkg =
+            (propertize package 'face (elpaca--status-face status) 'elpaca e)
+            collect
+            (list id (vector pkg (symbol-name status) info
+                             (format-time-string
+                              "%02s.%6N" (time-subtract time queue-time)))))
+           unless (eq (length events) (length log))
+           append events))
+
 (defun elpaca-log--sort-chronologically (a b)
   "Sort entries A and B chronologically."
   (< (string-to-number (aref (cadr a) 3))
