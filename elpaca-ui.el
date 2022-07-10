@@ -113,43 +113,18 @@ It recieves one argument, the parsed search query list.")
 (defvar url-http-end-of-headers)
 
 ;;;; Functions:
-(defun elpaca-ui--header-line (parsed &optional prefix)
-  "Set `header-line-format' to reflect PARSED query.
+(defun elpaca-ui--header-line (&optional prefix)
+  "Set `header-line-format' to reflect query.
 If PREFIX is non-nil it is displayed before the rest of the header-line."
-  (let* ((tags (car parsed))
-         (cols (cadr parsed))
-         (full-match-p (= (length cols) 1))
-         (queries (and full-match-p (car cols))))
-    (setq header-line-format
-          (concat
-           (or prefix "")
-           (propertize (format " (%d matches) " (length tabulated-list-entries))
-                       'face '(:weight bold))
-           " "
-           (concat
-            (propertize
-             (if full-match-p "Matching:" "Columns Matching:")
-             'face 'elpaca-failed)
-            " "
-            (if full-match-p
-                (mapconcat (lambda (cell) (concat (when (cdr cell) "!") (car cell)))
-                           queries ", ")
-              (mapconcat
-               (lambda (col)
-                 (format "|%s"
-                         (if col
-                             (mapconcat
-                              (lambda (cell)
-                                (concat (when (cdr cell) "!") (car cell)))
-                              col ", ")
-                           "*")))
-               cols)))
-           (when tags
-             (concat " " (propertize "Tags:" 'face 'elpaca-failed) " "
-                     (mapconcat (lambda (tag)
-                                  (let ((name (car tag)))
-                                    (concat (when (cdr tag) "!") "#" name)))
-                                tags ", ")))))))
+  (setq header-line-format
+        (list
+         (concat
+          (or prefix "")
+          (propertize (format " (%d matches) " (length tabulated-list-entries))
+                      'face '(:weight bold))
+          " "
+          elpaca-ui-search-filter))))
+
 
 (defun elpaca-ui--orphan-p (item)
   "Return non-nil if ITEM's repo or build are on disk without having been queued."
@@ -305,7 +280,7 @@ If QUERY is nil, the contents of the minibuffer are used instead."
           (elpaca-ui--apply-faces buffer)
           (when elpaca-ui-header-line-function
             (setq header-line-format (funcall elpaca-ui-header-line-function
-                                              parsed elpaca-ui-header-line-prefix))))))))
+                                              elpaca-ui-header-line-prefix))))))))
 
 (defun elpaca-ui--debounce-search (buffer)
   "Update BUFFER's search filter from minibuffer."
