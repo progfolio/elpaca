@@ -3305,7 +3305,7 @@ https://github.com/ternjs/tern
                             :files (:defaults "test"))
   :commands (speedo speedo-load-file akogare)
   :custom
-  (speedo-directory "~/.emacs.d/elpaca/repos/speedo.progfolio.github/test/")
+  (speedo-directory "~/.emacs.d/elpaca/repos/speedo/test/")
   (speedo-default-splits-file "./Akogare-Mario-World.spd")
   (speedo-confirm-evaluate nil)
   :general
