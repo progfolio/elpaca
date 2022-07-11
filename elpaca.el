@@ -1214,10 +1214,10 @@ Kick off next build step, and/or change E's status."
 (defun elpaca--generate-autoloads-async-process-sentinel (process event)
   "PROCESS autoload generation EVENT."
   (when-let (((equal event "finished\n"))
-             (p (process-get process :elpaca))
-             ((not (eq (elpaca--status p) 'failed))))
-    (elpaca--update-info p "Autoloads Generated")
-    (elpaca--continue-build p)))
+             (e (process-get process :elpaca))
+             ((not (eq (elpaca--status e) 'failed))))
+    (elpaca--update-info e "Autoloads Generated")
+    (elpaca--continue-build e)))
 
 (defun elpaca--generate-autoloads-async (e)
   "Generate E's autoloads.
@@ -1281,10 +1281,10 @@ Async wrapper for `elpaca-generate-autoloads'."
 (defun elpaca--byte-compile-process-sentinel (process event)
   "PROCESS byte-compilation EVENT."
   (when-let (((equal event "finished\n"))
-             (p (process-get process :elpaca))
-             ((not (eq (elpaca--status p) 'failed))))
-    (elpaca--update-info p "Successfully byte compiled")
-    (elpaca--continue-build p)))
+             (e (process-get process :elpaca))
+             ((not (eq (elpaca--status e) 'failed))))
+    (elpaca--update-info e "Successfully byte compiled")
+    (elpaca--continue-build e)))
 
 (defun elpaca--byte-compile (e)
   "Byte compile E's package."
@@ -1319,10 +1319,10 @@ Async wrapper for `elpaca-generate-autoloads'."
   "Return recursive list of ITEM's dependencies.
 IGNORE may be a list of symbols which are not included in the resulting list.
 RECURSE is used to track recursive calls."
-  (if-let ((p (or (elpaca-alist-get item (elpaca--queued))
+  (if-let ((e (or (elpaca-alist-get item (elpaca--queued))
                   (unless (member item elpaca-ignored-dependencies)
                     (elpaca<-create item))))
-           (dependencies (elpaca--dependencies p)))
+           (dependencies (elpaca--dependencies e)))
       (let ((transitives (cl-loop for dependency in dependencies
                                   for name = (car dependency)
                                   unless (memq name ignore) collect
@@ -1333,8 +1333,8 @@ RECURSE is used to track recursive calls."
 (defun elpaca-dependents (item &optional recurse)
   "Return recursive list of packages which depend on ITEM.
 RECURSE is used to keep track of recursive calls."
-  (if-let ((p (elpaca-alist-get item (elpaca--queued)))
-           (dependents (elpaca<-dependents p)))
+  (if-let ((e (elpaca-alist-get item (elpaca--queued)))
+           (dependents (elpaca<-dependents e)))
       (let ((transitives
              (cl-loop for dependent in dependents collect
                       (let ((i (intern (elpaca<-package dependent))))
@@ -1392,8 +1392,8 @@ ORDER's package is not made available during subsequent sessions."
 
 (defun elpaca--process (queued)
   "Process QUEUED elpaca."
-  (let ((p (cdr queued)))
-    (unless (memq (elpaca--status p) '(failed blocked)) (elpaca--continue-build p))))
+  (let ((e (cdr queued)))
+    (unless (memq (elpaca--status e) '(failed blocked)) (elpaca--continue-build e))))
 
 (defun elpaca--process-queue (q)
   "Process elpacas in Q."
@@ -1408,8 +1408,8 @@ ORDER's package is not made available during subsequent sessions."
 
 (defun elpaca--on-disk-p (item)
   "Return t if ITEM has an associated P and a build or repo dir on disk."
-  (when-let ((p (elpaca-alist-get item (elpaca--queued))))
-    (or (file-exists-p (elpaca<-repo-dir p)) (file-exists-p (elpaca<-build-dir p)))))
+  (when-let ((e (elpaca-alist-get item (elpaca--queued))))
+    (or (file-exists-p (elpaca<-repo-dir e)) (file-exists-p (elpaca<-build-dir e)))))
 
 ;;@INCOMPLETE: We need to determine policy for deleting dependencies.
 ;; Maybe skip dependencies which weren't declared or dependencies of a declaration.
@@ -1419,9 +1419,9 @@ ORDER's package is not made available during subsequent sessions."
 If WITH-DEPS is non-nil dependencies other than ASKER are deleted.
 If FORCE is non-nil do not confirm before deleting."
   (when (or force (yes-or-no-p (format "Delete package %S?" package)))
-    (if-let ((p (elpaca-alist-get package (elpaca--queued))))
-        (let ((repo-dir      (elpaca<-repo-dir  p))
-              (build-dir     (elpaca<-build-dir p))
+    (if-let ((e (elpaca-alist-get package (elpaca--queued))))
+        (let ((repo-dir      (elpaca<-repo-dir  e))
+              (build-dir     (elpaca<-build-dir e))
               (dependents    (delq asker (elpaca-dependents package)))
               (dependencies  (when with-deps
                                (elpaca-dependencies package elpaca-ignored-dependencies))))
@@ -1472,9 +1472,9 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
 (defun elpaca--log-updates-process-sentinel (process event)
   "Handle PROCESS EVENT."
   (when-let (((equal event "finished\n"))
-             (p (process-get process :elpaca)))
-    (elpaca--update-info p "End Update log" 'updates-logged)
-    (elpaca--continue-build p)))
+             (e (process-get process :elpaca)))
+    (elpaca--update-info e "End Update log" 'updates-logged)
+    (elpaca--continue-build e)))
 
 ;;@INCOMPLETE:
 ;; What do we actually want to log here?
@@ -1501,9 +1501,9 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
 (defun elpaca--fetch-process-sentinel (process event)
   "Handle PROCESS EVENT."
   (when-let (((equal event "finished\n"))
-             (p (process-get process :elpaca)))
-    (elpaca--update-info p "Updates fetched" 'updates-fetched)
-    (elpaca--continue-build p)))
+             (e (process-get process :elpaca)))
+    (elpaca--update-info e "Updates fetched" 'updates-fetched)
+    (elpaca--continue-build e)))
 
 (defun elpaca--fetch (e)
   "Fetch E's remote's commits."
@@ -1528,10 +1528,10 @@ If HIDE is non-nil don't display `elpaca-log-buffer'."
                (user-error "No package selected")
              (intern item)))))
   (if-let ((queued (assoc item (elpaca--queued))))
-      (let ((p (cdr queued)))
-        (elpaca--update-info p "Fetching updates" 'fetching-updates)
-        (setf (elpaca<-build-steps p) (list #'elpaca--fetch #'elpaca--log-updates))
-        (setf (elpaca<-queue-time p) (current-time))
+      (let ((e (cdr queued)))
+        (elpaca--update-info e "Fetching updates" 'fetching-updates)
+        (setf (elpaca<-build-steps e) (list #'elpaca--fetch #'elpaca--log-updates))
+        (setf (elpaca<-queue-time e) (current-time))
         (elpaca--process queued)
         (unless hide (elpaca-status)))
     (user-error "Package %S is not queued" item)))
@@ -1547,23 +1547,23 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
 ;;; Lockfiles
 (defun elpaca-declared-p (item)
   "Return t if ITEM is declared in user's init file, nil otherwise."
-  (when-let ((p (elpaca-alist-get item (elpaca--queued))))
-    (or (elpaca<-init p)
+  (when-let ((e (elpaca-alist-get item (elpaca--queued))))
+    (or (elpaca<-init e)
         (cl-loop for dependent in (elpaca-dependents item)
                  when (elpaca-alist-get dependent (elpaca--queued)) return t))))
 
 (defun elpaca-installed-p (item)
   "Return t if ITEM's associated repo directory is on disk, nil otherwise."
-  (when-let ((p (elpaca-alist-get item (elpaca--queued)))
-             (repo-dir (elpaca<-repo-dir p))
+  (when-let ((e (elpaca-alist-get item (elpaca--queued)))
+             (repo-dir (elpaca<-repo-dir e))
              ((file-exists-p repo-dir)))
     t))
 
 (defun elpaca-worktree-dirty-p (item)
   "Return t if ITEM's associated repository has a dirty worktree, nil otherwise."
-  (when-let ((p (elpaca-alist-get item (elpaca--queued)))
-             (recipe (elpaca<-recipe p))
-             (repo-dir (elpaca<-repo-dir p))
+  (when-let ((e (elpaca-alist-get item (elpaca--queued)))
+             (recipe (elpaca<-recipe e))
+             (repo-dir (elpaca<-repo-dir e))
              ((file-exists-p repo-dir))
              (default-directory repo-dir))
     (not (string-empty-p (elpaca-process-output
@@ -1580,9 +1580,9 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
 
 (defun elpaca-unshallow (item)
   "Convert ITEM's repo to an unshallow repository."
-  (when-let ((p (or (alist-get item (elpaca--queued))
+  (when-let ((e (or (alist-get item (elpaca--queued))
                     (user-error "%s is not queued" item)))
-             (repo-dir (or (elpaca<-repo-dir p)
+             (repo-dir (or (elpaca<-repo-dir e)
                            (user-error "%s has no associated repo dir" item)))
              (default-directory repo-dir)
              ((or (equal
@@ -1590,7 +1590,7 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
                     (elpaca-process-output "git" "rev-parse" "--is-shallow-repository"))
                    "true")
                   (user-error "%s is not a shallwow repository" repo-dir)))
-             (remotes (plist-get (elpaca<-recipe p) :remotes)))
+             (remotes (plist-get (elpaca<-recipe e) :remotes)))
     (cl-loop for remote in (if (stringp remotes) (list remotes) remotes)
              for name = (elpaca--first remote)
              do

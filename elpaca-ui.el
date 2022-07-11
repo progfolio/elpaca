@@ -162,10 +162,10 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
 
 (defun elpaca-ui--custom-candidates ()
   "Return declared candidate list with no recipe in `elpaca-menu-functions'."
-  (cl-loop for (item . p) in (elpaca--queued)
+  (cl-loop for (item . e) in (elpaca--queued)
            unless (elpaca-menu-item nil item nil nil 'no-descriptions)
            collect (list item :source "Init file"
-                         :date (ignore-errors (elpaca-ui--fallback-date p))
+                         :date (ignore-errors (elpaca-ui--fallback-date e))
                          :description "Not available in menu functions")))
 
 (define-derived-mode elpaca-ui-mode tabulated-list-mode "elpaca-ui"
