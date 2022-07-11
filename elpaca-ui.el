@@ -29,10 +29,20 @@
   :type 'string)
 
 (defcustom elpaca-ui-actions
-  '(("delete"  "💀" (:inherit default :weight bold :foreground "#FF0022")
-     (lambda (i) (elpaca-delete-package 'force nil i)))
-    ("install" "⚙️" (:inherit default :weight bold :foreground "#89cff0") elpaca-try-package)
-    ("rebuild" "♻️️" (:inherit default :weight bold :foreground "#f28500") elpaca-rebuild-package))
+  '((delete
+     :prefix "💀" :face (:inherit default :weight bold :foreground "#FF0022")
+     :action (lambda (i) (elpaca-delete-package 'force nil i)))
+    (install
+     :prefix "⚙️" :face(:inherit default :weight bold :foreground "#89cff0")
+     :setup (lambda () (elpaca-log "#unique !finished"))
+     :action elpaca-try-package)
+    (rebuild :prefix "♻️️" :face (:inherit default :weight bold :foreground "#f28500")
+             :setup (lambda () (elpaca-log
+                                (if (eq (length elpaca-ui--marked-packages) 1)
+                                    (format "#rebuild ^%s$|"
+                                            (caar elpaca-ui--marked-packages))
+                                  "#rebuild #unique")))
+             :action (lambda (it) (elpaca-rebuild-package it 'hide))))
   "List of actions which can be taken on packages.
 Each element is of the form: (DESCRIPTION PREFIX FACE FUNCTION)."
   :type 'list)
@@ -280,8 +290,9 @@ Assumes BUFFER in `elpaca-ui-mode'."
                     (o (if markedp
                            (make-overlay start (line-end-position))
                          (make-overlay start (+ start (length (symbol-name item)))))))
-               (let ((face   (when markedp (or (nth 2 elpaca-or-action) 'elpaca-ui-marked-package)))
-                     (prefix (when markedp (or (nth 1 elpaca-or-action) "*"))))
+               (let* ((props (and markedp (cdr elpaca-or-action)))
+                      (face  (and props (or (plist-get props :face) 'elpaca-ui-marked-package)))
+                      (prefix (and props (or (plist-get props :prefix) "*"))))
                  (setq continue nil)
                  (when markedp
                    (overlay-put o 'before-string  (propertize (concat prefix " ") 'face face)))
@@ -407,8 +418,7 @@ The action's function is passed the name of the package as its sole argument."
   (interactive)
   (with-silent-modifications
     (cl-pushnew (cons package (assoc action elpaca-ui-actions))
-                elpaca-ui--marked-packages
-                :test (lambda (a b) (string= (car a) (car b))))
+                elpaca-ui--marked-packages :key #'car)
     (save-restriction
       (narrow-to-region (line-beginning-position) (line-end-position))
       (elpaca-ui--apply-faces (current-buffer))))
@@ -433,7 +443,7 @@ The current package is its sole argument."
      ,(format "Mark package for %s." name)
      (interactive)
      (if (not (use-region-p))
-         (elpaca-ui--toggle-mark ,test ,name)
+         (elpaca-ui--toggle-mark ,test ',name)
        (save-excursion
          (save-restriction
            (narrow-to-region (save-excursion (goto-char (region-beginning))
@@ -442,18 +452,18 @@ The current package is its sole argument."
            (goto-char (point-min))
            (while (not (eobp))
              (condition-case _
-                 (elpaca-ui--toggle-mark ,test ,name)
+                 (elpaca-ui--toggle-mark ,test ',name)
                ((error) (forward-line)))))))))
 
-(elpaca-ui-defmark "rebuild"
+(elpaca-ui-defmark rebuild
   (lambda (p) (unless (elpaca-installed-p p)
                 (user-error "Package %S is not installed" p))))
 
-(elpaca-ui-defmark "install"
+(elpaca-ui-defmark install
   (lambda (p)
     (when (elpaca-installed-p p) (user-error "Package %S already installed" p))))
 
-(elpaca-ui-defmark "delete"
+(elpaca-ui-defmark delete
   (lambda (p) (unless (or (elpaca-installed-p p)
                           (let ((recipe (elpaca-recipe p)))
                             (or (file-exists-p (elpaca-build-dir recipe))
@@ -477,12 +487,17 @@ The current package is its sole argument."
     (deactivate-mark)
     (elpaca-split-queue)
     (setq elpaca--finalize-queue-hook '(elpaca-ui--post-execute-marks))
-    (cl-loop for marked in (nreverse elpaca-ui--marked-packages)
-             for action = (nth 3 (cdr marked))
+    (cl-loop with setups
+             with actions
+             for (item . (_ . props)) in  elpaca-ui--marked-packages
+             for action = (plist-get props :action)
+             for setup = (plist-get props :setup)
+             when setup do (cl-pushnew setup setups)
              when action do
-             (condition-case err
-                 (funcall action (car marked))
-               ((error) (message "Executing mark %S failed: %S" marked err))))
+             (push (cons action item) actions)
+             finally do (progn
+                          (mapc #'funcall setups)
+                          (mapc (lambda (a) (funcall (car a) (cdr a))) actions)))
     (setq elpaca-ui--marked-packages nil)
     (save-excursion
       (goto-char (point-min))
