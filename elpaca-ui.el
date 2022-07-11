@@ -473,6 +473,9 @@ The current package is its sole argument."
 (defvar elpaca-log-auto-kill)
 (defvar elpaca-manager-buffer)
 (defvar elpaca-log-buffer)
+
+;;@FIX: doesn't get run after rebuilds because the queue is already finalized.
+;; do we want to pluck previously queued orders into a new queue on rebuild?
 (defun elpaca-ui--post-execute-marks ()
   "Executed after `elpaca-ui-execute-marks'."
   (setq elpaca--finalize-queue-hook nil)
