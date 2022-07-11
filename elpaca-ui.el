@@ -254,17 +254,18 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                                  when (eq (car p) 'col)
                                  collect (and (cl-incf i) p))))
               (cl-decf i)
-              (push `(cl-loop for entry in entries
-                              for data = (cadr entry)
-                              when (and
-                                    ,@(cl-loop for (_ n query) in cols
-                                               for negated = (cadr query)
-                                               for q = (car query)
+              (push `(cl-loop
+                      for entry in entries
+                      for data = (cadr entry)
+                      when (and
+                            ,@(cl-loop
+                               for (_ n . queries) in cols
+                               append (cl-loop for (q negated) in queries
                                                collect
                                                (if negated
                                                    `(not (string-match-p ,q (aref data ,n)))
-                                                 `(string-match-p ,q (aref data ,n)))))
-                              collect entry)
+                                                 `(string-match-p ,q (aref data ,n))))))
+                      collect entry)
                     body))))
           (cl-incf i)))
       `(lambda ()
