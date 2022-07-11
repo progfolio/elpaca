@@ -302,7 +302,7 @@ This is faster (what you want with non-interactive calls)."
                     (mapcar #'intern-soft
                             (cl-remove-duplicates
                              (completing-read-multiple "Menus: " elpaca-menu-functions
-                                                       nil 'require-match)
+                                                       nil t)
                              :test #'equal))
                   (or menus elpaca-menu-functions (user-error "No menus found"))))
          (elpaca-menu-functions menus)
@@ -1453,7 +1453,7 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
   (interactive
    (list (let ((item (completing-read "Rebuild package: "
                                       (sort (mapcar #'car (elpaca--queued)) #'string<)
-                                      nil 'require-match)))
+                                      nil t)))
            (if (string-empty-p item)
                (user-error "No package selected")
              (intern item)))))
@@ -1523,7 +1523,7 @@ If HIDE is non-nil don't display `elpaca-log-buffer'."
   (interactive
    (list (let ((item (completing-read "Fetch updates: "
                                       (sort (mapcar #'car (elpaca--queued)) #'string<)
-                                      nil 'require-match)))
+                                      nil t)))
            (if (string-empty-p item)
                (user-error "No package selected")
              (intern item)))))
