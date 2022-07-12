@@ -150,10 +150,6 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
           (or (file-exists-p (elpaca-build-dir recipe))
               (file-exists-p (elpaca-repo-dir  recipe))))))))
 
-(defun elpaca-ui-tag-orphan (candidate)
-  "Return non-nil if CANDIDATE is an oprhaned package."
-  (elpaca-ui--orphan-p (car candidate)))
-
 (defun elpaca-ui--fallback-date (e)
   "Return time of last modification for E's built elisp, otherwise nil."
   (file-attribute-modification-time
