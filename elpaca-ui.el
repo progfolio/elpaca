@@ -39,9 +39,9 @@
     (rebuild :prefix "♻️️" :face (:inherit default :weight bold :foreground "#f28500")
              :setup (lambda () (elpaca-log
                                 (if (eq (length elpaca-ui--marked-packages) 1)
-                                    (format "#rebuild ^%s$|"
+                                    (format "#rebuild #linked-errors ^%s$|"
                                             (caar elpaca-ui--marked-packages))
-                                  "#rebuild #unique")))
+                                  "#rebuild #unique #linked-errors")))
              :action (lambda (it) (elpaca-rebuild-package it 'hide))))
   "List of actions which can be taken on packages.
 Each element is of the form: (DESCRIPTION PREFIX FACE FUNCTION)."
@@ -53,6 +53,7 @@ Each element is of the form: (DESCRIPTION PREFIX FACE FUNCTION)."
     (orphan    . (lambda (items) (cl-remove-if-not #'elpaca-ui--orphan-p items :key #'car)))
     (unique    . (lambda (items) (cl-remove-duplicates items :key #'car :from-end t)))
     (rebuild   . elpaca-log--build-entries)
+    (linked-errors . elpaca-ui--byte-comp-warnings)
     (random    . (lambda (items)
                    (if (< (length items) 10)
                        items
@@ -570,6 +571,42 @@ TYPE is either the symbol `repo` or `build`."
   "Visit builds dir associated with current package."
   (interactive)
   (elpaca-ui--visit 'build))
+
+(defun elpaca-ui--visit-byte-comp-warning (file line col)
+  "Visit warning location in FILE at LINE and COL."
+  (or (file-exists-p file) (user-error "File does not exist: %S" file))
+  (find-file-other-window file)
+  (goto-char (point-min))
+  (forward-line (1- line))
+  (move-to-column (1- col)))
+
+(defun elpaca-ui--byte-comp-warnings (entries)
+  "Buttonize byte comp warnings in ENTRIES."
+  (mapcar (lambda (entry)
+            (if-let ((cols (cadr entry))
+                     ((equal (aref cols 1) "byte-compilation"))
+                     (copy (copy-tree entry))
+                     (info (aref (cadr copy) 2))
+                     (e (get-text-property (point-min) 'elpaca (aref (cadr copy) 0))))
+                (progn
+                  (when (string-match-p "Warning:" info)
+                    (setf (aref (cadr copy) 2) (propertize info 'face 'elpaca-failed)))
+                  (when (string-match "\\(?:\\([^z-a]*?\\):\\([[:digit:]]+?\\):\\([[:digit:]]+?\\)\\)" info)
+                    (let ((file (match-string 1 (aref (cadr copy) 2)))
+                          (line  (match-string 2 (aref (cadr copy) 2)))
+                          (col (match-string 3 (aref (cadr copy) 2))))
+                      (setf (aref (cadr copy) 2)
+                            (replace-match
+                             (buttonize (string-join (list file col line) ":")
+                                        (lambda (&rest _)
+                                          (elpaca-ui--visit-byte-comp-warning
+                                           (expand-file-name file (elpaca<-build-dir e))
+                                           (string-to-number line)
+                                           (string-to-number col))))
+                             nil nil (aref (cadr copy) 2)))))
+                  copy)
+              entry))
+          entries))
 
 (provide 'elpaca-ui)
 ;;; elpaca-ui.el ends here
