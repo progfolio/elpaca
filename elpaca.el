@@ -1452,13 +1452,10 @@ If FORCE is non-nil do not confirm before deleting."
 (defun elpaca-rebuild-package (item &optional hide)
   "Rebuild ITEM's associated package.
 If HIDE is non-nil, do not display `elpaca-log-buffer'."
-  (interactive
-   (list (let ((item (completing-read "Rebuild package: "
-                                      (sort (mapcar #'car (elpaca--queued)) #'string<)
-                                      nil t)))
-           (if (string-empty-p item)
-               (user-error "No package selected")
-             (intern item)))))
+  (interactive (list (intern (completing-read
+                              "Rebuild package: "
+                              (sort (mapcar #'car (elpaca--queued)) #'string<)
+                              nil t))))
   (if-let ((queued (assoc item (elpaca--queued))))
       (let ((e (cdr queued)))
         (elpaca--update-info e "Rebuilding" 'rebuilding)
