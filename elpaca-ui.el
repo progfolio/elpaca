@@ -86,7 +86,7 @@ See `run-at-time' for acceptable values."
 (defvar-local elpaca-ui--search-timer nil "Timer to debounce search input.")
 (defvar-local elpaca-ui--marked-packages nil
   "List of marked packages. Each element is a cons of (PACKAGE . ACTION).")
-(defvar elpaca-ui--prev-entry-count nil "Number of previously recored entries.")
+(defvar-local elpaca-ui--prev-entry-count nil "Number of previously recored entries.")
 (defvar elpaca-ui-mode-map (let ((m (make-sparse-keymap)))
                              (define-key m (kbd ":") 'elpaca-ui-send-input)
                              (define-key m (kbd "I") 'elpaca-ui-search-installed)
