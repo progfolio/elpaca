@@ -66,6 +66,13 @@
            unless (eq (length events) (length log))
            append events))
 
+;;;###autoload
+(defun elpaca-log--latest ()
+  (elpaca-log)
+  (with-current-buffer elpaca-log-buffer
+    (setq elpaca-ui--prev-entry-count (length (funcall elpaca-ui-entries-function)))
+    (elpaca-log "#latest #linked-errors")))
+
 (defun elpaca-log--sort-chronologically (a b)
   "Sort entries A and B chronologically."
   (< (string-to-number (aref (cadr a) 3))
