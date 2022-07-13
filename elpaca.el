@@ -1468,7 +1468,7 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
         (unless hide
           (elpaca-log "#linked-errors #latest")
           (with-current-buffer elpaca-log-buffer
-            (setq elpaca-ui--previous-entries (funcall elpaca-ui-entries-function))))
+            (setq elpaca-ui--prev-entry-count (length (funcall elpaca-ui-entries-function)))))
         (elpaca--process queued))
     (user-error "Package %S is not queued" item)))
 
