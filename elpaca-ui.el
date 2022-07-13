@@ -331,12 +331,14 @@ If QUERY is nil, the contents of the minibuffer are used instead."
         ;;@TODO: cache functions?
         (when-let ((parsed (elpaca-ui--parse-search query))
                    (fn (elpaca-ui--search-fn parsed)))
-          (setq tabulated-list-entries (funcall (byte-compile fn))
-                elpaca-ui-search-filter query)
-          (tabulated-list-print 'remember-pos)
-          (when elpaca-ui-header-line-function
-            (setq header-line-format (funcall elpaca-ui-header-line-function
-                                              elpaca-ui-header-line-prefix))))))))
+          (setq tabulated-list-entries (funcall
+                                        (let ((byte-compile-log-warning-function nil))
+                                          (byte-compile fn)))
+                elpaca-ui-search-filter query)))
+      (tabulated-list-print 'remember-pos)
+      (when elpaca-ui-header-line-function
+        (setq header-line-format (funcall elpaca-ui-header-line-function
+                                          elpaca-ui-header-line-prefix))))))
 
 (defun elpaca-ui--debounce-search (buffer)
   "Update BUFFER's search filter from minibuffer."
