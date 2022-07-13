@@ -163,6 +163,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
 
 (define-derived-mode elpaca-ui-mode tabulated-list-mode "elpaca-ui"
   "Major mode to manage packages."
+  (setq tabulated-list-printer #'elpaca-ui--apply-faces)
   (add-hook 'minibuffer-setup-hook 'elpaca-ui--minibuffer-setup)
   (hl-line-mode))
 
@@ -302,38 +303,23 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
          (let ((entries (funcall elpaca-ui-entries-function)))
            ,@(mapcar (lambda (form) `(setq entries ,form)) (nreverse body)))))))
 
-(defun elpaca-ui--apply-faces (buffer)
-  "Update entry faces for marked, installed packages in BUFFER.
-Assumes BUFFER in `elpaca-ui-mode'."
-  (with-current-buffer buffer
-    (cl-loop
-     for (item . elpaca-or-action) in (append elpaca-ui--marked-packages (elpaca--queued))
-     for markedp = (not (elpaca<-p elpaca-or-action))
-     do
-     (save-excursion
-       (goto-char (point-min))
-       (let ((continue t))
-         (while (and continue (not (eobp)))
-           (if-let (((or markedp elpaca-ui--want-faces))
-                    (package (ignore-errors (elpaca-ui-current-package)))
-                    ((eq package item))
-                    (start (line-beginning-position))
-                    (o (if markedp
-                           (make-overlay start (line-end-position))
-                         (make-overlay start (+ start (length (symbol-name item)))))))
-               (let* ((props (and markedp (cdr elpaca-or-action)))
-                      (face  (and props (or (plist-get props :face) 'elpaca-ui-marked-package)))
-                      (prefix (and props (or (plist-get props :prefix) "*"))))
-                 (setq continue nil)
-                 (when markedp
-                   (overlay-put o 'before-string  (propertize (concat prefix " ") 'face face)))
-                 (overlay-put o 'face (or face
-                                          (elpaca--status-face
-                                           (elpaca--status elpaca-or-action))))
-                 (overlay-put o 'evaporate t)
-                 (overlay-put o 'priority (if markedp 1 0))
-                 (overlay-put o 'type 'elpaca-mark))
-             (forward-line))))))))
+(defun elpaca-ui--apply-faces (id cols)
+  "Propertize entries which are marked/installed.
+ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
+  (when-let ((found (cl-find id (append elpaca-ui--marked-packages (elpaca--queued)) :key #'car))
+             (target (cdr found))
+             (name (propertize (aref cols 0) 'display nil))
+             (result (if (elpaca<-p target) ;;not marked
+                         (if elpaca-ui--want-faces
+                             (propertize name 'face (elpaca--status-face (elpaca--status target)))
+                           name)
+                       (let* ((props  (cdr target))
+                              (face   (or (plist-get props :face) 'elpaca-ui-marked-package))
+                              (prefix (or (plist-get props :prefix) "*")))
+                         (propertize name 'display (propertize (concat prefix " " name) 'face face))))))
+    (setq cols (copy-tree cols))
+    (setf (aref cols 0) result))
+  (tabulated-list-print-entry id cols))
 
 (defun elpaca-ui--update-search-filter (&optional buffer query)
   "Update the BUFFER to reflect search QUERY.
@@ -348,7 +334,6 @@ If QUERY is nil, the contents of the minibuffer are used instead."
           (setq tabulated-list-entries (funcall (byte-compile fn))
                 elpaca-ui-search-filter query)
           (tabulated-list-print 'remember-pos)
-          (elpaca-ui--apply-faces buffer)
           (when elpaca-ui-header-line-function
             (setq header-line-format (funcall elpaca-ui-header-line-function
                                               elpaca-ui-header-line-prefix))))))))
@@ -414,13 +399,7 @@ If SILENT is non-nil, supress update message."
   (setq-local elpaca-ui--marked-packages
               (cl-remove-if (lambda (cell) (string= (car cell) package))
                             elpaca-ui--marked-packages))
-  (with-silent-modifications
-    (mapc #'delete-overlay
-          (cl-remove-if-not (lambda (o) (eq (overlay-get o 'type) 'elpaca-mark))
-                            (overlays-at (line-beginning-position))))
-    (save-restriction
-      (narrow-to-region (line-beginning-position) (line-end-position))
-      (elpaca-ui--apply-faces (current-buffer))))
+  (tabulated-list-print 'remember-pos)
   (forward-line))
 
 (defun elpaca-ui-unmark ()
@@ -446,12 +425,9 @@ If region is active unmark all packages in region."
 ACTION is the description of a cell in `elpaca-ui-actions'.
 The action's function is passed the name of the package as its sole argument."
   (interactive)
-  (with-silent-modifications
-    (cl-pushnew (cons package (assoc action elpaca-ui-actions))
-                elpaca-ui--marked-packages :key #'car)
-    (save-restriction
-      (narrow-to-region (line-beginning-position) (line-end-position))
-      (elpaca-ui--apply-faces (current-buffer))))
+  (cl-pushnew (cons package (assoc action elpaca-ui-actions))
+              elpaca-ui--marked-packages :key #'car)
+  (tabulated-list-print 'remember-pos)
   (forward-line))
 
 (defun elpaca-ui--toggle-mark (&optional test action)
