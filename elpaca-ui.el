@@ -109,9 +109,6 @@ See `run-at-time' for acceptable values."
                              m)
   "Keymap for `elpaca-ui-mode'.")
 
-(defvar-local elpaca-ui--previous-minibuffer-contents ""
-  "Keep track of minibuffer contents changes.
-Allows for less debouncing than during `post-command-hook'.")
 (defvar-local elpaca-ui--want-faces t "When non-nil, faces are applied to packages.")
 (defvar-local elpaca-ui-search-filter nil "Filter for package searches.")
 (defvar-local elpaca-ui-search-history nil "List of previous search queries.")
@@ -323,8 +320,7 @@ If QUERY is nil, the contents of the minibuffer are used instead."
 (defun elpaca-ui--debounce-search (buffer)
   "Update BUFFER's search filter from minibuffer."
   (let ((input (string-trim (minibuffer-contents-no-properties))))
-    (unless (string= input elpaca-ui--previous-minibuffer-contents)
-      (setq elpaca-ui--previous-minibuffer-contents input)
+    (unless (string= input (with-current-buffer buffer elpaca-ui-search-filter))
       (if elpaca-ui--search-timer
           (cancel-timer elpaca-ui--search-timer))
       (setq elpaca-ui--search-timer (run-at-time elpaca-ui-search-debounce-interval
@@ -338,16 +334,16 @@ If EDIT is non-nil, edit the last search."
   (interactive "P")
   (if edit
       (read-from-minibuffer "Search (empty to clear): " elpaca-ui-search-filter)
-    (elpaca-ui--update-search-filter
-     (current-buffer)
-     (setq elpaca-ui-search-filter
-           (let ((query (condition-case nil
-                            (prog1
-                                (read-from-minibuffer "Search (empty to clear): ")
-                              (push elpaca-ui-search-filter elpaca-ui-search-history)
-                              (when elpaca-ui--search-timer (cancel-timer elpaca-ui--search-timer)))
-                          (quit elpaca-ui-search-filter))))
-             (if (string-empty-p query) elpaca-ui-default-query query))))))
+    (let* ((input (string-trim (condition-case nil
+                                   (read-from-minibuffer "Search (empty to clear): ")
+                                 (quit elpaca-ui-search-filter))))
+           (query (if (string-empty-p input) elpaca-ui-default-query input)))
+      (if (string= query elpaca-ui-search-filter)
+          (when elpaca-ui--search-timer (cancel-timer elpaca-ui--search-timer))
+        (push elpaca-ui-search-filter elpaca-ui-search-history))
+      (setq elpaca-ui-search-filter query)
+      (unless (string= query elpaca-ui-search-filter)
+        (elpaca-ui--update-search-filter (current-buffer))))))
 
 (defun elpaca-ui-search-refresh (&optional buffer silent)
   "Rerun the current search for BUFFER.
