@@ -110,7 +110,6 @@ See `run-at-time' for acceptable values."
                              (define-key m (kbd "x") 'elpaca-ui-execute-marks)
                              m)
   "Keymap for `elpaca-ui-mode'.")
-
 (defvar-local elpaca-ui--want-faces t "When non-nil, faces are applied to packages.")
 (defvar-local elpaca-ui-search-filter nil "Filter for package searches.")
 (defvar-local elpaca-ui-search-history nil "List of previous search queries.")
@@ -134,7 +133,6 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                       'face '(:weight bold))
           " "
           elpaca-ui-search-filter))))
-
 
 (defun elpaca-ui--orphan-p (item)
   "Return non-nil if ITEM's repo or build are on disk without having been queued."
