@@ -615,6 +615,7 @@ If N is nil return a list of all queued elpacas."
     (elpaca--continue-build e)))
 
 (defvar elpaca-log-buffer)
+(declare-function elpaca-log "elpaca-log")
 (declare-function elpaca-status "elpaca-status")
 (declare-function elpaca-ui--update-search-filter "elpaca-ui")
 (defun elpaca--update-info-buffers ()
@@ -1368,6 +1369,8 @@ The expansion is a string indicating the package has been disabled."
       (format "%S :disabled by elpaca-use-package" order)
     `(elpaca ,order (use-package ,(elpaca--first order) ,@body))))
 
+(defvar elpaca-ui--prev-entry-count)
+(defvar elpaca-ui-entries-function)
 ;;;###autoload
 (defun elpaca-try-package (&rest orders)
   "Try ORDERS.
@@ -1385,7 +1388,10 @@ ORDER's package is not made available during subsequent sessions."
                     (append (list (intern (plist-get recipe :package)))
                             recipe)))))
   (setq elpaca-cache-autoloads nil)
-  (elpaca-log "#linked-errors #latest")
+  (with-current-buffer (get-buffer-create elpaca-log-buffer)
+    (setq elpaca-ui--prev-entry-count
+          (length (ignore-errors (funcall elpaca-ui-entries-function))))
+    (elpaca-log "#latest #linked-errors"))
   (dolist (order orders)
     ;;@FIX: wasteful to pad out the order to make it QUEUED.
     (elpaca--process (cons (elpaca--first order) (elpaca--queue order)))))
@@ -1444,8 +1450,6 @@ If FORCE is non-nil do not confirm before deleting."
             (when-let ((build-dir (elpaca-build-dir recipe))) (delete-directory build-dir 'recursive)))
         (user-error "%S is not queued" package)))))
 
-(declare-function elpaca-log "elpaca-log")
-(defvar elpaca-log-buffer)
 ;;;###autoload
 (defun elpaca-rebuild-package (item &optional hide)
   "Rebuild ITEM's associated package.
