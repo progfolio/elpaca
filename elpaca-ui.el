@@ -180,9 +180,9 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                 nil :local))))
 
 ;;TODO: clean this up.
-(defun elpaca-ui--parse-search-filter (filter)
-  "Return a list of form ((TYPE (QUERY NEGATED))...) for FILTER string."
-  (let* ((chars (mapcar #'string-to-char (split-string (string-trim filter) "" 'omit-nulls)))
+(defun elpaca-ui--parse-tokens (search)
+  "Return a list of form ((TYPE (QUERY NEGATED))...) for SEARCH."
+  (let* ((chars (mapcar #'string-to-char (split-string (string-trim search) "" 'omit-nulls)))
          (limit (1- (length chars)))
          (colcount -1)
          query queries col escapedp negatedp tagp skip lastp char)
@@ -196,7 +196,9 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
        ((eq char ?#)
         (setq skip t tagp (not lastp))
         (when (and col (not lastp)) (setq colcount -1)))
-       ((eq char ?!)  (setq skip t  negatedp (not lastp))))
+       ((eq char ?!)  (setq skip t
+                            negatedp
+                            (not (or lastp (member (nth (1+ i) chars) '(?\ ?|)))))))
       (unless skip (push char query))
       (when (or (not escapedp) lastp)
         (when-let ((query)
@@ -215,6 +217,33 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
           (when (eq char ?#) (setq colcount -1))
           (setq char nil col nil))))
     (nreverse queries)))
+
+(defun elpaca-ui--parse-search (search)
+  "Parse SEARCH."
+  (let (ops chunk finished tagp negatedp)
+    (with-temp-buffer
+      (insert search)
+      (goto-char (point-min))
+      (while (not finished)
+        (condition-case err
+            (while t
+              (let ((op (read (current-buffer))))
+                (if (eq (type-of op) 'symbol)
+                    (cond
+                     ((eq op '!) (setq negatedp t))
+                     (t (push (concat (and negatedp "!") (and tagp "#") (symbol-name op))
+                              chunk)
+                        (setq tagp nil negatedp nil)))
+                  (when chunk
+                    (push (elpaca-ui--parse-tokens (string-join (nreverse chunk) " ")) ops))
+                  (setq chunk nil)
+                  (push `((elisp ,op)) ops))))
+          (end-of-file (setq finished t))
+          (invalid-read-syntax (when (equal (cadr err) "#")
+                                 (setq tagp t) (forward-char -1)))))
+      (when chunk
+        (push (elpaca-ui--parse-tokens (string-join (nreverse chunk) " ")) ops))
+      (apply #'append (nreverse ops)))))
 
 (defun elpaca-ui--search-fn (parsed)
   "Return query function from PARSED." ;;@TODO: Clean this up. Reptition.
@@ -260,6 +289,12 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                                                    `(not (string-match-p ,q (aref data ,n)))
                                                  `(string-match-p ,q (aref data ,n))))))
                       collect entry)
+                    body)))
+           ((eq type 'elisp)
+            (let ((sym (caar props))
+                  (args (cdar props)))
+              (push `(apply (function ,(or (alist-get sym elpaca-ui-search-tags) sym))
+                            (list entries ,@args))
                     body))))
           (cl-incf i)))
       `(lambda ()
@@ -307,7 +342,7 @@ If QUERY is nil, the contents of the minibuffer are used instead."
     (with-current-buffer (get-buffer-create (or buffer (current-buffer)))
       (if (string-empty-p query)
           (setq tabulated-list-entries (funcall elpaca-ui-entries-function))
-        (when-let ((parsed (elpaca-ui--parse-search-filter query))
+        (when-let ((parsed (elpaca-ui--parse-search query))
                    (fn (elpaca-ui--search-fn parsed)))
           (setq tabulated-list-entries (funcall (byte-compile fn))
                 elpaca-ui-search-filter query)
