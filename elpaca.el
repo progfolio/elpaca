@@ -1385,7 +1385,7 @@ ORDER's package is not made available during subsequent sessions."
                     (append (list (intern (plist-get recipe :package)))
                             recipe)))))
   (setq elpaca-cache-autoloads nil)
-  (elpaca-status)
+  (elpaca-log "#linked-errors #latest")
   (dolist (order orders)
     ;;@FIX: wasteful to pad out the order to make it QUEUED.
     (elpaca--process (cons (elpaca--first order) (elpaca--queue order)))))
