@@ -1465,8 +1465,11 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
               (cl-remove #'elpaca--clone-dependencies (copy-tree elpaca-build-steps)))
         (setf (elpaca<-queue-time e) (current-time))
         (setf (elpaca<-statuses e) '(queued))
-        (elpaca--process queued)
-        (unless hide (elpaca-log "#linked-errors #latest")))
+        (unless hide
+          (elpaca-log "#linked-errors #latest")
+          (with-current-buffer elpaca-log-buffer
+            (setq elpaca-ui--previous-entries (funcall elpaca-ui-entries-function))))
+        (elpaca--process queued))
     (user-error "Package %S is not queued" item)))
 
 (defun elpaca--log-updates-process-sentinel (process event)
