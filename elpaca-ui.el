@@ -237,8 +237,10 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                   (setq chunk nil)
                   (push `((elisp ,op)) ops))))
           (end-of-file (setq finished t))
-          (invalid-read-syntax (when (equal (cadr err) "#")
-                                 (setq tagp t) (forward-char -1)))))
+          (invalid-read-syntax (when (and (equal (cadr err) "#")
+                                          (not (looking-back "#" nil)))
+                                 (setq tagp t)
+                                 (forward-char -1)))))
       (when chunk
         (push (elpaca-ui--parse-tokens (string-join (nreverse chunk) " ")) ops))
       (apply #'append (nreverse ops)))))
