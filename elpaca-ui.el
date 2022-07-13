@@ -169,7 +169,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
         (buffer nil))
     (with-minibuffer-selected-window
       (setq continue (and (derived-mode-p 'elpaca-ui-mode)
-                          (member this-command '(elpaca-ui-search elpaca-ui-search-edit)))
+                          (eq this-command 'elpaca-ui-search))
             buffer   (current-buffer)))
     (when continue
       (add-hook 'post-command-hook (lambda () (elpaca-ui--debounce-search buffer))
