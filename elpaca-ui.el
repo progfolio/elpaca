@@ -34,14 +34,12 @@
      :action (lambda (i) (elpaca-delete-package 'force nil i)))
     (install
      :prefix "⚙️" :face(:inherit default :weight bold :foreground "#89cff0")
-     :setup (lambda () (elpaca-log "#unique !finished"))
+     :setup (lambda () (setq elpaca-ui--previous-entries (funcall elpaca-ui-entries-function))
+              (elpaca-log "#latest"))
      :action elpaca-try-package)
     (rebuild :prefix "♻️️" :face (:inherit default :weight bold :foreground "#f28500")
-             :setup (lambda () (elpaca-log
-                                (if (eq (length elpaca-ui--marked-packages) 1)
-                                    (format "#rebuild #linked-errors ^%s$|"
-                                            (caar elpaca-ui--marked-packages))
-                                  "#rebuild #unique #linked-errors")))
+             :setup (lambda () (setq elpaca-ui--previous-entries (funcall elpaca-ui-entries-function))
+                      (elpaca-log "#latest"))
              :action (lambda (it) (elpaca-rebuild-package it 'hide))))
   "List of actions which can be taken on packages.
 Each element is of the form: (DESCRIPTION PREFIX FACE FUNCTION)."
@@ -53,6 +51,9 @@ Each element is of the form: (DESCRIPTION PREFIX FACE FUNCTION)."
     (orphan    . (lambda (items) (cl-remove-if-not #'elpaca-ui--orphan-p items :key #'car)))
     (unique    . (lambda (items) (cl-remove-duplicates items :key #'car :from-end t)))
     (rebuild   . elpaca-log--build-entries)
+    (latest    . (lambda (items) (cl-set-difference items elpaca-ui--previous-entries
+                                                    :test #'equal
+                                                    :key (lambda (it) (aref (cadr it) 3)))))
     (linked-errors . elpaca-ui--byte-comp-warnings)
     (random    . (lambda (items &optional limit)
                    (if (< (length items) (or limit 10))
@@ -86,6 +87,7 @@ See `run-at-time' for acceptable values."
 (defvar-local elpaca-ui--search-timer nil "Timer to debounce search input.")
 (defvar-local elpaca-ui--marked-packages nil
   "List of marked packages. Each element is a cons of (PACKAGE . ACTION).")
+(defvar elpaca-ui--previous-entries nil "List of previously recored entries.")
 (defvar elpaca-ui-mode-map (let ((m (make-sparse-keymap)))
                              (define-key m (kbd ":") 'elpaca-ui-send-input)
                              (define-key m (kbd "I") 'elpaca-ui-search-installed)

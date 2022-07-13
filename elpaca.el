@@ -1466,7 +1466,7 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
         (setf (elpaca<-queue-time e) (current-time))
         (setf (elpaca<-statuses e) '(queued))
         (elpaca--process queued)
-        (unless hide (elpaca-log (format "^%s$| #rebuild" item))))
+        (unless hide (elpaca-log "#linked-errors #latest")))
     (user-error "Package %S is not queued" item)))
 
 (defun elpaca--log-updates-process-sentinel (process event)
