@@ -331,6 +331,7 @@ If QUERY is nil, the contents of the minibuffer are used instead."
     (with-current-buffer (get-buffer-create (or buffer (current-buffer)))
       (if (string-empty-p query)
           (setq tabulated-list-entries (funcall elpaca-ui-entries-function))
+        ;;@TODO: cache functions?
         (when-let ((parsed (elpaca-ui--parse-search query))
                    (fn (elpaca-ui--search-fn parsed)))
           (setq tabulated-list-entries (funcall (byte-compile fn))
