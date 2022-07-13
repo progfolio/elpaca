@@ -35,11 +35,11 @@
     (install
      :prefix "⚙️" :face(:inherit default :weight bold :foreground "#89cff0")
      :setup (lambda () (setq elpaca-ui--prev-entry-count (length (funcall elpaca-ui-entries-function)))
-              (elpaca-log "#latest"))
+              (elpaca-log "#latest #linked-errors"))
      :action elpaca-try-package)
     (rebuild :prefix "♻️️" :face (:inherit default :weight bold :foreground "#f28500")
              :setup (lambda () (setq elpaca-ui--prev-entry-count (length (funcall elpaca-ui-entries-function)))
-                      (elpaca-log "#latest"))
+                      (elpaca-log "#latest #linked-errors"))
              :action (lambda (it) (elpaca-rebuild-package it 'hide))))
   "List of actions which can be taken on packages.
 Each element is of the form: (DESCRIPTION PREFIX FACE FUNCTION)."
