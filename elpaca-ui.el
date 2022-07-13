@@ -29,17 +29,13 @@
   :type 'string)
 
 (defcustom elpaca-ui-actions
-  '((delete
-     :prefix "💀" :face (:inherit default :weight bold :foreground "#FF0022")
-     :action (lambda (i) (elpaca-delete-package 'force nil i)))
-    (install
-     :prefix "⚙️" :face(:inherit default :weight bold :foreground "#89cff0")
-     :setup (lambda () (setq elpaca-ui--prev-entry-count (length (funcall elpaca-ui-entries-function)))
-              (elpaca-log "#latest #linked-errors"))
-     :action elpaca-try-package)
+  '((delete  :prefix "💀" :face (:inherit default :weight bold :foreground "#FF0022")
+             :action (lambda (i) (elpaca-delete-package 'force nil i)))
+    (install :prefix "⚙️" :face(:inherit default :weight bold :foreground "#89cff0")
+             :setup (lambda () (require 'elpaca-log) (elpaca-log--latest))
+             :action elpaca-try-package)
     (rebuild :prefix "♻️️" :face (:inherit default :weight bold :foreground "#f28500")
-             :setup (lambda () (setq elpaca-ui--prev-entry-count (length (funcall elpaca-ui-entries-function)))
-                      (elpaca-log "#latest #linked-errors"))
+             :setup (lambda () (require 'elpaca-log) (elpaca-log--latest))
              :action (lambda (it) (elpaca-rebuild-package it 'hide))))
   "List of actions which can be taken on packages.
 Each element is of the form: (DESCRIPTION PREFIX FACE FUNCTION)."

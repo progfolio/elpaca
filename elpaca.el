@@ -1369,8 +1369,8 @@ The expansion is a string indicating the package has been disabled."
       (format "%S :disabled by elpaca-use-package" order)
     `(elpaca ,order (use-package ,(elpaca--first order) ,@body))))
 
-(defvar elpaca-ui--prev-entry-count)
 (defvar elpaca-ui-entries-function)
+(declare-function elpaca-log--latest "elpaca-log")
 ;;;###autoload
 (defun elpaca-try-package (&rest orders)
   "Try ORDERS.
@@ -1388,10 +1388,8 @@ ORDER's package is not made available during subsequent sessions."
                     (append (list (intern (plist-get recipe :package)))
                             recipe)))))
   (setq elpaca-cache-autoloads nil)
-  (with-current-buffer (get-buffer-create elpaca-log-buffer)
-    (setq elpaca-ui--prev-entry-count
-          (length (ignore-errors (funcall elpaca-ui-entries-function))))
-    (elpaca-log "#latest #linked-errors"))
+  (require 'elpaca-log)
+  (elpaca-log--latest)
   (dolist (order orders)
     ;;@FIX: wasteful to pad out the order to make it QUEUED.
     (elpaca--process (cons (elpaca--first order) (elpaca--queue order)))))
@@ -1469,10 +1467,7 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
               (cl-remove #'elpaca--clone-dependencies (copy-tree elpaca-build-steps)))
         (setf (elpaca<-queue-time e) (current-time))
         (setf (elpaca<-statuses e) '(queued))
-        (unless hide
-          (elpaca-log "#linked-errors #latest")
-          (with-current-buffer elpaca-log-buffer
-            (setq elpaca-ui--prev-entry-count (length (funcall elpaca-ui-entries-function)))))
+        (unless hide (require 'elpaca-log) (elpaca-log--latest))
         (elpaca--process queued))
     (user-error "Package %S is not queued" item)))
 
