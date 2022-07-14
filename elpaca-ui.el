@@ -301,10 +301,17 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
          (let ((entries (funcall elpaca-ui-entries-function)))
            ,@(mapcar (lambda (form) `(setq entries ,form)) (nreverse body)))))))
 
+(defvar-local elpaca-ui--print-cache nil "Used when printing entries via `elpaca-ui--apply-faces'.")
+
+(defun elpaca-ui--print ()
+  "Print table entries."
+  (let ((elpaca-ui--print-cache (append elpaca-ui--marked-packages (elpaca--queued))))
+    (tabulated-list-print 'rembember-pos)))
+
 (defun elpaca-ui--apply-faces (id cols)
   "Propertize entries which are marked/installed.
 ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
-  (when-let ((found (cl-find id (append elpaca-ui--marked-packages (elpaca--queued)) :key #'car))
+  (when-let ((found (cl-find id elpaca-ui--print-cache :key #'car))
              (target (cdr found))
              (name (propertize (aref cols 0) 'display nil))
              (result (if (elpaca<-p target) ;;not marked
@@ -335,7 +342,7 @@ If QUERY is nil, the contents of the minibuffer are used instead."
                                         (let ((byte-compile-log-warning-function nil))
                                           (byte-compile fn)))
                 elpaca-ui-search-filter query)))
-      (tabulated-list-print 'remember-pos)
+      (elpaca-ui--print)
       (when elpaca-ui-header-line-function
         (setq header-line-format (funcall elpaca-ui-header-line-function
                                           elpaca-ui-header-line-prefix))))))
@@ -401,7 +408,7 @@ If SILENT is non-nil, supress update message."
   (setq-local elpaca-ui--marked-packages
               (cl-remove-if (lambda (cell) (string= (car cell) package))
                             elpaca-ui--marked-packages))
-  (tabulated-list-print 'remember-pos)
+  (elpaca-ui--print)
   (forward-line))
 
 (defun elpaca-ui-unmark ()
@@ -429,7 +436,7 @@ The action's function is passed the name of the package as its sole argument."
   (interactive)
   (cl-pushnew (cons package (assoc action elpaca-ui-actions))
               elpaca-ui--marked-packages :key #'car)
-  (tabulated-list-print 'remember-pos)
+  (elpaca-ui--print)
   (forward-line))
 
 (defun elpaca-ui--toggle-mark (&optional test action)
