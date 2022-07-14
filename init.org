@@ -210,8 +210,10 @@ https://github.com/progfolio/elpaca
 (declare-function elpaca-generate-autoloads "elpaca")
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (when-let ((elpaca-repo (expand-file-name "repos/elpaca/" elpaca-directory))
+           (elpaca-build (expand-file-name "builds/elpaca/" elpaca-directory))
+           (elpaca-target (if (file-exists-p elpaca-build) elpaca-build elpaca-repo))
            (elpaca-url  "https://www.github.com/progfolio/elpaca.git")
-           ((add-to-list 'load-path elpaca-repo))
+           ((add-to-list 'load-path elpaca-target))
            ((not (file-exists-p elpaca-repo)))
            (buffer (get-buffer-create "*elpaca-bootstrap*")))
   (condition-case-unless-debug err
