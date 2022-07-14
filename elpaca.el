@@ -1549,7 +1549,7 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
   (when-let ((e (elpaca-alist-get item (elpaca--queued))))
     (or (elpaca<-init e)
         (cl-loop for dependent in (elpaca-dependents item)
-                 when (elpaca-alist-get dependent (elpaca--queued)) return t))))
+                 when (elpaca-declared-p dependent) return t))))
 
 (defun elpaca-installed-p (item)
   "Return t if ITEM's associated repo directory is on disk, nil otherwise."
