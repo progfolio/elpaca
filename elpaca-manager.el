@@ -31,7 +31,7 @@
 (defvar elpaca-manager-buffer "*elpaca-manager*")
 (defvar-local elpaca-manager--entry-cache nil "Cache of all menu items.")
 
-(defcustom elpaca-manager-default-search-query "#unique"
+(defcustom elpaca-manager-default-search-query "#unique !#installed"
   "Default search query for `elpaca-manager'."
   :type 'string
   :group 'elpaca)
