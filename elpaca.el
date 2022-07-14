@@ -1553,10 +1553,9 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
 
 (defun elpaca-installed-p (item)
   "Return t if ITEM's associated repo directory is on disk, nil otherwise."
-  (when-let ((e (elpaca-alist-get item (elpaca--queued)))
+  (and-let* ((e (elpaca-alist-get item (elpaca--queued)))
              (repo-dir (elpaca<-repo-dir e))
-             ((file-exists-p repo-dir)))
-    t))
+             ((file-exists-p repo-dir)))))
 
 (defun elpaca-worktree-dirty-p (item)
   "Return t if ITEM's associated repository has a dirty worktree, nil otherwise."
