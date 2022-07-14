@@ -215,7 +215,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
     (nreverse queries)))
 
 (defun elpaca-ui--parse-search (search)
-  "Parse SEARCH."
+  "Parse SEARCH." ;by abusing the elisp reader
   (let (ops chunk finished tagp negatedp)
     (with-temp-buffer
       (insert search)
@@ -224,16 +224,21 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
         (condition-case err
             (while t
               (let ((op (read (current-buffer))))
-                (if (eq (type-of op) 'symbol)
-                    (cond
-                     ((eq op '!) (setq negatedp t))
-                     (t (push (concat (and negatedp "!") (and tagp "#") (symbol-name op))
-                              chunk)
-                        (setq tagp nil negatedp nil)))
+                (cond
+                 ((symbolp op)
+                  (if (eq op '!)
+                      (setq negatedp t)
+                    (push (concat (and negatedp "!") (and tagp "#") (symbol-name op)) chunk)
+                    (setq tagp nil negatedp nil)))
+                 ((and (consp op) (memq (car op) '(quote \`)))
+                  (setf (car chunk) (concat (car chunk)
+                                            (if (eq (car op) 'quote) "'" "`")
+                                            (symbol-name (cadr op)))))
+                 (t
                   (when chunk
                     (push (elpaca-ui--parse-tokens (string-join (nreverse chunk) " ")) ops))
                   (setq chunk nil)
-                  (push `((elisp ,op)) ops))))
+                  (push `((elisp ,op)) ops)))))
           (end-of-file (setq finished t))
           (invalid-read-syntax (when (and (or (equal (cadr err) "#")
                                               (string-prefix-p "integer" (cadr err)))
