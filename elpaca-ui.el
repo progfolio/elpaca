@@ -316,19 +316,21 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
 (defun elpaca-ui--apply-faces (id cols)
   "Propertize entries which are marked/installed.
 ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
-  (when-let ((found (cl-find id elpaca-ui--print-cache :key #'car))
-             (target (cdr found))
-             (name (propertize (aref cols 0) 'display nil))
-             (result (if (elpaca<-p target) ;;not marked
-                         (if elpaca-ui--want-faces
-                             (propertize name 'face (elpaca--status-face (elpaca--status target)))
-                           name)
-                       (let* ((props  (cdr target))
-                              (face   (or (plist-get props :face) 'elpaca-ui-marked-package))
-                              (prefix (or (plist-get props :prefix) "*")))
-                         (propertize name 'display (propertize (concat prefix " " name) 'face face))))))
-    (setq cols (copy-tree cols))
-    (setf (aref cols 0) result))
+  (if-let ((name (propertize (aref cols 0) 'display nil))
+           (found (cl-find (intern name) elpaca-ui--print-cache :key #'car))
+           (target (cdr found))
+           (result (if (elpaca<-p target) ;;not marked
+                       (if elpaca-ui--want-faces
+                           (propertize name 'face (elpaca--status-face (elpaca--status target)))
+                         name)
+                     (let* ((props  (cdr target))
+                            (face   (or (plist-get props :face) 'elpaca-ui-marked-package))
+                            (prefix (or (plist-get props :prefix) "*")))
+                       (propertize name 'display (propertize (concat prefix " " name) 'face face))))))
+      (progn
+        (setq cols (copy-tree cols t))
+        (setf (aref cols 0) result))
+    (remove-text-properties 0 (length (aref cols 0)) '(display) (aref cols 0)))
   (tabulated-list-print-entry id cols))
 
 (defun elpaca-ui--update-search-filter (&optional buffer query)
