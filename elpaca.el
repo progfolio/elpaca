@@ -567,10 +567,14 @@ Keys are as follows:
   "Return `car' of E's statuses."
   (car (elpaca<-statuses e)))
 
-(defun elpaca--log-event (e text)
+(defun elpaca--log-event (e text &optional replace)
   "Store TEXT in E's log.
-Each event is of the form: (STATUS TIME TEXT)"
-  (push (list (elpaca--status e) (current-time) text) (elpaca<-log e)))
+Each event is of the form: (STATUS TIME TEXT)
+If REPLACE is non-nil, the most recent log entry is replaced."
+  (let ((event (list (elpaca--status e) (current-time) text)))
+    (if replace
+        (setf (car (elpaca<-log e)) event)
+      (push event (elpaca<-log e)))))
 
 (defun elpaca--queued (&optional n)
   "Return list of elpacas from Nth queue.
@@ -624,11 +628,12 @@ If N is nil return a list of all queued elpacas."
              (get-buffer-window elpaca-log-buffer t)) ;; log buffer visible
     (elpaca-ui--update-search-filter elpaca-log-buffer)))
 
-(defun elpaca--update-info (e info &optional status)
+(defun elpaca--update-info (e info &optional status replace)
   "Update E's INFO.
 Print the elpaca status line in `elpaca-log-buffer'.
 If STATUS is non-nil and differs from E's current STATUS,
-signal E's depedentents to check (and possibly change) their statuses."
+signal E's depedentents to check (and possibly change) their statuses.
+If REPLACE is non-nil, E's log is updated instead of appended."
   (when (and status (not (equal status (elpaca--status e))))
     (push status (elpaca<-statuses e))
     (when (memq status '(finished failed blocked))
@@ -636,7 +641,7 @@ signal E's depedentents to check (and possibly change) their statuses."
     (when (eq status 'ref-checked-out)
       (mapc #'elpaca--continue-mono-repo-dependency (elpaca<-includes e)))
     (when (eq status 'failed) (elpaca-status)))
-  (when info (elpaca--log-event e info))
+  (when info (elpaca--log-event e info replace))
   (when elpaca--info-timer (cancel-timer elpaca--info-timer))
   (setq elpaca--info-timer
         (run-at-time elpaca-info-timer-interval nil #'elpaca--update-info-buffers)))
@@ -830,34 +835,37 @@ FILES and NOCONS are used recursively."
 (defun elpaca--process-busy (process)
   "Update E's status when PROCESS has stopped producing output."
   (when-let (((eq (process-status process) 'run))
-             (p (process-get process :elpaca)))
-    (elpaca--update-info p (process-get process :result) 'blocked)))
+             (e (process-get process :elpaca)))
+    (elpaca--update-info e (process-get process :result) 'blocked)))
 
 (defun elpaca--process-filter (process output &optional pattern status)
   "Filter PROCESS OUTPUT.
 PATTERN is a string which is checked against the entire process output.
-If it matches, the P associated with process has its STATUS updated."
+If it matches, the E associated with process has its STATUS updated."
   (process-put process :raw-output (concat (process-get process :raw-output) output))
-  (let* ((p      (process-get process :elpaca))
-         (result (process-get process :result))
-         (timer  (process-get process :timer))
-         (lines  (split-string (concat result output) elpaca-process-newline-regexp))
-         (line-p (string-empty-p (car (last lines)))))
+  (let* ((e       (process-get process :elpaca))
+         (result  (process-get process :result))
+         (timer   (process-get process :timer))
+         (chunk   (concat result output))
+         (lines   (split-string chunk "\n"))
+         (returnp (string-match-p "" chunk))
+         (linep   (string-empty-p (car (last lines)))))
     (when timer (cancel-timer timer))
     (process-put process :timer (run-at-time elpaca--process-busy-interval nil
                                              (lambda () (elpaca--process-busy process))))
-    (unless line-p
+    (unless linep
       (process-put process :result (car (last lines)))
       (setq lines (butlast lines)))
     (dolist (line lines)
       (unless (string-empty-p line)
-        (elpaca--update-info p line (when (and pattern (string-match-p pattern line))
-                                      status))))
+        (elpaca--update-info
+         e (car (last (split-string line "" t)))
+         (and pattern (string-match-p pattern line) status) returnp)))
     (when (and pattern (string-match-p pattern output))
       (process-put process :result nil)
       (if (eq status 'failed)
-          (elpaca--fail p output)
-        (elpaca--update-info p output status)))))
+          (elpaca--fail e output)
+        (elpaca--update-info e output status)))))
 
 (defun elpaca--compile-info-process-sentinel (process event)
   "Sentinel for info compilation PROCESS EVENT."
