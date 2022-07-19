@@ -249,7 +249,9 @@ e.g. elisp forms may be printed via `prin1'."
   (time (current-time))
   autoloads forms elpacas)
 
-(setq elpaca--queues (list (elpaca-q<-create)))
+;;@TODO: We should fix this so that the list is initialized in its defvar
+;; and properly set up before adding to it.
+(unless elpaca--queues (setq elpaca--queues (list (elpaca-q<-create))))
 
 (defun elpaca-merge-plists (&rest plists)
   "Return plist with set of unique keys from PLISTS.
