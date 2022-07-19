@@ -520,12 +520,6 @@ The current package is its sole argument."
                           (mapc #'funcall setups)
                           (mapc (lambda (a) (funcall (car a) (cdr a))) actions)))
     (setq elpaca-ui--marked-packages nil)
-    (save-excursion
-      (goto-char (point-min))
-      (while (not (eobp))
-        (condition-case _
-            (elpaca-ui-unmark)
-          ((error) (forward-line)))))
     (elpaca-ui-search-refresh)
     (when (functionp elpaca-ui-entries-function)
       (funcall elpaca-ui-entries-function))))
