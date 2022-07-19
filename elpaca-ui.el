@@ -44,7 +44,17 @@ Each element is of the form: (DESCRIPTION PREFIX FACE FUNCTION)."
 (defcustom elpaca-ui-search-tags
   '((dirty     . (lambda (items) (cl-remove-if-not #'elpaca-worktree-dirty-p items :key #'car)))
     (declared  . (lambda (items) (cl-remove-if-not #'elpaca-declared-p items :key #'car)))
-    (orphan    . (lambda (items) (cl-remove-if-not #'elpaca-ui--orphan-p items :key #'car)))
+    (orphan    . (lambda (items) (mapcar
+                                  (lambda (dir)
+                                    (let ((name (file-name-base dir)))
+                                      (list (intern name)
+                                            (vector name "orphan package" "n/a" "n/a" "n/a"))))
+                                  (cl-set-difference
+                                   (cl-remove-if-not
+                                    #'file-directory-p
+                                    (nthcdr 2 (directory-files (expand-file-name "builds/" elpaca-directory) t)))
+                                   (mapcar (lambda (q) (elpaca<-build-dir (cdr q))) (elpaca--queued))
+                                   :test #'equal))))
     (unique    . (lambda (items) (cl-remove-duplicates items :key #'car :from-end t)))
     (rebuild   . elpaca-log--build-entries)
     (latest    . (lambda (items) (butlast (reverse (sort (copy-tree items) #'elpaca-log--sort-chronologically))
@@ -128,20 +138,6 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                       'face '(:weight bold))
           " "
           elpaca-ui-search-filter))))
-
-(defun elpaca-ui--orphan-p (item)
-  "Return non-nil if ITEM's repo or build are on disk without having been queued."
-  (let ((queued (elpaca--queued)))
-    (unless (alist-get item queued)
-      (let* ((recipe (elpaca-recipe item))
-             (repo   (elpaca-repo-dir recipe)))
-        (unless (cl-some (lambda (cell)
-                           (when-let ((e (cdr cell))
-                                      ((equal repo (elpaca<-repo-dir e))))
-                             e))
-                         queued)
-          (or (file-exists-p (elpaca-build-dir recipe))
-              (file-exists-p (elpaca-repo-dir  recipe))))))))
 
 (defun elpaca-ui--fallback-date (e)
   "Return time of last modification for E's built elisp, otherwise nil."
