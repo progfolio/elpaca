@@ -431,7 +431,7 @@ ORDER is any of the following values:
          (dir (if (and (not mono-repo)
                        (member name (mapcar #'cdr elpaca--repo-dirs)))
                   (string-join (list name (format "%s" host) user) ".")
-                (file-name-sans-extension name))))
+                (and name (file-name-sans-extension name)))))
     (push (cons info dir) elpaca--repo-dirs)
     (expand-file-name (concat "repos/" dir) elpaca-directory)))
 
