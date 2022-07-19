@@ -484,8 +484,11 @@ The current package is its sole argument."
 (elpaca-ui-defmark delete
   (lambda (p) (unless (or (elpaca-installed-p p)
                           (let ((recipe (elpaca-recipe p)))
-                            (or (file-exists-p (elpaca-build-dir recipe))
-                                (file-exists-p (elpaca-repo-dir recipe)))))
+                            (or
+                             (when-let ((build (elpaca-build-dir recipe)))
+                               (file-exists-p build))
+                             (when-let ((repo (elpaca-repo-dir recipe)))
+                               (file-exists-p repo)))))
                 (user-error "Package %S is not installed" p))))
 
 (defvar elpaca-log-auto-kill)
