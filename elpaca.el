@@ -1493,7 +1493,7 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
 ;; Anything else will require user intervention. ~ NV [2022-03-03]
 (defun elpaca--log-updates (e)
   "Log E's fetched commits."
-  (elpaca--update-info e "Start Update log" 'log-updates)
+  (elpaca--update-info e "Logging updates" 'log-updates)
   (let* ((default-directory (elpaca<-repo-dir e))
          (recipe (elpaca<-recipe e))
          (remotes (plist-get recipe :remotes))
