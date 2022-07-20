@@ -7,7 +7,7 @@
 #+html: <p align="center"> "Chews data, spits packages."</p>
 
 Elpaca is an elisp package manager.
-It allows the user to find, install, update, and remove third-party packages for Emacs.
+It allows users to find, install, update, and remove third-party packages for Emacs.
 It is a replacement for the built-in Emacs package manager, package.el.
 
 * Installation
@@ -26,8 +26,10 @@ It then builds and activates Elpaca.
 (declare-function elpaca-generate-autoloads "elpaca")
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (when-let ((elpaca-repo (expand-file-name "repos/elpaca/" elpaca-directory))
-           (elpaca-url  "https://github.com/progfolio/elpaca.git")
-           ((add-to-list 'load-path elpaca-repo))
+           (elpaca-build (expand-file-name "builds/elpaca/" elpaca-directory))
+           (elpaca-target (if (file-exists-p elpaca-build) elpaca-build elpaca-repo))
+           (elpaca-url  "https://www.github.com/progfolio/elpaca.git")
+           ((add-to-list 'load-path elpaca-target))
            ((not (file-exists-p elpaca-repo)))
            (buffer (get-buffer-create "*elpaca-bootstrap*")))
   (condition-case-unless-debug err
@@ -410,8 +412,7 @@ The following commands are available in the Elpaca manager buffer:
 
 | Command                     | Default Binding | Action                                                                           | Region aware? |
 |-----------------------------+-----------------+----------------------------------------------------------------------------------+---------------|
-| elpaca-ui-send-input        | :               | Prompt for input to send to package's current subprocess                         | no            |
-| elpaca-ui-browse-package    | B               | Open package's website via =browse-url=                                            | no            |
+| elpaca-ui-send-input        | !               | Prompt for input to send to package's current subprocess                         | no            |
 | elpaca-ui-search-installed  | I               | Show all Installed packages                                                      | no            |
 | elpaca-ui-search-marked     | M               | Show all currently marked packages                                               | no            |
 | elpaca-ui-search-orphans    | O               | Show packages which are on disk but not in use during the current Emacs session  | no            |
@@ -419,13 +420,13 @@ The following commands are available in the Elpaca manager buffer:
 | elpaca-ui-search-refresh    | R               | Refresh the view for the current search                                          | no            |
 | elpaca-ui-search-edit       | S               | Edit the current search                                                          | no            |
 | elpaca-ui-search-undeclared | U               | Show packages installed packages which were not declared in the user's init file | no            |
-| elpaca-ui-visit-build       | b               | Visit the current package's build directory via =dired=                            | no            |
+| elpaca-ui-browse-package    | b               | Open package's website via =browse-url=                                            | no            |
 | elpaca-ui-mark-delete       | d               | Mark the current package for deletion                                            | yes           |
 | elpaca-ui-mark-install      | i               | Mark the current package for installation                                        | yes           |
-| elpaca-ui-mark-rebuild      | r               | Mark the current package for rebuilding                                          | yes           |
 | elpaca-ui-search            | s               | Filter the current table via a minibuffer search                                 | no            |
 | elpaca-ui-unmark            | u               | Unmark the current package                                                       | yes           |
-| elpaca-ui-visit-repo        | v               | Visit the current package's repository via =dired=                                 | no            |
+| elpaca-ui-visit-build       | vb              | Visit the current package's build directory via =dired=                            | no            |
+| elpaca-ui-mark-rebuild      | vr              | Mark the current package for rebuilding                                          | yes           |
 | elpaca-ui-execute-marks     | x               | Execute marked package's actions                                                 | no            |
 
 * Example configuration
@@ -440,8 +441,10 @@ The following is an example init.el using Elpaca:
 (declare-function elpaca-generate-autoloads "elpaca")
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (when-let ((elpaca-repo (expand-file-name "repos/elpaca/" elpaca-directory))
-           (elpaca-url  "https://github.com/progfolio/elpaca.git")
-           ((add-to-list 'load-path elpaca-repo))
+           (elpaca-build (expand-file-name "builds/elpaca/" elpaca-directory))
+           (elpaca-target (if (file-exists-p elpaca-build) elpaca-build elpaca-repo))
+           (elpaca-url  "https://www.github.com/progfolio/elpaca.git")
+           ((add-to-list 'load-path elpaca-target))
            ((not (file-exists-p elpaca-repo)))
            (buffer (get-buffer-create "*elpaca-bootstrap*")))
   (condition-case-unless-debug err
@@ -460,6 +463,7 @@ The following is an example init.el using Elpaca:
        (display-buffer buffer)))))
 (require 'elpaca-autoloads)
 (add-hook 'after-init-hook #'elpaca-process-queues)
+(elpaca (elpaca :host github :repo "progfolio/elpaca"))
 
 ;; Install use-package
 (elpaca use-package (require 'use-package))
