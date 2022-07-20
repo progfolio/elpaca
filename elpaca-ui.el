@@ -608,7 +608,7 @@ TYPE is either the symbol `repo` or `build`."
                 (progn
                   (when (string-match-p "Warning:" info)
                     (setf (aref (cadr copy) 2) (propertize info 'face 'elpaca-failed)))
-                  (when (string-match "\\(?:\\([^z-a]*?\\):\\([[:digit:]]+?\\):\\([[:digit:]]+?\\)\\)" info)
+                  (when (string-match "\\(?:\\([^z-a]*?\\):\\([[:digit:]]+?\\):\\([[:digit:]]*?\\)\\):" info)
                     (let ((file (match-string 1 (aref (cadr copy) 2)))
                           (line  (match-string 2 (aref (cadr copy) 2)))
                           (col (match-string 3 (aref (cadr copy) 2))))
