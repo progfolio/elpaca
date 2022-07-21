@@ -1436,6 +1436,7 @@ ORDER's package is not made available during subsequent sessions."
 
 ;;@INCOMPLETE: We need to determine policy for deleting dependencies.
 ;; Maybe skip dependencies which weren't declared or dependencies of a declaration.
+;;@FIX: this should be interactive.
 ;;;###autoload
 (defun elpaca-delete-package (force with-deps &optional package asker)
   "Remove a PACKAGE from all caches and disk.
