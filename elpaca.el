@@ -193,6 +193,13 @@ Each function is passed a request, which may be any of the follwoing symbols:
      Updates the menu's package candidate list."
   :type 'hook)
 
+(defcustom elpaca-hide-status-during-build nil
+  "When non-nil, don't display `elpaca-status' when a package requires a build."
+  :type 'boolean)
+
+(defvar elpaca--show-status (not elpaca-hide-status-during-build)
+  "When non-nil, show `elpaca-status' during build.")
+
 (defvar elpaca-ignored-dependencies
   '(emacs cl-lib cl-generic nadvice org org-mode map seq json)
   "Ignore these unless the user explicitly requests they be installed.")
@@ -514,6 +521,7 @@ ORDER is any of the following values:
 BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
   (if builtp
       elpaca--pre-built-steps
+    (unless elpaca-hide-status-during-build (setq elpaca--show-status t))
     (when-let ((steps (elpaca--build-steps1 item)))
       (when (and mono-repo (memq 'ref-checked-out (elpaca<-statuses mono-repo)))
         (setq steps (cl-set-difference steps
@@ -1411,6 +1419,7 @@ ORDER's package is not made available during subsequent sessions."
 
 (defun elpaca--process-queue (q)
   "Process elpacas in Q."
+  (when elpaca--show-status (require 'elpaca-log) (elpaca-log "#unique !finished"))
   (mapc #'elpaca--process (reverse (elpaca-q<-elpacas q))))
 
 ;;;###autoload
