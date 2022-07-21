@@ -2611,9 +2611,7 @@ If a template has a :properties keyword, add them to the entry."
                                ;;@MAYBE: extract this to a global variable.
                                (notedir "~/Documents/devops/repo-notes/")
                                (project-root (projectile-project-root))
-                               (name (concat
-                                      (car (last (split-string (projectile-project-root) "/") 2))
-                                      ".org"))
+                               (name (concat (directory-file-name project-root) ".org"))
                                (path (expand-file-name name (file-truename notedir))))
                           (with-current-buffer (find-file-noselect path)
                             (unless (derived-mode-p 'org-mode) (org-mode)
@@ -2629,7 +2627,8 @@ If a template has a :properties keyword, add them to the entry."
                :template (lambda () (concat  "* %{todo-state} " (when (y-or-n-p "Link? ") "%A\n") "%?"))
                :todo-state "TODO"
                :children (("bug" :keys "b" :headline "Bug")
-                          ("documentation" :keys "d" :headline "Documentation")
+                          ("design"        :keys "d" :headline "Design")
+                          ("documentation" :keys "D" :headline "Documentation")
                           ("enhancement"   :keys "e" :headline "Enhancement" :todo-state "IDEA")
                           ("feature"       :keys "f" :headline "Feature"     :todo-state "IDEA")
                           ("optimization"  :keys "o" :headline "Optimization")
