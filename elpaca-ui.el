@@ -334,17 +334,16 @@ ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
 If QUERY is nil, the contents of the minibuffer are used instead."
   (let ((query (or query (and (minibufferp) (minibuffer-contents-no-properties))
                    elpaca-ui-search-filter elpaca-ui-default-query)))
-    (with-current-buffer (get-buffer-create (or buffer (current-buffer)))
-      (if (string-empty-p query)
-          (setq tabulated-list-entries (funcall elpaca-ui-entries-function)
-                elpaca-ui-search-filter elpaca-ui-default-query)
-        ;;@TODO: cache functions?
-        (when-let ((parsed (elpaca-ui--parse-search query))
-                   (fn (elpaca-ui--search-fn parsed)))
-          (setq tabulated-list-entries (funcall
-                                        (let ((byte-compile-log-warning-function nil))
-                                          (byte-compile fn)))
-                elpaca-ui-search-filter query)))
+    (with-current-buffer (get-buffer-create (or buffer
+                                                (with-minibuffer-selected-window
+                                                  (current-buffer))))
+      (when (string-empty-p query) (setq query elpaca-ui-default-query))
+      (when-let ((parsed (elpaca-ui--parse-search query))
+                 (fn (elpaca-ui--search-fn parsed)))
+        (setq tabulated-list-entries (funcall
+                                      (let ((byte-compile-log-warning-function nil))
+                                        (byte-compile fn)))
+              elpaca-ui-search-filter query))
       (elpaca-ui--print)
       (when elpaca-ui-header-line-function
         (setq header-line-format (funcall elpaca-ui-header-line-function
@@ -353,7 +352,8 @@ If QUERY is nil, the contents of the minibuffer are used instead."
 (defun elpaca-ui--debounce-search (buffer)
   "Update BUFFER's search filter from minibuffer."
   (let ((input (string-trim (minibuffer-contents-no-properties))))
-    (unless (string= input (with-current-buffer buffer elpaca-ui-search-filter))
+    (unless (or (string-empty-p input)
+                (string= input (with-current-buffer buffer elpaca-ui-search-filter)))
       (if elpaca-ui--search-timer
           (cancel-timer elpaca-ui--search-timer))
       (setq elpaca-ui--search-timer (run-at-time elpaca-ui-search-debounce-interval
@@ -365,18 +365,19 @@ If QUERY is nil, the contents of the minibuffer are used instead."
   "Filter current buffer by string.
 If EDIT is non-nil, edit the last search."
   (interactive "P")
-  (if edit
-      (read-from-minibuffer "Search (empty to clear): " elpaca-ui-search-filter)
-    (let* ((input (string-trim (condition-case nil
-                                   (read-from-minibuffer "Search (empty to clear): ")
-                                 (quit elpaca-ui-search-filter))))
-           (query (if (string-empty-p input) elpaca-ui-default-query input)))
-      (if (string= query elpaca-ui-search-filter)
-          (when elpaca-ui--search-timer (cancel-timer elpaca-ui--search-timer))
-        (push elpaca-ui-search-filter elpaca-ui-search-history))
+  (let* ((returnedp nil)
+         (input (string-trim
+                 (condition-case nil
+                     (prog1
+                         (read-from-minibuffer "Search (empty to clear): "
+                                               (and edit elpaca-ui-search-filter))
+                       (setq returnedp t))
+                   (quit elpaca-ui-search-filter))))
+         (query (if (string-empty-p input) elpaca-ui-default-query input)))
+    (when (and returnedp (not (string= query elpaca-ui-search-filter)))
       (setq elpaca-ui-search-filter query)
-      (unless (string= query elpaca-ui-search-filter)
-        (elpaca-ui--update-search-filter (current-buffer))))))
+      (elpaca-ui--update-search-filter (current-buffer))
+      (cl-pushnew elpaca-ui-search-filter elpaca-ui-search-history))))
 
 (defun elpaca-ui-search-refresh (&optional buffer silent)
   "Rerun the current search for BUFFER.
