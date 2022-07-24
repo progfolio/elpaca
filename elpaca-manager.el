@@ -59,7 +59,8 @@ If RECACHE is non-nil, recompute menu items from `elpaca-menu-item-functions'."
   (interactive "P")
   (when recache
     (elpaca--menu-items recache)
-    (elpaca-manager--entries recache))
+    (elpaca-manager--entries recache)
+    (message "Elpaca menu item cache refreshed."))
   (with-current-buffer (get-buffer-create elpaca-manager-buffer)
     (unless (derived-mode-p 'elpaca-ui-mode)
       (elpaca-ui-mode)
