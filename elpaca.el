@@ -287,7 +287,9 @@ If RECACHE is non-nil, recompute `elpaca--menu-items-cache'."
                 (sort (copy-tree
                        (cl-loop for fn in elpaca-menu-functions
                                 ;; Allows adding a symbol prior menu installation.
-                                append (and (functionp fn) (funcall fn 'index))))
+                                append (and (functionp fn)
+                                            (funcall fn 'update)
+                                            (funcall fn 'index))))
                       (lambda (a b) (string-lessp (car a) (car b)))))
         (when elpaca-cache-menu-items (elpaca--write-menu-cache)))))
 
