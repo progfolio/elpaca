@@ -29,7 +29,6 @@
 (defvar elpaca-status-auto-kill)
 (defvar elpaca-log-buffer)
 
-
 ;;;###autoload
 (defmacro elpaca-with-dir (type item &rest body)
   "Set `default-directory' for duration of BODY.
@@ -39,29 +38,6 @@ TYPE is either `:repo' or `:build' for ITEM's repo or build directory."
           (,(intern (format "elpaca-%s-dir" (substring (symbol-name type) 1)))
            (elpaca-recipe ,item))))
      ,@body))
-
-
-(defun elpaca-package-file-p ()
-  "Return t if current buffer's file is part of a repo."
-  (interactive)
-  (and-let* ((name (buffer-file-name))
-             ((string-prefix-p (expand-file-name "./repos" elpaca-directory) name))
-             ((cl-find-if (lambda (q) (member name
-                                              (mapcar #'car (elpaca--files (cdr q)))))
-                          (elpaca--queued))))))
-
-(defun elpaca-ui--post-maybe-rebuild ()
-  "Executed after rebuild finalized."
-  (setq elpaca--finalize-queue-hook nil)
-  (when elpaca-status-auto-kill (kill-buffer elpaca-log-buffer)))
-
-(defun elpaca-maybe-rebuild-package ()
-  "Rebuild package associated with BUFFER."
-  (interactive)
-  (when-let ((queued (elpaca-package-file-p)))
-    (elpaca-split-queue)
-    (setq elpaca--finalize-queue-hook '(elpaca-ui--post-maybe-rebuild))
-    (elpaca-rebuild-package (car queued))))
 
 (provide 'elpaca-ideas)
 ;;; elpaca-ideas.el ends here

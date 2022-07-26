@@ -1477,14 +1477,26 @@ If FORCE is non-nil do not confirm before deleting."
             (when-let ((build-dir (elpaca-build-dir recipe))) (delete-directory build-dir 'recursive)))
         (user-error "%S is not queued" package)))))
 
+(defun elpaca--file-package (&optional file)
+  "Return queued E if current buffer's FILE is part of a repo, nil otherwise."
+  (when-let ((name (or file (buffer-file-name))))
+    (cl-find-if (lambda (e)
+                  (string-prefix-p (elpaca<-repo-dir e) (file-name-directory name)))
+                (elpaca--queued) :key #'cdr)))
+
 ;;;###autoload
 (defun elpaca-rebuild-package (item &optional hide)
   "Rebuild ITEM's associated package.
+When called interactively, prompt for ITEM.
+With a prefix argument, rebuild current file's package or prompt if none found.
 If HIDE is non-nil, do not display `elpaca-log-buffer'."
-  (interactive (list (intern (completing-read
-                              "Rebuild package: "
-                              (sort (mapcar #'car (elpaca--queued)) #'string<)
-                              nil t))))
+  (interactive (list (or (and-let* ((current-prefix-arg)
+                                    (queued (elpaca--file-package))
+                                    ((car queued))))
+                         (intern (completing-read
+                                  "Rebuild package: "
+                                  (sort (mapcar #'car (elpaca--queued)) #'string<)
+                                  nil t)))))
   (if-let ((queued (assoc item (elpaca--queued))))
       (let ((e (cdr queued)))
         (elpaca--update-info e "Rebuilding" 'rebuilding)
