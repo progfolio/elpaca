@@ -630,15 +630,14 @@ If N is nil return a list of all queued elpacas."
     (elpaca--remove-build-steps e '(elpaca--clone elpaca--add-remotes elpaca--checkout-ref))
     (elpaca--continue-build e)))
 
-(defvar elpaca-log-buffer)
 (declare-function elpaca-log "elpaca-log")
 (declare-function elpaca-status "elpaca-status")
 (declare-function elpaca-ui--update-search-filter "elpaca-ui")
 (defun elpaca--update-info-buffers ()
   "Update views in `elpaca-log-buffer'."
-  (when (and (boundp 'elpaca-log-buffer)
-             (get-buffer-window elpaca-log-buffer t)) ;; log buffer visible
-    (elpaca-ui--update-search-filter elpaca-log-buffer)))
+  (when-let ((log (bound-and-true-p elpaca-log-buffer))
+             ((get-buffer-window log t))) ;; log buffer visible
+    (elpaca-ui--update-search-filter log)))
 
 (defun elpaca--update-info (e info &optional status replace)
   "Update E's INFO.
@@ -1459,7 +1458,9 @@ If FORCE is non-nil do not confirm before deleting."
             (dolist (queue elpaca--queues)
               (setf (elpaca-q<-elpacas queue)
                     (cl-remove package (elpaca-q<-elpacas queue) :key #'car)))
-            (when (equal (buffer-name) elpaca-log-buffer) (elpaca-status))
+            (when (and (bound-and-true-p elpaca-log-buffer)
+                       (equal (buffer-name) elpaca-log-buffer))
+              (elpaca-status))
             (message "Deleted package %S" package)
             (when with-deps
               (dolist (dependency dependencies)
