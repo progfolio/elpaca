@@ -40,27 +40,26 @@
   "Return list of all entries available in `elpaca-menu-functions' and init.
 If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
   (or (and (not recache) elpaca-manager--entry-cache)
-      (setq elpaca-manager--entry-cache
-            (cl-loop for (item . data) in (append (elpaca--menu-items)
-                                                  (elpaca-ui--custom-candidates))
-                     collect (list
-                              item
-                              (vector (symbol-name item)
-                                      (or (plist-get data :description) "")
-                                      (if-let ((date (plist-get data :date)))
-                                          (format-time-string "%Y-%m-%d" date)
-                                        "")
-                                      (or (plist-get data :source) "")))))))
+      (prog1
+          (setq elpaca-manager--entry-cache
+                (cl-loop for (item . data) in (append (elpaca--menu-items recache)
+                                                      (elpaca-ui--custom-candidates))
+                         collect (list
+                                  item
+                                  (vector (symbol-name item)
+                                          (or (plist-get data :description) "")
+                                          (if-let ((date (plist-get data :date)))
+                                              (format-time-string "%Y-%m-%d" date)
+                                            "")
+                                          (or (plist-get data :source) "")))))
+        (message "Elpaca menu item cache refreshed."))))
 
 ;;;###autoload
 (defun elpaca-manager (&optional recache)
   "Display elpaca's package management UI.
 If RECACHE is non-nil, recompute menu items from `elpaca-menu-item-functions'."
   (interactive "P")
-  (when recache
-    (elpaca--menu-items recache)
-    (elpaca-manager--entries recache)
-    (message "Elpaca menu item cache refreshed."))
+  (when recache (elpaca-manager--entries recache))
   (with-current-buffer (get-buffer-create elpaca-manager-buffer)
     (let ((initializedp (derived-mode-p 'elpaca-ui-mode)))
       (unless initializedp
