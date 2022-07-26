@@ -62,20 +62,23 @@ If RECACHE is non-nil, recompute menu items from `elpaca-menu-item-functions'."
     (elpaca-manager--entries recache)
     (message "Elpaca menu item cache refreshed."))
   (with-current-buffer (get-buffer-create elpaca-manager-buffer)
-    (unless (derived-mode-p 'elpaca-ui-mode)
-      (elpaca-ui-mode)
-      (setq tabulated-list-format [("Package" 30 t)
-                                   ("Description" 80 t)
-                                   ("Date" 15 t)
-                                   ("Source" 20 t)]
-            elpaca-ui-entries-function #'elpaca-manager--entries
-            elpaca-ui-header-line-prefix (propertize "Elpaca Manager" 'face '(:weight bold))
-            tabulated-list-use-header-line nil)
-      (setq-local bookmark-make-record-function #'elpaca-manager-bookmark-make-record
-                  elpaca-ui-default-query elpaca-manager-default-search-query)
-      (tabulated-list-init-header)
-      (elpaca-ui--update-search-filter (current-buffer) elpaca-manager-default-search-query))
-    (pop-to-buffer-same-window elpaca-manager-buffer)))
+    (let ((initializedp (derived-mode-p 'elpaca-ui-mode)))
+      (unless initializedp
+        (elpaca-ui-mode)
+        (setq tabulated-list-format [("Package" 30 t)
+                                     ("Description" 80 t)
+                                     ("Date" 15 t)
+                                     ("Source" 20 t)]
+              elpaca-ui-entries-function #'elpaca-manager--entries
+              elpaca-ui-header-line-prefix (propertize "Elpaca Manager" 'face '(:weight bold))
+              tabulated-list-use-header-line nil)
+        (setq-local bookmark-make-record-function #'elpaca-manager-bookmark-make-record
+                    elpaca-ui-default-query elpaca-manager-default-search-query)
+        (tabulated-list-init-header))
+      (when (or (not initializedp) recache)
+        (elpaca-ui--update-search-filter (current-buffer)
+                                         (or elpaca-ui-search-filter elpaca-manager-default-search-query)))))
+  (pop-to-buffer-same-window elpaca-manager-buffer))
 
 ;;;; Bookmark integration
 
