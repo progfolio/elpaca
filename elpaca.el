@@ -1483,6 +1483,13 @@ If FORCE is non-nil do not confirm before deleting."
                   (string-prefix-p (elpaca<-repo-dir e) (file-name-directory name)))
                 (elpaca--queued) :key #'cdr)))
 
+(defun elpaca--read-queued (&optional prompt)
+  "Return queued item.
+If PROMPT is non-nil, it is used instead of the default."
+  (intern (completing-read (or prompt "Queued item: ")
+                           (sort (mapcar #'car (elpaca--queued)) #'string<)
+                           nil t)))
+
 ;;;###autoload
 (defun elpaca-rebuild-package (item &optional hide)
   "Rebuild ITEM's associated package.
@@ -1492,10 +1499,7 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
   (interactive (list (or (and-let* ((current-prefix-arg)
                                     (queued (elpaca--file-package))
                                     ((car queued))))
-                         (intern (completing-read
-                                  "Rebuild package: "
-                                  (sort (mapcar #'car (elpaca--queued)) #'string<)
-                                  nil t)))))
+                         (elpaca--read-queued "Rebuild package: "))))
   (if-let ((queued (assoc item (elpaca--queued))))
       (let ((e (cdr queued)))
         (elpaca--update-info e "Rebuilding" 'rebuilding)
@@ -1563,20 +1567,14 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
   "Fetch ITEM's associated package remote commits.
 This does not merge changes or rebuild the packages.
 If HIDE is non-nil don't display `elpaca-log-buffer'."
-  (interactive
-   (list (let ((item (completing-read "Fetch updates: "
-                                      (sort (mapcar #'car (elpaca--queued)) #'string<)
-                                      nil t)))
-           (if (string-empty-p item)
-               (user-error "No package selected")
-             (intern item)))))
+  (interactive (list (elpaca--read-queued "Fetch Package Updates: ")))
   (if-let ((queued (assoc item (elpaca--queued))))
       (let ((e (cdr queued)))
         (elpaca--update-info e "Fetching updates" 'fetching-updates)
         (setf (elpaca<-build-steps e) (list #'elpaca--fetch #'elpaca--log-updates))
         (setf (elpaca<-queue-time e) (current-time))
         (elpaca--process queued)
-        (unless hide (elpaca-status)))
+        (unless hide (require 'elpaca-log) (elpaca-log--latest)))
     (user-error "Package %S is not queued" item)))
 
 ;;;###autoload
