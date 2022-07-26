@@ -235,12 +235,6 @@ https://github.com/progfolio/elpaca
 (elpaca (elpaca :host github :repo "progfolio/elpaca"))
 #+end_src
 
-I want to see the status buffer when doing an initial install.
-#+begin_src emacs-lisp :lexical t
-(setq +elpaca-installed (file-exists-p (expand-file-name "repos" elpaca-directory)))
-(add-hook 'emacs-startup-hook (lambda () (unless +elpaca-installed (elpaca-status))))
-#+end_src
-
 Use Evil bindings in status and UI maps
 #+begin_src emacs-lisp :lexical t
 (with-eval-after-load 'evil
