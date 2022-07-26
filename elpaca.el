@@ -1437,7 +1437,7 @@ ORDER's package is not made available during subsequent sessions."
     (message "No incomplete queues to process")))
 
 (defun elpaca--on-disk-p (item)
-  "Return t if ITEM has an associated P and a build or repo dir on disk."
+  "Return t if ITEM has an associated E and a build or repo dir on disk."
   (when-let ((e (elpaca-alist-get item (elpaca--queued))))
     (or (file-exists-p (elpaca<-repo-dir e)) (file-exists-p (elpaca<-build-dir e)))))
 
@@ -1643,8 +1643,7 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
                (elpaca-process-call "git" "fetch" "--unshallow" name)))))
 
 (defun elpaca-load-lockfile (&optional lockfile _force)
-  "Load LOCKFILE.
-If FORCE is non-nil,."
+  "Load LOCKFILE. If FORCE is non-nil, @TODO."
   (interactive "fLockfile: ")
   (message "%S" lockfile))
 
