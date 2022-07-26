@@ -1585,6 +1585,37 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
   (cl-loop for (item . _) in (cl-remove-duplicates (elpaca--queued) :key #'car)
            do (elpaca-fetch item hide)))
 
+(defun elpaca--merge-process-sentinel (process event)
+  "Handle PROCESS EVENT."
+  (when-let (((equal event "finished\n"))
+             (e (process-get process :elpaca)))
+    (elpaca--update-info e "Updates merged" 'updates-fetched)
+    (elpaca--continue-build e)))
+
+(defun elpaca--merge (e)
+  "Merge E's fetched commits."
+  (let* ((default-directory (elpaca<-repo-dir e))
+         (process (make-process
+                   :name (format "elpaca-merge-%s" (elpaca<-package e))
+                   :command  '("git" "merge" "--ff-only")
+                   :filter (lambda (process output)
+                         (elpaca--process-filter process output "fatal" 'failed))
+                   :sentinel #'elpaca--merge-process-sentinel)))
+    (process-put process :elpaca e)))
+
+(defun elpaca-update (item &optional hide)
+  "Update ITEM's associated package."
+  (interactive (list (elpaca--read-queued "Update package: ")))
+  (if-let ((queued (assoc item (elpaca--queued))))
+      (let ((e (cdr queued)))
+        (elpaca--update-info e "Fetching updates" 'fetching-updates)
+        (setf (elpaca<-build-steps e) (list #'elpaca--fetch #'elpaca--log-updates
+                                            #'elpaca--merge))
+        (setf (elpaca<-queue-time e) (current-time))
+        (elpaca--process queued)
+        (unless hide (require 'elpaca-log) (elpaca-log--latest)))
+    (user-error "Package %S is not queued" item)))
+
 ;;; Lockfiles
 (defun elpaca-declared-p (item)
   "Return t if ITEM is declared in user's init file, nil otherwise."
