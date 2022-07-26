@@ -197,7 +197,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
   "When non-nil, don't display `elpaca-status' when a package requires a build."
   :type 'boolean)
 
-(defvar elpaca--show-status (not elpaca-hide-status-during-build)
+(defvar elpaca--show-status nil
   "When non-nil, show `elpaca-status' during build.")
 
 (defvar elpaca-ignored-dependencies
@@ -1420,7 +1420,13 @@ ORDER's package is not made available during subsequent sessions."
 
 (defun elpaca--process-queue (q)
   "Process elpacas in Q."
-  (when elpaca--show-status (require 'elpaca-log) (elpaca-log "#unique !finished"))
+  ;;@FIX: Do this without resorting to `initial-buffer-choice'.
+  (when elpaca--show-status
+    (setq initial-buffer-choice
+          (lambda ()
+            (require 'elpaca-log)
+            (elpaca-log "#unique !finished")
+            (when (bound-and-true-p elpaca-log-buffer) (get-buffer-create elpaca-log-buffer)))))
   (mapc #'elpaca--process (reverse (elpaca-q<-elpacas q))))
 
 ;;;###autoload
