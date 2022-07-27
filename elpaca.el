@@ -1658,15 +1658,6 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
     (not (string-empty-p (elpaca-process-output
                           "git" "-c" "status.branch=false" "status" "--short")))))
 
-;; @TODO Implement these:
-;; (defun elpaca-on-default-branch-p (item)
-;;   (if-let ((order (elpaca-alist-get item (elpaca--queued))))
-;;       (let* ((default-directory (elpaca-repo-dir order)))
-;;         (
-;;          ;;git ls-remote --symref REMOTE HEAD
-;;          ;;git symbolic-ref HEAD  vs :branch
-;;          ;; (defun elpaca-ui--local-branch-behind-p (package)
-
 (defun elpaca-unshallow (item)
   "Convert ITEM's repo to an unshallow repository."
   (when-let ((e (or (alist-get item (elpaca--queued))
