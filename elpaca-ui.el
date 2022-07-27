@@ -391,7 +391,7 @@ If SILENT is non-nil, supress update message."
 
 (defun elpaca-ui-current-package ()
   "Return current package of UI line."
-  (or (get-text-property (line-beginning-position) 'tabulated-list-id)
+  (or (get-text-property (point) 'tabulated-list-id)
       (user-error "No package found at point")))
 
 (defun elpaca-ui-browse-package ()
