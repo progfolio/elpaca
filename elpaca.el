@@ -1487,9 +1487,10 @@ If FORCE is non-nil do not confirm before deleting."
 (defun elpaca--read-queued (&optional prompt)
   "Return queued item.
 If PROMPT is non-nil, it is used instead of the default."
-  (intern (completing-read (or prompt "Queued item: ")
-                           (sort (mapcar #'car (elpaca--queued)) #'string<)
-                           nil t)))
+  (intern (completing-read
+           (or prompt "Queued item: ")
+           (sort (cl-delete-duplicates (mapcar #'car (elpaca--queued))) #'string<)
+           nil t)))
 
 ;;;###autoload
 (defun elpaca-rebuild-package (item &optional hide)
