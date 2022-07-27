@@ -1710,5 +1710,15 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
                   collect (cons item (plist-put (copy-tree (elpaca<-recipe p)) :ref rev))
                   do (push item seen))))))
 
+;;;###autoload
+(defmacro elpaca-with-dir (type item &rest body)
+  "Set `default-directory' for duration of BODY.
+TYPE is either `:repo' or `:build' for ITEM's repo or build directory."
+  (declare (indent 2) (debug t))
+  `(let ((default-directory
+          (,(intern (format "elpaca-%s-dir" (substring (symbol-name type) 1)))
+           (elpaca-recipe ,item))))
+     ,@body))
+
 (provide 'elpaca)
 ;;; elpaca.el ends here
