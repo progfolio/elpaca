@@ -85,9 +85,9 @@ If RECACHE is non-nil, recompute menu items from `elpaca-menu-item-functions'."
 (defun elpaca-manager--bookmark-handler (record)
   "Open a bookmarked search RECORD."
   (elpaca-manager)
-  (pop-to-buffer-same-window elpaca-manager-buffer)
-  (setq elpaca-ui-search-filter (bookmark-prop-get record 'query))
-  (elpaca-ui-search-refresh))
+  (with-current-buffer elpaca-manager-buffer
+    (setq elpaca-ui-search-filter (bookmark-prop-get record 'query))
+    (elpaca-ui-search-refresh)))
 
 (defun elpaca-manager-bookmark-make-record ()
   "Return a bookmark record for the current `elpaca-ui-search-filter'."
