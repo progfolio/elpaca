@@ -1601,7 +1601,7 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
                    :name (format "elpaca-merge-%s" (elpaca<-package e))
                    :command  '("git" "merge" "--ff-only")
                    :filter (lambda (process output)
-                         (elpaca--process-filter process output "fatal" 'failed))
+                             (elpaca--process-filter process output "fatal" 'failed))
                    :sentinel #'elpaca--merge-process-sentinel)))
     (process-put process :elpaca e)))
 
