@@ -1593,7 +1593,7 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
              (e (process-get process :elpaca)))
     (if (string-match-p "Already up to date" (nth 2 (car (elpaca<-log e))))
         (elpaca--finalize e)
-      (elpaca--update-info e "Updates merged" 'updates-fetched)
+      (elpaca--update-info e "Updates merged" 'merged)
       (elpaca--continue-build e))))
 
 (defun elpaca--merge (e)
@@ -1605,6 +1605,7 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
                    :filter (lambda (process output)
                              (elpaca--process-filter process output "fatal" 'failed))
                    :sentinel #'elpaca--merge-process-sentinel)))
+    (elpaca--update-info e "Merging updates" 'merging)
     (process-put process :elpaca e)))
 
 (defun elpaca-update (item &optional hide)
@@ -1613,8 +1614,21 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
   (if-let ((queued (assoc item (elpaca--queued))))
       (let ((e (cdr queued)))
         (elpaca--update-info e "Fetching updates" 'fetching-updates)
-        (setf (elpaca<-build-steps e) (list #'elpaca--fetch #'elpaca--log-updates
-                                            #'elpaca--merge))
+        (setf (elpaca<-build-steps e)
+              `(elpaca--fetch
+                elpaca--log-updates
+                elpaca--merge
+                ,@(cl-intersection
+                   (elpaca--build-steps (elpaca<-item e) nil t
+                                        (elpaca<-mono-repo e))
+                   '(elpaca--run-pre-build-commands
+                     elpaca--link-build-files
+                     elpaca--byte-compile
+                     elpaca--generate-autoloads-async
+                     elpaca--compile-info
+                     elpaca--install-info
+                     elpaca--add-info-path
+                     elpaca--run-post-build-commands))))
         (setf (elpaca<-queue-time e) (current-time))
         (elpaca--process queued)
         (unless hide (require 'elpaca-log) (elpaca-log--latest)))
