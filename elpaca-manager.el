@@ -77,7 +77,7 @@ If RECACHE is non-nil, recompute menu items from `elpaca-menu-item-functions'."
       (when (or (not initializedp) recache)
         (elpaca-ui--update-search-filter (current-buffer)
                                          (or elpaca-ui-search-filter elpaca-manager-default-search-query)))))
-  (pop-to-buffer-same-window elpaca-manager-buffer))
+  (pop-to-buffer elpaca-manager-buffer '((display-buffer-reuse-window display-buffer-same-window ))))
 
 ;;;; Bookmark integration
 

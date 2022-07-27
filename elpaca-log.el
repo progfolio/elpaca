@@ -102,7 +102,7 @@ If FILTER is non-nil, it is used as the initial search query."
                                      (or filter
                                          elpaca-ui-search-filter
                                          elpaca-log-default-search-query))
-    (pop-to-buffer-same-window elpaca-log-buffer)))
+    (pop-to-buffer elpaca-log-buffer '((display-buffer-reuse-window display-buffer-same-window)))))
 
 (defcustom elpaca-log-auto-kill t
   "When non-nil, the status buffer is killed after successfully processed queues."
