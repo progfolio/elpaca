@@ -1591,8 +1591,10 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
   "Handle PROCESS EVENT."
   (when-let (((equal event "finished\n"))
              (e (process-get process :elpaca)))
-    (elpaca--update-info e "Updates merged" 'updates-fetched)
-    (elpaca--continue-build e)))
+    (if (string-match-p "Already up to date" (nth 2 (car (elpaca<-log e))))
+        (elpaca--finalize e)
+      (elpaca--update-info e "Updates merged" 'updates-fetched)
+      (elpaca--continue-build e))))
 
 (defun elpaca--merge (e)
   "Merge E's fetched commits."
