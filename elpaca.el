@@ -1542,8 +1542,7 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
          (process (make-process
                    :name (format "elpaca-log-updates-%s" (elpaca<-package e))
                    ;; Pager will break this process. Complains about terminal functionality.
-                   :command
-                   (list "git" "--no-pager" "log" (elpaca--first remote) "..." "HEAD")
+                   :command (list "git" "--no-pager" "log" "..@{u}")
                    :filter   #'elpaca--process-filter
                    :sentinel #'elpaca--log-updates-process-sentinel)))
     (process-put process :elpaca e)))
