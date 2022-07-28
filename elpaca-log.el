@@ -104,8 +104,8 @@ If FILTER is non-nil, it is used as the initial search query."
                                          elpaca-log-default-search-query))
     (pop-to-buffer elpaca-log-buffer '((display-buffer-reuse-window display-buffer-same-window)))))
 
-(defcustom elpaca-log-auto-kill t
-  "When non-nil, the status buffer is killed after successfully processed queues."
+(defcustom elpaca-log-auto-bury t
+  "When non-nil, the status buffer is buried after successfully processed queues."
   :type 'boolean
   :group 'elpaca)
 

@@ -520,7 +520,7 @@ The current package is its sole argument."
                                (file-exists-p repo)))))
                 (user-error "Package %S is not installed" p))))
 
-(defvar elpaca-log-auto-kill)
+(defvar elpaca-log-auto-bury)
 (defvar elpaca-manager-buffer)
 (defvar elpaca-log-buffer)
 
@@ -530,7 +530,8 @@ The current package is its sole argument."
   "Executed after `elpaca-ui-execute-marks'."
   (setq elpaca--finalize-queue-hook nil)
   (with-current-buffer elpaca-manager-buffer (elpaca-ui-search-refresh))
-  (when elpaca-log-auto-kill (kill-buffer elpaca-log-buffer)))
+  (when elpaca-log-auto-bury
+    (with-current-buffer elpaca-log-buffer (bury-buffer))))
 
 (defun elpaca-ui-execute-marks ()
   "Execute each action in `elpaca-ui-marked-packages'."
