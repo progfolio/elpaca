@@ -221,7 +221,8 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
             (while t
               (let ((op (read (current-buffer))))
                 (cond
-                 ((symbolp op)
+                 ((or (symbolp op) (numberp op))
+                  (when (numberp op) (setq op (intern (number-to-string op))))
                   (if (eq op '!)
                       (setq negatedp t)
                     (push (concat (and negatedp "!") (and tagp "#") (symbol-name op)) chunk)
