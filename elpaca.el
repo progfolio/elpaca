@@ -1609,7 +1609,8 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
     (process-put process :elpaca e)))
 
 (defun elpaca-update (item &optional hide)
-  "Update ITEM's associated package."
+  "Update ITEM's associated package.
+If HIDE is non-nil, do not show `elpaca-log'."
   (interactive (list (elpaca--read-queued "Update package: ")))
   (if-let ((queued (assoc item (elpaca--queued))))
       (let ((e (cdr queued)))
