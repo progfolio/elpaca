@@ -776,13 +776,13 @@ RECURSE is used to keep track of recursive calls."
   "Remove each step in SPEC from P."
   (setf (elpaca<-build-steps p) (cl-set-difference (elpaca<-build-steps p) spec)))
 
-(defun elpaca--files (p &optional files nocons)
-  "Return alist of P :files to be symlinked: (PATH . TARGET PATH).
+(defun elpaca--files (e &optional files nocons)
+  "Return alist of E :files to be symlinked: (PATH . TARGET PATH).
 FILES and NOCONS are used recursively."
-  (let* ((repo-dir          (elpaca<-repo-dir p))
+  (let* ((repo-dir          (elpaca<-repo-dir e))
          (default-directory repo-dir)
-         (build-dir         (elpaca<-build-dir p))
-         (recipe            (elpaca<-recipe p))
+         (build-dir         (elpaca<-build-dir e))
+         (recipe            (elpaca<-recipe e))
          (files             (or files (plist-get recipe :files)))
          (exclusions        nil)
          (targets           nil)
@@ -791,10 +791,10 @@ FILES and NOCONS are used recursively."
       (pcase el
         ((pred stringp) (push (or (file-expand-wildcards el) el) targets))
         (`(:exclude  . ,excluded)
-         (push (elpaca--files p excluded 'nocons) exclusions)
+         (push (elpaca--files e excluded 'nocons) exclusions)
          nil)
         (:defaults
-         (push (elpaca--files p elpaca-default-files-directive 'nocons) targets))
+         (push (elpaca--files e elpaca-default-files-directive 'nocons) targets))
         ;;@FIX: subdir needn't be same name as globbed path...
         (`(,_subdir . ,paths)
          (cl-loop for path in paths
