@@ -68,6 +68,7 @@
 
 ;;;###autoload
 (defun elpaca-log--latest ()
+  "Log latest activity."
   (elpaca-log)
   (with-current-buffer elpaca-log-buffer
     (setq elpaca-ui--prev-entry-count (length (funcall elpaca-ui-entries-function)))
