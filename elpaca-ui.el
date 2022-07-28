@@ -24,9 +24,9 @@
   :prefix "elpaca-ui-")
 
 ;;;; Customizations:
-(defcustom elpaca-ui-default-query ".*"
-  "Search query used when enabling `elpaca-ui-mode'."
+(defcustom elpaca-ui-default-query ".*" "Initial `elpaca-ui-mode' search query."
   :type 'string)
+(make-variable-buffer-local 'elpaca-ui-default-query)
 
 (defcustom elpaca-ui-actions
   '((delete  :prefix "💀" :face (:inherit default :weight bold :foreground "#FF0022")
@@ -37,8 +37,7 @@
     (rebuild :prefix "♻️️" :face (:inherit default :weight bold :foreground "#f28500")
              :setup (lambda () (require 'elpaca-log) (elpaca-log--latest))
              :action (lambda (it) (elpaca-rebuild-package it 'hide))))
-  "List of actions which can be taken on packages.
-Each element is of the form: (DESCRIPTION PREFIX FACE FUNCTION)."
+  "List of actions which can be taken on packages."
   :type 'list)
 
 (defcustom elpaca-ui-search-tags
@@ -79,14 +78,15 @@ list of menu items.
 
 Each tag can be inverted in the minibuffer by prepending an
 exclamation point to it. e.g. #!installed."
-  :group 'elpaca-ui
   :type 'alist)
 
 (defcustom elpaca-ui-search-debounce-interval 0.25
-  "Length of time to wait before updating the search UI.
-See `run-at-time' for acceptable values."
-  :group 'elpaca-ui
+  "Length of time in seconds to wait before updating the search UI."
   :type (or 'string 'int 'float))
+
+(defun elpaca-defsearch (query)
+  "Return seach command for QUERY."
+  (lambda () (interactive) (elpaca-ui-search query)))
 
 ;;;; Variables:
 (defvar-local elpaca-ui--search-timer nil "Timer to debounce search input.")
@@ -95,12 +95,11 @@ See `run-at-time' for acceptable values."
 (defvar-local elpaca-ui--prev-entry-count nil "Number of previously recored entries.")
 (defvar elpaca-ui-mode-map (let ((m (make-sparse-keymap)))
                              (define-key m (kbd "!") 'elpaca-ui-send-input)
-                             (define-key m (kbd "I") 'elpaca-ui-search-installed)
-                             (define-key m (kbd "M") 'elpaca-ui-search-marked)
-                             (define-key m (kbd "O") 'elpaca-ui-search-orphans)
-                             (define-key m (kbd "P") 'elpaca-ui-search-previous)
+                             (define-key m (kbd "I") (elpaca-defsearch "#unique #installed"))
+                             (define-key m (kbd "M") (elpaca-defsearch "#unique #marked"))
+                             (define-key m (kbd "O") (elpaca-defsearch "#unique #orphan"))
                              (define-key m (kbd "R") 'elpaca-ui-search-refresh)
-                             (define-key m (kbd "U") 'elpaca-ui-search-undeclared)
+                             (define-key m (kbd "U") (elpaca-defsearch "#unique #undeclared"))
                              (define-key m (kbd "b") 'elpaca-ui-browse-package)
                              (define-key m (kbd "d") 'elpaca-ui-mark-delete)
                              (define-key m (kbd "i") 'elpaca-ui-mark-install)
@@ -117,7 +116,6 @@ See `run-at-time' for acceptable values."
   "Keymap for `elpaca-ui-mode'.")
 (defvar-local elpaca-ui--want-faces t "When non-nil, faces are applied to packages.")
 (defvar-local elpaca-ui-search-filter nil "Filter for package searches.")
-(defvar-local elpaca-ui-search-history nil "List of previous search queries.")
 (defvar-local elpaca-ui-header-line-prefix nil "Header line prefix.")
 (defvar-local elpaca-ui-header-line-function #'elpaca-ui--header-line
   "Function responsible for setting the UI buffer's `header-line-format'.
@@ -371,9 +369,8 @@ ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
 If QUERY is nil, the contents of the minibuffer are used instead."
   (let ((query (or query (and (minibufferp) (minibuffer-contents-no-properties))
                    elpaca-ui-search-filter elpaca-ui-default-query)))
-    (with-current-buffer (get-buffer-create (or buffer
-                                                (with-minibuffer-selected-window
-                                                  (current-buffer))))
+    (with-current-buffer
+        (get-buffer-create (or buffer (with-minibuffer-selected-window (current-buffer))))
       (when (string-empty-p query) (setq query elpaca-ui-default-query))
       (when-let ((parsed (elpaca-ui--parse-search query))
                  (fn (elpaca-ui--search-fn parsed)))
@@ -398,23 +395,25 @@ If QUERY is nil, the contents of the minibuffer are used instead."
                                                  #'elpaca-ui--update-search-filter
                                                  buffer)))))
 
-(defun elpaca-ui-search (&optional edit)
-  "Filter current buffer by string.
-If EDIT is non-nil, edit the last search."
-  (interactive "P")
-  (let* ((returnedp nil)
-         (input (string-trim
+(defun elpaca-ui--ensure-mode ()
+  "Ensure current buffer is derived from `elpaca-ui-mode'."
+  (unless (derived-mode-p 'elpaca-ui-mode)
+    (user-error "Cannot search outside of `elpaca-ui-mode'")))
+
+(defun elpaca-ui-search (&optional query)
+  "Filter current buffer by QUERY. If QUERY is nil, prompt for it."
+  (interactive
+   (progn (elpaca-ui--ensure-mode)
+          (list (string-trim
                  (condition-case nil
-                     (prog1
-                         (read-from-minibuffer "Search (empty to clear): "
-                                               (and edit elpaca-ui-search-filter))
-                       (setq returnedp t))
-                   (quit elpaca-ui-search-filter))))
-         (query (if (string-empty-p input) elpaca-ui-default-query input)))
-    (when (and returnedp (not (string= query elpaca-ui-search-filter)))
-      (setq elpaca-ui-search-filter query)
-      (elpaca-ui--update-search-filter (current-buffer))
-      (cl-pushnew elpaca-ui-search-filter elpaca-ui-search-history))))
+                     (read-from-minibuffer "Search (empty to clear): "
+                                           (and current-prefix-arg elpaca-ui-search-filter))
+                   (quit elpaca-ui-search-filter))))))
+  (elpaca-ui--ensure-mode)
+  (when (string-empty-p query) (setq query elpaca-ui-default-query))
+  (when (not (string= query elpaca-ui-search-filter))
+    (setq elpaca-ui-search-filter query)
+    (elpaca-ui--update-search-filter (current-buffer))))
 
 (defun elpaca-ui-search-refresh (&optional buffer silent)
   "Rerun the current search for BUFFER.
@@ -428,8 +427,7 @@ If SILENT is non-nil, supress update message."
 
 (defun elpaca-ui-current-package ()
   "Return current package of UI line."
-  (or (get-text-property (point) 'tabulated-list-id)
-      (user-error "No package found at point")))
+  (or (get-text-property (point) 'tabulated-list-id) (user-error "No package at point")))
 
 (defun elpaca-ui-browse-package ()
   "Display general info for package on current line."
@@ -447,8 +445,7 @@ If SILENT is non-nil, supress update message."
 (defun elpaca-ui--unmark (package)
   "Unmark PACKAGE."
   (setq elpaca-ui--marked-packages
-        (cl-remove-if (lambda (cell) (string= (car cell) package))
-                      elpaca-ui--marked-packages))
+        (cl-remove-if (lambda (cell) (string= (car cell) package)) elpaca-ui--marked-packages))
   (elpaca-ui--apply-face))
 
 (defun elpaca-ui-unmark ()
@@ -503,12 +500,10 @@ The current package is its sole argument."
            (deactivate-mark))))))
 
 (elpaca-ui-defmark rebuild
-  (lambda (p) (unless (elpaca-installed-p p)
-                (user-error "Package %S is not installed" p))))
+  (lambda (p) (unless (elpaca-installed-p p) (user-error "Package %S is not installed" p))))
 
 (elpaca-ui-defmark install
-  (lambda (p)
-    (when (elpaca-installed-p p) (user-error "Package %S already installed" p))))
+  (lambda (p) (when (elpaca-installed-p p) (user-error "Package %S already installed" p))))
 
 (elpaca-ui-defmark delete
   (lambda (p) (unless (or (elpaca-installed-p p)
@@ -557,37 +552,6 @@ The current package is its sole argument."
     (when (functionp elpaca-ui-entries-function)
       (funcall elpaca-ui-entries-function))))
 
-(defmacro elpaca-ui-defsearch (name query)
-  "Define a QUERY toggle command with NAME."
-  `(defun ,(intern (format "elpaca-ui-search-%s"
-                           (replace-regexp-in-string "[[:space:]]+" "-" name)))
-       (toggle)
-     ,(format "Search for packages which are %s.
-If TOGGLE is non-nil, invert search." name)
-     (interactive "P")
-     (elpaca-ui--update-search-filter
-      (current-buffer)
-      (if toggle ,(mapconcat (lambda (token)
-                               (if (string-prefix-p "!" token)
-                                   (substring token 1)
-                                 (concat "!" token)))
-                             (split-string query " " 'omit-nulls)
-                             " ")
-        ,query))))
-
-(elpaca-ui-defsearch "marked"     "#marked")
-(elpaca-ui-defsearch "installed"  "#installed #unique")
-(elpaca-ui-defsearch "undeclared" "#installed !#declared #unique")
-(elpaca-ui-defsearch "orphans"    "#orphan #unique")
-
-(defun elpaca-ui-search-previous ()
-  "Restore last search query."
-  (interactive)
-  (if-let ((previous (progn (pop elpaca-ui-search-history)
-                            (pop elpaca-ui-search-history))))
-      (elpaca-ui--update-search-filter (current-buffer) previous)
-    (user-error "End of search history")))
-
 (defun elpaca-ui-send-input ()
   "Send input string to current process."
   (interactive)
@@ -602,9 +566,9 @@ If TOGGLE is non-nil, invert search." name)
 (defun elpaca-ui--visit (type)
   "Visit current E's TYPE dir.
 TYPE is either the symbol `repo` or `build`."
-  (if-let ((id (get-text-property (point) 'tabulated-list-id))
-           (e (alist-get id (elpaca--queued)))
-           (dir   (funcall (intern (format "elpaca<-%s-dir" type)) e))
+  (if-let ((id  (get-text-property (point) 'tabulated-list-id))
+           (e   (alist-get id (elpaca--queued)))
+           (dir (funcall (intern (format "elpaca<-%s-dir" type)) e))
            ((file-exists-p dir)))
       (dired dir)
     (user-error "No %s dir associated with current line" type)))
@@ -629,31 +593,32 @@ TYPE is either the symbol `repo` or `build`."
 
 (defun elpaca-ui--byte-comp-warnings (entries)
   "Buttonize byte comp warnings in ENTRIES."
-  (mapcar (lambda (entry)
-            (if-let ((cols (cadr entry))
-                     ((equal (aref cols 1) "byte-compilation"))
-                     (copy (copy-tree entry))
-                     (info (aref (cadr copy) 2))
-                     (e (get-text-property (point-min) 'elpaca (aref (cadr copy) 0))))
-                (progn
-                  (when (string-match-p "Warning:" info)
-                    (setf (aref (cadr copy) 2) (propertize info 'face 'elpaca-failed)))
-                  (when (string-match "\\(?:\\([^z-a]*?\\):\\([[:digit:]]+?\\):\\([[:digit:]]*?\\)\\):" info)
-                    (let ((file (match-string 1 (aref (cadr copy) 2)))
-                          (line  (match-string 2 (aref (cadr copy) 2)))
-                          (col (match-string 3 (aref (cadr copy) 2))))
-                      (setf (aref (cadr copy) 2)
-                            (replace-match
-                             (buttonize (string-join (list file col line) ":")
-                                        (lambda (&rest _)
-                                          (elpaca-ui--visit-byte-comp-warning
-                                           (expand-file-name file (elpaca<-build-dir e))
-                                           (string-to-number line)
-                                           (string-to-number col))))
-                             nil nil (aref (cadr copy) 2)))))
-                  copy)
-              entry))
-          entries))
+  (mapcar
+   (lambda (entry)
+     (if-let ((cols (cadr entry))
+              ((equal (aref cols 1) "byte-compilation"))
+              (copy (copy-tree entry))
+              (info (aref (cadr copy) 2))
+              (e (get-text-property (point-min) 'elpaca (aref (cadr copy) 0))))
+         (progn
+           (when (string-match-p "Warning:" info)
+             (setf (aref (cadr copy) 2) (propertize info 'face 'elpaca-failed)))
+           (when (string-match "\\(?:\\([^z-a]*?\\):\\([[:digit:]]+?\\):\\([[:digit:]]*?\\)\\):" info)
+             (let ((file (match-string 1 (aref (cadr copy) 2)))
+                   (line  (match-string 2 (aref (cadr copy) 2)))
+                   (col (match-string 3 (aref (cadr copy) 2))))
+               (setf (aref (cadr copy) 2)
+                     (replace-match
+                      (buttonize (string-join (list file col line) ":")
+                                 (lambda (&rest _)
+                                   (elpaca-ui--visit-byte-comp-warning
+                                    (expand-file-name file (elpaca<-build-dir e))
+                                    (string-to-number line)
+                                    (string-to-number col))))
+                      nil nil (aref (cadr copy) 2)))))
+           copy)
+       entry))
+   entries))
 
 (provide 'elpaca-ui)
 ;;; elpaca-ui.el ends here

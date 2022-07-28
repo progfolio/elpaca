@@ -24,9 +24,6 @@
 
 ;;; Code:
 (require 'elpaca-ui)
-;;@TODO: do these need to be unconditionally required/executed?
-(require 'bookmark)
-(bookmark-maybe-load-default-file)
 
 (defvar elpaca-manager-buffer "*elpaca-manager*")
 (defvar-local elpaca-manager--entry-cache nil "Cache of all menu items.")
@@ -70,36 +67,12 @@ If RECACHE is non-nil, recompute menu items from `elpaca-menu-item-functions'."
                                      ("Source" 20 t)]
               elpaca-ui-entries-function #'elpaca-manager--entries
               elpaca-ui-header-line-prefix (propertize "Elpaca Manager" 'face '(:weight bold))
-              tabulated-list-use-header-line nil)
-        (setq-local bookmark-make-record-function #'elpaca-manager-bookmark-make-record
-                    elpaca-ui-default-query elpaca-manager-default-search-query)
+              tabulated-list-use-header-line nil
+              elpaca-ui-default-query elpaca-manager-default-search-query)
         (tabulated-list-init-header))
       (when (or (not initializedp) recache)
-        (elpaca-ui--update-search-filter (current-buffer)
-                                         (or elpaca-ui-search-filter elpaca-manager-default-search-query)))))
-  (pop-to-buffer elpaca-manager-buffer '((display-buffer-reuse-window display-buffer-same-window ))))
-
-;;;; Bookmark integration
-
-;;;###autoload
-(defun elpaca-manager--bookmark-handler (record)
-  "Open a bookmarked search RECORD."
-  (elpaca-manager)
-  (with-current-buffer elpaca-manager-buffer
-    (setq elpaca-ui-search-filter (bookmark-prop-get record 'query))
-    (elpaca-ui-search-refresh)))
-
-(defun elpaca-manager-bookmark-make-record ()
-  "Return a bookmark record for the current `elpaca-ui-search-filter'."
-  (let ((name (replace-regexp-in-string
-               " \(.* packages\):" ""
-               (substring-no-properties (format-mode-line header-line-format)))))
-    (list name
-          (cons 'location name)
-          (cons 'handler #'elpaca-manager--bookmark-handler)
-          (cons 'query elpaca-ui-search-filter)
-          (cons 'defaults nil))))
-
+        (elpaca-ui--update-search-filter (current-buffer) elpaca-ui-search-filter))))
+  (pop-to-buffer elpaca-manager-buffer '((display-buffer-reuse-window display-buffer-same-window))))
 
 (provide 'elpaca-manager)
 ;;; elpaca-manager.el ends here

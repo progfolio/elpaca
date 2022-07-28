@@ -65,6 +65,7 @@
   "Indicates an order has failed.")
 
 (defvar elpaca--info-timer nil "Timer to debounce order info printing.")
+
 (defvar elpaca--pre-built-steps
   '(elpaca--queue-dependencies elpaca--add-info-path elpaca--activate-package)
   "List of steps for packages which are already built.")

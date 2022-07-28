@@ -96,13 +96,12 @@ If FILTER is non-nil, it is used as the initial search query."
             elpaca-ui--want-faces nil
             elpaca-ui-entries-function #'elpaca-log--entries
             elpaca-ui-header-line-prefix (propertize "Elpaca Log" 'face '(:weight bold))
+            elpaca-ui-default-query elpaca-log-default-search-query
             tabulated-list-use-header-line nil
             tabulated-list-sort-key '("Time"))
       (tabulated-list-init-header))
     (elpaca-ui--update-search-filter (current-buffer)
-                                     (or filter
-                                         elpaca-ui-search-filter
-                                         elpaca-log-default-search-query))
+                                     (or filter elpaca-ui-search-filter))
     (pop-to-buffer elpaca-log-buffer '((display-buffer-reuse-window display-buffer-same-window)))))
 
 (defcustom elpaca-log-auto-bury t
