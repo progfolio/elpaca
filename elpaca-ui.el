@@ -329,6 +329,42 @@ ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
     (remove-text-properties 0 (length (aref cols 0)) '(display) (aref cols 0)))
   (tabulated-list-print-entry id cols))
 
+(defun elpaca-ui--apply-face ()
+  "Apply face to current entry item."
+  (when-let ((entry (get-text-property (point) 'tabulated-list-entry))
+             (name  (aref entry 0))
+             (item  (intern name))
+             (offset (save-excursion
+                       (goto-char (point-min))
+                       (let ((continue t)
+                             (line 0))
+                         (while (and continue (not (eobp)))
+                           (if (get-text-property (point) 'tabulated-list-entry)
+                               (setq continue nil)
+                             (cl-incf line))
+                           (forward-line))
+                         line)))
+             (lines (cl-loop for i from 0 to (length tabulated-list-entries)
+                             for entry = (nth i tabulated-list-entries)
+                             when (eq (car entry) item) collect i)))
+    (save-excursion
+      (with-silent-modifications
+        (cl-loop with marked = (cl-find item elpaca-ui--marked-packages :key #'car)
+                 with props  = (nthcdr 2 marked)
+                 with face   = (or (plist-get props :face) 'elpaca-ui-marked-package)
+                 with prefix = (or (plist-get props :prefix) "*")
+                 with mark   = (propertize (concat prefix " " name) 'face face)
+                 with len    = (length name)
+                 for line in lines
+                 do (progn
+                      (goto-char (point-min))
+                      (forward-line (+ line offset))
+                      (let* ((start (line-beginning-position))
+                             (end (+ start len)))
+                        (if marked
+                            (put-text-property start (+ start (length name)) 'display mark)
+                          (remove-text-properties start end '(display))))))))))
+
 (defun elpaca-ui--update-search-filter (&optional buffer query)
   "Update the BUFFER to reflect search QUERY.
 If QUERY is nil, the contents of the minibuffer are used instead."
@@ -409,38 +445,30 @@ If SILENT is non-nil, supress update message."
 
 (defun elpaca-ui--unmark (package)
   "Unmark PACKAGE."
-  (setq-local elpaca-ui--marked-packages
-              (cl-remove-if (lambda (cell) (string= (car cell) package))
-                            elpaca-ui--marked-packages))
-  (elpaca-ui--print)
-  (forward-line))
+  (setq elpaca-ui--marked-packages
+        (cl-remove-if (lambda (cell) (string= (car cell) package))
+                      elpaca-ui--marked-packages))
+  (elpaca-ui--apply-face))
 
 (defun elpaca-ui-unmark ()
   "Unmark current package.
 If region is active unmark all packages in region."
   (interactive)
-  (if (not (use-region-p))
-      (elpaca-ui--unmark (elpaca-ui-current-package))
-    (save-excursion
-      (save-restriction
-        (narrow-to-region (save-excursion (goto-char (region-beginning))
-                                          (line-beginning-position))
-                          (region-end))
-        (goto-char (point-min))
-        (while (not (eobp))
-          (condition-case _
-              (progn
-                (elpaca-ui--unmark (elpaca-ui-current-package)))
-            ((error) (forward-line))))))))
+  (elpaca-ui--unmark (elpaca-ui-current-package))
+  (forward-line))
 
-(defun elpaca-ui-mark (package &optional action)
+(defun elpaca-ui--mark (package action)
+  "Internally mark PACKAGE for ACTION."
+  (cl-pushnew (cons package (assoc action elpaca-ui-actions))
+              elpaca-ui--marked-packages :key #'car)
+  (elpaca-ui--apply-face))
+
+(defun elpaca-ui-mark (package action)
   "Mark PACKAGE for ACTION with PREFIX.
 ACTION is the description of a cell in `elpaca-ui-actions'.
 The action's function is passed the name of the package as its sole argument."
   (interactive)
-  (cl-pushnew (cons package (assoc action elpaca-ui-actions))
-              elpaca-ui--marked-packages :key #'car)
-  (elpaca-ui--print)
+  (elpaca-ui--mark package action)
   (forward-line))
 
 (defun elpaca-ui--toggle-mark (&optional test action)
@@ -451,7 +479,7 @@ The current package is its sole argument."
       (progn
         (when test (funcall test package))
         (if (elpaca-ui-package-marked-p package)
-            (elpaca-ui--unmark package)
+            (elpaca-ui-unmark)
           (elpaca-ui-mark package action)))
     (user-error "No package associated with current line")))
 
@@ -463,16 +491,15 @@ The current package is its sole argument."
      (interactive)
      (if (not (use-region-p))
          (elpaca-ui--toggle-mark ,test ',name)
-       (save-excursion
+       (let ((end (region-end))
+             (beg (region-beginning)))
          (save-restriction
-           (narrow-to-region (save-excursion (goto-char (region-beginning))
-                                             (line-beginning-position))
-                             (region-end))
-           (goto-char (point-min))
-           (while (not (eobp))
+           (goto-char beg)
+           (while (not (>= (point) end))
              (condition-case _
                  (elpaca-ui--toggle-mark ,test ',name)
-               ((error) (forward-line)))))))))
+               ((error) (forward-line))))
+           (deactivate-mark))))))
 
 (elpaca-ui-defmark rebuild
   (lambda (p) (unless (elpaca-installed-p p)
