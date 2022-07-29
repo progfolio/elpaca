@@ -1633,6 +1633,13 @@ If HIDE is non-nil, do not show `elpaca-log'."
         (unless hide (require 'elpaca-log) (elpaca-log--latest)))
     (user-error "Package %S is not queued" item)))
 
+;;;###autoload
+(defun elpaca-update-all ()
+  "Update all queued packages."
+  (interactive)
+  (cl-loop for (item . _) in (cl-remove-duplicates (elpaca--queued) :key #'car)
+           do (elpaca-update item)))
+
 ;;; Lockfiles
 (defun elpaca-declared-p (item)
   "Return t if ITEM is declared in user's init file, nil otherwise."
