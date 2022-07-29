@@ -99,7 +99,7 @@ exclamation point to it. e.g. #!installed."
                              (define-key m (kbd "M") (elpaca-defsearch "#unique #marked"))
                              (define-key m (kbd "O") (elpaca-defsearch "#unique #orphan"))
                              (define-key m (kbd "R") 'elpaca-ui-search-refresh)
-                             (define-key m (kbd "U") (elpaca-defsearch "#unique #undeclared"))
+                             (define-key m (kbd "U") (elpaca-defsearch "#unique #installed !#declared"))
                              (define-key m (kbd "b") 'elpaca-ui-browse-package)
                              (define-key m (kbd "d") 'elpaca-ui-mark-delete)
                              (define-key m (kbd "i") 'elpaca-ui-mark-install)
