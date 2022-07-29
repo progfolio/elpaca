@@ -1605,6 +1605,7 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
     (elpaca--update-info e "Merging updates" 'merging)
     (process-put process :elpaca e)))
 
+;;;###autoload
 (defun elpaca-update (item &optional hide)
   "Update ITEM's associated package.
 If HIDE is non-nil, do not show `elpaca-log'."
