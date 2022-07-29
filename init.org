@@ -2615,7 +2615,7 @@ If a template has a :properties keyword, add them to the entry."
                                ;;@MAYBE: extract this to a global variable.
                                (notedir "~/Documents/devops/repo-notes/")
                                (project-root (projectile-project-root))
-                               (name (concat (directory-file-name project-root) ".org"))
+                               (name (concat (file-name-base (directory-file-name project-root)) ".org"))
                                (path (expand-file-name name (file-truename notedir))))
                           (with-current-buffer (find-file-noselect path)
                             (unless (derived-mode-p 'org-mode) (org-mode)
