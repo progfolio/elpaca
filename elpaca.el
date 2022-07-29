@@ -1536,9 +1536,6 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
   "Log E's fetched commits."
   (elpaca--update-info e "" 'update-log)
   (let* ((default-directory (elpaca<-repo-dir e))
-         (recipe (elpaca<-recipe e))
-         (remotes (plist-get recipe :remotes))
-         (remote (elpaca--first remotes))
          (process (make-process
                    :name (format "elpaca-log-updates-%s" (elpaca<-package e))
                    ;; Pager will break this process. Complains about terminal functionality.
