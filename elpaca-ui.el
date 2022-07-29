@@ -297,9 +297,10 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                             (list entries ,@args))
                     body))))
           (cl-incf i)))
-      `(lambda ()
+      `(with-no-warnings
+         (lambda ()
          (let ((entries (funcall elpaca-ui-entries-function)))
-           ,@(mapcar (lambda (form) `(setq entries ,form)) (nreverse body)))))))
+           ,@(mapcar (lambda (form) `(setq entries ,form)) (nreverse body))))))))
 
 (defvar-local elpaca-ui--print-cache nil "Used when printing entries via `elpaca-ui--apply-faces'.")
 
@@ -374,9 +375,7 @@ If QUERY is nil, the contents of the minibuffer are used instead."
       (when (string-empty-p query) (setq query elpaca-ui-default-query))
       (when-let ((parsed (elpaca-ui--parse-search query))
                  (fn (elpaca-ui--search-fn parsed)))
-        (setq tabulated-list-entries (funcall
-                                      (let ((byte-compile-log-warning-function nil))
-                                        (byte-compile fn)))
+        (setq tabulated-list-entries (funcall (byte-compile fn))
               elpaca-ui-search-filter query))
       (elpaca-ui--print)
       (when elpaca-ui-header-line-function
