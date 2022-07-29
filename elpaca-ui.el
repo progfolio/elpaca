@@ -608,7 +608,8 @@ TYPE is either the symbol `repo` or `build`."
                    (col (match-string 3 (aref (cadr copy) 2))))
                (setf (aref (cadr copy) 2)
                      (replace-match
-                      (buttonize (string-join (list file col line) ":")
+                      (buttonize (propertize (string-join (list file col line) ":")
+                                             'face nil)
                                  (lambda (&rest _)
                                    (elpaca-ui--visit-byte-comp-warning
                                     (expand-file-name file (elpaca<-build-dir e))
