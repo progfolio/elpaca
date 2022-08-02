@@ -964,6 +964,7 @@ The keyword's value is expected to be one of the following:
                (program           `(progn
                                      (require 'elpaca)
                                      (normal-top-level-add-subdirs-to-load-path)
+                                     (setq gc-cons-percentage 1.0) ;; trade memory for gc speed
                                      (elpaca--run-build-commands ',commands)))
                (process (make-process
                          :name (format "elpaca-%s-%s" type (plist-get recipe :package))
@@ -1253,7 +1254,7 @@ Async wrapper for `elpaca-generate-autoloads'."
                 "-L" build-dir ; Is this necessary?
                 "-l" (expand-file-name "elpaca.el" elpaca)
                 "--batch" "--eval"
-                (format "(elpaca-generate-autoloads %S %S)" package build-dir)))
+                (format "(and (setq gc-cons-percentage 1.0) (elpaca-generate-autoloads %S %S))" package build-dir)))
          (process
           (make-process
            :name     (format "elpaca-autoloads-%s" package)
@@ -1324,6 +1325,7 @@ Async wrapper for `elpaca-generate-autoloads'."
                                            (add-to-list 'load-path dir)
                                            (normal-top-level-add-subdirs-to-load-path)))
                            ',(append dependency-dirs (list build-dir)))
+                     (setq gc-cons-percentage 1.0) ;; trade memory for gc speed
                      (byte-recompile-directory ,build-dir 0 'force)))
          (print-level nil)
          (print-circle nil)
