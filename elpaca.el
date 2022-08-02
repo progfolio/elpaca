@@ -970,7 +970,7 @@ The keyword's value is expected to be one of the following:
                          :command (list
                                    emacs "-Q"
                                    "-L" "./"
-                                   "-L" (expand-file-name "repos/elpaca/" elpaca-directory)
+                                   "-L" (expand-file-name "builds/elpaca/" elpaca-directory)
                                    "--batch"
                                    "--eval" (let (print-level print-length print-circle)
                                               (format "%S" program)))
