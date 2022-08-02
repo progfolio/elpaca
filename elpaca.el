@@ -972,7 +972,7 @@ The keyword's value is expected to be one of the following:
                                    "-L" "./"
                                    "-L" (expand-file-name "repos/elpaca/" elpaca-directory)
                                    "--batch"
-                                   "--eval" (let (print-level print-length)
+                                   "--eval" (let (print-level print-length print-circle)
                                               (format "%S" program)))
                          :filter   #'elpaca--process-filter
                          :sentinel #'elpaca--dispatch-build-commands-process-sentinel)))
