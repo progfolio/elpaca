@@ -24,47 +24,47 @@
 
 ;;; Code:
 (require 'cl-lib)
+(require 'elpaca)
 (require 'url)
+
+(defvar elpaca-menu-melpa--index-cache
+  (elpaca--read-file (expand-file-name "melpa.eld" elpaca-cache-directory))
+  "MELPA recipe cache.")
+
 (defvar url-http-end-of-headers)
-
-(defcustom elpaca-menu-melpa-path
-  (expand-file-name "melpa/" (temporary-file-directory))
-  "Path where MELPA repository is cloned."
-  :type 'directory
-  :group 'elpaca)
-
-(defvar elpaca-menu-melpa--index-cache nil "Cache of index.")
-(defvar elpaca-default-files-directive) ;defined in elpaca.el
-
 (defun elpaca-menu-melpa--metadata ()
   "Return an alist of MELPA package metadata."
-  (with-current-buffer (url-retrieve-synchronously
-                        "https://melpa.org/archive.json")
+  (with-current-buffer (url-retrieve-synchronously "https://melpa.org/archive.json" 'silent)
     (json-parse-string
      (decode-coding-region url-http-end-of-headers (point-max) 'utf-8 t)
      :object-type 'alist)))
 
-;;@TODO: needs to be more robust if processes error
 (defun elpaca-menu-melpa--clone (path)
   "Clone MELPA recipes repo to PATH."
-  (make-directory path)
-  (message "Downloading MELPA recipes...")
-  (call-process "git" nil nil nil "init")
-  (call-process "git" nil nil nil "config" "core.sparseCheckout" "true")
-  (shell-command "echo \"recipes\" >> .git/info/sparse-checkout")
-  (call-process "git" nil nil nil "remote" "add" "origin" "https://www.github.com/melpa/melpa.git")
-  (call-process "git" nil nil nil "pull" "--depth=1")
-  (call-process "git" nil nil nil "checkout" "master")
-  (message "MELPA recipes downloaded."))
+  (let ((default-directory path))
+    (make-directory path t)
+    (make-directory (expand-file-name ".git/info/" path) t)
+    (message "Downloading MELPA recipes...")
+    (let* ((processes
+            (list
+             (elpaca-process-call "git" "init")
+             (elpaca-process-call "git" "config" "core.sparseCheckout" "true")
+             (with-temp-buffer
+               (insert "recipes")
+               (append-to-file (point-min) (point-max)
+                               (expand-file-name ".git/info/sparse-checkout" path)))
+             (elpaca-process-call "git" "remote" "add" "origin" "https://github.com/melpa/melpa.git")
+             (elpaca-process-call "git" "pull" "--depth=1" "origin" "master")
+             (elpaca-process-call "git" "checkout" "master")))
+           (err (car (cl-remove-if #'zerop (delq nil processes) :key #'car))))
+      (when err (error "Unable to clone MELPA: %S" err))
+      (message "MELPA recipes downloaded."))))
 
 (defun elpaca-menu-melpa--update ()
   "Update recipes in MELPA menu."
   (message "Checking Melpa for updates...")
-  (condition-case _
-      (progn
-        (call-process "git" nil nil nil "pull")
-        (message "MELPA updates downloaded"))
-    ((error) (message "Unable to pull MELPA recipes"))))
+  (elpaca-with-process (elpaca-process-call "git" "pull")
+    (message (if success "MELPA menu updated" "Unable to pull MELPA recipes"))))
 
 (defun elpaca-menu-melpa--convert (file metadata)
   "Return menu item candidate for FILE's MELPA recipe and METADATA."
@@ -100,18 +100,22 @@
 (defun elpaca-menu-melpa--index ()
   "Return candidate list of available MELPA recipes."
   (or elpaca-menu-melpa--index-cache
-      (let ((metadata (elpaca-menu-melpa--metadata)))
-        (setq elpaca-menu-melpa--index-cache
-              (cl-loop for file in (directory-files "./recipes/" 'full "\\(?:^[^.]\\)")
-                       for candidate = (elpaca-menu-melpa--convert file metadata)
-                       when candidate collect candidate)))))
+      (prog1
+          (setq elpaca-menu-melpa--index-cache
+                (cl-loop with metadata = (elpaca-menu-melpa--metadata)
+                         for file in (directory-files "./recipes/" 'full "\\(?:^[^.]\\)")
+                         for candidate = (elpaca-menu-melpa--convert file metadata)
+                         when candidate collect candidate))
+        (elpaca--write-file (expand-file-name "melpa.eld" elpaca-cache-directory)
+          (prin1 elpaca-menu-melpa--index-cache))
+        (message "MELPA menu index cached"))))
 
 ;;;###autoload
 (defun elpaca-menu-melpa (request)
   "Delegate REQUEST.
 If REQUEST is `index`, return a recipe candidate alist.
 If REQUEST is `update`, update the MELPA recipe cache."
-  (let* ((repo (file-name-as-directory elpaca-menu-melpa-path))
+  (let* ((repo (expand-file-name "melpa/" elpaca-cache-directory))
          (default-directory repo))
     (unless (file-exists-p repo) (elpaca-menu-melpa--clone repo))
     (pcase request
