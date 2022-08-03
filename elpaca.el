@@ -230,12 +230,9 @@ e.g. elisp forms may be printed via `prin1'."
          ,@body
          nil))))
 
-(defun elpaca--read-menu-cache ()
-  "Read the menu-cache."
-  (elpaca--read-file (expand-file-name "menu-items.eld" elpaca-cache-directory)))
-
 (defvar elpaca--menu-items-cache
-  (when elpaca-cache-menu-items (elpaca--read-menu-cache))
+  (when elpaca-cache-menu-items
+    (elpaca--read-file (expand-file-name "menu-items.eld" elpaca-cache-directory)))
   "Cache for menu candidates.")
 
 (defvar elpaca--package-requires-regexp
