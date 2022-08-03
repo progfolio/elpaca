@@ -38,7 +38,7 @@
   "File name for GNU ELPA mirror recipe cache.")
 
 (defvar elpaca-menu-gnu-elpa-mirror--index-cache
-  (elpaca--read-file elpaca-menu-gnu-elpa-mirror-path) "GNU ELPA Mirror cache.")
+  (elpaca--read-file elpaca-menu-gnu-elpa-mirror-cache-path) "GNU ELPA Mirror cache.")
 
 (defvar elpaca-menu-gnu-elpa-mirror-address
   "https://www.github.com/emacs-straight/gnu-elpa-mirror.git" "GNU ELPA Mirror URL.")
