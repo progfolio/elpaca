@@ -88,6 +88,10 @@ exclamation point to it. e.g. #!installed."
   "Return seach command for QUERY."
   (lambda () (interactive) (elpaca-ui-search query)))
 
+
+(defalias 'elpaca-ui--buttonize
+  (with-no-warnings
+    (if (version< emacs-version "29.1") #'button-buttonize #'buttonize)))
 ;;;; Variables:
 (defvar-local elpaca-ui--search-timer nil "Timer to debounce search input.")
 (defvar-local elpaca-ui--marked-packages nil
@@ -608,8 +612,8 @@ TYPE is either the symbol `repo` or `build`."
                    (col (match-string 3 (aref (cadr copy) 2))))
                (setf (aref (cadr copy) 2)
                      (replace-match
-                      (buttonize (propertize (string-join (list file col line) ":")
-                                             'face nil)
+                      (elpaca-ui--buttonize
+                       (propertize (string-join (list file col line) ":") 'face nil)
                                  (lambda (&rest _)
                                    (elpaca-ui--visit-byte-comp-warning
                                     (expand-file-name file (elpaca<-build-dir e))
