@@ -79,7 +79,7 @@
 
 (defun elpaca-menu-gnu-elpa-mirror--date (file)
   "Return time of last modification for FILE."
-  (ignore-errors (elpaca-process-output "git" "log" "-1" "--pretty=\"%ci\"" file)))
+  (ignore-errors (string-trim (elpaca-process-output "git" "log" "-1" "--pretty=%ci" file))))
 
 (defun elpaca-menu-gnu-elpa-mirror--index (&optional recache)
   "Return candidate list of available GNU ELPA recipes.
