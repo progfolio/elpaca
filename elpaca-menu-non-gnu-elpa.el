@@ -25,23 +25,20 @@
 ;;; Code:
 (require 'cl-lib)
 (require 'elpaca)
+(require 'url)
+(defvar url-http-end-of-headers)
 
-(defcustom elpaca-menu-non-gnu-elpa-cache-path
-  (expand-file-name "cache/non-gnu-elpa.eld" elpaca-directory)
-  "File name for NonGNU ELPA recipe cache."
-  :type 'file
-  :group 'elpaca)
+(defvar elpaca-menu-non-gnu-elpa-cache-path
+  (expand-file-name "non-gnu-elpa.eld" elpaca-cache-directory)
+  "File name for NonGNU ELPA recipe cache.")
 
 (defvar elpaca-menu-non-gnu-elpa-url
   "https://git.savannah.gnu.org/cgit/emacs/nongnu.git/plain/elpa-packages"
   "URL for NonGNU ELPA package list.")
 
 (defvar elpaca-menu-non-gnu-elpa--index-cache
-  (when (file-exists-p elpaca-menu-non-gnu-elpa-cache-path)
-    (elpaca--read-file elpaca-menu-non-gnu-elpa-cache-path))
-  "Cache of NonGNU ELPA recipes.")
+  (elpaca--read-file elpaca-menu-non-gnu-elpa-cache-path) "NonGNU ELPA recipe cache.")
 
-(defvar url-http-end-of-headers)
 (defun elpaca-menu-non-gnu-elpa--recipes ()
   "Return list of recipes from `elpaca-menu-non-gnu-elpa-url'."
   (with-current-buffer (url-retrieve-synchronously elpaca-menu-non-gnu-elpa-url)
@@ -70,22 +67,18 @@
 
 (defun elpaca-menu-non-gnu-elpa--index ()
   "Return candidate list of available NonGNU ELPA recipes."
-  (let ((metadata (elpaca-menu-non-gnu-elpa--metadata)))
-    (cl-loop for recipe in (elpaca-menu-non-gnu-elpa--recipes)
-             for name = (pop recipe)
-             for item = (intern name)
-             for url = (plist-get recipe :url)
-             collect
-             (list item
-                   :source "NonGNU ELPA"
-                   :url url
-                   :description (or (alist-get item metadata) "n/a")
-                   :recipe
-                   `( :package ,name
-                      :repo ,url
-                      :url ,url
-                      ,@(when-let ((ignored (plist-get recipe :ignored-files)))
-                          `(:files (:defaults (:not ,@ignored)))))))))
+  (cl-loop with metadata = (elpaca-menu-non-gnu-elpa--metadata)
+           for (id . props) in (elpaca-menu-non-gnu-elpa--recipes)
+           for item = (intern id)
+           for url = (plist-get props :url)
+           collect (list item
+                         :source "NonGNU ELPA"
+                         :url url
+                         :description (or (alist-get item metadata) "n/a")
+                         :recipe
+                         `( :package ,id :repo ,url :url ,url
+                            ,@(when-let ((ignored (plist-get props :ignored-files)))
+                                `(:files (:defaults (:not ,@ignored))))))))
 
 (defun elpaca-menu-non-gnu-elpa--write-cache ()
   "Write NonGNU ELPA menu item cache."
