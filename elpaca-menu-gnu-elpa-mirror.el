@@ -106,9 +106,8 @@ If RECACHE is non-nil, recompute the cache."
   "Delegate REQUEST.
 If REQUEST is `index`, return a recipe candidate alist.
 If REQUEST is `update`, update the GNU ELPA recipe cache."
-  (let* ((repo (file-name-as-directory elpaca-menu-gnu-elpa-mirror-path))
-         (default-directory repo))
-    (unless (file-exists-p repo) (elpaca-menu-gnu-elpa-mirror--clone))
+  (let ((default-directory (file-name-as-directory elpaca-menu-gnu-elpa-mirror-path)))
+    (unless (file-exists-p default-directory) (elpaca-menu-gnu-elpa-mirror--clone))
     (pcase request
       ('index  (elpaca-menu-gnu-elpa-mirror--index))
       ('update (setq elpaca-menu-gnu-elpa-mirror--index-cache nil)
