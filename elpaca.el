@@ -1477,11 +1477,10 @@ If FORCE is non-nil do not confirm before deleting."
             (when with-deps
               (dolist (dependency dependencies)
                 (elpaca-delete-package 'force with-deps dependency package)))))
-      (if-let ((recipe (elpaca-recipe package)))
-          (progn
-            (when-let ((repo-dir (elpaca-repo-dir recipe))) (delete-directory repo-dir 'recursive))
-            (when-let ((build-dir (elpaca-build-dir recipe))) (delete-directory build-dir 'recursive)))
-        (user-error "%S is not queued" package)))))
+      (let ((recipe (elpaca-recipe package)))
+        (unless recipe (user-error "%S is not queued" package))
+        (when-let ((r (elpaca-repo-dir  recipe))) (delete-directory r 'recursive))
+        (when-let ((b (elpaca-build-dir recipe))) (delete-directory b 'recursive))))))
 
 (defun elpaca--file-package (&optional file)
   "Return queued E if current buffer's FILE is part of a repo, nil otherwise."
