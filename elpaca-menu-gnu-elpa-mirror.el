@@ -48,7 +48,7 @@
   (message "Downloading GNU ELPA recipes...")
   (let ((default-directory user-emacs-directory))
     (elpaca-with-process
-        (elpaca-process-call "git" "clone"
+        (elpaca-process-call "git" "clone" "--depth=1"
                              elpaca-menu-gnu-elpa-mirror-address
                              elpaca-menu-gnu-elpa-mirror-path)
       (message "%s" (if success "GNU ELPA recipes downloaded." stderr)))))
