@@ -1390,6 +1390,7 @@ The expansion is a string indicating the package has been disabled."
       (format "%S :disabled by elpaca-use-package" order)
     `(elpaca ,order (use-package ,(elpaca--first order) ,@body))))
 
+(defvar elpaca--try-package-history nil "History for `elpaca-try-package'.")
 (defvar elpaca-ui-entries-function)
 (declare-function elpaca-log--latest "elpaca-log")
 ;;;###autoload
@@ -1400,7 +1401,8 @@ Activate the corresponding package for the current session.
 ORDER's package is not made available during subsequent sessions."
   (interactive (list
                 (if (equal current-prefix-arg '(4))
-                    (read (format "(%s)" (read-string "elpaca-try-package: ")))
+                    (read (format "(%s)" (read-string "elpaca-try-package: " nil
+                                                      'elpaca--try-package-history)))
                   (let ((recipe (elpaca-menu-item
                                  nil nil nil
                                  (lambda (candidate)
