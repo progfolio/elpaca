@@ -23,19 +23,25 @@
 ;;  GNU ELPA support for elpaca.
 
 ;;; Code:
+(eval-when-compile (require 'subr-x))
 (require 'cl-lib)
-(require 'elpaca-process)
+(require 'elpaca)
 
 (defcustom elpaca-menu-gnu-elpa-mirror-path
-  (expand-file-name "gnu-elpa-mirror/" (temporary-file-directory))
+  (expand-file-name "gnu-elpa-mirror/" elpaca-cache-directory)
   "Path where GNU ELPA repository is cloned."
   :type 'directory
   :group 'elpaca)
 
-(defvar elpaca-menu-gnu-elpa-mirror--index-cache nil "Cache of index.")
+(defvar elpaca-menu-gnu-elpa-mirror-cache-path
+  (expand-file-name "gnu-elpa-mirror.eld" elpaca-cache-directory)
+  "File name for GNU ELPA mirror recipe cache.")
+
+(defvar elpaca-menu-gnu-elpa-mirror--index-cache
+  (elpaca--read-file elpaca-menu-gnu-elpa-mirror-path) "GNU ELPA Mirror cache.")
+
 (defvar elpaca-menu-gnu-elpa-mirror-address
-  "https://www.github.com/emacs-straight/gnu-elpa-mirror.git"
-  "Address of the menu repository.")
+  "https://www.github.com/emacs-straight/gnu-elpa-mirror.git" "GNU ELPA Mirror URL.")
 
 (defun elpaca-menu-gnu-elpa-mirror--clone ()
   "Clone GNU ELPA recipes repo to PATH."
@@ -45,19 +51,13 @@
         (elpaca-process-call "git" "clone"
                              elpaca-menu-gnu-elpa-mirror-address
                              elpaca-menu-gnu-elpa-mirror-path)
-      ;;@TODO: make stderr match more robust
-      (if (or success (and stderr (string-match-p "already" stderr)))
-          (message "GNU ELPA recipes downloaded.")
-        (warn "Unable to download GNU ELPA recipes. This menu will not work!")))))
+      (message "%s" (if success "GNU ELPA recipes downloaded." stderr)))))
 
 (defun elpaca-menu-gnu-elpa-mirror--update ()
   "Update recipes in GNU ELPA menu."
   (message "Checking GNU ELPA for updates...")
-  (condition-case _
-      (progn
-        (call-process "git" nil nil nil "pull")
-        (message "GNU ELPA updates downloaded"))
-    ((error) (message "Unable to pull GNU ELPA recipes"))))
+  (elpaca-with-process (elpaca-process-call "git" "pull")
+    (message (if success "GNU ELPA updates downloaded" "GNU ELPA update failed"))))
 
 (declare-function dom-by-tag "dom")
 (declare-function dom-texts  "dom")
@@ -79,28 +79,27 @@
 
 (defun elpaca-menu-gnu-elpa-mirror--date (file)
   "Return time of last modification for FILE."
-  (elpaca-with-process
-      (elpaca-process-call "git" "log" "-1" "--pretty=\"%ci\"" file)
-    (when success (date-to-time stdout))))
+  (ignore-errors (elpaca-process-output "git" "log" "-1" "--pretty=\"%ci\"" file)))
 
 (defun elpaca-menu-gnu-elpa-mirror--index (&optional recache)
   "Return candidate list of available GNU ELPA recipes.
 If RECACHE is non-nil, recompute the cache."
   (or (and (not recache) elpaca-menu-gnu-elpa-mirror--index-cache)
-      (let ((metadata (elpaca-menu-gnu-elpa-mirror--metadata))
-            (files (directory-files default-directory nil "\\(?:^[^.]\\)"))) ; Only stores descriptions.
-        (setq elpaca-menu-gnu-elpa-mirror--index-cache
-              (cl-loop for file in files
-                       when (file-exists-p (expand-file-name file))
-                       for item = (intern file)
-                       collect (cons item
-                                     (list :source "GNU ELPA Mirror"
-                                           :description (or (alist-get item metadata) "This package has not been released yet.")
-                                           :date (elpaca-menu-gnu-elpa-mirror--date file)
-                                           :url (format "https://elpa.gnu.org/packages/%s.html" item)
-                                           :recipe (list :package file
-                                                         :host 'github
-                                                         :repo (concat "emacs-straight/" file)))))))))
+      (setq elpaca-menu-gnu-elpa-mirror--index-cache
+            (cl-loop
+             with metadata = (elpaca-menu-gnu-elpa-mirror--metadata)
+             with files = (directory-files default-directory nil "\\(?:^[^.]\\)")
+             for file in files
+             when (file-exists-p (expand-file-name file))
+             for item = (intern file)
+             collect (cons item
+                           (list :source "GNU ELPA Mirror"
+                                 :description (or (alist-get item metadata) "Unreleased package.")
+                                 :date (elpaca-menu-gnu-elpa-mirror--date file)
+                                 :url (format "https://elpa.gnu.org/packages/%s.html" item)
+                                 :recipe (list :package file
+                                               :host 'github
+                                               :repo (concat "emacs-straight/" file))))))))
 
 ;;;###autoload
 (defun elpaca-menu-gnu-elpa-mirror (request)
