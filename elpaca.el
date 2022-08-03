@@ -1248,13 +1248,15 @@ Async wrapper for `elpaca-generate-autoloads'."
          (build-dir         (elpaca<-build-dir e))
          (default-directory build-dir)
          (elpaca            (expand-file-name "repos/elpaca/" elpaca-directory))
+         (program           `(progn (setq gc-cons-percentage 1.0)
+                                    (elpaca-generate-autoloads ,package ,build-dir)))
          (command
           (list emacs "-Q"
                 "-L" elpaca
                 "-L" build-dir ; Is this necessary?
                 "-l" (expand-file-name "elpaca.el" elpaca)
-                "--batch" "--eval"
-                (format "(and (setq gc-cons-percentage 1.0) (elpaca-generate-autoloads %S %S))" package build-dir)))
+                "--batch" "--eval" (let (print-level print-length print-circle)
+                                     (format "%S" program))))
          (process
           (make-process
            :name     (format "elpaca-autoloads-%s" package)
