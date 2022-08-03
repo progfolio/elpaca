@@ -24,9 +24,8 @@
 
 ;;; Code:
 (defvar elpaca-menu-org--index-cache nil "Cache of Org menu index.")
-(require 'elpaca-process)
+(require 'elpaca)
 
-(defvar elpaca-directory)
 (defun elpaca-menu-org--build ()
   "Generate `org-version.el`.
 `default-directory' is assumed to be org's repo dir."
