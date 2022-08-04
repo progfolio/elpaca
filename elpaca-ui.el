@@ -305,8 +305,8 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
           (cl-incf i)))
       `(with-no-warnings
          (lambda ()
-         (let ((entries (funcall elpaca-ui-entries-function)))
-           ,@(mapcar (lambda (form) `(setq entries ,form)) (nreverse body))))))))
+           (let ((entries (funcall elpaca-ui-entries-function)))
+             ,@(mapcar (lambda (form) `(setq entries ,form)) (nreverse body))))))))
 
 (defvar-local elpaca-ui--print-cache nil "Used when printing entries via `elpaca-ui--apply-faces'.")
 
@@ -616,11 +616,11 @@ TYPE is either the symbol `repo` or `build`."
                      (replace-match
                       (elpaca-ui--buttonize
                        (propertize (string-join (list file col line) ":") 'face nil)
-                                 (lambda (&rest _)
-                                   (elpaca-ui--visit-byte-comp-warning
-                                    (expand-file-name file (elpaca<-build-dir e))
-                                    (string-to-number line)
-                                    (string-to-number col))))
+                       (lambda (&rest _)
+                         (elpaca-ui--visit-byte-comp-warning
+                          (expand-file-name file (elpaca<-build-dir e))
+                          (string-to-number line)
+                          (string-to-number col))))
                       nil nil (aref (cadr copy) 2)))))
            copy)
        entry))
