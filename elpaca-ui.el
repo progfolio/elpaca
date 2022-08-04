@@ -214,7 +214,8 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
 
 (defun elpaca-ui--parse-search (search)
   "Parse SEARCH." ;by abusing the elisp reader
-  (let (ops chunk finished tagp negatedp)
+  (let ((adjustp (version< emacs-version "29"))
+        ops chunk finished tagp negatedp)
     (with-temp-buffer
       (insert search)
       (goto-char (point-min))
@@ -239,7 +240,8 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                   (setq chunk nil)
                   (push `((elisp ,op)) ops)))))
           (end-of-file (setq finished t))
-          (invalid-read-syntax (when (and (or (equal (cadr err) "#")
+          (invalid-read-syntax (when adjustp (forward-char))
+                               (when (and (or (equal (cadr err) "#")
                                               (string-prefix-p "integer" (cadr err)))
                                           (not (looking-back "#" nil)))
                                  (setq tagp t)
