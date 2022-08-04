@@ -886,7 +886,8 @@ If it matches, the E associated with process has its STATUS updated."
 (defun elpaca--compile-info (e)
   "Compile E's .texi files."
   (elpaca--update-info e "Compiling Info files" 'info)
-  (if-let ((files
+  (if-let ((elpaca-makeinfo-executable)
+           (files
             (cl-loop for (repo-file . build-file) in
                      (or (elpaca<-files e)
                          (setf (elpaca<-files e) (elpaca--files e)))
@@ -902,7 +903,8 @@ If it matches, the E associated with process has its STATUS updated."
                      :filter   #'elpaca--process-filter
                      :sentinel #'elpaca--compile-info-process-sentinel)))
       (process-put process :elpaca e)
-    (elpaca--update-info e "No .info files found")
+    (elpaca--update-info
+     e (if elpaca-makeinfo-executable "No .info files found" "makeinfo executable not found"))
     (elpaca--remove-build-steps e '(elpaca--install-info elpaca--add-info-path))
     (elpaca--continue-build e)))
 
