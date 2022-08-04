@@ -436,7 +436,8 @@ The following commands are available in the Elpaca manager buffer:
 
 The following is an example init.el using Elpaca:
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :tangle ./test/example-init.el :results silent
+;;; init-elpaca.el --- ELPACA INIT DEMO   -*- lexical-binding: t; -*-
 ;; Bootstrap Elpaca
 (declare-function elpaca-generate-autoloads "elpaca")
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
