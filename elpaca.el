@@ -1391,18 +1391,18 @@ The expansion is a string indicating the package has been disabled."
       (format "%S :disabled by elpaca-use-package" order)
     `(elpaca ,order (use-package ,(elpaca--first order) ,@body))))
 
-(defvar elpaca--try-package-history nil "History for `elpaca-try-package'.")
+(defvar elpaca--try-package-history nil "History for `elpaca-try'.")
 (defvar elpaca-ui-entries-function)
 (declare-function elpaca-log--latest "elpaca-log")
 ;;;###autoload
-(defun elpaca-try-package (&rest orders)
+(defun elpaca-try (&rest orders)
   "Try ORDERS.
 Install the repo/build files on disk.
 Activate the corresponding package for the current session.
 ORDER's package is not made available during subsequent sessions."
   (interactive (list
                 (if (equal current-prefix-arg '(4))
-                    (read (format "(%s)" (read-string "elpaca-try-package: " nil
+                    (read (format "(%s)" (read-string "elpaca-try: " nil
                                                       'elpaca--try-package-history)))
                   (let ((recipe (elpaca-menu-item
                                  nil nil nil
@@ -1498,7 +1498,7 @@ If PROMPT is non-nil, it is used instead of the default."
            nil t)))
 
 ;;;###autoload
-(defun elpaca-rebuild-package (item &optional hide)
+(defun elpaca-rebuild (item &optional hide)
   "Rebuild ITEM's associated package.
 When called interactively, prompt for ITEM.
 With a prefix argument, rebuild current file's package or prompt if none found.

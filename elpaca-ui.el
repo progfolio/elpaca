@@ -33,10 +33,10 @@
              :action (lambda (i) (elpaca-delete-package 'force nil i)))
     (install :prefix "⚙️" :face(:inherit default :weight bold :foreground "#89cff0")
              :setup (lambda () (require 'elpaca-log) (elpaca-log--latest))
-             :action elpaca-try-package)
+             :action elpaca-try)
     (rebuild :prefix "♻️️" :face (:inherit default :weight bold :foreground "#f28500")
              :setup (lambda () (require 'elpaca-log) (elpaca-log--latest))
-             :action (lambda (it) (elpaca-rebuild-package it 'hide))))
+             :action (lambda (it) (elpaca-rebuild it 'hide))))
   "List of actions which can be taken on packages."
   :type 'list)
 
