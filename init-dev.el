@@ -1,4 +1,4 @@
-;;; init-dev.el --- development settings for init file
+;;; init-dev.el --- development settings for init file  -*- lexical-binding: t; -*-
 
 
 ;;; Commentary:
