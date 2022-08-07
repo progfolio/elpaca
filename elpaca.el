@@ -88,10 +88,6 @@ Results in faster start-up time.
 However, loading errors will prevent later package autoloads from loading."
   :type 'boolean)
 
-(defcustom elpaca-cache-menu-items t
-  "When non-nil, menu-items ares cached. Speeds up init load."
-  :type 'boolean)
-
 (defcustom elpaca-directory (expand-file-name "elpaca" user-emacs-directory)
   "Location of the elpaca package store."
   :type 'directory)
@@ -231,8 +227,7 @@ e.g. elisp forms may be printed via `prin1'."
          nil))))
 
 (defvar elpaca--menu-items-cache
-  (when elpaca-cache-menu-items
-    (elpaca--read-file (expand-file-name "menu-items.eld" elpaca-cache-directory)))
+  (elpaca--read-file (expand-file-name "menu-items.eld" elpaca-cache-directory))
   "Cache for menu candidates.")
 
 (defvar elpaca--package-requires-regexp
@@ -274,21 +269,22 @@ Values for each key are that of the right-most plist containing that key."
   (elpaca--write-file (expand-file-name "menu-items.eld" elpaca-cache-directory)
     (prin1 elpaca--menu-items-cache)))
 
-;;@TODO:
-;;- allow passing in menu functions.
-(defun elpaca--menu-items (&optional recache)
-  "Return alist of `elpaca-menu-functions' candidates.
-If RECACHE is non-nil, recompute `elpaca--menu-items-cache'."
-  (or (and (not recache) elpaca-cache-menu-items elpaca--menu-items-cache)
-      (prog1
-          (setq elpaca--menu-items-cache
-                (sort (copy-tree
-                       (cl-loop for fn in elpaca-menu-functions
-                                ;; Allows adding a symbol prior menu installation.
-                                append (and (functionp fn)
-                                            (funcall fn 'index))))
-                      (lambda (a b) (string-lessp (car a) (car b)))))
-        (when elpaca-cache-menu-items (elpaca--write-menu-cache)))))
+(defun elpaca--menu-items (&optional cache menus)
+  "Return alist of `elpaca-menu-functions' candidates from MENUS.
+If CACHE may be any of the following symbols:
+  `t` Return cache or recompute if nil. Ignore MENUS.
+  `nil` Recompute items, ignoring cache altogether.
+  `recache` Invalidate and recompute cache considering MENUS.
+See `elpaca-menu-functions' for valid values of MENUS."
+  (or (and (eq cache t) elpaca--menu-items-cache)
+      (let ((items (sort (copy-tree
+                          (cl-loop for fn in (or menus elpaca-menu-functions)
+                                   append (and (functionp fn) (funcall fn 'index))))
+                         (lambda (a b) (string-lessp (car a) (car b))))))
+        (when cache
+          (setq elpaca--menu-items-cache items)
+          (elpaca--write-menu-cache))
+        items)))
 
 (defsubst elpaca-alist-get (key alist)
   "Return KEY's value in ALIST.
