@@ -1664,8 +1664,10 @@ If HIDE is non-nil, do not show `elpaca-log'."
     (not (string-empty-p (elpaca-process-output
                           "git" "-c" "status.branch=false" "status" "--short")))))
 
-(defun elpaca-unshallow (item)
+;;;###autoload
+(defun elpaca-unshallow (item) ;;@TODO: make async?
   "Convert ITEM's repo to an unshallow repository."
+  (interactive (list (elpaca--read-queued "Unshallow Package Repository: ")))
   (when-let ((e (or (alist-get item (elpaca--queued))
                     (user-error "%s is not queued" item)))
              (repo-dir (or (elpaca<-repo-dir e)
