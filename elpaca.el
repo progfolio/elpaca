@@ -1331,31 +1331,37 @@ Async wrapper for `elpaca-generate-autoloads'."
            :sentinel #'elpaca--byte-compile-process-sentinel)))
     (process-put process :elpaca e)))
 
+;;;###autoload
 (defun elpaca-dependencies (item &optional ignore recurse)
   "Return recursive list of ITEM's dependencies.
 IGNORE may be a list of symbols which are not included in the resulting list.
 RECURSE is used to track recursive calls."
+  (interactive (list (elpaca--read-queued "Dependencies of: ")))
   (if-let ((e (or (elpaca-alist-get item (elpaca--queued))
                   (unless (member item elpaca-ignored-dependencies)
                     (elpaca<-create item))))
            (dependencies (elpaca--dependencies e)))
-      (let ((transitives (cl-loop for dependency in dependencies
-                                  for name = (car dependency)
-                                  unless (memq name ignore) collect
-                                  (cons name (elpaca-dependencies name ignore 'recurse)))))
-        (delete-dups (flatten-tree transitives)))
+      (let* ((transitives (cl-loop for dependency in dependencies
+                                   for name = (car dependency)
+                                   unless (memq name ignore) collect
+                                   (cons name (elpaca-dependencies name ignore 'recurse))))
+             (deps (delete-dups (flatten-tree transitives))))
+        (if (called-interactively-p 'interactive) (message "%s" deps) deps))
     (when recurse item)))
 
+;;;###autoload
 (defun elpaca-dependents (item &optional recurse)
   "Return recursive list of packages which depend on ITEM.
 RECURSE is used to keep track of recursive calls."
+  (interactive (list (elpaca--read-queued "Dependents of: ")))
   (if-let ((e (elpaca-alist-get item (elpaca--queued)))
            (dependents (elpaca<-dependents e)))
-      (let ((transitives
-             (cl-loop for dependent in dependents collect
-                      (let ((i (intern (elpaca<-package dependent))))
-                        (cons i (elpaca-dependents i 'recurse))))))
-        (delete-dups (nreverse (flatten-tree transitives))))
+      (let* ((transitives
+              (cl-loop for dependent in dependents collect
+                       (let ((i (intern (elpaca<-package dependent))))
+                         (cons i (elpaca-dependents i 'recurse)))))
+             (deps (delete-dups (nreverse (flatten-tree transitives)))))
+        (if (called-interactively-p 'interactive) (message "%s" deps) deps))
     (when recurse item)))
 
 ;;;; COMMANDS/MACROS
