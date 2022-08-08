@@ -438,7 +438,7 @@ If SILENT is non-nil, supress update message."
   "Display general info for package on current line."
   (interactive)
   (if-let ((item (elpaca-ui-current-package))
-           (candidate (elpaca-alist-get item (elpaca--menu-items)))
+           (candidate (elpaca-alist-get item (elpaca--menu-items t)))
            (url (plist-get candidate :url)))
       (browse-url url)
     (user-error "No URL associated with current line")))
