@@ -303,7 +303,7 @@ If NO-DESCRIPTIONS is non-nil, candidate descriptions are not included.
 This is faster (what you want with non-interactive calls)."
   (interactive "P")
   (let* ((omenus menus)
-	 (menus (if (equal interactive '(4))
+         (menus (if (equal interactive '(4))
                     (mapcar #'intern-soft
                             (cl-remove-duplicates
                              (completing-read-multiple "Menus: " elpaca-menu-functions
