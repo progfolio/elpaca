@@ -302,18 +302,17 @@ If it returns nil, the candidate is not considered for selection.
 If NO-DESCRIPTIONS is non-nil, candidate descriptions are not included.
 This is faster (what you want with non-interactive calls)."
   (interactive "P")
-  (let* ((menus (if (eq interactive '(4))
+  (let* ((menus (if (equal interactive '(4))
                     (mapcar #'intern-soft
                             (cl-remove-duplicates
                              (completing-read-multiple "Menus: " elpaca-menu-functions
                                                        nil t)
                              :test #'equal))
                   (or menus elpaca-menu-functions (user-error "No menus found"))))
-         (elpaca-menu-functions menus)
          (candidates
           (let ((c (if filter
-                       (cl-remove-if-not filter (elpaca--menu-items))
-                     (elpaca--menu-items))))
+                       (cl-remove-if-not filter (elpaca--menu-items (not menus) menus))
+                     (elpaca--menu-items (not menus) menus))))
             (if no-descriptions
                 c
               (mapcar (lambda (candidate)
