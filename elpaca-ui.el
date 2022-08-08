@@ -91,10 +91,10 @@ exclamation point to it. e.g. #!installed."
   "Return seach command for QUERY."
   (lambda () (interactive) (elpaca-ui-search query)))
 
-
 (defalias 'elpaca-ui--buttonize
   (with-no-warnings
     (if (version< emacs-version "29.1") #'button-buttonize #'buttonize)))
+
 ;;;; Variables:
 (defvar-local elpaca-ui--search-timer nil "Timer to debounce search input.")
 (defvar-local elpaca-ui--marked-packages nil
