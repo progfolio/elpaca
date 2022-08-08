@@ -85,21 +85,24 @@
   "Return candidate list of available GNU ELPA recipes.
 If RECACHE is non-nil, recompute the cache."
   (or (and (not recache) elpaca-menu-gnu-elpa-mirror--index-cache)
-      (setq elpaca-menu-gnu-elpa-mirror--index-cache
-            (cl-loop
-             with metadata = (elpaca-menu-gnu-elpa-mirror--metadata)
-             with files = (directory-files default-directory nil "\\(?:^[^.]\\)")
-             for file in files
-             when (file-exists-p (expand-file-name file))
-             for item = (intern file)
-             collect (cons item
-                           (list :source "GNU ELPA Mirror"
-                                 :description (or (alist-get item metadata) "Unreleased package.")
-                                 :date (elpaca-menu-gnu-elpa-mirror--date file)
-                                 :url (format "https://elpa.gnu.org/packages/%s.html" item)
-                                 :recipe (list :package file
-                                               :host 'github
-                                               :repo (concat "emacs-straight/" file))))))))
+      (prog1
+          (setq elpaca-menu-gnu-elpa-mirror--index-cache
+                (cl-loop
+                 with metadata = (elpaca-menu-gnu-elpa-mirror--metadata)
+                 with files = (directory-files default-directory nil "\\(?:^[^.]\\)")
+                 for file in files
+                 when (file-exists-p (expand-file-name file))
+                 for item = (intern file)
+                 collect (cons item
+                               (list :source "GNU ELPA Mirror"
+                                     :description (or (alist-get item metadata) "Unreleased package.")
+                                     :date (elpaca-menu-gnu-elpa-mirror--date file)
+                                     :url (format "https://elpa.gnu.org/packages/%s.html" item)
+                                     :recipe (list :package file
+                                                   :host 'github
+                                                   :repo (concat "emacs-straight/" file))))))
+        (elpaca--write-file  elpaca-menu-gnu-elpa-mirror-cache-path
+          (prin1 elpaca-menu-gnu-elpa-mirror--index-cache)))))
 
 ;;;###autoload
 (defun elpaca-menu-gnu-elpa-mirror (request)
