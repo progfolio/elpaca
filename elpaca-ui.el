@@ -30,7 +30,7 @@
 
 (defcustom elpaca-ui-actions
   '((delete  :prefix "💀" :face (:inherit default :weight bold :foreground "#FF0022")
-             :action (lambda (i) (elpaca-delete i 'force)))
+             :action (lambda (i) (elpaca-delete i 'force 'deps)))
     (install :prefix "⚙️" :face(:inherit default :weight bold :foreground "#89cff0")
              :setup (lambda () (require 'elpaca-log) (elpaca-log--latest))
              :action elpaca-try)
