@@ -36,7 +36,10 @@
              :action elpaca-try)
     (rebuild :prefix "♻️️" :face (:inherit default :weight bold :foreground "#f28500")
              :setup (lambda () (require 'elpaca-log) (elpaca-log--latest))
-             :action (lambda (it) (elpaca-rebuild it 'hide))))
+             :action (lambda (it) (elpaca-rebuild it 'hide)))
+    (update  :prefix "⬆️" ️️:face (:inherit default :weight bold :foreground "#f28500")
+             :setup (lambda () (require 'elpaca-log) (elpaca-log--latest))
+             :action (lambda (it) (elpaca-update it 'hide))))
   "List of actions which can be taken on packages."
   :type 'list)
 
@@ -103,7 +106,8 @@ exclamation point to it. e.g. #!installed."
                              (define-key m (kbd "M") (elpaca-defsearch "#unique #marked"))
                              (define-key m (kbd "O") (elpaca-defsearch "#unique #orphan"))
                              (define-key m (kbd "R") 'elpaca-ui-search-refresh)
-                             (define-key m (kbd "U") (elpaca-defsearch "#unique #installed !#declared"))
+                             (define-key m (kbd "T") (elpaca-defsearch "#unique #installed !#declared"))
+                             (define-key m (kbd "U") 'elpaca-ui-unmark)
                              (define-key m (kbd "b") 'elpaca-ui-browse-package)
                              (define-key m (kbd "d") 'elpaca-ui-mark-delete)
                              (define-key m (kbd "i") 'elpaca-ui-mark-install)
@@ -112,7 +116,7 @@ exclamation point to it. e.g. #!installed."
                              (define-key m (kbd "r") 'elpaca-ui-mark-rebuild)
                              (define-key m (kbd "s") 'elpaca-ui-search)
                              (define-key m (kbd "t") 'elpaca-status)
-                             (define-key m (kbd "u") 'elpaca-ui-unmark)
+                             (define-key m (kbd "u") 'elpaca-ui-mark-update)
                              (define-key m (kbd "vb") 'elpaca-ui-visit-build)
                              (define-key m (kbd "vr") 'elpaca-ui-visit-repo)
                              (define-key m (kbd "x") 'elpaca-ui-execute-marks)
@@ -509,6 +513,9 @@ The current package is its sole argument."
 
 (elpaca-ui-defmark install
   (lambda (p) (when (elpaca-installed-p p) (user-error "Package %S already installed" p))))
+
+(elpaca-ui-defmark update
+  (lambda (p) (unless (elpaca-installed-p p) (user-error "Package %S is not installed" p))))
 
 (elpaca-ui-defmark delete
   (lambda (p) (unless (or (elpaca-installed-p p)
