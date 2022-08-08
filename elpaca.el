@@ -1439,38 +1439,35 @@ ORDER's package is not made available during subsequent sessions."
   (when-let ((e (elpaca-alist-get item (elpaca--queued))))
     (or (file-exists-p (elpaca<-repo-dir e)) (file-exists-p (elpaca<-build-dir e)))))
 
-;;@INCOMPLETE: We need to determine policy for deleting dependencies.
-;; Maybe skip dependencies which weren't declared or dependencies of a declaration.
-;;@FIX: this should be interactive.
 ;;;###autoload
-(defun elpaca-delete-package (force with-deps &optional package asker)
-  "Remove a PACKAGE from all caches and disk.
-If WITH-DEPS is non-nil dependencies other than ASKER are deleted.
+(defun elpaca-delete (id &optional force deps ignored)
+  "Remove a package with ID from item cache and disk.
+If DEPS is non-nil dependencies other than IGNORED are deleted.
 If FORCE is non-nil do not confirm before deleting."
-  (when (or force (yes-or-no-p (format "Delete package %S?" package)))
-    (if-let ((e (elpaca-alist-get package (elpaca--queued))))
+  (interactive (list (elpaca--read-queued "Delete Package: ")))
+  (when (or force (yes-or-no-p (format "Delete package %S?" id)))
+    (if-let ((e (elpaca-alist-get id (elpaca--queued))))
         (let ((repo-dir      (elpaca<-repo-dir  e))
               (build-dir     (elpaca<-build-dir e))
-              (dependents    (delq asker (elpaca-dependents package)))
-              (dependencies  (when with-deps
-                               (elpaca-dependencies package elpaca-ignored-dependencies))))
+              (ignored       (if (listp ignored) ignored (list ignored)))
+              (dependents    (cl-set-difference (elpaca-dependents id) ignored))
+              (dependencies  (and deps (elpaca-dependencies id elpaca-ignored-dependencies))))
           (if (cl-some #'elpaca--on-disk-p dependents)
               (message "Cannot delete %S unless dependents %S are deleted first"
-                       package dependents)
+                       id dependents)
             (when (file-exists-p repo-dir)  (delete-directory repo-dir  'recursive))
             (when (file-exists-p build-dir) (delete-directory build-dir 'recursive))
             (dolist (queue elpaca--queues)
               (setf (elpaca-q<-elpacas queue)
-                    (cl-remove package (elpaca-q<-elpacas queue) :key #'car)))
+                    (cl-remove id (elpaca-q<-elpacas queue) :key #'car)))
             (when (and (bound-and-true-p elpaca-log-buffer)
                        (equal (buffer-name) elpaca-log-buffer))
               (elpaca-status))
-            (message "Deleted package %S" package)
-            (when with-deps
-              (dolist (dependency dependencies)
-                (elpaca-delete-package 'force with-deps dependency package)))))
-      (let ((recipe (elpaca-recipe package)))
-        (unless recipe (user-error "%S is not queued" package))
+            (message "Deleted package %S" id)
+            (dolist (dependency (and deps dependencies))
+              (elpaca-delete dependency 'force deps (push id ignored)))))
+      (let ((recipe (elpaca-recipe id)))
+        (unless recipe (user-error "%S is not queued" id))
         (when-let ((r (elpaca-repo-dir  recipe))) (delete-directory r 'recursive))
         (when-let ((b (elpaca-build-dir recipe))) (delete-directory b 'recursive))))))
 
