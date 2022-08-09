@@ -498,7 +498,7 @@ The current package is its sole argument."
   "Define a marking command with NAME and TEST."
   (declare (indent 1) (debug t))
   `(defun ,(intern (format "elpaca-ui-mark-%s" name)) ()
-     ,(format "Mark package for %s." name)
+     ,(format "Mark package for %s action." name)
      (interactive)
      (if (not (use-region-p))
          (elpaca-ui--toggle-mark ,test ',name)

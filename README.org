@@ -445,14 +445,14 @@ The following commands are available in the Elpaca manager buffer:
 | elpaca-ui-search-tried     | T               | Search for "#unique #installed !#declared"                      |
 | elpaca-ui-unmark           | U               | Unmark current package.                                         |
 | elpaca-ui-browse-package   | b               | Browse current package’s URL via ‘browse-url’.                  |
-| elpaca-ui-mark-delete      | d               | Mark package for delete.                                        |
-| elpaca-ui-mark-install     | i               | Mark package for install.                                       |
+| elpaca-ui-mark-delete      | d               | Mark package for delete action.                                 |
+| elpaca-ui-mark-install     | i               | Mark package for install action.                                |
 | elpaca-log                 | l               | Display ‘elpaca-log-buffer’.                                    |
 | elpaca-manager             | m               | Display elpaca’s package management UI.                         |
-| elpaca-ui-mark-rebuild     | r               | Mark package for rebuild.                                       |
+| elpaca-ui-mark-rebuild     | r               | Mark package for rebuild action.                                |
 | elpaca-ui-search           | s               | Filter current buffer by QUERY. If QUERY is nil, prompt for it. |
 | elpaca-status              | t               | Log most recent events for packages.                            |
-| elpaca-ui-mark-update      | u               | Mark package for update.                                        |
+| elpaca-ui-mark-update      | u               | Mark package for update action.                                 |
 | elpaca-ui-visit-build      | v b             | Visit builds dir associated with current package.               |
 | elpaca-ui-visit-repo       | v r             | Visit repo associated with current package.                     |
 | elpaca-ui-execute-marks    | x               | Execute each action in ‘elpaca-ui-marked-packages’.             |
