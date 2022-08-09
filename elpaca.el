@@ -136,8 +136,7 @@ Setting it too high causes prints fewer status updates."
   :type 'list)
 
 (defvar elpaca-default-files-directive
-  '("*.el" "*.el.in" "dir"
-    "*.info" "*.texi" "*.texinfo"
+  '("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
     "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
     (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el" "LICENSE"
               "README*" "*-pkg.el"))
@@ -148,6 +147,7 @@ is used in a `:files' directive.")
 (defvar elpaca-order-defaults
   (list :protocol 'https :remotes "origin" :inherit t :depth 1)
   "Default order modifications.")
+
 (defun elpaca-order-defaults (_order)
   "Matches any order."
   elpaca-order-defaults)
@@ -591,7 +591,6 @@ If N is nil return a list of all queued elpacas."
        (copy-sequence (elpaca-q<-elpacas (nth n (reverse elpaca--queues))))
      (cl-loop for queue in elpaca--queues append (elpaca-q<-elpacas queue)))))
 
-;;@TODO: make an alist?
 (defsubst elpaca--status-face (status &optional default)
   "Return face for STATUS or DEFAULT if not found."
   (cond
@@ -672,8 +671,7 @@ If REPLACE is non-nil, E's log is updated instead of appended."
      ,@body
      (elpaca-split-queue)))
 
-(defvar elpaca--finalize-queue-hook nil
-  "Private hook run after a queue has been finalized.")
+(defvar elpaca--finalize-queue-hook nil "Private hook run after a finalizing queue.")
 
 (defun elpaca--finalize-queue (q)
   "Run Q's post isntallation functions:
