@@ -349,7 +349,8 @@ For example, a package which implements an Elpaca [[#menus][menu]]:
 
 #+begin_src emacs-lisp :lexical t
 (elpaca-queue (elpaca '(melpulls :host github :repo "progfolio/melpulls"))
-              (add-to-list 'elpaca-menu-functions #'melpulls))
+              (add-to-list 'elpaca-menu-functions #'melpulls)
+              (elpaca-update-menus #'melpulls))
 ;; Implicitly queued into a new queue.
 (elpaca 'menu-item-available-in-melpulls)
 #+end_src
