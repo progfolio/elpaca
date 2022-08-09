@@ -871,12 +871,12 @@ If it matches, the E associated with process has its STATUS updated."
           (elpaca--fail e output)
         (elpaca--update-info e output status)))))
 
-(defun elpaca--process-sentinel (info process event)
-  "Update E's INFO when PROCESS EVENT is finished."
+(defun elpaca--process-sentinel (info &optional status process event)
+  "Update E's INFO and STATUS when PROCESS EVENT is finished."
   (when-let (((equal event "finished\n"))
              (e (process-get process :elpaca))
              ((not (eq (elpaca--status e) 'failed))))
-    (elpaca--update-info e info)
+    (elpaca--update-info e info status)
     (elpaca--continue-build e)))
 
 (defun elpaca--compile-info-process-sentinel (process event)
@@ -1254,7 +1254,7 @@ Async wrapper for `elpaca-generate-autoloads'."
            :name     (format "elpaca-autoloads-%s" package)
            :command  command
            :filter   #'elpaca--process-filter
-           :sentinel (apply-partially #'elpaca--process-sentinel "Autoloads Generated"))))
+           :sentinel (apply-partially #'elpaca--process-sentinel "Autoloads Generated" nil))))
     (process-put process :elpaca e)
     (elpaca--update-info e (format "Generating autoloads: %s" default-directory) 'autoloads)))
 
@@ -1320,7 +1320,7 @@ Async wrapper for `elpaca-generate-autoloads'."
            :name     (format "elpaca-byte-compile-%s" (elpaca<-package e))
            :command  `(,emacs "-Q" "--batch" "--eval" ,(format "%S" program))
            :filter   #'elpaca--process-filter
-           :sentinel (apply-partially #'elpaca--process-sentinel "Byte compilation complete"))))
+           :sentinel (apply-partially #'elpaca--process-sentinel "Byte compilation complete" nil))))
     (process-put process :elpaca e)))
 
 ;;;###autoload
@@ -1520,7 +1520,7 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
                    ;; Pager will break this process. Complains about terminal functionality.
                    :command (list "git" "--no-pager" "log" "..@{u}")
                    :filter   #'elpaca--process-filter
-                   :sentinel (apply-partially #'elpaca--process-sentinel ""))))
+                   :sentinel (apply-partially #'elpaca--process-sentinel "" nil))))
     (process-put process :elpaca e)))
 
 (defun elpaca--fetch (e)
@@ -1530,7 +1530,7 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
                    :name (format "elpaca-fetch-%s" (elpaca<-package e))
                    :command  '("git" "fetch" "--all")
                    :filter   #'elpaca--process-filter
-                   :sentinel (apply-partially #'elpaca--process-sentinel "Updates fetched"))))
+                   :sentinel (apply-partially #'elpaca--process-sentinel "Remotes fetched" nil))))
     (process-put process :elpaca e)))
 
 ;;;###autoload
