@@ -1505,7 +1505,7 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
     (process-put process :elpaca e)))
 
 (defun elpaca--fetch (e)
-  "Fetch E's remote's commits."
+  "Fetch E's remotes' commits."
   (let* ((default-directory (elpaca<-repo-dir e))
          (process (make-process
                    :name (format "elpaca-fetch-%s" (elpaca<-package e))
