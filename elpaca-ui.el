@@ -439,7 +439,7 @@ If SILENT is non-nil, supress update message."
   (or (get-text-property (point) 'tabulated-list-id) (user-error "No package at point")))
 
 (defun elpaca-ui-browse-package ()
-  "Display general info for package on current line."
+  "Browse current package's URL via `browse-url'."
   (interactive)
   (if-let ((item (elpaca-ui-current-package))
            (candidate (elpaca-alist-get item (elpaca--menu-items t)))
