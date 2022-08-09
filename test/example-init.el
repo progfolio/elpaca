@@ -33,3 +33,7 @@
 (elpaca-use-package evil :demand t)
 ;; Install a package from a user-provided recipe
 (elpaca (yodel :host github :repo "progfolio/yodel"))
+
+;; Local Variables:
+;; no-byte-compile: t
+;; End:
