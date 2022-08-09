@@ -613,7 +613,7 @@ TYPE is either the symbol `repo` or `build`."
               (info (aref (cadr copy) 2))
               (e (get-text-property (point-min) 'elpaca (aref (cadr copy) 0))))
          (progn
-           (when (string-match-p "Warning:" info)
+           (when (string-match-p "\\(?:Error\\|Warning\\):" info)
              (setf (aref (cadr copy) 2) (propertize info 'face 'elpaca-failed)))
            (when (string-match "\\(?:\\([^z-a]*?\\):\\([[:digit:]]+?\\):\\([[:digit:]]*?\\)\\):" info)
              (let ((file (match-string 1 (aref (cadr copy) 2)))
