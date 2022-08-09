@@ -41,10 +41,13 @@
 
 (defun elpaca-menu-non-gnu-elpa--recipes ()
   "Return list of recipes from `elpaca-menu-non-gnu-elpa-url'."
+  (message "Downloading NonGNU ELPA recipes")
   (with-current-buffer (url-retrieve-synchronously elpaca-menu-non-gnu-elpa-url)
     (goto-char url-http-end-of-headers)
     (condition-case err
-        (read (current-buffer))
+        (prog1
+            (read (current-buffer))
+          (message "NonGNU ELPA recipes downloaded"))
       ((error) (error "Unable to read NonGNU ELPA package file: %S" err)))))
 
 (declare-function dom-by-tag "dom")
