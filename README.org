@@ -51,6 +51,14 @@ It then builds and activates Elpaca.
 (elpaca (elpaca :host github :repo "progfolio/elpaca"))
 #+end_src
 
+You'll also want to disable package.el in your [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html][early-init file]], and remove anything related to package.el in your init file.
+e.g. calls to ~(package-activate-all)~.
+
+
+#+begin_src emacs-lisp :lexical t
+(setq package-enable-at-startup nil)
+#+end_src
+
 * Basic concepts
 
 The =elpaca-example= macro in the following examples reduces verbosity.
