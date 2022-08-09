@@ -345,12 +345,12 @@ This is faster (what you want with non-interactive calls)."
       recipe)))
 
 ;;;###autoload
-(defun elpaca-update-menus (&optional sources)
-  "Update all menus in SOURCES or `elpaca-menu-functions'."
+(defun elpaca-update-menus (&rest menus)
+  "Update all menus in MENUS or `elpaca-menu-functions'."
   (interactive (list (mapcar #'intern
                              (completing-read-multiple
                               "Update Menus: " elpaca-menu-functions))))
-  (let ((elpaca-menu-functions (or sources elpaca-menu-functions)))
+  (let ((elpaca-menu-functions (or menus elpaca-menu-functions)))
     (run-hook-with-args 'elpaca-menu-functions 'update))
   (elpaca--menu-items 'recache))
 
