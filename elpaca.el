@@ -120,6 +120,7 @@ Setting it too high causes prints fewer status updates."
 
 (defcustom elpaca-build-steps '(elpaca--clone
                                 elpaca--add-remotes
+                                elpaca--fetch
                                 elpaca--checkout-ref
                                 elpaca--run-pre-build-commands
                                 elpaca--clone-dependencies
@@ -1105,63 +1106,43 @@ The keyword's value is expected to be one of the following:
         (elpaca--update-info e "No external dependencies detected")
         (elpaca--continue-build e)))))
 
-(defun elpaca--checkout-ref-process-sentinel (process event)
-  "PROCESS EVENT."
-  (when-let (((equal event "finished\n"))
-             (p                 (process-get process :elpaca))
-             (recipe            (elpaca<-recipe   p))
-             (default-directory (elpaca<-repo-dir p)))
-    (let* ((remotes (plist-get recipe :remotes))
-           (remote (elpaca--first remotes))
-           (ref (plist-get recipe :ref))
-           (tag (plist-get recipe :tag))
-           (branch (or (plist-get (cdr-safe (car-safe remotes)) :branch)
-                       (plist-get recipe :branch)))
-           (target (or ref tag branch)))
-      (when target
-        (elpaca-with-process
-            (apply #'elpaca-process-call
-                   `("git"
-                     ,@(cond
-                        (ref    (list "checkout" ref))
-                        (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
-                        (branch (list "switch" "-C" branch
-                                      (format "%s/%s" (elpaca--first remote) branch))))))
-          (unless success
-            (elpaca--fail p (format "Unable to check out ref: %S " (string-trim stderr))))))
-      (unless (eq (elpaca--status p) 'failed)
-        (elpaca--update-info
-         p
-         (if target (format "%S ref checked out" target) "Default ref checked out")
-         'ref-checked-out)
-        (elpaca--continue-build p)))))
-
 (defun elpaca--checkout-ref (e)
-  "Checkout E's :ref. Handles :branch and :tag recipe keyword syntatic sugar."
-  (elpaca--update-info e "Checking out repo ref")
-  (let* ((default-directory (elpaca<-repo-dir e))
-         (package           (elpaca<-package e))
-         (recipe            (elpaca<-recipe e))
-         (ref               (plist-get recipe :ref))
-         (remotes           (plist-get recipe :remotes))
-         (branch            (or (plist-get (cdr-safe (car-safe remotes)) :branch)
-                                (plist-get recipe :branch)))
-         (tag               (plist-get recipe :tag)))
-    (unless remotes (signal 'wrong-type-argument `((stringp listp) ,remotes ,recipe)))
-    (when (or ref branch tag)
+  "Check out E's ref."
+  (let* ((recipe            (elpaca<-recipe   e))
+         (default-directory (elpaca<-repo-dir e))
+         (remotes (plist-get recipe :remotes))
+         (remote (elpaca--first remotes))
+         (ref (plist-get recipe :ref))
+         (tag (plist-get recipe :tag))
+         (branch (or (plist-get (cdr-safe (car-safe remotes)) :branch)
+                     (plist-get recipe :branch)))
+         (target (or ref tag branch)))
+    (unless remotes
+      (elpaca--fail e (format "Invalid :remotes ((stringp listp) %s" remotes)))
+    (if (not target)
+        (elpaca--continue-build e)
+      (elpaca--update-info e (format "Checking out ref: %s" target))
       (cond
-       ((and ref branch) (warn "Recipe :ref overriding :branch %S" recipe))
-       ((and ref tag)    (warn "Recipe :ref overriding :tag %S" recipe))
-       ((and tag branch) (error "Recipe :ref ambiguous :tag and :branch %S" recipe))))
-    (let* ((process
-            (make-process
-             :name     (format "elpaca-fetch-%s" package)
-             :command  '("git" "fetch" "--all")
-             :filter   (lambda (process output)
-                         (elpaca--process-filter process output "fatal" 'failed))
-             :sentinel #'elpaca--checkout-ref-process-sentinel)))
-      (process-put process :elpaca e)
-      (setf (elpaca<-process e) process))))
+       ((and ref branch)
+        (elpaca--update-info e "Recipe :ref overriding :branch"))
+       ((and ref tag)
+        (elpaca--update-info e "Recipe :ref overriding :tag %S"))
+       ((and tag branch)
+        (elpaca--fail e "Recipe has :tag and :branch declared, ambiguous ref")))
+      (let ((process
+             (make-process
+              :name (format "elpaca-checkout-ref-%s" (elpaca<-package e))
+              :command
+              `("git"
+                ,@(cond
+                   (ref    (list "checkout" ref))
+                   (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
+                   (branch (list "switch" "-C" branch
+                                 (format "%s/%s" (elpaca--first remote) branch)))))
+              :sentinel (apply-partially #'elpaca--process-sentinel
+                                         (format "%s ref checked out" (or target "Default"))
+                                         'ref-checked-out))))
+        (process-put process :elpaca e)))))
 
 (defun elpaca--check-status (e)
   "Called when one of an E's dependencies change status.
