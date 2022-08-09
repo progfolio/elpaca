@@ -871,6 +871,14 @@ If it matches, the E associated with process has its STATUS updated."
           (elpaca--fail e output)
         (elpaca--update-info e output status)))))
 
+(defun elpaca--process-sentinel (info process event)
+  "Update E's INFO when PROCESS EVENT is finished."
+  (when-let (((equal event "finished\n"))
+             (e (process-get process :elpaca))
+             ((not (eq (elpaca--status e) 'failed))))
+    (elpaca--update-info e info)
+    (elpaca--continue-build e)))
+
 (defun elpaca--compile-info-process-sentinel (process event)
   "Sentinel for info compilation PROCESS EVENT."
   (let ((p  (process-get process :elpaca)))
@@ -1224,14 +1232,6 @@ Kick off next build step, and/or change E's status."
     (when-let ((buf (find-buffer-visiting output))) (kill-buffer buf))
     auto-name))
 
-(defun elpaca--generate-autoloads-async-process-sentinel (process event)
-  "PROCESS autoload generation EVENT."
-  (when-let (((equal event "finished\n"))
-             (e (process-get process :elpaca))
-             ((not (eq (elpaca--status e) 'failed))))
-    (elpaca--update-info e "Autoloads Generated")
-    (elpaca--continue-build e)))
-
 (defun elpaca--generate-autoloads-async (e)
   "Generate E's autoloads.
 Async wrapper for `elpaca-generate-autoloads'."
@@ -1254,7 +1254,7 @@ Async wrapper for `elpaca-generate-autoloads'."
            :name     (format "elpaca-autoloads-%s" package)
            :command  command
            :filter   #'elpaca--process-filter
-           :sentinel #'elpaca--generate-autoloads-async-process-sentinel)))
+           :sentinel (apply-partially #'elpaca--process-sentinel "Autoloads Generated"))))
     (process-put process :elpaca e)
     (elpaca--update-info e (format "Generating autoloads: %s" default-directory) 'autoloads)))
 
@@ -1293,14 +1293,6 @@ Async wrapper for `elpaca-generate-autoloads'."
                   e (format "Failed to load %S: %S" autoloads err) 'failed-to-activate))))
     (elpaca--continue-build e)))
 
-(defun elpaca--byte-compile-process-sentinel (process event)
-  "PROCESS byte-compilation EVENT."
-  (when-let (((equal event "finished\n"))
-             (e (process-get process :elpaca))
-             ((not (eq (elpaca--status e) 'failed))))
-    (elpaca--update-info e "Successfully byte compiled")
-    (elpaca--continue-build e)))
-
 (defun elpaca--byte-compile (e)
   "Byte compile E's package."
   ;; Assumes all dependencies are 'built
@@ -1328,7 +1320,7 @@ Async wrapper for `elpaca-generate-autoloads'."
            :name     (format "elpaca-byte-compile-%s" (elpaca<-package e))
            :command  `(,emacs "-Q" "--batch" "--eval" ,(format "%S" program))
            :filter   #'elpaca--process-filter
-           :sentinel #'elpaca--byte-compile-process-sentinel)))
+           :sentinel (apply-partially #'elpaca--process-sentinel "Byte compilation complete"))))
     (process-put process :elpaca e)))
 
 ;;;###autoload
@@ -1519,19 +1511,6 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
         (elpaca--process queued))
     (user-error "Package %S is not queued" item)))
 
-(defun elpaca--log-updates-process-sentinel (process event)
-  "Handle PROCESS EVENT."
-  (when-let (((equal event "finished\n"))
-             (e (process-get process :elpaca)))
-    (elpaca--update-info e "")
-    (elpaca--continue-build e)))
-
-;;@INCOMPLETE:
-;; What do we actually want to log here?
-;; If the user is on a different branch which has an upstream?
-;; Or do we strictly log the difference between the recipe's declared ref and upstream?
-;; Probably the latter, because that's the only case we can automatically update.
-;; Anything else will require user intervention. ~ NV [2022-03-03]
 (defun elpaca--log-updates (e)
   "Log E's fetched commits."
   (elpaca--update-info e "" 'update-log)
@@ -1541,15 +1520,8 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
                    ;; Pager will break this process. Complains about terminal functionality.
                    :command (list "git" "--no-pager" "log" "..@{u}")
                    :filter   #'elpaca--process-filter
-                   :sentinel #'elpaca--log-updates-process-sentinel)))
+                   :sentinel (apply-partially #'elpaca--process-sentinel ""))))
     (process-put process :elpaca e)))
-
-(defun elpaca--fetch-process-sentinel (process event)
-  "Handle PROCESS EVENT."
-  (when-let (((equal event "finished\n"))
-             (e (process-get process :elpaca)))
-    (elpaca--update-info e "Updates fetched" 'updates-fetched)
-    (elpaca--continue-build e)))
 
 (defun elpaca--fetch (e)
   "Fetch E's remote's commits."
@@ -1558,7 +1530,7 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
                    :name (format "elpaca-fetch-%s" (elpaca<-package e))
                    :command  '("git" "fetch" "--all")
                    :filter   #'elpaca--process-filter
-                   :sentinel #'elpaca--fetch-process-sentinel)))
+                   :sentinel (apply-partially #'elpaca--process-sentinel "Updates fetched"))))
     (process-put process :elpaca e)))
 
 ;;;###autoload
