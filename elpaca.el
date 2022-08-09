@@ -1485,6 +1485,7 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
         (setf (elpaca<-build-steps e)
               (cl-remove-if (lambda (step) (member step '(elpaca--clone
                                                           elpaca--add-remotes
+                                                          elpaca--fetch
                                                           elpaca--checkout-ref
                                                           elpaca--clone-dependencies)))
                             (copy-tree elpaca-build-steps)))
