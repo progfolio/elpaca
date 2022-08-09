@@ -473,8 +473,8 @@ ORDER is any of the following values:
 
 (defun elpaca--build-steps1 (item)
   "Return a list of build functions for ITEM."
-  (let* ((p (alist-get item (elpaca--queued)))
-         (recipe (or (and p (elpaca<-recipe p))
+  (let* ((e (alist-get item (elpaca--queued)))
+         (recipe (or (and e (elpaca<-recipe e))
                      (elpaca-recipe item)))
          (build (plist-member recipe :build))
          (steps (cadr build))
@@ -507,9 +507,9 @@ ORDER is any of the following values:
 (defsubst elpaca--mono-repo (repo-dir)
   "Return previously queued P with REPO-DIR."
   (cl-some (lambda (queued)
-             (and-let* ((p (cdr queued))
-                        ((equal repo-dir (elpaca<-repo-dir p)))
-                        p)))
+             (and-let* ((e (cdr queued))
+                        ((equal repo-dir (elpaca<-repo-dir e)))
+                        e)))
            (elpaca--queued)))
 
 (defsubst elpaca--build-steps (item builtp clonedp mono-repo)
@@ -547,9 +547,9 @@ Keys are as follows:
          (builtp (and clonedp (and build-dir (file-exists-p build-dir))))
          (mono-repo (or mono-repo
                         (when-let (((not builtp))
-                                   (p (elpaca--mono-repo repo-dir)))
+                                   (e (elpaca--mono-repo repo-dir)))
                           (setq status 'blocked info (format "Waiting on monorepo %S" repo-dir))
-                          p)))
+                          e)))
          (build-steps (elpaca--build-steps item builtp clonedp mono-repo))
          (elpaca (elpaca<--create
                   :id id :package (format "%S" id) :item item :statuses (list status)
@@ -560,14 +560,14 @@ Keys are as follows:
     (when mono-repo (cl-pushnew elpaca (elpaca<-includes mono-repo)))
     elpaca))
 
-(defun elpaca--fail (p &optional reason)
-  "Fail P for REASON."
-  (let ((item (elpaca<-item p))
-        (queue (car (last elpaca--queues (1+ (elpaca<-queue-id p))))))
+(defun elpaca--fail (e &optional reason)
+  "Fail E for REASON."
+  (let ((item (elpaca<-item e))
+        (queue (car (last elpaca--queues (1+ (elpaca<-queue-id e))))))
     (setf (elpaca-q<-forms queue)
           (assq-delete-all (elpaca--first item) (elpaca-q<-forms queue))))
-  (elpaca--update-info p reason 'failed)
-  (elpaca--finalize p))
+  (elpaca--update-info e reason 'failed)
+  (elpaca--finalize e))
 
 (defsubst elpaca--status (e)
   "Return `car' of E's statuses."
@@ -767,9 +767,9 @@ RECURSE is used to keep track of recursive calls."
         (_ (elpaca--fail e (format "(wrong-type-argument ((stringp listp)) %S" remotes))))))
   (unless recurse (elpaca--continue-build e)))
 
-(defun elpaca--remove-build-steps (p spec)
-  "Remove each step in SPEC from P."
-  (setf (elpaca<-build-steps p) (cl-set-difference (elpaca<-build-steps p) spec)))
+(defun elpaca--remove-build-steps (e spec)
+  "Remove each step in SPEC from E."
+  (setf (elpaca<-build-steps e) (cl-set-difference (elpaca<-build-steps e) spec)))
 
 (defun elpaca--files (e &optional files nocons)
   "Return alist of E :files to be symlinked: (PATH . TARGET PATH).
@@ -882,11 +882,11 @@ If it matches, the E associated with process has its STATUS updated."
 
 (defun elpaca--compile-info-process-sentinel (process event)
   "Sentinel for info compilation PROCESS EVENT."
-  (let ((p  (process-get process :elpaca)))
-    (elpaca--update-info p (if (equal event "finished\n")
+  (let ((e  (process-get process :elpaca)))
+    (elpaca--update-info e (if (equal event "finished\n")
                                "Info compiled"
                              (format "Failed to compile Info: %S" (string-trim event))))
-    (elpaca--continue-build p)))
+    (elpaca--continue-build e)))
 
 (defun elpaca--compile-info (e)
   "Compile E's .texi files."
@@ -933,16 +933,16 @@ If it matches, the E associated with process has its STATUS updated."
 
 (defun elpaca--dispatch-build-commands-process-sentinel (process event)
   "PROCESS EVENT."
-  (let ((p    (process-get process :elpaca))
+  (let ((e    (process-get process :elpaca))
         (type (process-get process :build-type)))
     (cond
      ((equal event "finished\n")
       (elpaca--update-info
-       p (format "%s steps finished" type) (intern (substring (symbol-name type) 1)))
-      (elpaca--continue-build p))
+       e (format "%s steps finished" type) (intern (substring (symbol-name type) 1)))
+      (elpaca--continue-build e))
      ((string-match-p "abnormally" event)
       ;; We want the event prior to the last "exited abnormally" event.
-      (elpaca--fail p (nth 2 (car (last (elpaca<-log p) 2))))))))
+      (elpaca--fail e (nth 2 (car (last (elpaca<-log e) 2))))))))
 
 (defun elpaca--dispatch-build-commands (e type)
   "Run E's TYPE commands for.
@@ -1164,11 +1164,11 @@ Kick off next build step, and/or change E's status."
 
 (defun elpaca--clone-process-sentinel (process _event)
   "Sentinel for clone PROCESS."
-  (let ((p   (process-get process :elpaca))
+  (let ((e   (process-get process :elpaca))
         (raw (process-get process :raw-output)))
     (if (and (string-match-p "fatal" raw) (not (string-match-p "already exists" raw)))
-        (elpaca--fail p (nth 2 (car (elpaca<-log p))))
-      (elpaca--continue-build p))))
+        (elpaca--fail e (nth 2 (car (elpaca<-log e))))
+      (elpaca--continue-build e))))
 
 (defun elpaca--clone (e)
   "Clone E's repo to `elpaca-directory'."
@@ -1653,15 +1653,15 @@ If HIDE is non-nil, do not show `elpaca-log'."
   (elpaca--write-file path
     (pp (nreverse
          (cl-loop with seen
-                  for (item . p) in (elpaca--queued)
+                  for (item . e) in (elpaca--queued)
                   unless (member item seen)
                   for rev =
-                  (let ((default-directory (elpaca<-repo-dir p)))
+                  (let ((default-directory (elpaca<-repo-dir e)))
                     (elpaca-with-process
                         (elpaca-process-call "git" "rev-parse" "HEAD")
                       (when success (string-trim stdout))))
                   when rev
-                  collect (cons item (plist-put (copy-tree (elpaca<-recipe p)) :ref rev))
+                  collect (cons item (plist-put (copy-tree (elpaca<-recipe e)) :ref rev))
                   do (push item seen))))))
 
 ;;;###autoload
