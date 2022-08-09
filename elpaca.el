@@ -1120,7 +1120,9 @@ The keyword's value is expected to be one of the following:
     (unless remotes
       (elpaca--fail e (format "Invalid :remotes ((stringp listp) %s" remotes)))
     (if (not target)
-        (elpaca--continue-build e)
+        (progn
+          (elpaca--update-info e "No ref specified. Using default" 'ref-checked-out)
+          (elpaca--continue-build e))
       (elpaca--update-info e (format "Checking out ref: %s" target))
       (cond
        ((and ref branch)
