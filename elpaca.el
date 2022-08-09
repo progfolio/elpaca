@@ -362,18 +362,19 @@ This is faster (what you want with non-interactive calls)."
     (not (cadr member))))
 
 ;;;###autoload
-(defun elpaca-recipe (order)
+(defun elpaca-recipe (order &optional interactive)
   "Return recipe computed from ORDER.
 ORDER is any of the following values:
   - nil. The order is prompted for.
   - an item symbol which will be looked up via `elpaca-menu-functions'
-  - an order list of the form: //='(ITEM . PROPS)."
+  - an order list of the form: //='(ITEM . PROPS).
+When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
   (interactive (list (if-let ((elpaca-overriding-prompt "Recipe: ")
                               (recipe (elpaca-menu-item)))
                          (push (intern (plist-get recipe :package)) recipe)
-                       (user-error "No recipe selected"))))
-  (let* ((interactive (called-interactively-p 'interactive))
-         (props (cdr-safe order))
+                       (user-error "No recipe selected"))
+                     t))
+  (let* ((props (cdr-safe order))
          (item (if (listp order) (car order) order))
          (nonheritablep (elpaca--inheritance-disabled-p props))
          (mods (unless nonheritablep (run-hook-with-args-until-success
@@ -1307,11 +1308,12 @@ Async wrapper for `elpaca-generate-autoloads'."
     (process-put process :elpaca e)))
 
 ;;;###autoload
-(defun elpaca-dependencies (item &optional ignore recurse)
+(defun elpaca-dependencies (item &optional ignore interactive recurse)
   "Return recursive list of ITEM's dependencies.
 IGNORE may be a list of symbols which are not included in the resulting list.
-RECURSE is used to track recursive calls."
-  (interactive (list (elpaca--read-queued "Dependencies of: ")))
+RECURSE is used to track recursive calls.
+When INTERACTIVE is non-nil, message the list of dependencies."
+  (interactive (list (elpaca--read-queued "Dependencies of: ") nil t))
   (if-let ((e (or (elpaca-alist-get item (elpaca--queued))
                   (unless (member item elpaca-ignored-dependencies)
                     (elpaca<-create item))))
@@ -1319,24 +1321,25 @@ RECURSE is used to track recursive calls."
       (let* ((transitives (cl-loop for dependency in dependencies
                                    for name = (car dependency)
                                    unless (memq name ignore) collect
-                                   (cons name (elpaca-dependencies name ignore 'recurse))))
+                                   (cons name (elpaca-dependencies name ignore nil 'recurse))))
              (deps (delete-dups (flatten-tree transitives))))
-        (if (called-interactively-p 'interactive) (message "%s" deps) deps))
+        (if interactive (message "%s" deps) deps))
     (when recurse item)))
 
 ;;;###autoload
-(defun elpaca-dependents (item &optional recurse)
+(defun elpaca-dependents (item &optional interactive recurse)
   "Return recursive list of packages which depend on ITEM.
-RECURSE is used to keep track of recursive calls."
-  (interactive (list (elpaca--read-queued "Dependents of: ")))
+RECURSE is used to keep track of recursive calls.
+When INTERACTIVE is non-nil, message the list of dependents."
+  (interactive (list (elpaca--read-queued "Dependents of: ") t))
   (if-let ((e (elpaca-alist-get item (elpaca--queued)))
            (dependents (elpaca<-dependents e)))
       (let* ((transitives
-              (cl-loop for dependent in dependents collect
-                       (let ((i (intern (elpaca<-package dependent))))
-                         (cons i (elpaca-dependents i 'recurse)))))
+              (cl-loop for dependent in dependents
+                       for i = (intern (elpaca<-package dependent))
+                       collect (cons i (elpaca-dependents i nil 'recurse))))
              (deps (delete-dups (nreverse (flatten-tree transitives)))))
-        (if (called-interactively-p 'interactive) (message "%s" deps) deps))
+        (if interactive (message "%s" deps) deps))
     (when recurse item)))
 
 ;;;; COMMANDS/MACROS
