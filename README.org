@@ -411,24 +411,51 @@ From this buffer you can search and act on all the packages Elpaca knows about.
 
 The following commands are available in the Elpaca manager buffer:
 
-| Command                     | Default Binding | Action                                                                           | Region aware? |
-|-----------------------------+-----------------+----------------------------------------------------------------------------------+---------------|
-| elpaca-ui-send-input        | !               | Prompt for input to send to package's current subprocess                         | no            |
-| elpaca-ui-search-installed  | I               | Show all Installed packages                                                      | no            |
-| elpaca-ui-search-marked     | M               | Show all currently marked packages                                               | no            |
-| elpaca-ui-search-orphans    | O               | Show packages which are on disk but not in use during the current Emacs session  | no            |
-| elpaca-ui-search-previous   | P               | Search for the last search entered in the minibuffer                             | no            |
-| elpaca-ui-search-refresh    | R               | Refresh the view for the current search                                          | no            |
-| elpaca-ui-search-edit       | S               | Edit the current search                                                          | no            |
-| elpaca-ui-search-undeclared | U               | Show packages installed packages which were not declared in the user's init file | no            |
-| elpaca-ui-browse-package    | b               | Open package's website via =browse-url=                                            | no            |
-| elpaca-ui-mark-delete       | d               | Mark the current package for deletion                                            | yes           |
-| elpaca-ui-mark-install      | i               | Mark the current package for installation                                        | yes           |
-| elpaca-ui-search            | s               | Filter the current table via a minibuffer search                                 | no            |
-| elpaca-ui-unmark            | u               | Unmark the current package                                                       | yes           |
-| elpaca-ui-visit-build       | vb              | Visit the current package's build directory via =dired=                            | no            |
-| elpaca-ui-mark-rebuild      | vr              | Mark the current package for rebuilding                                          | yes           |
-| elpaca-ui-execute-marks     | x               | Execute marked package's actions                                                 | no            |
+#+begin_src emacs-lisp :lexical t :exports results table replace
+(with-temp-buffer
+  (describe-map-tree elpaca-ui-mode-map)
+  (goto-char (point-min))
+  (let (rows)
+    (while (re-search-forward "elpaca" nil 'noerror)
+      (push (split-string (buffer-substring-no-properties
+                           (line-beginning-position) (line-end-position))
+                          "\t+")
+            rows))
+    (setq rows (mapcar (lambda (it)
+                         (append
+                          (list (car (split-string
+                                      (documentation (intern (cadr it)))
+                                      "\n")))
+                          it))
+                       rows))
+    (setq rows (cl-sort (mapcar #'nreverse rows) #'string< :key #'cadr))
+    (push 'hline rows)
+    (push (list "Command" "Default Binding" "Description") rows)
+    rows))
+#+end_src
+
+#+RESULTS:
+| Command                    | Default Binding | Description                                                     |
+|----------------------------+-----------------+-----------------------------------------------------------------|
+| elpaca-ui-send-input       | !               | Send input string to current process.                           |
+| elpaca-ui-search-installed | I               | Search for "#unique #installed"                                 |
+| elpaca-ui-search-marked    | M               | Search for "#unique #marked"                                    |
+| elpaca-ui-search-orphaned  | O               | Search for "#unique #orphan"                                    |
+| elpaca-ui-search-refresh   | R               | Rerun the current search for BUFFER.                            |
+| elpaca-ui-search-tried     | T               | Search for "#unique #installed !#declared"                      |
+| elpaca-ui-unmark           | U               | Unmark current package.                                         |
+| elpaca-ui-browse-package   | b               | Browse current package’s URL via ‘browse-url’.                  |
+| elpaca-ui-mark-delete      | d               | Mark package for delete.                                        |
+| elpaca-ui-mark-install     | i               | Mark package for install.                                       |
+| elpaca-log                 | l               | Display ‘elpaca-log-buffer’.                                    |
+| elpaca-manager             | m               | Display elpaca’s package management UI.                         |
+| elpaca-ui-mark-rebuild     | r               | Mark package for rebuild.                                       |
+| elpaca-ui-search           | s               | Filter current buffer by QUERY. If QUERY is nil, prompt for it. |
+| elpaca-status              | t               | Log most recent events for packages.                            |
+| elpaca-ui-mark-update      | u               | Mark package for update.                                        |
+| elpaca-ui-visit-build      | v b             | Visit builds dir associated with current package.               |
+| elpaca-ui-visit-repo       | v r             | Visit repo associated with current package.                     |
+| elpaca-ui-execute-marks    | x               | Execute each action in ‘elpaca-ui-marked-packages’.             |
 
 * Example configuration
 :PROPERTIES:
