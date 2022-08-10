@@ -1445,7 +1445,7 @@ If FORCE is non-nil do not confirm before deleting."
             (dolist (dependency (and deps dependencies))
               (elpaca-delete dependency 'force deps (push id ignored)))))
       (let ((recipe (elpaca-recipe id)))
-        (unless recipe (user-error "%S is not queued" id))
+        (unless recipe (user-error "No recipe for %S" id))
         (when-let ((r (elpaca-repo-dir  recipe))) (delete-directory r 'recursive))
         (when-let ((b (elpaca-build-dir recipe))) (delete-directory b 'recursive))))))
 
