@@ -37,12 +37,10 @@
 (eval-and-compile (require 'cl-lib))
 (eval-when-compile (require 'subr-x))
 (cl-declaim (optimize (safety 0) (speed 3)))
-(require 'text-property-search)
 (require 'elpaca-process)
 (declare-function autoload-rubric "autoload")
 (declare-function info-initialize "info")
 (declare-function url-filename    "url-parse")
-(declare-function url-host        "url-parse")
 (defvar autoload-timestamps)
 (defvar generated-autoload-file)
 (defvar Info-directory-list)
@@ -1366,7 +1364,6 @@ The expansion is a string indicating the package has been disabled."
     `(elpaca ,order (use-package ,(elpaca--first order) ,@body))))
 
 (defvar elpaca--try-package-history nil "History for `elpaca-try'.")
-(defvar elpaca-ui-entries-function)
 (declare-function elpaca-log--latest "elpaca-log")
 ;;;###autoload
 (defun elpaca-try (&rest orders)
