@@ -1376,8 +1376,8 @@ Activate the corresponding package for the current session.
 ORDER's package is not made available during subsequent sessions."
   (interactive (list
                 (if (equal current-prefix-arg '(4))
-                    (read (format "(%s)" (read-string "elpaca-try: " nil
-                                                      'elpaca--try-package-history)))
+                    (minibuffer-with-setup-hook #'backward-char
+                      (read (read-string "elpaca-try: " "()" 'elpaca--try-package-history)))
                   (let ((recipe (elpaca-menu-item
                                  nil nil nil
                                  (lambda (candidate)
