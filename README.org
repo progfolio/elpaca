@@ -301,7 +301,7 @@ The =elpaca-menu-functions= variable contains menu functions for the following p
 - [[https://git.savannah.gnu.org/cgit/emacs/org-mode.git/][Org]]
 - [[https://git.sr.ht/~bzg/org-contrib][Org-contrib]]
 - [[https://www.github.com/emacs-straight/gnu-elpa-mirror][GNU ELPA Mirror]]
-- [[https://elpa.nongnu.org][NonGNU Elpa]]
+- [[https://elpa.nongnu.org][NonGNU ELPA]]
 
 Menus are checked in order until one returns the requested menu item or the menu list is exhausted.
 
