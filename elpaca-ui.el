@@ -90,7 +90,7 @@ exclamation point to it. e.g. #!installed."
 (defun elpaca-defsearch (name query)
   "Return seach command with NAME for QUERY."
   (eval `(defun ,(intern (format "elpaca-ui-search-%s" name)) ()
-             ,(format "Search for %S" query)
+           ,(format "Search for %S" query)
            (interactive)
            (elpaca-ui-search ,query))
         t))
