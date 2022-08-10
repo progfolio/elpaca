@@ -358,7 +358,7 @@ ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
                              (cl-incf line))
                            (forward-line))
                          line)))
-             (lines (cl-loop for i from 0 to (length tabulated-list-entries)
+             (lines (cl-loop for i below (length tabulated-list-entries)
                              for entry = (nth i tabulated-list-entries)
                              when (eq (car entry) item) collect i)))
     (save-excursion
