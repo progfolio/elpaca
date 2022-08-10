@@ -205,31 +205,6 @@ the elpaca-example-menu provides the rest of the "burger" recipe.
 (:package "burger" :beef t :buns 2 :cheese t :cook well-done :from elpaca-example-menu :inherit t :lettuce t :tomato t)
 #+end_src
 
-*** elpaca-recipe-functions
-:PROPERTIES:
-:CUSTOM_ID: elpaca-recipe-functions
-:END:
-The abnormal hook =elpaca-recipe-functions= runs via =run-hook-with-args-until-success= just before installing the package.
-Each function in the list should accept the current recipe as its sole argument and return either nil or a plist.
-The first function to return a plist has its return value merged with the current recipe.
-
-This is useful if you want to guarantee the values of certain keywords despite allowing recipe inheritance.
-
-#+name: recipe-functions-example
-#+begin_src emacs-lisp :lexical t :exports both :results raw code
-(elpaca-example
- (let ((elpaca-recipe-functions
-        '((lambda (recipe)
-            "If a recipe calls for cheese, I always want extra."
-            (when (plist-get recipe :cheese) (list :cheese 'extra))))))
-   (elpaca-recipe '(burger))))
-#+end_src
-
-#+results: recipe-functions-example
-#+begin_src emacs-lisp
-(:package "burger" :beef t :buns 2 :cheese extra :cook well-done :from elpaca-example-menu :lettuce t :tomato t)
-#+end_src
-
 *** Inheritance precedence
 :PROPERTIES:
 :CUSTOM_ID: inheritance-precedence
@@ -253,6 +228,31 @@ Each item takes precedence over the items which follow it.
 #+results: recipe-inheritance-precedence
 #+begin_src emacs-lisp
 (:package "burger" :beef t :buns 2 :cheese extra :cook well-done :from recipe-functions :lettuce t :tomato nil)
+#+end_src
+
+*** elpaca-recipe-functions
+:PROPERTIES:
+:CUSTOM_ID: elpaca-recipe-functions
+:END:
+The abnormal hook =elpaca-recipe-functions= runs via =run-hook-with-args-until-success= just before installing the package.
+Each function in the list should accept the current recipe as its sole argument and return either nil or a plist.
+The first function to return a plist has its return value merged with the current recipe.
+
+This is useful if you want to guarantee the values of certain keywords despite allowing recipe inheritance.
+
+#+name: recipe-functions-example
+#+begin_src emacs-lisp :lexical t :exports both :results raw code
+(elpaca-example
+ (let ((elpaca-recipe-functions
+        '((lambda (recipe)
+            "If a recipe calls for cheese, I always want extra."
+            (when (plist-get recipe :cheese) (list :cheese 'extra))))))
+   (elpaca-recipe '(burger))))
+#+end_src
+
+#+results: recipe-functions-example
+#+begin_src emacs-lisp
+(:package "burger" :beef t :buns 2 :cheese extra :cook well-done :from elpaca-example-menu :lettuce t :tomato t)
 #+end_src
 
 ** Menus
