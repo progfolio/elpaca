@@ -134,6 +134,8 @@ Setting it too high causes prints fewer status updates."
   "List of steps which are run when installing/building a package."
   :type 'list)
 
+(defvar elpaca--debug-init debug-on-error "Preserves --debug-init option.")
+
 (defvar elpaca-default-files-directive
   '("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
     "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
@@ -1409,6 +1411,7 @@ ORDER's package is not made available during subsequent sessions."
 ;;;###autoload
 (defun elpaca-process-queues ()
   "Process the incomplete queues."
+  (setq debug-on-error elpaca--debug-init elpaca--debug-init nil)
   (if-let ((incomplete (cl-find 'incomplete (reverse elpaca--queues) :key #'elpaca-q<-status)))
       (elpaca--process-queue incomplete)
     (message "No incomplete queues to process")))
