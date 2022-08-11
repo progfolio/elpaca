@@ -1100,7 +1100,7 @@ Ement.el is a new Matrix client for Emacs. It aims to be simple, fast, featurefu
   (+general-global-application
     "M" '(:ignore t :which-key "Matrix")
     "MM" '((lambda () (interactive) (ement-connect :user-id "@nv-elisp:Matrix.org"))
-    :which-key "ement-connect")))
+           :which-key "ement-connect")))
 #+end_src
 ** emp
 #+begin_quote
