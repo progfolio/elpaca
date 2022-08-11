@@ -44,6 +44,7 @@
 (defvar autoload-timestamps)
 (defvar generated-autoload-file)
 (defvar Info-directory-list)
+(unless (executable-find "git") (error "Elpaca unable to find git executable"))
 
 (defgroup elpaca nil
   "An elisp package manager."
