@@ -124,8 +124,8 @@ Setting it too high causes prints fewer status updates."
                                 elpaca--run-pre-build-commands
                                 elpaca--clone-dependencies
                                 elpaca--link-build-files
-                                elpaca--byte-compile
                                 elpaca--generate-autoloads-async
+                                elpaca--byte-compile
                                 elpaca--compile-info
                                 elpaca--install-info
                                 elpaca--add-info-path
@@ -1194,7 +1194,8 @@ Kick off next build step, and/or change E's status."
 (defun elpaca-generate-autoloads (package dir)
   "Generate autoloads in DIR for PACKAGE."
   (require 'autoload)
-  (let* ((auto-name (format "%s-autoloads.el" package))
+  (let* ((default-directory dir)
+         (auto-name (format "%s-autoloads.el" package))
          (output    (expand-file-name auto-name dir))
          (generated-autoload-file output)
          (autoload-timestamps nil)
@@ -1203,11 +1204,12 @@ Kick off next build step, and/or change E's status."
          (find-file-hook nil) ; Don't clobber recentf.
          (write-file-functions nil)
          (left-margin 0)) ; Prevent spurious parens in autoloads.
-    (write-region (autoload-rubric output nil 'feature) nil output nil 'silent)
-    (if (fboundp 'make-directory-autoloads)
-        (make-directory-autoloads dir output)
-      ;; Compatibility for Emacs < 28.1
-      (with-no-warnings (update-directory-autoloads dir)))
+    (write-region (autoload-rubric output nil 'feature 'compile) nil output nil 'silent)
+    (cond
+     ((fboundp 'loaddefs-generate) (loaddefs-generate dir auto-name nil nil nil t)) ;; Emacs 29
+     ((fboundp 'make-directory-autoloads) (make-directory-autoloads dir output))
+     ((fboundp 'update-directory-autoloads) ;; Compatibility for Emacs < 28.1
+      (with-no-warnings (update-directory-autoloads dir))))
     (when-let ((buf (find-buffer-visiting output))) (kill-buffer buf))
     auto-name))
 
