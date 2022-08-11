@@ -13,7 +13,7 @@ It is a replacement for the built-in Emacs package manager, package.el.
 * Installation
 If you're impatient, take a look at the [[#example-configuration][example configuration]]
 ** Requirements
-- Emacs >= 27.1
+- Emacs >= 27.1 built `--with-json`. Can be checked via `(member "JSON" (split-string system-configuration-features))`.
 - git (minimum version TBD)
 - Windows users must be able to create symlinks.
 ** Bootstrap Snippet
