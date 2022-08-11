@@ -35,9 +35,12 @@
 (defun elpaca-menu-melpa--metadata ()
   "Return an alist of MELPA package metadata."
   (with-current-buffer (url-retrieve-synchronously "https://melpa.org/archive.json" 'silent)
-    (json-parse-string
-     (decode-coding-region url-http-end-of-headers (point-max) 'utf-8 t)
-     :object-type 'alist)))
+    (let ((s (decode-coding-region url-http-end-of-headers (point-max) 'utf-8 t)))
+      (if (fboundp #'json-parse-string)
+          (json-parse-string s :object-type 'alist)
+        (require 'json)
+        (let ((json-object-type 'alist))
+          (json-read-from-string s))))))
 
 (defun elpaca-menu-melpa--clone (path)
   "Clone MELPA recipes repo to PATH."
