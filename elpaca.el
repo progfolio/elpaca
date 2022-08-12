@@ -472,12 +472,9 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
   "Return `car' of OBJ if it is a list, else OBJ."
   (if (listp obj) (car obj) obj))
 
-(defun elpaca--build-steps1 (item)
-  "Return a list of build functions for ITEM."
-  (let* ((e (alist-get item (elpaca--queued)))
-         (recipe (or (and e (elpaca<-recipe e))
-                     (elpaca-recipe item)))
-         (build (plist-member recipe :build))
+(defun elpaca--build-steps1 (recipe)
+  "Return a list of build functions from RECIPE."
+  (let* ((build (plist-member recipe :build))
          (steps (cadr build))
          (removep (and (eq (car-safe steps) :not) (pop steps))))
     (when (and elpaca-use-build-step-short-names (listp steps))
@@ -513,16 +510,16 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
                         e)))
            (elpaca--queued)))
 
-(defsubst elpaca--build-steps (item builtp clonedp mono-repo)
+(defsubst elpaca--build-steps (recipe builtp clonedp mono-repo)
   "Return list of build functions for ITEM.
 BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
-  (if builtp
-      elpaca--pre-built-steps
-    (unless elpaca-hide-status-during-build (setq elpaca--show-status t))
-    (when-let ((steps (elpaca--build-steps1 item)))
+  (when-let ((steps (elpaca--build-steps1 recipe)))
+    (if builtp
+        (cons 'elpaca--queue-dependencies (cl-intersection elpaca--pre-built-steps steps))
+      (unless elpaca-hide-status-during-build (setq elpaca--show-status t))
       (when (and mono-repo (memq 'ref-checked-out (elpaca<-statuses mono-repo)))
-        (setq steps (cl-set-difference steps
-                                       '(elpaca--clone elpaca--add-remotes elpaca--checkout-ref))))
+        (setq steps
+              (cl-set-difference steps '(elpaca--clone elpaca--add-remotes elpaca--checkout-ref))))
       (when clonedp (setq steps (delq 'elpaca--clone steps)))
       steps)))
 
@@ -551,7 +548,7 @@ Keys are as follows:
                                    (e (elpaca--mono-repo repo-dir)))
                           (setq status 'blocked info (format "Waiting on monorepo %S" repo-dir))
                           e)))
-         (build-steps (elpaca--build-steps item builtp clonedp mono-repo))
+         (build-steps (elpaca--build-steps recipe builtp clonedp mono-repo))
          (elpaca (elpaca<--create
                   :id id :package (format "%S" id) :item item :statuses (list status)
                   :repo-dir repo-dir :build-dir build-dir :mono-repo mono-repo
@@ -1575,7 +1572,7 @@ If HIDE is non-nil, do not show `elpaca-log'."
                 elpaca--log-updates
                 elpaca--merge
                 ,@(cl-intersection
-                   (elpaca--build-steps (elpaca<-item e) nil t
+                   (elpaca--build-steps (elpaca<-recipe e) nil t
                                         (elpaca<-mono-repo e))
                    '(elpaca--run-pre-build-commands
                      elpaca--link-build-files
