@@ -515,6 +515,7 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
 BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
   (when-let ((steps (elpaca--build-steps1 recipe)))
     (if builtp
+        ;;@FIX: should this be hardcoded?
         (cons 'elpaca--queue-dependencies (cl-intersection elpaca--pre-built-steps steps))
       (unless elpaca-hide-status-during-build (setq elpaca--show-status t))
       (when (and mono-repo (memq 'ref-checked-out (elpaca<-statuses mono-repo)))
