@@ -1,0 +1,39 @@
+* Guidlines
+
+** General Ettiquets
+
+- Please do not argue or debate (especially in while opening any feature requests) . If you have a valid point please consider explaining it Like for example:
+
+  you could answer the following questions while explaining your point such as:
+
+  - what are the advantages in doing that way rather than this?.
+  - why is your way better?.
+
+  After reading your explaination, I will most likely accept your point if I find it reasonable. Though incase I reject please do not think anything bad/panic or get angry. I have heard your point and I do respect it. It is just that it might not be compatible with the project's idea or goals.
+
+- Do not bully, harress or disrespect others or the developers/maintainers/contributers of the project.
+
+- Treat everyone with respect (Please follow the *"Give respect and take respect"* ideology/philosophy).
+
+- Please do not use any bad words (you might call yourself to unnecessory trouble in doing so by other countries. for example: using some words in other countries is banned and you could end up in jail.).
+
+- Please follow the internet ettiquetes and do not write things in uppercase (because it is considered yelling/shouting.).
+
+- Please be patient.
+
+- Please do not think bad or get angry if you do not get issues resolved quickly because we provide time to the user to try to solve the issue on their own but we will try our best to resolve your issue within a week or so. If you need urgent help for your issue please put it under the label urgent (*But please don't be selfish or dishonest because it would not be good for other people who have opened the issues and want to have them resolved and they would not get help because of you.*).
+
+- Please after your issue gets resolved request any of the developers/contributers/maintainers to close the issue.
+
+** Things to consider adding in the issue
+
+Please provide the following set of minimum information while opening any issue labeled *bug*:
+
+- Tell us what is the issue
+- attach a debug information by running *emacs --debug-init*
+- provide emacs version information and also provide information about what type of emacs is being used gccemacs or normal emacs.
+- provide which operating system are you running.
+- provide information about where did you install the package from and the name of the package . (and if you have compiled it from source (in the case of gccemacs) please consider about providing information about what flags you used while compliling.).
+
+
+*Thanks*, for being patient and cooporative with us.

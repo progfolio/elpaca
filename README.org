@@ -510,3 +510,23 @@ The following is an example init.el using Elpaca:
 (elpaca (yodel :host github :repo "progfolio/yodel"))
 #+end_src
 #  LocalWords:  elpaca Elpaca elisp repo minibuffer website init ui UI unmark Unmark plist alist MELPA programmatic
+
+* Issues/Bugs
+
+Before reporting any issues/bugs. Please have a look at [[file:ISSUES_TEMPLATE.org][ISSUES_TEMPLATE.org]]
+
+* Contributing
+
+Contributions are welcome. It does not matter who you are you can still contribute to the project in your way :).
+
+** Not a developer but still want to contribute
+
+Here is [[https://youtu.be/FccdqCucVSI][video]] by Mr. Nick on how to contribute and credit to him as well
+
+** Developer
+
+If you are developer, have a look at the [[file:CONTRIBUTING.org][CONTRIBUTING.org]] document for more information.
+
+* License
+
+The project is available under the [[file:LICENSE][GPLv3]] license.

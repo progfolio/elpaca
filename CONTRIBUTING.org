@@ -1,0 +1,31 @@
+* Things to consider before contributing.
+
+** Test your changes before creating the pull request.
+
+----placeholder-----
+
+** Knowledge required
+
+- emacs-lisp basics --> https://www.youtube.com/playlist?list=PLEoMzSkcN8oPQtn7FQEF3D7sroZbXuPZ7  
+- package management in emacs
+
+** guidlines
+
+- Please do not argue or debate. If you have a valid point for opening the pull request please consider explaining it Like for example:
+
+  you could answer the following questions while explaining your point such as:
+
+  - what are the advantages in doing that way rather than this?.
+  - why is your way better?.
+
+  After reading your explaination, I will most likely accept your pull request if I find it reasonable. Though incase I reject it please do not think anything bad/panic or get angry. I have heard your point and I do respect it. It is just that it might not be compatible with the project's idea or goals.
+
+- please be patient
+- treat everyone with respect --> (Please follow the *"give respect and take respect"* ideology/philosophy.)
+- document your code properly
+- provide a brief description of what changes you made in the pull request
+- provide an apropriate header to pull requests
+
+*NOTE:* ---placeholder for any note you want to provide--- 
+
+*Thanks*, for contributing. "Without you we are nothing".
