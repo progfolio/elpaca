@@ -1205,7 +1205,7 @@ Kick off next build step, and/or change E's status."
          (find-file-hook nil) ; Don't clobber recentf.
          (write-file-functions nil)
          (left-margin 0)) ; Prevent spurious parens in autoloads.
-    (write-region (autoload-rubric output nil 'feature 'compile) nil output nil 'silent)
+    (write-region (autoload-rubric output nil 'feature) nil output nil 'silent)
     (cond
      ((fboundp 'loaddefs-generate) (loaddefs-generate dir auto-name nil nil nil t)) ;; Emacs 29
      ((fboundp 'make-directory-autoloads) (make-directory-autoloads dir output))
