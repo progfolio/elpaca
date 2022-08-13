@@ -511,7 +511,7 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
            (elpaca--queued)))
 
 (defsubst elpaca--build-steps (recipe builtp clonedp mono-repo)
-  "Return list of build functions for ITEM.
+  "Return list of build functions for RECIPE.
 BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
   (when-let ((steps (elpaca--build-steps1 recipe)))
     (if builtp
