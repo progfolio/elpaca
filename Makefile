@@ -19,4 +19,4 @@ test: elpaca.elc
 
 .PHONY: autoloads
 autoloads:
-	$(EMACS) -Q --batch --eval '(make-directory-autoloads "./" "elpaca-autoloads.el")'
+	$(EMACS) -Q -L . -l elpaca --batch --eval '(elpaca-generate-autoloads "elpaca" default-directory)'

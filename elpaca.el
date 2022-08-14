@@ -815,8 +815,9 @@ FILES and NOCONS are used recursively."
     (when (file-exists-p build-dir) (delete-directory build-dir 'recusrive))
     (make-directory build-dir 'parents)
     (dolist (spec files)
-      (let ((file   (car spec))
-            (link   (cdr spec)))
+      (when-let ((file   (car spec))
+                 ((file-exists-p file))
+                 (link   (cdr spec)))
         (make-directory (file-name-directory link) 'parents)
         (make-symbolic-link file link 'overwrite))))
   (elpaca--update-info e "Build files linked" 'build-linked)
@@ -1194,10 +1195,11 @@ Kick off next build step, and/or change E's status."
 
 (defun elpaca-generate-autoloads (package dir)
   "Generate autoloads in DIR for PACKAGE."
-  (require 'autoload)
-  (let* ((default-directory dir)
-         (auto-name (format "%s-autoloads.el" package))
-         (output    (expand-file-name auto-name dir))
+  (let* ((autoloadp (or (and (version< emacs-version "29") (require 'autoload))
+                        (and (require 'loaddefs-gen) nil)))
+         (default-directory dir)
+         (name (format "%s-autoloads.el" package))
+         (output    (expand-file-name name dir))
          (generated-autoload-file output)
          (autoload-timestamps nil)
          (backup-inhibited t)
@@ -1205,14 +1207,22 @@ Kick off next build step, and/or change E's status."
          (find-file-hook nil) ; Don't clobber recentf.
          (write-file-functions nil)
          (left-margin 0)) ; Prevent spurious parens in autoloads.
-    (write-region (autoload-rubric output nil 'feature) nil output nil 'silent)
+    (when autoloadp
+      (write-region (autoload-rubric output nil 'feature) nil output nil 'silent))
     (cond
-     ((fboundp 'loaddefs-generate) (loaddefs-generate dir auto-name nil nil nil t)) ;; Emacs 29
+     ((fboundp 'loaddefs-generate)
+      (loaddefs-generate
+       (cl-loop with seen
+                for file in (elpaca--directory-files-recursively dir "\\.el$")
+                for d = (file-name-directory file)
+                unless (member d seen)
+                collect d do (push d seen))
+       name nil nil nil t)) ;; Emacs 29
      ((fboundp 'make-directory-autoloads) (make-directory-autoloads dir output))
      ((fboundp 'update-directory-autoloads) ;; Compatibility for Emacs < 28.1
       (with-no-warnings (update-directory-autoloads dir))))
     (when-let ((buf (find-buffer-visiting output))) (kill-buffer buf))
-    auto-name))
+    name))
 
 (defun elpaca--generate-autoloads-async (e)
   "Generate E's autoloads.
