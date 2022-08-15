@@ -1195,8 +1195,7 @@ Kick off next build step, and/or change E's status."
 
 (defun elpaca-generate-autoloads (package dir)
   "Generate autoloads in DIR for PACKAGE."
-  (let* ((autoloadp (or (and (version< emacs-version "29") (require 'autoload))
-                        (and (require 'loaddefs-gen) nil)))
+  (let* ((feature (or (require 'loaddefs-gen nil t) (require 'autoload)))
          (default-directory dir)
          (name (format "%s-autoloads.el" package))
          (output    (expand-file-name name dir))
@@ -1207,7 +1206,7 @@ Kick off next build step, and/or change E's status."
          (find-file-hook nil) ; Don't clobber recentf.
          (write-file-functions nil)
          (left-margin 0)) ; Prevent spurious parens in autoloads.
-    (when autoloadp
+    (when (eq feature 'autoload)
       (write-region (autoload-rubric output nil 'feature) nil output nil 'silent))
     (cond
      ((fboundp 'loaddefs-generate)
