@@ -433,7 +433,8 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
                                                        (url-generic-parse-url url)))))
                 (repo
                  (setq user (elpaca--repo-user repo))
-                 (elpaca--repo-name repo))))
+                 (elpaca--repo-name repo))
+	       (t (error "Unable to determine repo name"))))
          (dir (if (and (not mono-repo)
                        (member name (mapcar #'cdr elpaca--repo-dirs)))
                   (string-join (list name (format "%s" host) user) ".")
