@@ -619,9 +619,8 @@ If N is nil return a list of all queued elpacas."
 
 (defun elpaca--continue-mono-repo-dependency (e)
   "Continue processing E after its mono-repo is in the proper state."
-  (unless (memq (elpaca<-statuses e) '(finished build-linked))
     (elpaca--remove-build-steps e '(elpaca--clone elpaca--add-remotes elpaca--checkout-ref))
-    (elpaca--continue-build e)))
+    (elpaca--continue-build e))
 
 (declare-function elpaca-log "elpaca-log")
 (declare-function elpaca-status "elpaca-status")
