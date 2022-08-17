@@ -22,6 +22,8 @@
 
 ;; A elpaca menu for Org packages
 
+;; @FIX: info not buildling properly
+
 ;;; Code:
 (defvar elpaca-menu-org--index-cache nil "Cache of Org menu index.")
 (require 'elpaca)
