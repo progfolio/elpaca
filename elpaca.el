@@ -614,7 +614,7 @@ If N is nil return a list of all queued elpacas."
   (nth 2 (car (elpaca<-log e))))
 
 (defsubst elpaca--continue-build (e)
-  "Run E's next build step with ARGS."
+  "Run E's next build step."
   (funcall (or (pop (elpaca<-build-steps e)) #'elpaca--finalize) e))
 
 (defun elpaca--continue-mono-repo-dependency (e)
