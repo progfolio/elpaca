@@ -656,9 +656,13 @@ If REPLACE is non-nil, E's log is updated instead of appended."
     (time-subtract end (elpaca<-queue-time e))))
 
 ;;;###autoload
-(defun elpaca-split-queue ()
-  "Split remaining elpacas into new queue. Reuse current queue if it is empty."
-  (when (elpaca-q<-elpacas (car elpaca--queues)) (push (elpaca-q<-create) elpaca--queues)))
+(defun elpaca-split-queue (&rest args)
+  "Split remaining elpacas into new queue with ARGS."
+  (let ((current (car elpaca--queues)))
+    (unless (or (elpaca-q<-elpacas current) (elpaca-q<-forms current))
+      (pop elpaca--queues)))
+  (push (apply #'elpaca-q<-create args) elpaca--queues)
+  nil)
 
 ;;;###autoload
 (defmacro elpaca-queue (&rest body)
@@ -1432,7 +1436,9 @@ ORDER's package is not made available during subsequent sessions."
             (require 'elpaca-log)
             (elpaca-log "#unique !finished")
             (when (bound-and-true-p elpaca-log-buffer) (get-buffer-create elpaca-log-buffer)))))
-  (mapc #'elpaca--process (reverse (elpaca-q<-elpacas q))))
+  (if (and (not (elpaca-q<-elpacas q)) (elpaca-q<-forms q))
+      (elpaca--finalize-queue q)
+    (mapc #'elpaca--process (reverse (elpaca-q<-elpacas q)))))
 
 ;;;###autoload
 (defun elpaca-process-queues ()
