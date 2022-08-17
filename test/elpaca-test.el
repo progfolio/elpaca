@@ -27,7 +27,8 @@
 (require 'elpaca)
 
 ;;prevent user cache corruption
-(setq elpaca-cache-menu-items nil)
+(setq elpaca-cache-directory
+      (expand-file-name "elpaca-test-cache/" (temporary-file-directory)))
 (setq elpaca-cache-autoloads nil)
 
 (defun elpaca-test--plist-equal-p (&rest plists)
