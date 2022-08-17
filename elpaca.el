@@ -434,7 +434,7 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
                 (repo
                  (setq user (elpaca--repo-user repo))
                  (elpaca--repo-name repo))
-	       (t (error "Unable to determine repo name"))))
+                (t (error "Unable to determine repo name"))))
          (dir (if (and (not mono-repo)
                        (member name (mapcar #'cdr elpaca--repo-dirs)))
                   (string-join (list name (format "%s" host) user) ".")
@@ -619,8 +619,8 @@ If N is nil return a list of all queued elpacas."
 
 (defun elpaca--continue-mono-repo-dependency (e)
   "Continue processing E after its mono-repo is in the proper state."
-    (elpaca--remove-build-steps e '(elpaca--clone elpaca--add-remotes elpaca--checkout-ref))
-    (elpaca--continue-build e))
+  (elpaca--remove-build-steps e '(elpaca--clone elpaca--add-remotes elpaca--checkout-ref))
+  (elpaca--continue-build e))
 
 (declare-function elpaca-log "elpaca-log")
 (declare-function elpaca-status "elpaca-status")
