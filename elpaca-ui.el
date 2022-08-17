@@ -31,7 +31,7 @@
 (defcustom elpaca-ui-actions
   '((delete  :prefix "💀" :face (:inherit default :weight bold :foreground "#FF0022")
              :action (lambda (i) (elpaca-delete i 'force 'deps)))
-    (install :prefix "⚙️" :face(:inherit default :weight bold :foreground "#89cff0")
+    (install :prefix "⚙️" :face (:inherit default :weight bold :foreground "#89cff0")
              :setup (lambda () (require 'elpaca-log) (elpaca-log--latest))
              :action elpaca-try)
     (rebuild :prefix "♻️️" :face (:inherit default :weight bold :foreground "#f28500")
@@ -96,8 +96,7 @@ exclamation point to it. e.g. #!installed."
         t))
 
 (defalias 'elpaca-ui--buttonize
-  (with-no-warnings
-    (if (version< emacs-version "29.1") #'button-buttonize #'buttonize)))
+  (with-no-warnings (if (version< emacs-version "29.1") #'button-buttonize #'buttonize)))
 
 ;;;; Variables:
 (defvar-local elpaca-ui--search-timer nil "Timer to debounce search input.")
