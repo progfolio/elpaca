@@ -911,23 +911,40 @@ If it matches, the E associated with process has its STATUS updated."
     (elpaca--remove-build-steps e '(elpaca--install-info elpaca--add-info-path))
     (elpaca--continue-build e)))
 
-;;@TODO: make async
+;;@TODO: DRY. Identical to compile-info sentinel
+(defun elpaca--install-info-process-sentinel (process event)
+  "Sentinel for info installation PROCESS EVENT."
+  (let ((e (process-get process :elpaca)))
+    (elpaca--update-info e (if (equal event "finished\n")
+                               "Info installed"
+                             (format "Failed to install Info: %S" (string-trim event))))
+    (elpaca--continue-build e)))
+
+(defun elpaca--install-info-async (file dir e)
+  "Asynchronously Install E's .info FILE in Info DIR."
+  (let ((process (make-process
+                  :name (format "elpaca-install-info-%s" (elpaca<-package e))
+                  :command (list elpaca-install-info-executable file dir)
+                  :filter #'elpaca--process-filter
+                  :sentinel #'elpaca--install-info-process-sentinel)))
+    (process-put process :elpaca e)))
+
 (defun elpaca--install-info (e)
-  "Install E's info files."
+  "Install E's .info files."
   (elpaca--update-info e "Installing Info files")
   (when-let ((dir (expand-file-name "dir" (elpaca<-build-dir e)))
-             ((not (file-exists-p dir))))
-    (cl-loop for (repo-file . build-file) in (or (elpaca<-files e)
-                                                 (setf (elpaca<-files e) (elpaca--files e)))
-             for f = (cond
-                      ((string-match-p "\\.info$" build-file) build-file)
-                      ((string-match-p "\\.texi\\(nfo\\)?$" repo-file)
-                       (concat (file-name-sans-extension build-file) ".info")))
-             when (and f (file-exists-p f))
-             do (elpaca-with-process
-                    (elpaca-process-call elpaca-install-info-executable f dir)
-                  (unless success (elpaca--update-info e result)))))
-  (elpaca--continue-build e))
+             ((not (file-exists-p dir)))
+             (specs (or (elpaca<-files e) (setf (elpaca<-files e) (elpaca--files e)))))
+    (cl-loop for (target . link) in specs
+             for file = (cond
+                         ((string-match-p "\\.info$" link) link)
+                         ((string-match-p "\\.texi\\(nfo\\)?$" target)
+                          (concat (file-name-sans-extension link) ".info")))
+             when (and file (file-exists-p file))
+             do (setf (elpaca<-build-steps e)
+                      (push (apply-partially #'elpaca--install-info-async file dir)
+                            (elpaca<-build-steps e)))
+             finally (elpaca--continue-build e))))
 
 (defun elpaca--dispatch-build-commands-process-sentinel (process event)
   "PROCESS EVENT."
