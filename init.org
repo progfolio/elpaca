@@ -159,7 +159,7 @@ It's a rough way of knowing when/if I need to optimize my init file.
 #+begin_src emacs-lisp :lexical t
 (add-hook 'elpaca-after-init-hook
           (lambda ()
-            (message "Emacs loaded in %s with %d garbage collecitons."
+            (message "Emacs loaded in %s with %d garbage collections."
                      (format "%.2f seconds"
                              (float-time
                               (time-subtract (current-time) before-init-time)))
