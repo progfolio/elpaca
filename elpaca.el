@@ -1370,8 +1370,8 @@ When INTERACTIVE is non-nil, message the list of dependents."
 (defmacro elpaca (order &rest body)
   "Install ORDER, then execute BODY.
 If ORDER is `nil`, defer BODY until orders have been processed."
-  (when (equal 'quote (car-safe order)) (setq order (cadr order)))
   (declare (indent 1))
+  (when (equal 'quote (car-safe order)) (setq order (cadr order)))
   `(progn
      ,@(when body (list `(push ',(cons (elpaca--first order) body)
                                (elpaca-q<-forms (car elpaca--queues)))))
