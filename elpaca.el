@@ -246,7 +246,7 @@ e.g. elisp forms may be printed via `prin1'."
   (processed 0)
   (status 'incomplete)
   (time (current-time))
-  autoloads forms elpacas)
+  pre post autoloads forms elpacas)
 
 (defvar elpaca--queues (list (elpaca-q<-create)) "List of elpaca queue objects.")
 
@@ -661,14 +661,18 @@ If REPLACE is non-nil, E's log is updated instead of appended."
 
 ;;;###autoload
 (defmacro elpaca-queue (&rest body)
-  "Execute BODY in its own queue."
+  "Execute BODY in new queue with [KEY VAL...] args.
+Accepted KEYS are :pre and :post which are hooks run around queue processing."
   (declare (debug t))
-  `(progn
-     (elpaca-split-queue)
-     ,@body
-     (elpaca-split-queue)))
-
-(defvar elpaca--finalize-queue-hook nil "Private hook run after a finalizing queue.")
+  (let* ((pre (when-let ((found (memq :pre body)))
+                (butlast found (- (length found) 2))))
+         (post (when-let ((found (memq :post body)))
+                 (butlast found (- (length found) 2)))))
+    (while (keywordp (car body)) (pop body) (pop body))
+    `(progn
+       (apply #'elpaca-split-queue ',(append pre post))
+       ,@body
+       (elpaca-split-queue))))
 
 (defun elpaca--finalize-queue (q)
   "Run Q's post isntallation functions:
@@ -687,7 +691,7 @@ If REPLACE is non-nil, E's log is updated instead of appended."
         (progn
           (run-hooks 'elpaca-after-init-hook)
           (elpaca-split-queue))
-      (run-hooks 'elpaca--finalize-queue-hook)
+      (when-let ((post (elpaca-q<-post q))) (funcall post))
       (run-hooks 'elpaca-post-queue-hook)
       (when next (elpaca--process-queue next)))))
 
@@ -1394,11 +1398,12 @@ The expansion is a string indicating the package has been disabled."
 (defvar elpaca--try-package-history nil "History for `elpaca-try'.")
 (declare-function elpaca-log--latest "elpaca-log")
 ;;;###autoload
-(defun elpaca-try (&rest orders)
-  "Try ORDERS.
+(defun elpaca-try (order)
+  "Try ORDER.
 Install the repo/build files on disk.
 Activate the corresponding package for the current session.
-ORDER's package is not made available during subsequent sessions."
+ORDER's package is not made available during subsequent sessions.
+When called interactively, ORDER is immediately processed, otherwise it queued."
   (interactive (list
                 (if (equal current-prefix-arg '(4))
                     (minibuffer-with-setup-hook #'backward-char
@@ -1410,12 +1415,12 @@ ORDER's package is not made available during subsequent sessions."
                                                           (elpaca--queued)))))))
                     (append (list (intern (plist-get recipe :package)))
                             recipe)))))
-  (setq elpaca-cache-autoloads nil)
-  (require 'elpaca-log)
-  (elpaca-log--latest)
-  (dolist (order orders)
-    ;;@FIX: wasteful to pad out the order to make it QUEUED.
-    (elpaca--process (cons (elpaca--first order) (elpaca--queue order)))))
+  (if (not (called-interactively-p 'interactive))
+      (elpaca--queue (elpaca--first order))
+    (require 'elpaca-log)
+    (elpaca-log--latest)
+    (elpaca-queue (eval `(elpaca ,order) t))
+    (elpaca--process-queue (nth 1 elpaca--queues))))
 
 (defun elpaca--process (queued)
   "Process QUEUED elpaca."
@@ -1431,6 +1436,7 @@ ORDER's package is not made available during subsequent sessions."
             (require 'elpaca-log)
             (elpaca-log "#unique !finished")
             (when (bound-and-true-p elpaca-log-buffer) (get-buffer-create elpaca-log-buffer)))))
+  (when-let ((pre (elpaca-q<-pre q))) (funcall pre))
   (if (and (not (elpaca-q<-elpacas q)) (elpaca-q<-forms q))
       (elpaca--finalize-queue q)
     (mapc #'elpaca--process (reverse (elpaca-q<-elpacas q)))))

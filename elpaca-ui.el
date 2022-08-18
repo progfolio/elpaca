@@ -529,42 +529,32 @@ The current package is its sole argument."
                                (file-exists-p repo)))))
                 (user-error "Package %S is not installed" p))))
 
-(defvar elpaca-log-auto-bury)
-(defvar elpaca-manager-buffer)
-(defvar elpaca-log-buffer)
-
-;;@FIX: doesn't get run after rebuilds because the queue is already finalized.
-;; do we want to pluck previously queued orders into a new queue on rebuild?
-(defun elpaca-ui--post-execute-marks ()
-  "Executed after `elpaca-ui-execute-marks'."
-  (setq elpaca--finalize-queue-hook nil)
-  (with-current-buffer elpaca-manager-buffer (elpaca-ui-search-refresh))
-  (when elpaca-log-auto-bury
-    (with-current-buffer elpaca-log-buffer (bury-buffer))))
-
+(declare-function elpaca-log--latest "elpaca-log")
 (defun elpaca-ui-execute-marks ()
   "Execute each action in `elpaca-ui-marked-packages'."
   (interactive)
-  (if (not elpaca-ui--marked-packages)
-      (user-error "No packages marked")
-    (deactivate-mark)
-    (elpaca-split-queue)
-    (setq elpaca--finalize-queue-hook '(elpaca-ui--post-execute-marks))
-    (cl-loop with setups
-             with actions
-             for (item . (_ . props)) in  elpaca-ui--marked-packages
-             for action = (plist-get props :action)
-             for setup = (plist-get props :setup)
-             when setup do (cl-pushnew setup setups)
-             when action do
-             (push (cons action item) actions)
-             finally do (progn
-                          (mapc #'funcall setups)
-                          (mapc (lambda (a) (funcall (car a) (cdr a))) actions)))
-    (setq elpaca-ui--marked-packages nil)
-    (elpaca-ui-search-refresh)
-    (when (functionp elpaca-ui-entries-function)
-      (funcall elpaca-ui-entries-function))))
+  (when (null elpaca-ui--marked-packages) (user-error "No marked packages"))
+  (deactivate-mark)
+  (eval
+   `(elpaca-queue
+     :pre  (lambda () (require 'elpaca-log) (elpaca-log--latest))
+     :post (lambda ()
+             (when-let ((buffer (get-buffer elpaca-log-buffer))
+                        (elpaca-log-auto-bury))
+               (bury-buffer buffer))
+             (when-let ((buffer (get-buffer elpaca-manager-buffer)))
+               (with-current-buffer buffer
+                 (when (functionp elpaca-ui-entries-function)
+                   (funcall elpaca-ui-entries-function))
+                 (elpaca-ui-search-refresh buffer))))
+     (elpaca nil
+             (with-current-buffer ,(current-buffer)
+               (cl-loop for (item action . props) in elpaca-ui--marked-packages
+                        for a = (plist-get props :action)
+                        when a do (funcall a item)
+                        do (pop elpaca-ui--marked-packages)))))
+   t)
+  (elpaca--process-queue (nth 1 elpaca--queues)))
 
 (defun elpaca-ui-send-input ()
   "Send input string to current process."
