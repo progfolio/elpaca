@@ -120,8 +120,7 @@ exclamation point to it. e.g. #!installed."
                              (define-key m (kbd "s") 'elpaca-ui-search)
                              (define-key m (kbd "t") 'elpaca-status)
                              (define-key m (kbd "u") 'elpaca-ui-mark-update)
-                             (define-key m (kbd "vb") 'elpaca-ui-visit-build)
-                             (define-key m (kbd "vr") 'elpaca-ui-visit-repo)
+                             (define-key m (kbd "v") 'elpaca-visit)
                              (define-key m (kbd "x") 'elpaca-ui-execute-marks)
                              m)
   "Keymap for `elpaca-ui-mode'.")
@@ -577,26 +576,6 @@ The current package is its sole argument."
       (let* ((input (read-string (format "Send input to %S: " (process-name process)))))
         (process-send-string process (concat input "\n")))
     (user-error "No running process associated with %S" (elpaca<-package e))))
-
-(defun elpaca-ui--visit (type)
-  "Visit current E's TYPE dir.
-TYPE is either the symbol `repo` or `build`."
-  (if-let ((id  (get-text-property (point) 'tabulated-list-id))
-           (e   (alist-get id (elpaca--queued)))
-           (dir (funcall (intern (format "elpaca<-%s-dir" type)) e))
-           ((file-exists-p dir)))
-      (dired dir)
-    (user-error "No %s dir associated with current line" type)))
-
-(defun elpaca-ui-visit-repo ()
-  "Visit repo associated with current package."
-  (interactive)
-  (elpaca-ui--visit 'repo))
-
-(defun elpaca-ui-visit-build ()
-  "Visit builds dir associated with current package."
-  (interactive)
-  (elpaca-ui--visit 'build))
 
 (defun elpaca-ui--visit-byte-comp-warning (file line col)
   "Visit warning location in FILE at LINE and COL."

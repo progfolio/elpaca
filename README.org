@@ -461,8 +461,7 @@ The following commands are available in the Elpaca manager buffer:
 | elpaca-ui-search           | s               | Filter current buffer by QUERY. If QUERY is nil, prompt for it. |
 | elpaca-status              | t               | Log most recent events for packages.                            |
 | elpaca-ui-mark-update      | u               | Mark package for update action.                                 |
-| elpaca-ui-visit-build      | v b             | Visit builds dir associated with current package.               |
-| elpaca-ui-visit-repo       | v r             | Visit repo associated with current package.                     |
+| elpaca-visit               | v               | Open ITEM’s local repository directory.                         |
 | elpaca-ui-execute-marks    | x               | Execute each action in ‘elpaca-ui-marked-packages’.             |
 
 * Example configuration

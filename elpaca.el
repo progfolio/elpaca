@@ -1704,5 +1704,23 @@ TYPE is either `:repo' or `:build' for ITEM's repo or build directory."
            (,(intern (format "elpaca<-%s-dir" (substring (symbol-name type) 1))) e)))
      ,@body))
 
+(declare-function elpaca-ui-current-package "elpaca-ui")
+;;;###autoload
+(defun elpaca-visit (item &optional build)
+  "Open ITEM's local repository directory.
+When BUILD is non-nil visit ITEM's build directory."
+  (interactive
+   (list (if (derived-mode-p 'elpaca-ui-mode)
+             (elpaca-ui-current-package)
+           (elpaca--read-queued (format "Visit package %s dir "
+                                        (if current-prefix-arg "build" "repo"))))
+         current-prefix-arg))
+  (if-let ((e (alist-get item (elpaca--queued)))
+           (dir (if build (elpaca<-build-dir e) (elpaca<-repo-dir e))))
+      (if (file-exists-p dir)
+          (find-file dir)
+        (user-error "Directory does not exist: %S" dir))
+    (user-error "%S is not a queued package" item)))
+
 (provide 'elpaca)
 ;;; elpaca.el ends here
