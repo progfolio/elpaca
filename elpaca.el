@@ -1382,7 +1382,7 @@ If ORDER is `nil`, defer BODY until orders have been processed."
 
 ;;;###autoload
 (defmacro elpaca-use-package (order &rest body)
-  "Execute BODY in `use-package' declartion after ORDER is finished.
+  "Execute BODY in `use-package' declaration after ORDER is finished.
 If the :disabled keyword is present in body, the package is completely ignored.
 This happens regardless of the value associated with :disabled.
 The expansion is a string indicating the package has been disabled."
