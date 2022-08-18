@@ -288,6 +288,10 @@ See `elpaca-menu-functions' for valid values of MENUS."
 Simplified version of `alist-get'."
   (cdr (assq key alist)))
 
+(defsubst elpaca--first (obj)
+  "Return `car' of OBJ if it is a list, else OBJ."
+  (if (listp obj) (car obj) obj))
+
 ;;@TODO: clean up interface.
 ;;;###autoload
 (defun elpaca-menu-item (&optional interactive symbol menus filter no-descriptions)
@@ -370,7 +374,7 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
                        (user-error "No recipe selected"))
                      t))
   (let* ((props (cdr-safe order))
-         (item (if (listp order) (car order) order))
+         (item (elpaca--first order))
          (nonheritablep (elpaca--inheritance-disabled-p props))
          (mods (unless nonheritablep (run-hook-with-args-until-success
                                       'elpaca-order-functions order)))
@@ -463,10 +467,6 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
                         (_              (signal 'wrong-type-argument
                                                 `(:host (github gitlab stringp) ,host ,recipe))))))
         (format "%s%s%s%s.git" (car protocol) host (cdr protocol) repo)))))
-
-(defsubst elpaca--first (obj)
-  "Return `car' of OBJ if it is a list, else OBJ."
-  (if (listp obj) (car obj) obj))
 
 (defun elpaca--build-steps1 (recipe)
   "Return a list of build functions from RECIPE."
