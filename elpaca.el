@@ -236,24 +236,19 @@ e.g. elisp forms may be printed via `prin1'."
   "\\(?:[[:space:]]*;+[[:space:]]*Package-Requires:[[:space:]]*\\(([^z-a]*?))\\)\\)"
   "Regexp matching the Package-Requires metadata in an elisp source file.")
 
-(defvar elpaca--queues nil
-  "List of elpaca queue objects.")
-
 (cl-defstruct (elpaca-q< (:constructor elpaca-q<-create)
                          (:type list)
                          (:copier nil)
                          (:named))
   "Queue to hold elpacas."
   (type (unless after-init-time 'init))
-  (id   (length elpaca--queues))
+  (id  (if (boundp 'elpaca--queues) (length elpaca--queues) 0))
   (processed 0)
   (status 'incomplete)
   (time (current-time))
   autoloads forms elpacas)
 
-;;@TODO: We should fix this so that the list is initialized in its defvar
-;; and properly set up before adding to it.
-(unless elpaca--queues (setq elpaca--queues (list (elpaca-q<-create))))
+(defvar elpaca--queues (list (elpaca-q<-create)) "List of elpaca queue objects.")
 
 (defun elpaca-merge-plists (&rest plists)
   "Return plist with set of unique keys from PLISTS.
