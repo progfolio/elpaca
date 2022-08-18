@@ -404,7 +404,8 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
   "pm" 'elpaca-manager
   "pl" 'elpaca-log
   "ps" 'elpaca-status
-  "pt" 'elpaca-try)
+  "pt" 'elpaca-try
+  "pv" 'elpaca-visit)
 #+end_src
 **** buffers
 #+begin_src emacs-lisp :lexical t
