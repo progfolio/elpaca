@@ -81,7 +81,7 @@
                          :recipe
                          `( :package ,id :repo ,url :url ,url
                             ,@(when-let ((ignored (plist-get props :ignored-files)))
-                                `(:files (:defaults (:not ,@ignored))))))))
+                                `(:files (:defaults (:exclude ,@ignored))))))))
 
 (defun elpaca-menu-non-gnu-elpa--write-cache ()
   "Write NonGNU ELPA menu item cache."
