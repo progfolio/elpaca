@@ -1419,7 +1419,18 @@ When called interactively, ORDER is immediately processed, otherwise it queued."
       (elpaca--queue (elpaca--first order))
     (require 'elpaca-log)
     (elpaca-log--latest)
-    (elpaca-queue (eval `(elpaca ,order) t))
+    (elpaca-queue
+     (eval `(elpaca ,order
+              ,(when-let (((listp order))
+                          (id (pop order)))
+                 `(progn
+                    (push (list ',id
+                                :source "elpaca-try"
+                                :description "user provided recipe"
+                                :recipe '(:pakcage ,(symbol-name id) ,@order))
+                          elpaca--menu-items-cache)
+                    (elpaca--write-menu-cache))))
+           t))
     (elpaca--process-queue (nth 1 elpaca--queues))))
 
 (defun elpaca--process (queued)
