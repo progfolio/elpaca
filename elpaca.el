@@ -1423,6 +1423,8 @@ When called interactively, ORDER is immediately processed, otherwise it queued."
      (eval `(elpaca ,order
               ,(when-let (((listp order))
                           (id (pop order)))
+                 ;;@TODO: implement as a proper menu function?
+                 ;;What would the semantics of an update be here?
                  `(progn
                     (push (list ',id
                                 :source "elpaca-try"
