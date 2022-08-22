@@ -1426,11 +1426,10 @@ When called interactively, ORDER is immediately processed, otherwise it queued."
                  ;;@TODO: implement as a proper menu function?
                  ;;What would the semantics of an update be here?
                  `(progn
-                    (push (list ',id
-                                :source "elpaca-try"
+                    (setf (alist-get ',id elpaca--menu-items-cache)
+                          (list :source "elpaca-try"
                                 :description "user provided recipe"
-                                :recipe '(:pakcage ,(symbol-name id) ,@order))
-                          elpaca--menu-items-cache)
+                                :recipe '(:pakcage ,(symbol-name id) ,@order)))
                     (elpaca--write-menu-cache))))
            t))
     (elpaca--process-queue (nth 1 elpaca--queues))))
