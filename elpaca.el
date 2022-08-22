@@ -1044,21 +1044,27 @@ The keyword's value is expected to be one of the following:
                     (car (elpaca--directory-files-recursively default-directory regexp))
                     ;; Best guess if there is no file matching the package name...
                     (car (directory-files default-directory nil "\\.el$" 'nosort))
-                    (error "Unable to find main elisp file for %S" package))))
-        (unless (file-exists-p default-directory)
-          (error "Package repository not on disk: %S" (elpaca<-recipe e)))
-        (with-temp-buffer
-          (insert-file-contents-literally main)
-          (goto-char (point-min))
-          (if (string-suffix-p "-pkg.el" main)
-              (eval (nth 4 (read (current-buffer))))
-            (let ((case-fold-search t))
-              (when (re-search-forward elpaca--package-requires-regexp nil 'noerror)
-                (condition-case err
-                    ;; Replace comment delimiters in multi-line package-requires metadata.
-                    (read (replace-regexp-in-string ";" "" (match-string 1)))
-                  ((error)
-                   (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))))
+                    (error "Unable to find main elisp file for %S" package)))
+             (deps
+              (if (not (file-exists-p default-directory))
+                  (error "Package repository not on disk: %S" (elpaca<-recipe e))
+                (with-temp-buffer
+                  (insert-file-contents-literally main)
+                  (goto-char (point-min))
+                  (if (string-suffix-p "-pkg.el" main)
+                      (eval (nth 4 (read (current-buffer))))
+                    (let ((case-fold-search t))
+                      (when (re-search-forward elpaca--package-requires-regexp nil 'noerror)
+                        (condition-case err
+                            ;; Replace comment delimiters in multi-line package-requires metadata.
+                            (read (replace-regexp-in-string ";" "" (match-string 1)))
+                          ((error)
+                           (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))))
+        (cl-loop for dep in deps ; convert naked symbol or (symbol) to (symbol "0")
+                 collect (if (or (symbolp dep) (null (cdr-safe dep)))
+                             (list (elpaca--first dep) "0")
+                           dep)))))
+
 
 ;;@DECOMPOSE: The body of this function is similar to `elpaca--clone-dependencies'.
 ;; Refactor into a macro to operate on dependencies?
