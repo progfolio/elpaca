@@ -456,17 +456,19 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
       recipe
     (if (elpaca--full-repo-protocol-p repo)
         repo
-      (let ((protocol (pcase protocol
-                        ('https '("https://" . "/"))
-                        ('ssh   '("git@" . ":"))
-                        (_      (signal 'wrong-type-argument `((https ssh) ,protocol)))))
-            (host     (pcase host
-                        ('github       "github.com")
-                        ('gitlab       "gitlab.com")
-                        ((pred stringp) host)
-                        (_              (signal 'wrong-type-argument
-                                                `(:host (github gitlab stringp) ,host ,recipe))))))
-        (format "%s%s%s%s.git" (car protocol) host (cdr protocol) repo)))))
+      (let ((p (pcase protocol
+                 ('https '("https://" . "/"))
+                 ('ssh   '("git@" . ":"))
+                 (_      (signal 'wrong-type-argument `((https ssh) ,protocol)))))
+            (h (pcase host
+                 ('github       "github.com")
+                 ('gitlab       "gitlab.com")
+                 ('codeberg     "codeberg.org")
+                 ('sourcehut    "git.sr.ht")
+                 ((pred stringp) host)
+                 (_ (signal 'wrong-type-argument
+                            `(:host (github gitlab stringp) ,host ,recipe))))))
+        (concat (car p) h (cdr p) (when (eq host 'sourcehut) "~") repo ".git")))))
 
 (defun elpaca--build-steps1 (recipe)
   "Return a list of build functions from RECIPE."
