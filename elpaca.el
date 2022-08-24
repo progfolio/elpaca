@@ -1474,6 +1474,7 @@ When called interactively, ORDER is immediately processed, otherwise it queued."
   (when-let ((e (elpaca-alist-get item (elpaca--queued))))
     (or (file-exists-p (elpaca<-repo-dir e)) (file-exists-p (elpaca<-build-dir e)))))
 
+;;@FIX: Should not delete user's declared package if it is a dependency
 ;;;###autoload
 (defun elpaca-delete (id &optional force deps ignored)
   "Remove a package with ID from item cache and disk.
