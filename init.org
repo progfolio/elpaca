@@ -1545,7 +1545,7 @@ ielm.el commentary
 #+end_quote
 
 #+begin_src emacs-lisp :lexical t
-(use-feature inferior-emacs-lisp-mode
+(use-feature ielm
   :general
   (global-leader
     :major-modes '(inferior-emacs-lisp-mode)
