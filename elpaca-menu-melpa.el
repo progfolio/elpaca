@@ -77,7 +77,8 @@
     (condition-case-unless-debug _
         (when-let ((recipe (read (buffer-string)))
                    (package (pop recipe))
-                   ((member (plist-get recipe :fetcher) '(git github gitlab))))
+                   ((member (plist-get recipe :fetcher)
+                            '(git github gitlab sourcehut codeberg))))
           (setq recipe
                 (append (list :package (symbol-name package)) recipe))
           (unless (plist-member recipe :files)
