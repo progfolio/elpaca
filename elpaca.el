@@ -468,7 +468,8 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
                  ((pred stringp) host)
                  (_ (signal 'wrong-type-argument
                             `(:host (github gitlab stringp) ,host ,recipe))))))
-        (concat (car p) h (cdr p) (when (eq host 'sourcehut) "~") repo ".git")))))
+        (concat (car p) h (cdr p) (when (eq host 'sourcehut) "~") repo
+                (unless (eq host 'sourcehut) ".git"))))))
 
 (defun elpaca--build-steps1 (recipe)
   "Return a list of build functions from RECIPE."
