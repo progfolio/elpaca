@@ -889,10 +889,15 @@ If it matches, the E associated with process has its STATUS updated."
 
 (defun elpaca--compile-info-process-sentinel (process event)
   "Sentinel for info compilation PROCESS EVENT."
-  (let ((e  (process-get process :elpaca)))
-    (elpaca--update-info e (if (equal event "finished\n")
+  (let* ((e  (process-get process :elpaca))
+         (finished (equal event "finished\n")))
+    (elpaca--update-info e (if finished
                                "Info compiled"
                              (format "Failed to compile Info: %S" (string-trim event))))
+    (unless finished
+      (setf (elpaca<-build-steps e)
+            (cl-set-difference (elpaca<-build-steps e)
+                               '(elpaca--install-info elpaca--add-info-path))))
     (elpaca--continue-build e)))
 
 (defun elpaca--compile-info (e)
