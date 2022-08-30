@@ -1445,7 +1445,7 @@ When called interactively, ORDER is immediately processed, otherwise it queued."
                  `(progn
                     (setf (alist-get ',id elpaca--menu-items-cache)
                           (list :source "elpaca-try"
-                                :description "user provided recipe"
+                                :description "user-provided recipe"
                                 :recipe '(:pakcage ,(symbol-name id) ,@order)))
                     (elpaca--write-menu-cache))))
            t))
