@@ -347,9 +347,12 @@ This is faster (what you want with non-interactive calls)."
 
 ;;;###autoload
 (defun elpaca-update-menus (&rest menus)
-  "Update all menus in MENUS or `elpaca-menu-functions'."
-  (interactive (mapcar #'intern (completing-read-multiple "Update Menus: "
-                                                          elpaca-menu-functions)))
+  "Update all menus in MENUS or `elpaca-menu-functions'.
+When called interactively with \\[universal-argument] update all menus."
+  (interactive (if (equal current-prefix-arg '(4))
+                   elpaca-menu-functions
+                 (mapcar #'intern (completing-read-multiple "Update Menus: "
+                                                            elpaca-menu-functions))))
   (let ((elpaca-menu-functions (or menus elpaca-menu-functions)))
     (run-hook-with-args 'elpaca-menu-functions 'update))
   (elpaca--menu-items 'recache))
