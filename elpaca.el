@@ -1548,24 +1548,22 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
                                     (queued (elpaca--file-package))
                                     ((car queued))))
                          (elpaca--read-queued "Rebuild package: "))))
-  (if-let ((queued (assoc item (elpaca--queued))))
-      (let ((e (cdr queued)))
-        (elpaca--update-info e "Rebuilding" 'rebuilding)
-        (setq elpaca-cache-autoloads nil)
-        (when (eq (elpaca--status e) 'finished)
-          (setf (elpaca<-build-steps e)
-                (cl-remove-if (lambda (step)
-                                (member step '(elpaca--clone
-                                               elpaca--add-remotes
-                                               elpaca--fetch
-                                               elpaca--checkout-ref
-                                               elpaca--clone-dependencies)))
-                              (copy-tree elpaca-build-steps))))
-        (setf (elpaca<-queue-time e) (current-time))
-        (setf (elpaca<-statuses e) '(queued))
-        (unless hide (require 'elpaca-log) (elpaca-log--latest))
-        (elpaca--process queued))
-    (user-error "Package %S is not queued" item)))
+  (let* ((queued (assoc item (elpaca--queued)))
+         (e (cdr queued)))
+    (unless e (user-error "Package %S is not queued" item))
+    (when (eq (elpaca--status e) 'finished)
+      (setf (elpaca<-build-steps e) (cl-set-difference elpaca-build-steps
+                                                       '(elpaca--clone
+                                                         elpaca--add-remotes
+                                                         elpaca--fetch
+                                                         elpaca--checkout-ref
+                                                         elpaca--clone-dependencies))))
+    (elpaca--update-info e "Rebuilding" 'rebuilding)
+    (setq elpaca-cache-autoloads nil)
+    (setf (elpaca<-queue-time e) (current-time))
+    (setf (elpaca<-statuses e) '(queued))
+    (unless hide (require 'elpaca-log) (elpaca-log--latest))
+    (elpaca--process queued)))
 
 (defun elpaca--log-updates (e)
   "Log E's fetched commits."
