@@ -1552,6 +1552,7 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
          (e (cdr queued)))
     (unless e (user-error "Package %S is not queued" item))
     (when (eq (elpaca--status e) 'finished)
+      ;;@MAYBE: remove Info/load-path entries?
       (setf (elpaca<-build-steps e) (cl-set-difference elpaca-build-steps
                                                        '(elpaca--clone
                                                          elpaca--add-remotes
