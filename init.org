@@ -250,10 +250,10 @@ This package gets the correct environment variables so elpaca can use the ssh pr
 ;; We need this loaded for SSH protocol
 (elpaca-queue
  (elpaca keychain-environment
-         (keychain-refresh-environment)))
+   (keychain-refresh-environment)))
 (elpaca-queue
  (elpaca (melpulls :host github :repo "progfolio/melpulls" :protocol ssh)
-         (add-to-list 'elpaca-menu-functions 'melpulls)))
+   (add-to-list 'elpaca-menu-functions 'melpulls)))
 #+end_src
 
 ** packaging
