@@ -3479,6 +3479,11 @@ https://github.com/justbur/emacs-which-key
     "r" 'winner-redo)
   :config (winner-mode))
 #+end_src
+** window
+#+begin_src emacs-lisp :lexical t
+(use-feature window
+  :custom (switch-to-buffer-obey-display-actions t))
+#+end_src
 ** wordel
 #+begin_src emacs-lisp :lexical t
 (elpaca-use-package (wordel :host github :repo "progfolio/wordel"
