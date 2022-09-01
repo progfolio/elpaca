@@ -94,6 +94,9 @@ However, loading errors will prevent later package autoloads from loading."
 (defvar elpaca-cache-directory (expand-file-name "cache" elpaca-directory)
   "Location of the cache directory.")
 
+(defvar elpaca-builds-directory (expand-file-name "builds" elpaca-directory)
+  "Location of the builds directory.")
+
 (defcustom elpaca-makeinfo-executable (executable-find "makeinfo")
   "Path of the makeinfo executable."
   :type 'string)
@@ -446,8 +449,7 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
 
 (defun elpaca-build-dir (recipe)
   "Return RECIPE's build dir."
-  (expand-file-name (plist-get recipe :package)
-                    (expand-file-name "builds/" elpaca-directory)))
+  (expand-file-name (plist-get recipe :package) elpaca-builds-directory))
 
 (defun elpaca--repo-uri (recipe)
   "Return repo URI from RECIPE."
@@ -1004,7 +1006,7 @@ The keyword's value is expected to be one of the following:
                          :command (list
                                    emacs "-Q"
                                    "-L" "./"
-                                   "-L" (expand-file-name "builds/elpaca/" elpaca-directory)
+                                   "-L" (expand-file-name "elpaca/" elpaca-builds-directory)
                                    "--batch"
                                    "--eval" (let (print-level print-length print-circle)
                                               (format "%S" program)))

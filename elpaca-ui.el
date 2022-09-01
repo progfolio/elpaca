@@ -54,7 +54,7 @@
                                   (cl-set-difference
                                    (cl-remove-if-not
                                     #'file-directory-p
-                                    (nthcdr 2 (directory-files (expand-file-name "builds/" elpaca-directory) t)))
+                                    (nthcdr 2 (directory-files elpaca-builds-directory t)))
                                    (mapcar (lambda (q) (elpaca<-build-dir (cdr q))) (elpaca--queued))
                                    :test #'equal))))
     (unique    . (lambda (items) (cl-remove-duplicates items :key #'car :from-end t)))
