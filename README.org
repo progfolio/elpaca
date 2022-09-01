@@ -1,6 +1,7 @@
 #+title: Elpaca: An Elisp Package Manager
 #+author: Nicholas Vollmer
 #+options: exports:both
+#+property: header-args :noweb yes
 
 #+html: <p align="center"><img src="./images/elpaca.svg" /></p>
 
@@ -11,12 +12,15 @@ It allows users to find, install, update, and remove third-party packages for Em
 It is a replacement for the built-in Emacs package manager, package.el.
 
 * Installation
-If you're impatient, take a look at the [[#example-configuration][example configuration]]
+If you're impatient, take a look at the [[./test/example-init.el][example configuration]]
 ** Requirements
 - Emacs >= 27.1
 - git (minimum version TBD)
 - Windows users must be able to create symlinks.
 ** Bootstrap Snippet
+:PROPERTIES:
+:header-args: :noweb-ref bootstrap
+:END:
 To install Elpaca, add the following bootstrapping snippet to your init.el.
 It must come before any calls to other Elpaca functions/macros.
 This will clone Elpaca into your =user-emacs-directory= under the =elpaca= subdirectory.
@@ -472,35 +476,11 @@ The following commands are available in the Elpaca manager buffer:
 
 The following is an example init.el using Elpaca:
 
-#+begin_src emacs-lisp :lexical t :tangle ./test/example-init.el :results silent
+#+begin_src emacs-lisp :lexical t :tangle ./test/example-init.el :results silent :exports none
 ;;; init-elpaca.el --- ELPACA INIT DEMO   -*- lexical-binding: t; -*-
+
 ;; Bootstrap Elpaca
-(declare-function elpaca-generate-autoloads "elpaca")
-(defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
-(when-let ((elpaca-repo (expand-file-name "repos/elpaca/" elpaca-directory))
-           (elpaca-build (expand-file-name "builds/elpaca/" elpaca-directory))
-           (elpaca-target (if (file-exists-p elpaca-build) elpaca-build elpaca-repo))
-           (elpaca-url  "https://www.github.com/progfolio/elpaca.git")
-           ((add-to-list 'load-path elpaca-target))
-           ((not (file-exists-p elpaca-repo)))
-           (buffer (get-buffer-create "*elpaca-bootstrap*")))
-  (condition-case-unless-debug err
-      (progn
-        (unless (zerop (call-process "git" nil buffer t "clone" elpaca-url elpaca-repo))
-          (error "%s" (list (with-current-buffer buffer (buffer-string)))))
-        (byte-recompile-directory elpaca-repo 0 'force)
-        (require 'elpaca)
-        (elpaca-generate-autoloads "elpaca" elpaca-repo)
-        (kill-buffer buffer))
-    ((error)
-     (delete-directory elpaca-directory 'recursive)
-     (with-current-buffer buffer
-       (goto-char (point-max))
-       (insert (format "\n%S" err))
-       (display-buffer buffer)))))
-(require 'elpaca-autoloads)
-(add-hook 'after-init-hook #'elpaca-process-queues)
-(elpaca (elpaca :host github :repo "progfolio/elpaca"))
+<<bootstrap>>
 
 ;; Install use-package
 (elpaca use-package (require 'use-package))
@@ -508,5 +488,9 @@ The following is an example init.el using Elpaca:
 (elpaca-use-package evil :demand t)
 ;; Install a package from a user-provided recipe
 (elpaca (yodel :host github :repo "progfolio/yodel"))
+
+;; Local Variables:
+;; no-byte-compile: t
+;; End:
 #+end_src
 #  LocalWords:  elpaca Elpaca elisp repo minibuffer website init ui UI unmark Unmark plist alist MELPA programmatic

@@ -1,9 +1,11 @@
 ;;; init-elpaca.el --- ELPACA INIT DEMO   -*- lexical-binding: t; -*-
+
 ;; Bootstrap Elpaca
 (declare-function elpaca-generate-autoloads "elpaca")
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
+(defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (when-let ((elpaca-repo (expand-file-name "repos/elpaca/" elpaca-directory))
-           (elpaca-build (expand-file-name "builds/elpaca/" elpaca-directory))
+           (elpaca-build (expand-file-name "elpaca/" elpaca-builds-directory))
            (elpaca-target (if (file-exists-p elpaca-build) elpaca-build elpaca-repo))
            (elpaca-url  "https://www.github.com/progfolio/elpaca.git")
            ((add-to-list 'load-path elpaca-target))
@@ -26,6 +28,7 @@
 (require 'elpaca-autoloads)
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca (elpaca :host github :repo "progfolio/elpaca"))
+(setq package-enable-at-startup nil)
 
 ;; Install use-package
 (elpaca use-package (require 'use-package))
