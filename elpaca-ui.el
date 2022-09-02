@@ -132,6 +132,7 @@ exclamation point to it. e.g. #!installed."
 It recieves one argument, the parsed search query list.")
 (defvar-local elpaca-ui-entries-function nil
   "Function responsible for returning the UI buffer's `tabulated-list-entries'.")
+(defvar-local elpaca-ui--history nil "History for `elpaca-ui' minibuffer.")
 (defvar url-http-end-of-headers)
 
 ;;;; Functions:
@@ -418,7 +419,8 @@ If QUERY is nil, the contents of the minibuffer are used instead."
           (list (string-trim
                  (condition-case nil
                      (read-from-minibuffer "Search (empty to clear): "
-                                           (and current-prefix-arg elpaca-ui-search-filter))
+                                           (and current-prefix-arg elpaca-ui-search-filter)
+                                           nil nil elpaca-ui--history)
                    (quit elpaca-ui-search-filter))))))
   (elpaca-ui--ensure-mode)
   (when (string-empty-p query) (setq query elpaca-ui-default-query))

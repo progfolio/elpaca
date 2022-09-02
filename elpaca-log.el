@@ -25,6 +25,7 @@
 ;;; Code:
 (require 'elpaca-ui)
 (defvar elpaca-log-buffer "*elpaca-log*")
+(defvar elpaca-log--history nil "`elpaca-log' minibuffer history.")
 
 (defcustom elpaca-log-default-search-query ".*"
   "Default query for `elpaca-log-buffer'."
@@ -97,6 +98,7 @@ If FILTER is non-nil, it is used as the initial search query."
             elpaca-ui-entries-function #'elpaca-log--entries
             elpaca-ui-header-line-prefix (propertize "Elpaca Log" 'face '(:weight bold))
             elpaca-ui-default-query elpaca-log-default-search-query
+            elpaca-ui--history 'elpaca-log--history
             tabulated-list-use-header-line nil
             tabulated-list-sort-key '("Time"))
       (tabulated-list-init-header))

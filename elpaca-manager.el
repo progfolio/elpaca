@@ -26,6 +26,7 @@
 (require 'elpaca-ui)
 
 (defvar elpaca-manager-buffer "*elpaca-manager*")
+(defvar elpaca-manager--history nil "`elpaca-manager' minibuffer history.")
 (defvar-local elpaca-manager--entry-cache nil "Cache of all menu items.")
 
 (defcustom elpaca-manager-default-search-query "#unique !#installed"
@@ -69,6 +70,7 @@ If RECACHE is non-nil, recompute menu items from `elpaca-menu-item-functions'."
               elpaca-ui-entries-function #'elpaca-manager--entries
               elpaca-ui-header-line-prefix (propertize "Elpaca Manager" 'face '(:weight bold))
               tabulated-list-use-header-line nil
+              elpaca-ui--history 'elpaca-manager--history
               elpaca-ui-default-query elpaca-manager-default-search-query)
         (tabulated-list-init-header))
       (when (or (not initializedp) recache)
