@@ -539,7 +539,7 @@ The current package is its sole argument."
   (deactivate-mark)
   (eval
    `(elpaca-queue
-     :pre  (lambda () (require 'elpaca-log) (elpaca-log--latest))
+     :pre  (lambda () (require 'elpaca-log) (require 'elpaca-manager) (elpaca-log--latest))
      :post (lambda ()
              (when-let ((buffer (get-buffer elpaca-log-buffer))
                         (elpaca-log-auto-bury))
