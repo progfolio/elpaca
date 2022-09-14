@@ -1,0 +1,23 @@
+name: Feature Request
+description: Suggest a feature
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: Please keep issues focused to a single topic and provide all the requested details.
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature Description
+      description: Describe the proposed feature
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      description: Please ensure you have checked the current documentation (including command/function docstrings) to see if the feature already exists.
+      options:
+        - label: The feature I'm proposing does not already exist in Elpaca
+          required: true
