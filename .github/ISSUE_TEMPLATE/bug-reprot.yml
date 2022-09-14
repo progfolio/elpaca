@@ -1,0 +1,38 @@
+name: Bug Report
+description: File a bug report
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out a bug report.
+        Please keep reports focused to a single issue and provide all the requested details.
+  - type: textarea
+    id: emacs-version
+    attributes:
+      label: Emacs Version
+      description: Output of the emacs-version command
+      placeholder: M-x emacs-version
+    validations:
+      required: true
+  - type: textarea
+    id: operating-system
+    attributes:
+      label: Operating System
+      description: What operating system are you using Emacs on?
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: Describe the problem, what you expected to happen, and what actually happened.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: emacs-lisp
