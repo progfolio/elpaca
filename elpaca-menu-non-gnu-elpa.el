@@ -55,7 +55,6 @@
 (defun elpaca-menu-non-gnu-elpa--metadata ()
   "Return alist of package metadata."
   (when (libxml-available-p)
-    (require 'url)
     (require 'dom)
     (with-current-buffer (url-retrieve-synchronously "https://elpa.nongnu.org/nongnu/")
       (when-let ((html (libxml-parse-html-region (point-min) (point-max)))
