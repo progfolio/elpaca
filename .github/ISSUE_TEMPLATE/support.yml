@@ -28,6 +28,12 @@ body:
       description: Your question
     validations:
       required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant information
+      description: If applicable, please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: emacs-lisp
   - type: checkboxes
     id: confirmation
     attributes:
