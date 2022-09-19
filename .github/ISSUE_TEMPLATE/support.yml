@@ -1,0 +1,38 @@
+name: Support
+description: Ask a question about using Elpaca
+title: "[Support]: "
+labels: ["support"]
+body:
+  - type: markdown
+    attributes:
+      value: Please keep issues focused to a single topic and provide all the requested details.
+  - type: textarea
+    id: emacs-version
+    attributes:
+      label: Emacs Version
+      description: Output of the emacs-version command
+      placeholder: M-x emacs-version
+    validations:
+      required: true
+  - type: textarea
+    id: operating-system
+    attributes:
+      label: Operating System
+      description: What operating system are you using Emacs on?
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: question
+      description: Your question
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      description: Please ensure you have checked the current documentation (including command/function docstrings) to see if it answers your question.
+      options:
+        - label: I've read the documentation and I still am unsure.
+          required: true
