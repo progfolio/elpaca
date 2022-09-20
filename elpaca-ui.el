@@ -550,11 +550,11 @@ The current package is its sole argument."
                    (funcall elpaca-ui-entries-function))
                  (elpaca-ui-search-refresh buffer))))
      (elpaca nil
-             (with-current-buffer ,(current-buffer)
-               (cl-loop for (item action . props) in elpaca-ui--marked-packages
-                        for a = (plist-get props :action)
-                        when a do (funcall a item)
-                        do (pop elpaca-ui--marked-packages)))))
+       (with-current-buffer ,(current-buffer)
+         (cl-loop for (item action . props) in elpaca-ui--marked-packages
+                  for a = (plist-get props :action)
+                  when a do (funcall a item)
+                  do (pop elpaca-ui--marked-packages)))))
    t)
   (elpaca--process-queue (nth 1 elpaca--queues)))
 
