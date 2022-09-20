@@ -1245,6 +1245,13 @@ https://www.flycheck.org/en/latest/
     "fp" 'flymake-goto-prev-error)
   :hook (flymake-mode . +flymake-toggle-diagnostics-buffer)
   :config
+  (defun +flymake-elpaca-bytecomp-load-path ()
+    "Augment `elisp-flymake-byte-compile-load-path' to support Elpaca."
+    (setq-local elisp-flymake-byte-compile-load-path
+                `("./" ,@(mapcar #'file-name-as-directory
+                                 (nthcdr 2 (directory-files (expand-file-name "builds" elpaca-directory) 'full))))))
+  (add-hook 'flymake-mode-hook #'+flymake-elpaca-bytecomp-load-path)
+
   (defun +flymake-toggle-diagnostics-buffer ()
     "Toggle the diagnostics buffer when entering/exiting `flymake-mode'."
     (let* ((root (vc-root-dir))
