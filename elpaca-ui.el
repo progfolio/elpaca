@@ -62,6 +62,7 @@
     (latest    . (lambda (items) (butlast (reverse (sort (copy-tree items) #'elpaca-log--sort-chronologically))
                                           elpaca-ui--prev-entry-count)))
     (linked-errors . elpaca-ui--byte-comp-warnings)
+    (update-log . elpaca-ui--commit-info)
     (random    . (lambda (items &optional limit)
                    (if (< (length items) (or limit 10))
                        items
@@ -606,6 +607,42 @@ The current package is its sole argument."
            copy)
        entry))
    entries))
+
+(defun elpaca-ui--commit-info (entries)
+  "Apply faces to commit info in ENTRIES."
+  (cl-loop with desc = t
+           for entry in entries
+           collect
+           (if-let (((equal (aref (cadr entry) 1) "update-log"))
+                    (copy (copy-tree entry))
+                    (e (get-text-property (point-min) 'elpaca (aref (cadr copy) 0)))
+                    (repo (elpaca<-repo-dir e))
+                    (cols (cadr copy))
+                    (info (aref cols 2))
+                    ((not (equal info "Update Log"))))
+               (progn
+                 (setf (aref (cadr copy) 2)
+                       (cond
+                        ((string-match "\\(?:^commit \\([^z-a]*\\)$\\)" info)
+                         (setq desc t)
+                         (concat (propertize "commit" 'face '(:weight bold))
+                                 " "
+                                 (if (fboundp 'magit-show-commit)
+                                     (elpaca-ui--buttonize (match-string 1 info)
+                                                           (lambda (rev)
+                                                             (let ((default-directory repo))
+                                                               (magit-show-commit rev)))
+                                                           (car (split-string (match-string 1 info) " ")))
+                                   (match-string 1 info))))
+                        ((string-match "\\(?:^\\([^[:space:]][[:alpha:]]+:\\)\\([^z-a]*?$\\)\\)" info)
+                         (when (string-match-p "Date" info) (setq desc nil))
+                         (concat (propertize (match-string 1 info) 'face '(:weight bold))
+                                 (match-string 2 info)))
+                        ((eq desc t) (propertize info 'face 'elpaca-finished))
+
+                        (t info)))
+                 copy)
+             entry)))
 
 (provide 'elpaca-ui)
 ;;; elpaca-ui.el ends here

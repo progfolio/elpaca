@@ -1570,7 +1570,7 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
 
 (defun elpaca--log-updates (e)
   "Log E's fetched commits."
-  (elpaca--update-info e "" 'update-log)
+  (elpaca--update-info e "Update Log" 'update-log)
   (let* ((default-directory (elpaca<-repo-dir e))
          (process (make-process
                    :name (format "elpaca-log-updates-%s" (elpaca<-package e))
