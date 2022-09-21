@@ -475,7 +475,7 @@ The following commands are available in the Elpaca manager buffer:
 :CUSTOM_ID: example-configuration
 :END:
 
-The following is an example init.el using Elpaca:
+The following src block can be tangled to generate the [[./test/example-init.el][example configuration]]
 
 #+begin_src emacs-lisp :lexical t :tangle ./test/example-init.el :results silent
 ;;; init-elpaca.el --- ELPACA INIT DEMO   -*- lexical-binding: t; -*-
