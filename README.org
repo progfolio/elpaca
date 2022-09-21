@@ -469,6 +469,7 @@ The following commands are available in the Elpaca manager buffer:
 | elpaca-visit               | v               | Open ITEM’s local repository directory.                         |
 | elpaca-ui-execute-marks    | x               | Execute each action in ‘elpaca-ui-marked-packages’.             |
 
+
 * Example configuration
 :PROPERTIES:
 :CUSTOM_ID: example-configuration
@@ -493,4 +494,5 @@ The following is an example init.el using Elpaca:
 ;; no-byte-compile: t
 ;; End:
 #+end_src
+
 #  LocalWords:  elpaca Elpaca elisp repo minibuffer website init ui UI unmark Unmark plist alist MELPA programmatic
