@@ -1573,15 +1573,16 @@ ielm.el commentary
     "c"  'comint-clear-buffer)
   ;;@TODO: fix this command.
   ;;This should be easier
-  (+general-global-application "i" (lambda ()
-                                     (interactive)
-                                     (let* ((b (current-buffer))
-                                            (i (format "*ielm<%s>*" b)))
-                                       (setq ielm-prompt (concat (buffer-name b) ">"))
-                                       (ielm i)
-                                       (ielm-change-working-buffer b)
-                                       (next-buffer)
-                                       (switch-to-buffer-other-window i)))))
+  (+general-global-application "i"
+    '("ielm" . (lambda ()
+      (interactive)
+      (let* ((b (current-buffer))
+             (i (format "*ielm<%s>*" b)))
+        (setq ielm-prompt (concat (buffer-name b) ">"))
+        (ielm i)
+        (ielm-change-working-buffer b)
+        (next-buffer)
+        (switch-to-buffer-other-window i))))))
 #+end_src
 ** i3wm-config-mode
 #+begin_quote
