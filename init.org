@@ -1097,6 +1097,7 @@ Ement.el is a new Matrix client for Emacs. It aims to be simple, fast, featurefu
 
 #+begin_src emacs-lisp :lexical t
 (elpaca-use-package (ement :host github :repo "alphapapa/ement.el")
+  :custom (ement-room-avatars t)
   :config
   (define-advice ement-api-error (:around (fn &rest args) "ignore-not-hosted-error")
     "Ignore a spurious(?) error from Matrix home server."
