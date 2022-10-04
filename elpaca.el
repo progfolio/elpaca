@@ -424,9 +424,10 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
   (let* ((local-repo (plist-get recipe :local-repo))
          (url (plist-get recipe :url))
          (repo (plist-get recipe :repo))
+         (pkg (plist-get recipe :package))
          (host (or (plist-get recipe :host) (plist-get recipe :fetcher)))
          (user nil)
-         (info (intern (concat url repo (symbol-name host))))
+         (info (intern (concat pkg url repo (and host (symbol-name host)))))
          (mono-repo (alist-get info elpaca--repo-dirs))
          (name (cond
                 (local-repo
@@ -439,6 +440,7 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
                 (repo
                  (setq user (elpaca--repo-user repo))
                  (elpaca--repo-name repo))
+                (pkg pkg)
                 (t (error "Unable to determine repo name"))))
          (dir (if (and (not mono-repo)
                        (member name (mapcar #'cdr elpaca--repo-dirs)))
