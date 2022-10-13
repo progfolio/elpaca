@@ -1106,6 +1106,7 @@ Ement.el is a new Matrix client for Emacs. It aims to be simple, fast, featurefu
       ((error)
        (unless (string-match-p "User is not hosted on this homeserver" (cadr err))
          (signal 'ement-api-error (cdr err))))))
+  (add-hook 'ement-room-compose-hook #'flyspell-mode)
   :general
   (+general-global-application
     "M" '(:ignore t :which-key "Matrix")
