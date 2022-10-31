@@ -500,3 +500,10 @@ The following src block can be tangled to generate the [[./test/example-init.el]
 #+end_src
 
 #  LocalWords:  elpaca Elpaca elisp repo minibuffer website init ui UI unmark Unmark plist alist MELPA programmatic
+* FAQs
+** Why doesn't my after-init-hook function work with Elpaca?
+Elpaca processes your init file to build its order queue.
+=after-init-hook= is run immediately after the order queue is built, but
+before Elpaca has installed any packages or run their configuration bodies.
+=elpaca-after-init-hook= runs after all orders queued during init have finished processing.
+It is only run once after init.
