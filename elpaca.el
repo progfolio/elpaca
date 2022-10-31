@@ -620,7 +620,10 @@ If N is nil return a list of all queued elpacas."
 
 (defsubst elpaca--continue-build (e)
   "Run E's next build step."
-  (funcall (or (pop (elpaca<-build-steps e)) #'elpaca--finalize) e))
+  (let ((fn (or (pop (elpaca<-build-steps e)) #'elpaca--finalize)))
+    (condition-case-unless-debug err
+        (funcall fn e)
+      ((error) (elpaca--fail e (format "%s: %S" fn err))))))
 
 (defun elpaca--continue-mono-repo-dependency (e)
   "Continue processing E after its mono-repo is in the proper state."
