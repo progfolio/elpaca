@@ -416,7 +416,9 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
 (defun elpaca--full-repo-protocol-p (string)
   "Return t if STRING specifies a protocol."
   ;;@TODO: this needs to be more robust.
-  (and (string-match-p ":" string) t))
+  (and (or (string-match-p ":" string)
+           (string-match-p "^[/~]" string))
+       t))
 
 (defvar elpaca--repo-dirs nil "List of registered repository directories.")
 (defun elpaca-repo-dir (recipe)
