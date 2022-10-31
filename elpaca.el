@@ -1414,7 +1414,12 @@ The expansion is a string indicating the package has been disabled."
   (declare (indent 1))
   (if (memq :disabled body)
       (format "%S :disabled by elpaca-use-package" order)
-    `(elpaca ,order (use-package ,(elpaca--first order) ,@body))))
+    (let ((o order))
+      (when-let ((ensure (cl-position :ensure body)))
+        (setq o (if (null (nth (1+ ensure) body)) nil order)
+              body (append (cl-subseq body 0 ensure)
+                           (cl-subseq body (+ ensure 2)))))
+      `(elpaca ,o (use-package ,(elpaca--first order) ,@body)))))
 
 (defvar elpaca--try-package-history nil "History for `elpaca-try'.")
 (declare-function elpaca-log--latest "elpaca-log")
