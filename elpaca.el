@@ -444,7 +444,9 @@ or nil if none apply."
                                                        (url-generic-parse-url url)))))
                 (repo
                  (setq user (elpaca--repo-user repo))
-                 (elpaca--repo-name repo))
+                 (if (eq (elpaca--repo-type repo) 'local)
+                     (file-name-base (directory-file-name repo))
+                   (elpaca--repo-name repo)))
                 (pkg pkg)
                 (t (error "Unable to determine repo name"))))
          (dir (if (and (not mono-repo)
