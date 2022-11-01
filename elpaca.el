@@ -413,12 +413,15 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
   "Return user name portion of STRING."
   (substring string 0 (string-match-p "/" string)))
 
-(defun elpaca--full-repo-protocol-p (string)
-  "Return t if STRING specifies a protocol."
-  ;;@TODO: this needs to be more robust.
-  (and (or (string-match-p ":" string)
-           (string-match-p "^[/~]" string))
-       t))
+(defun elpaca--repo-type (string)
+  "Return type of :repo STRING.
+Type will be any of the following symbols:
+   - local: a local filesystem path
+   - remote: a remote repo URL
+or nil if none apply."
+  (cond
+   ((string-match-p "^[/~]" string) 'local)
+   ((string-match-p ":" string) 'remote)))
 
 (defvar elpaca--repo-dirs nil "List of registered repository directories.")
 (defun elpaca-repo-dir (recipe)
@@ -463,22 +466,24 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
                                (host fetcher)
                                (repo url) &allow-other-keys)
       recipe
-    (if (elpaca--full-repo-protocol-p repo)
-        (if host repo (expand-file-name repo))
-      (let ((p (pcase protocol
-                 ('https '("https://" . "/"))
-                 ('ssh   '("git@" . ":"))
-                 (_      (signal 'wrong-type-argument `((https ssh) ,protocol)))))
-            (h (pcase host
-                 ('github       "github.com")
-                 ('gitlab       "gitlab.com")
-                 ('codeberg     "codeberg.org")
-                 ('sourcehut    "git.sr.ht")
-                 ((pred stringp) host)
-                 (_ (signal 'wrong-type-argument
-                            `(:host (github gitlab stringp) ,host ,recipe))))))
-        (concat (car p) h (cdr p) (when (eq host 'sourcehut) "~") repo
-                (unless (eq host 'sourcehut) ".git"))))))
+    (pcase (elpaca--repo-type repo)
+      ('remote repo)
+      ('local  (expand-file-name repo))
+      (_ (let ((p (pcase protocol
+                    ('https '("https://" . "/"))
+                    ('ssh   '("git@" . ":"))
+                    (_      (signal 'wrong-type-argument `((https ssh) ,protocol)))))
+               (h (pcase host
+                    ('github       "github.com")
+                    ('gitlab       "gitlab.com")
+                    ('codeberg     "codeberg.org")
+                    ('sourcehut    "git.sr.ht")
+                    ((pred stringp) host)
+                    (_ (signal 'wrong-type-argument
+                               `(:host (github gitlab codeberg sourcehut stringp)
+                                       ,host ,recipe))))))
+           (concat (car p) h (cdr p) (when (eq host 'sourcehut) "~") repo
+                   (unless (eq host 'sourcehut) ".git")))))))
 
 (defun elpaca--build-steps1 (recipe)
   "Return a list of build functions from RECIPE."
