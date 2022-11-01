@@ -464,7 +464,7 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
                                (repo url) &allow-other-keys)
       recipe
     (if (elpaca--full-repo-protocol-p repo)
-        repo
+        (if host repo (expand-file-name repo))
       (let ((p (pcase protocol
                  ('https '("https://" . "/"))
                  ('ssh   '("git@" . ":"))
