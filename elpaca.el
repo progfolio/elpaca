@@ -981,8 +981,7 @@ If it matches, the E associated with process has its STATUS updated."
         (type (process-get process :build-type)))
     (cond
      ((equal event "finished\n")
-      (elpaca--update-info
-       e (format "%s steps finished" type) (intern (substring (symbol-name type) 1)))
+      (elpaca--update-info e (format "%s steps finished" type))
       (elpaca--continue-build e))
      ((string-match-p "abnormally" event)
       ;; We want the event prior to the last "exited abnormally" event.
@@ -1006,7 +1005,8 @@ The keyword's value is expected to be one of the following:
   (if-let ((recipe   (elpaca<-recipe e))
            (commands (plist-get recipe type)))
       (progn
-        (elpaca--update-info e (format "Running %S commands" type))
+        (elpaca--update-info e (format "Running %S commands" type)
+                             (intern (substring (symbol-name type) 1)))
         (let* ((default-directory (elpaca<-repo-dir e))
                (emacs             (elpaca--emacs-path))
                (program           `(progn
