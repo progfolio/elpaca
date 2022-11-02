@@ -523,13 +523,7 @@ The current package is its sole argument."
   (lambda (p) (unless (elpaca-installed-p p) (user-error "Package %S is not installed" p))))
 
 (elpaca-ui-defmark delete
-  (lambda (p) (unless (or (elpaca-installed-p p)
-                          (let ((recipe (elpaca-recipe p)))
-                            (or
-                             (when-let ((build (elpaca-build-dir recipe)))
-                               (file-exists-p build))
-                             (when-let ((repo (elpaca-repo-dir recipe)))
-                               (file-exists-p repo)))))
+  (lambda (p) (unless (or (elpaca-installed-p p) (alist-get p (elpaca--queued)))
                 (user-error "Package %S is not installed" p))))
 
 (declare-function elpaca-log--latest "elpaca-log")
