@@ -832,7 +832,7 @@ FILES and NOCONS are used recursively."
 
 (defun elpaca--link-build-files (e)
   "Link E's :files into its builds subdirectory."
-  (elpaca--update-info e "Linking build files")
+  (elpaca--update-info e "Linking build files" 'linking)
   (let* ((build-dir (elpaca<-build-dir e))
          (files (or (elpaca<-files e)
                     (setf (elpaca<-files e) (elpaca--files e)))))
@@ -844,7 +844,7 @@ FILES and NOCONS are used recursively."
                  (link   (cdr spec)))
         (make-directory (file-name-directory link) 'parents)
         (make-symbolic-link file link 'overwrite))))
-  (elpaca--update-info e "Build files linked" 'build-linked)
+  (elpaca--update-info e "Build files linked")
   (elpaca--continue-build e))
 
 (defun elpaca--add-info-path (e)
