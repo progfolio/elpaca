@@ -1569,12 +1569,13 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
     (unless e (user-error "Package %S is not queued" item))
     (when (eq (elpaca--status e) 'finished)
       ;;@MAYBE: remove Info/load-path entries?
-      (setf (elpaca<-build-steps e) (cl-set-difference elpaca-build-steps
-                                                       '(elpaca--clone
-                                                         elpaca--add-remotes
-                                                         elpaca--fetch
-                                                         elpaca--checkout-ref
-                                                         elpaca--clone-dependencies))))
+      (setf (elpaca<-build-steps e)
+            (cl-set-difference (elpaca--build-steps (elpaca<-recipe e) t t nil)
+                               '(elpaca--clone
+                                 elpaca--add-remotes
+                                 elpaca--fetch
+                                 elpaca--checkout-ref
+                                 elpaca--clone-dependencies))))
     (elpaca--update-info e "Rebuilding" 'rebuilding)
     (setq elpaca-cache-autoloads nil)
     (setf (elpaca<-queue-time e) (current-time))
