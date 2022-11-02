@@ -184,7 +184,7 @@ The remaining elements are lists of the form:
   If the list starts with the symbol =:not=. The set difference of =elpaca-default-build-steps= and the remaining elements of the list are used.
 
   #+begin_src emacs-lisp :lexical t
-(example :build (:not autoloads))
+(example :build (:not elpaca--byte-compile))
   #+end_src
 
 - :inherit :: When non-nil, inherit /PROPS/ from =elpaca-order-functions= and possibly =elpaca-menu-functions=.

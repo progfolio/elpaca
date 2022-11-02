@@ -116,10 +116,6 @@ Setting it too high causes prints fewer status updates."
   "Seconds to wait between subprocess outputs before declaring process blocked."
   :type 'number)
 
-(defcustom elpaca-use-build-step-short-names t
-  "When non-nil, recipe :build functions are auto-prefixed with `elpaca--`."
-  :type 'boolean)
-
 (defcustom elpaca-build-steps '(elpaca--clone
                                 elpaca--add-remotes
                                 elpaca--fetch
@@ -491,9 +487,6 @@ or nil if none apply."
   (let* ((build (plist-member recipe :build))
          (steps (cadr build))
          (removep (and (eq (car-safe steps) :not) (pop steps))))
-    (when (and elpaca-use-build-step-short-names (listp steps))
-      (setq steps (cl-loop for step in steps
-                           collect (intern (concat "elpaca--" (symbol-name step))))))
     (cond
      ((or (not build) (eq steps t)) elpaca-build-steps)
      (removep (cl-set-difference elpaca-build-steps steps))
