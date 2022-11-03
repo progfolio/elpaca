@@ -514,7 +514,8 @@ The current package is its sole argument."
            (deactivate-mark))))))
 
 (elpaca-ui-defmark rebuild
-  (lambda (p) (unless (elpaca-installed-p p) (user-error "Package %S is not installed" p))))
+  (lambda (p) (unless (or (elpaca-installed-p p) (alist-get p (elpaca--queued)))
+                (user-error "Package %S is not installed" p))))
 
 (elpaca-ui-defmark install
   (lambda (p) (when (elpaca-installed-p p) (user-error "Package %S already installed" p))))
