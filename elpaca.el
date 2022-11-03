@@ -1570,7 +1570,7 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
     (when (eq (elpaca--status e) 'finished)
       ;;@MAYBE: remove Info/load-path entries?
       (setf (elpaca<-build-steps e)
-            (cl-set-difference (elpaca--build-steps (elpaca<-recipe e) t t nil)
+            (cl-set-difference (elpaca--build-steps (elpaca<-recipe e) nil nil nil)
                                '(elpaca--clone
                                  elpaca--add-remotes
                                  elpaca--fetch
