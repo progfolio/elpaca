@@ -568,12 +568,13 @@ Keys are as follows:
 
 (defun elpaca--fail (e &optional reason)
   "Fail E for REASON."
-  (let ((item (elpaca<-item e))
-        (queue (car (last elpaca--queues (1+ (elpaca<-queue-id e))))))
-    (setf (elpaca-q<-forms queue)
-          (assq-delete-all (elpaca--first item) (elpaca-q<-forms queue))))
-  (elpaca--update-info e reason 'failed)
-  (elpaca--finalize e))
+  (unless (eq (elpaca--status e) 'failed)
+    (let ((item (elpaca<-item e))
+          (queue (car (last elpaca--queues (1+ (elpaca<-queue-id e))))))
+      (setf (elpaca-q<-forms queue)
+            (assq-delete-all (elpaca--first item) (elpaca-q<-forms queue))))
+    (elpaca--update-info e reason 'failed)
+    (elpaca--finalize e)))
 
 (defsubst elpaca--status (e)
   "Return `car' of E's statuses."
