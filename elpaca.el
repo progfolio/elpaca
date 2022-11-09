@@ -1575,7 +1575,8 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
                                  elpaca--add-remotes
                                  elpaca--fetch
                                  elpaca--checkout-ref
-                                 elpaca--clone-dependencies))))
+                                 elpaca--clone-dependencies
+                                 elpaca--activate-package))))
     (elpaca--update-info e "Rebuilding" 'rebuilding)
     (setq elpaca-cache-autoloads nil)
     (setf (elpaca<-queue-time e) (current-time))
