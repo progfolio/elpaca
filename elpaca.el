@@ -1338,7 +1338,7 @@ Async wrapper for `elpaca-generate-autoloads'."
          (default-directory build-dir)
          (emacs             (elpaca--emacs-path))
          (dependency-dirs
-          (cl-loop for item in (elpaca-dependencies (intern (elpaca<-package e))
+          (cl-loop for item in (elpaca-dependencies (elpaca<-id e)
                                                     elpaca-ignored-dependencies)
                    when item
                    for build-dir = (elpaca<-build-dir (elpaca-alist-get item (elpaca--queued)))
