@@ -144,6 +144,12 @@ It is a list of the form:
 (example :host github :repo "user/example" :ref "a76ca0a") ;; Check out a specific commit.
   #+end_src
 
+- :pin :: When non-nil, ignore the package during update commands.
+
+  #+begin_src emacs-lisp :lexical t
+(example :pin t)
+  #+end_src
+
 - :depth :: The package repository's history depth.
 
   #+begin_src emacs-lisp :lexical t

@@ -1651,33 +1651,42 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
     (elpaca--update-info e "Merging updates" 'merging)
     (process-put process :elpaca e)))
 
+(defun elpaca--announce-pin (e)
+  "Dummy build step to announce a package is pinned."
+  (elpaca--update-info e "Skipping pinned package" 'pinned)
+  (elpaca--continue-build e))
+
 ;;;###autoload
 (defun elpaca-update (item &optional hide)
   "Update ITEM's associated package.
 If HIDE is non-nil, do not show `elpaca-log'."
   (interactive (list (elpaca--read-queued "Update package: ")))
-  (if-let ((queued (assoc item (elpaca--queued))))
-      (let ((e (cdr queued)))
-        (elpaca--update-info e "Fetching updates" 'fetching-updates)
-        (setf (elpaca<-build-steps e)
-              `(elpaca--fetch
-                elpaca--log-updates
-                elpaca--merge
-                ,@(cl-intersection
-                   (elpaca--build-steps (elpaca<-recipe e) nil t
-                                        (elpaca<-mono-repo e))
-                   '(elpaca--run-pre-build-commands
-                     elpaca--link-build-files
-                     elpaca--byte-compile
-                     elpaca--generate-autoloads-async
-                     elpaca--compile-info
-                     elpaca--install-info
-                     elpaca--add-info-path
-                     elpaca--run-post-build-commands))))
-        (setf (elpaca<-queue-time e) (current-time))
-        (elpaca--process queued)
-        (unless hide (require 'elpaca-log) (elpaca-log--latest)))
-    (user-error "Package %S is not queued" item)))
+  (let* ((queued (assoc item (elpaca--queued)))
+         (e (cdr queued))
+         (recipe (elpaca<-recipe e))
+         (pin (plist-get recipe :pin)))
+    (unless queued (user-error "Package %S is not queued" item))
+    (elpaca--update-info e "Fetching updates" 'fetching-updates)
+    (setf (elpaca<-build-steps e)
+          (if pin
+              (list #'elpaca--announce-pin)
+            `(elpaca--fetch
+              elpaca--log-updates
+              elpaca--merge
+              ,@(cl-intersection
+                 (elpaca--build-steps recipe nil t
+                                      (elpaca<-mono-repo e))
+                 '(elpaca--run-pre-build-commands
+                   elpaca--link-build-files
+                   elpaca--byte-compile
+                   elpaca--generate-autoloads-async
+                   elpaca--compile-info
+                   elpaca--install-info
+                   elpaca--add-info-path
+                   elpaca--run-post-build-commands))))
+          (elpaca<-queue-time e) (current-time))
+    (unless hide (require 'elpaca-log) (elpaca-log--latest))
+    (elpaca--process queued)))
 
 ;;;###autoload
 (defun elpaca-update-all ()
