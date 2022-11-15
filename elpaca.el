@@ -696,9 +696,14 @@ Accepted KEYS are :pre and :post which are hooks run around queue processing."
 - evaluate deferred package configuration forms
 - possibly run `elpaca-after-init-hook'."
   (when-let ((autoloads (elpaca-q<-autoloads q)))
-    (eval `(progn ,@autoloads) t))
-  (when-let ((forms (elpaca-q<-forms q)))
-    (eval `(progn ,@(apply #'append (mapcar #'cdr (reverse forms)))) t))
+    (condition-case-unless-debug err
+        (eval `(progn ,@autoloads) t)
+      ((error) (warn "Autoload Error: %S" err))))
+  (cl-loop with forms = (reverse (elpaca-q<-forms q))
+           for (item . body) in forms
+           do (condition-case-unless-debug err
+                  (eval `(progn ,@body) t)
+                ((error) (warn "Config Error in package %s: %S" item err))))
   (setf (elpaca-q<-status q) 'complete)
   (let ((next (nth (1+ (elpaca-q<-id q)) (reverse elpaca--queues))))
     (if (and (eq (elpaca-q<-type q) 'init)
