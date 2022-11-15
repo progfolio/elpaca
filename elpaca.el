@@ -595,6 +595,9 @@ If N is nil return a list of all queued elpacas."
   (nreverse
    (if n
        (copy-sequence (elpaca-q<-elpacas (nth n (reverse elpaca--queues))))
+     ;;@TODO: should elpaca--queues be reversed here?
+     ;;That would allow us to update recipes by re-evaluating elpaca forms.
+     ;;However, this would require reworking mono-repo detection.
      (cl-loop for queue in elpaca--queues append (elpaca-q<-elpacas queue)))))
 
 (defsubst elpaca--status-face (status &optional default)
