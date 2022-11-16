@@ -566,6 +566,10 @@ Keys are as follows:
     (when mono-repo (cl-pushnew elpaca (elpaca<-includes mono-repo)))
     elpaca))
 
+(defsubst elpaca--status (e)
+  "Return `car' of E's statuses."
+  (car (elpaca<-statuses e)))
+
 (defun elpaca--fail (e &optional reason)
   "Fail E for REASON."
   (unless (eq (elpaca--status e) 'failed)
@@ -575,10 +579,6 @@ Keys are as follows:
             (assq-delete-all (elpaca--first item) (elpaca-q<-forms queue))))
     (elpaca--update-info e reason 'failed)
     (elpaca--finalize e)))
-
-(defsubst elpaca--status (e)
-  "Return `car' of E's statuses."
-  (car (elpaca<-statuses e)))
 
 (defun elpaca--log-event (e text &optional replace)
   "Store TEXT in E's log.
