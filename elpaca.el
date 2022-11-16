@@ -1314,30 +1314,31 @@ Async wrapper for `elpaca-generate-autoloads'."
     (cl-pushnew default-directory load-path)
     ;;@TODO: condition on a slot we set on the e to indicate cached recipe?
     (elpaca--update-info e "Package build dir added to load-path")
-    (if (and elpaca-cache-autoloads (file-exists-p autoloads))
-        (let ((forms nil))
-          (elpaca--update-info e "Caching autoloads")
-          (with-temp-buffer
-            (insert-file-contents autoloads)
-            (goto-char (point-min))
-            (condition-case _
-                (while t (push (read (current-buffer)) forms))
-              ((end-of-file)))
-            (push `(let ((load-file-name ,autoloads)
-                         (load-in-progress t)
-                         (package ,package))
-                     (condition-case err
-                         (eval '(progn ,@(nreverse forms)) t)
-                       ((error) (warn "Error loading %S autoloads: %S" package err))))
-                  (elpaca-q<-autoloads (car (last elpaca--queues (1+ (elpaca<-queue-id e)))))))
-          (elpaca--update-info e "Autoloads cached"))
-      (condition-case err
-          (progn
-            (load autoloads nil 'nomessage)
-            (elpaca--update-info e "Package activated" 'activated))
-        ((error) (elpaca--update-info
-                  e (format "Failed to load %S: %S" autoloads err) 'failed-to-activate))))
-    (elpaca--continue-build e)))
+    (when (file-exists-p autoloads)
+      (if elpaca-cache-autoloads
+          (let ((forms nil))
+            (elpaca--update-info e "Caching autoloads")
+            (with-temp-buffer
+              (insert-file-contents autoloads)
+              (goto-char (point-min))
+              (condition-case _
+                  (while t (push (read (current-buffer)) forms))
+                ((end-of-file)))
+              (push `(let ((load-file-name ,autoloads)
+                           (load-in-progress t)
+                           (package ,package))
+                       (condition-case err
+                           (eval '(progn ,@(nreverse forms)) t)
+                         ((error) (warn "Error loading %S autoloads: %S" package err))))
+                    (elpaca-q<-autoloads (car (last elpaca--queues (1+ (elpaca<-queue-id e)))))))
+            (elpaca--update-info e "Autoloads cached"))
+        (condition-case err
+            (progn
+              (load autoloads nil 'nomessage)
+              (elpaca--update-info e "Package activated" 'activated))
+          ((error) (elpaca--update-info
+                    e (format "Failed to load %S: %S" autoloads err) 'failed-to-activate))))))
+  (elpaca--continue-build e))
 
 (defun elpaca--byte-compile (e)
   "Byte compile E's package."
