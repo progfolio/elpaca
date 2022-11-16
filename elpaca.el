@@ -83,8 +83,7 @@ Note blocked or failed orders will prevent this hook from being run."
 
 (defcustom elpaca-cache-autoloads t
   "If non-nil, cache package autoloads and load all at once.
-Results in faster start-up time.
-However, loading errors will prevent later package autoloads from loading."
+Results in faster start-up time."
   :type 'boolean)
 
 (defcustom elpaca-directory (expand-file-name "elpaca" user-emacs-directory)
