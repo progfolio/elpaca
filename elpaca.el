@@ -705,7 +705,7 @@ Accepted KEYS are :pre and :post which are hooks run around queue processing."
            for (item . body) in forms
            do (condition-case-unless-debug err
                   (eval `(progn ,@body) t)
-                ((error) (warn "Config Error in package %s: %S" item err))))
+                ((error) (warn "Package Config Error %s: %S" item err))))
   (setf (elpaca-q<-status q) 'complete)
   (let ((next (nth (1+ (elpaca-q<-id q)) (reverse elpaca--queues))))
     (if (and (eq (elpaca-q<-type q) 'init)
