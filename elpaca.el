@@ -428,7 +428,7 @@ or nil if none apply."
          (pkg (plist-get recipe :package))
          (host (or (plist-get recipe :host) (plist-get recipe :fetcher)))
          (user nil)
-         (info (intern (concat pkg url repo (and host (symbol-name host)))))
+         (info (intern (concat url repo (and host (symbol-name host)))))
          (mono-repo (alist-get info elpaca--repo-dirs))
          (name (cond
                 (local-repo
@@ -448,7 +448,7 @@ or nil if none apply."
          (dir (if (and (not mono-repo) (rassoc name elpaca--repo-dirs))
                   (string-join (list name (format "%s" host) user) ".")
                 (and name (file-name-sans-extension name)))))
-    (push (cons info dir) elpaca--repo-dirs)
+    (unless mono-repo (push (cons info dir) elpaca--repo-dirs))
     (expand-file-name (concat "repos/" dir) elpaca-directory)))
 
 (defun elpaca-build-dir (recipe)
