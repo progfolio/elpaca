@@ -1660,7 +1660,7 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
     (process-put process :elpaca e)))
 
 (defun elpaca--announce-pin (e)
-  "Dummy build step to announce a package is pinned."
+  "Dummy build step to announce a E's package is pinned."
   (elpaca--update-info e "Skipping pinned package" 'pinned)
   (elpaca--continue-build e))
 
