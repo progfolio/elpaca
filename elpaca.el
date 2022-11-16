@@ -504,13 +504,13 @@ or nil if none apply."
   process log)
 
 (defmacro elpaca--required-arg (try info)
-  "TRY to set arg. If error, fail P with INFO."
+  "TRY to set arg. If error, fail E with INFO."
   (declare (indent 1) (debug t))
   `(condition-case err ,try
      ((error) (setq status 'failed info (format ,info err)) nil)))
 
 (defsubst elpaca--mono-repo (repo-dir)
-  "Return previously queued P with REPO-DIR."
+  "Return previously queued E with REPO-DIR."
   (cl-some (lambda (queued)
              (and-let* ((e (cdr queued))
                         ((equal repo-dir (elpaca<-repo-dir e)))
