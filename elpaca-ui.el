@@ -50,7 +50,8 @@
                                   (lambda (dir)
                                     (let ((name (file-name-base dir)))
                                       (list (intern name)
-                                            (vector name "orphan package" "n/a" "n/a" "n/a"))))
+                                            (vector (propertize name 'orphan-dir dir)
+                                                    "orphan package" "n/a" "n/a" "n/a"))))
                                   (cl-set-difference
                                    (cl-remove-if-not
                                     #'file-directory-p
@@ -524,7 +525,9 @@ The current package is its sole argument."
   (lambda (p) (unless (elpaca-installed-p p) (user-error "Package %S is not installed" p))))
 
 (elpaca-ui-defmark delete
-  (lambda (p) (unless (or (elpaca-installed-p p) (alist-get p (elpaca--queued)))
+  (lambda (p) (unless (or (elpaca-installed-p p)
+                          (alist-get p (elpaca--queued))
+                          (get-text-property (point) 'orphan-dir))
                 (user-error "Package %S is not installed" p))))
 
 (declare-function elpaca-log--latest "elpaca-log")
