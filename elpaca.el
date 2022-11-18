@@ -660,7 +660,8 @@ If REPLACE is non-nil, E's log is updated instead of appended."
   (when info (elpaca--log-event e info replace))
   (when elpaca--info-timer (cancel-timer elpaca--info-timer))
   (setq elpaca--info-timer
-        (run-at-time elpaca-info-timer-interval nil #'elpaca--update-info-buffers)))
+        (run-at-time elpaca-info-timer-interval nil #'elpaca--update-info-buffers))
+  nil)
 
 (defun elpaca--log-duration (e)
   "Return E's log duration."
