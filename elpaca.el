@@ -899,11 +899,13 @@ If it matches, the E associated with process has its STATUS updated."
 
 (defun elpaca--process-sentinel (info &optional status process event)
   "Update E's INFO and STATUS when PROCESS EVENT is finished."
-  (when-let (((equal event "finished\n"))
-             (e (process-get process :elpaca))
-             ((not (eq (elpaca--status e) 'failed))))
-    (elpaca--update-info e info status)
-    (elpaca--continue-build e)))
+  (let ((e (process-get process :elpaca)))
+    (if (and (equal event "finished\n")
+             (not (eq (elpaca--status e) 'failed)))
+        (progn
+          (elpaca--update-info e info status)
+          (elpaca--continue-build e))
+      (elpaca--fail e (process-get process :output)))))
 
 (defun elpaca--compile-info-process-sentinel (process event)
   "Sentinel for info compilation PROCESS EVENT."
