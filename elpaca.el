@@ -1190,14 +1190,15 @@ The keyword's value is expected to be one of the following:
              (make-process
               :name (format "elpaca-checkout-ref-%s" (elpaca<-package e))
               :command
-              `("git"
+              `("git" "-c" "advice.detachedHead=false" ;ref, tag may detach HEAD
                 ,@(cond
                    (ref    (list "checkout" ref))
                    (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
                    (branch (list "switch" "-C" branch
                                  (format "%s/%s" (elpaca--first remote) branch)))))
+              :filter   #'elpaca--process-filter
               :sentinel (apply-partially #'elpaca--process-sentinel
-                                         (format "%s ref checked out" (or target "Default"))
+                                         (format "%s checked out" (or target "Default ref"))
                                          'ref-checked-out))))
         (process-put process :elpaca e)))))
 
@@ -1240,7 +1241,9 @@ Kick off next build step, and/or change E's status."
             :command  `("git" "clone"
                         ;;@TODO: Some refs will need a full clone or specific branch.
                         ,@(when depth
-                            (list "--depth" (number-to-string depth) "--no-single-branch"))
+                            (if (plist-get recipe :ref)
+                                (elpaca--update-info e "ignoring :depth in favor of :ref")
+                            (list "--depth" (number-to-string depth) "--no-single-branch")))
                         ,URI ,repodir)
             :filter   (lambda (process output)
                         (elpaca--process-filter
