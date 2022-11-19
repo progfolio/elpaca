@@ -513,3 +513,25 @@ Elpaca processes your init file to build its order queue.
 before Elpaca has installed any packages or run their configuration bodies.
 =elpaca-after-init-hook= runs after all orders queued during init have finished processing.
 It is only run once after init.
+** Why did my init file execute out of order?
+Elpaca installs and activates packages asynchronously.
+The entire init file is read /before/ any of Elpaca's queues are processed.
+Consider the following example:
+
+#+begin_src emacs-lisp :lexical t
+(elpaca nil (message "First")) ; First is queued
+(message "Second") ; Second is messaged
+(elpaca nil (message "Third")) ; Third is queued
+(elpaca-process-queues) ; Queue is processed: First messaged, Third messaged.
+#+end_src
+
+"Second" will be messaged /before/ "First" and "Third".
+Any forms which are dependent on deferred forms should be deferred as well.
+To fix the above example, the "Second" message can be wrapped in an `elpaca` call:
+
+#+begin_src emacs-lisp :lexical t
+(elpaca nil (message "First"))  ; First is queued
+(elpaca nil (message "Second")) ; Second is queued
+(elpaca nil (message "Third"))  ; Third is queued
+(elpaca-process-queues) ; Queue is processed: First, Second, Third messaged.
+#+end_src
