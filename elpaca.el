@@ -1243,7 +1243,7 @@ Kick off next build step, and/or change E's status."
                         ,@(when depth
                             (if (plist-get recipe :ref)
                                 (elpaca--update-info e "ignoring :depth in favor of :ref")
-                            (list "--depth" (number-to-string depth) "--no-single-branch")))
+                              (list "--depth" (number-to-string depth) "--no-single-branch")))
                         ,URI ,repodir)
             :filter   (lambda (process output)
                         (elpaca--process-filter
