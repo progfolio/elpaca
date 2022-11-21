@@ -506,7 +506,7 @@ or nil if none apply."
   "TRY to set arg. If error, fail E with INFO."
   (declare (indent 1) (debug t))
   `(condition-case err ,try
-     ((error) (setq status 'failed info (format ,info err)) nil)))
+     ((error) (setq status 'struct-failed info (format ,info err)) nil)))
 
 (defsubst elpaca--mono-repo (repo-dir)
   "Return previously queued E with REPO-DIR."
@@ -744,7 +744,7 @@ Accepted KEYS are :pre and :post which are hooks run around queue processing."
            (status (car log))
            (info (nth 2 log)))
       (push (cons (elpaca<-id e) e) (elpaca-q<-elpacas (car elpaca--queues)))
-      (if (eq status 'failed)
+      (if (eq status 'struct-failed)
           (elpaca--fail e info)
         (elpaca--update-info e info status))
       e)))
