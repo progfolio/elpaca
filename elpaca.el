@@ -427,7 +427,7 @@ or nil if none apply."
          (pkg (plist-get recipe :package))
          (host (or (plist-get recipe :host) (plist-get recipe :fetcher)))
          (user nil)
-         (info (intern (concat url repo (and host (symbol-name host)))))
+         (info (intern (concat url repo (and host (if (symbolp host) (symbol-name host) host)))))
          (mono-repo (alist-get info elpaca--repo-dirs))
          (name (cond
                 (local-repo
