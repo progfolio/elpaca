@@ -427,7 +427,7 @@ or nil if none apply."
          (pkg (plist-get recipe :package))
          (host (or (plist-get recipe :host) (plist-get recipe :fetcher)))
          (user nil)
-         (info (intern (concat url repo (and host (symbol-name host)))))
+         (info (intern (concat url repo (and host (format "%s" host)))))
          (mono-repo (alist-get info elpaca--repo-dirs))
          (name (cond
                 (local-repo
@@ -1532,7 +1532,7 @@ If FORCE is non-nil do not confirm before deleting."
                (url           (plist-get recipe :url))
                (repo          (plist-get recipe :repo))
                (host          (or (plist-get recipe :host) (plist-get recipe :fetcher)))
-               (info          (intern (concat url repo (symbol-name host)))))
+               (info          (intern (concat url repo (and host (format "%s" host))))))
           (if (cl-some #'elpaca--on-disk-p dependents)
               (message "Cannot delete %S unless dependents %S are deleted first"
                        id dependents)
