@@ -97,8 +97,16 @@ exclamation point to it. e.g. #!installed."
            (elpaca-ui-search ,query))
         t))
 
+(defun elpaca-ui--button-noop (&rest args)
+  "Return first arg in ARGS."
+  (car args))
+
 (defalias 'elpaca-ui--buttonize
-  (with-no-warnings (if (version< emacs-version "29.1") #'button-buttonize #'buttonize)))
+  (with-no-warnings (cond
+                     ;;API for Emacs 27 requires allocating temp buffers. Not worth it.
+                     ((version< emacs-version "28.1") #'elpaca-ui--button-noop)
+                     ((version< emacs-version "29") #'button-buttonize)
+                     (t #'buttonize))))
 
 ;;;; Variables:
 (defvar-local elpaca-ui--search-timer nil "Timer to debounce search input.")
