@@ -32,25 +32,23 @@
   "Generate `org-version.el`.
 `default-directory' is assumed to be org's repo dir."
   (let* ((default-directory (expand-file-name "lisp/"))
+         (emacs (concat invocation-directory invocation-name))
          (orgversion
           (elpaca-with-process
-              (elpaca-process-call "git" "describe" "--match" "release*" "--abbrev=0" "HEAD")
+              (elpaca-process-call
+               emacs "-Q" "--batch"
+               "--eval" "(require 'lisp-mnt)"
+               "--visit" "org.el"
+               "--eval" "(princ (lm-header \"version\"))")
             (if failure
-                ;; Backup in case where Org repo has no tags
-                (elpaca-with-process
-                    (elpaca-process-call
-                     "emacs" "-Q" "--batch"
-                     "--eval" "(require 'lisp-mnt)"
-                     "--visit" "org.el"
-                     "--eval" "(princ (lm-header \"version\"))")
-                  (if failure
-                      (error "Failed to parse ORGVERSION")
-                    (replace-regexp-in-string "-dev" "" stdout)))
-              (string-trim (replace-regexp-in-string "release_" "" stdout)))))
-         (gitversion
-          (concat orgversion "-g"
-                  (string-trim (elpaca-process-output "git" "rev-parse" "--short=6" "HEAD"))))
-         (emacs (concat invocation-directory invocation-name)))
+                (error "Failed to parse ORGVERSION: %S" result)
+              (replace-regexp-in-string "-dev" "" stdout))
+            (string-trim (replace-regexp-in-string "release_" "" stdout))))
+         (gitversion (elpaca-with-process (elpaca-process-call
+                                           "git" "describe" "--match" "release*"
+                                           "--abbrev=6" "HEAD")
+                       (if success (string-trim stdout) (message "%S" stderr) "N/A"))))
+    (message "Org version: %s %s" orgversion gitversion)
     (call-process
      emacs nil "*elpaca-byte-compilation*" nil
      "-Q" "--batch"
@@ -78,7 +76,7 @@
                           :package "org"
                           :local-repo "org"
                           :repo "https://git.savannah.gnu.org/git/emacs/org-mode.git"
-                          :depth 'full ; `org-version' depends on repository tags.
+                          :depth nil ; `org-version' depends on repository tags.
                           :pre-build '(progn (require 'elpaca-menu-org)
                                              (elpaca-menu-org--build))
                           :build '(:not elpaca--generate-autoloads-async)
