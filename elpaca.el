@@ -1243,7 +1243,7 @@ Kick off next build step, and/or change E's status."
             :name     (format "elpaca-clone-%s" package)
             :command  `("git" "clone"
                         ;;@TODO: Some refs will need a full clone or specific branch.
-                        ,@(when depth
+                        ,@(when (numberp depth)
                             (if (plist-get recipe :ref)
                                 (elpaca--update-info e "ignoring :depth in favor of :ref")
                               (list "--depth" (number-to-string depth) "--no-single-branch")))
