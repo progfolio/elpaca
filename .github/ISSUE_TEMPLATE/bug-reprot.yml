@@ -27,7 +27,7 @@ body:
     id: description
     attributes:
       label: Bug Description
-      description: Describe the problem, what you expected to happen, and what actually happened.
+      description: Describe the problem, what you expected to happen, and what actually happened. Please include steps to reproduce the bug if possible. If the bug involves a package recipe, please include that recipe.
     validations:
       required: true
   - type: textarea
