@@ -1099,18 +1099,11 @@ Ement.el is a new Matrix client for Emacs. It aims to be simple, fast, featurefu
 (elpaca-use-package (ement :host github :repo "alphapapa/ement.el")
   :custom (ement-room-avatars t)
   :config
-  (define-advice ement-api-error (:around (fn &rest args) "ignore-not-hosted-error")
-    "Ignore a spurious(?) error from Matrix home server."
-    (condition-case err
-        (apply fn args)
-      ((error)
-       (unless (string-match-p "User is not hosted on this homeserver" (cadr err))
-         (signal 'ement-api-error (cdr err))))))
   (add-hook 'ement-room-compose-hook #'flyspell-mode)
   :general
   (+general-global-application
     "M" '(:ignore t :which-key "Matrix")
-    "MM" '((lambda () (interactive) (ement-connect :user-id "@nv-elisp:Matrix.org"))
+    "MM" '((lambda () (interactive) (ement-connect :user-id "@nv-elisp:matrix.org"))
            :which-key "ement-connect")))
 #+end_src
 ** emp
