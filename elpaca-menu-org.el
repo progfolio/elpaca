@@ -32,7 +32,7 @@
   "Generate `org-version.el`.
 `default-directory' is assumed to be org's repo dir."
   (let* ((default-directory (expand-file-name "lisp/"))
-         (emacs (concat invocation-directory invocation-name))
+         (emacs (elpaca--emacs-path))
          (orgversion
           (elpaca-with-process
               (elpaca-process-call
