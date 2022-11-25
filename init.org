@@ -1515,31 +1515,31 @@ https://github.com/abo-abo/hydra
   (defhydra +hydra-zoom (:pre (setq which-key-inhibit t)
                               :post (setq which-key-inhibit nil)
                               :hint none)
-    ;;newline is necessary here!
-    "
+            ;;newline is necessary here!
+            "
 ^Zoom ^ ^-----^ _i_ in _o_ out _r_ reset (capital for all frames)"
-    ;;Entry
-    ("i" text-scale-increase "in")
-    ("I" default-text-scale-increase "all in")
-    ("o" text-scale-decrease "out")
-    ("O" default-text-scale-decrease "all out")
-    ("r" (text-scale-adjust 0) "reset")
-    ("R" default-text-scale-reset "reset all"))
+            ;;Entry
+            ("i" text-scale-increase "in")
+            ("I" default-text-scale-increase "all in")
+            ("o" text-scale-decrease "out")
+            ("O" default-text-scale-decrease "all out")
+            ("r" (text-scale-adjust 0) "reset")
+            ("R" default-text-scale-reset "reset all"))
   (defhydra +hydra-window-resize (:pre (setq which-key-inhibit t)
                                        :post (setq which-key-inhibit nil))
-    ;;newline is necessary here!
-    "
+            ;;newline is necessary here!
+            "
 ^Resize Windows^ "
-    ;;Entry
-    ("H" (lambda () (interactive) (shrink-window-horizontally 5)) "shrink-horizontal" :column "Large")
-    ("J" (lambda () (interactive) (enlarge-window 5)) "enlarge-vertical")
-    ("K" (lambda () (interactive) (shrink-window 5)) "shrink-vertical")
-    ("L" (lambda () (interactive) (enlarge-window-horizontally 5)) "enlarge-horizontal")
-    ("=" (lambda () (interactive) (balance-windows)) "balance-windows" :column "Balance")
-    ("h" (lambda () (interactive) (shrink-window-horizontally 1)) "shrink-horizontal" :column "Small")
-    ("j" (lambda () (interactive) (enlarge-window 1)) "enlarge-vertical")
-    ("k" (lambda () (interactive) (shrink-window 1)) "shrink-vertical")
-    ("l" (lambda () (interactive) (enlarge-window-horizontally 1)) "enlarge-horizontal"))
+            ;;Entry
+            ("H" (lambda () (interactive) (shrink-window-horizontally 5)) "shrink-horizontal" :column "Large")
+            ("J" (lambda () (interactive) (enlarge-window 5)) "enlarge-vertical")
+            ("K" (lambda () (interactive) (shrink-window 5)) "shrink-vertical")
+            ("L" (lambda () (interactive) (enlarge-window-horizontally 5)) "enlarge-horizontal")
+            ("=" (lambda () (interactive) (balance-windows)) "balance-windows" :column "Balance")
+            ("h" (lambda () (interactive) (shrink-window-horizontally 1)) "shrink-horizontal" :column "Small")
+            ("j" (lambda () (interactive) (enlarge-window 1)) "enlarge-vertical")
+            ("k" (lambda () (interactive) (shrink-window 1)) "shrink-vertical")
+            ("l" (lambda () (interactive) (enlarge-window-horizontally 1)) "enlarge-horizontal"))
   :general
   (global-definer
     "z"   '(+hydra-zoom/body :which-key "zoom"))
