@@ -71,16 +71,14 @@
   "Return candidate list of available NonGNU ELPA recipes."
   (cl-loop with metadata = (elpaca-menu-non-gnu-elpa--metadata)
            for (id . props) in (elpaca-menu-non-gnu-elpa--recipes)
-           for item = (intern id)
            for url = (plist-get props :url)
-           collect (list item
+           collect (list id
                          :source "NonGNU ELPA"
                          :url url
-                         :description (or (alist-get item metadata) "n/a")
-                         :recipe
-                         `( :package ,id :repo ,url :url ,url
-                            ,@(when-let ((ignored (plist-get props :ignored-files)))
-                                `(:files (:defaults (:exclude ,@ignored))))))))
+                         :description (or (alist-get id metadata) "n/a")
+                         :recipe `( :package ,(symbol-name id) :repo ,url :url ,url
+                                    ,@(when-let ((ignored (plist-get props :ignored-files)))
+                                        `(:files (:defaults (:exclude ,@ignored))))))))
 
 (defun elpaca-menu-non-gnu-elpa--write-cache ()
   "Write NonGNU ELPA menu item cache."
