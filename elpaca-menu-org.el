@@ -40,10 +40,8 @@
                "--eval" "(require 'lisp-mnt)"
                "--visit" "org.el"
                "--eval" "(princ (lm-header \"version\"))")
-            (if failure
-                (error "Failed to parse ORGVERSION: %S" result)
-              (replace-regexp-in-string "-dev" "" stdout))
-            (string-trim (replace-regexp-in-string "release_" "" stdout))))
+            (when failure (error "Failed to parse ORGVERSION: %S" result))
+            (string-trim (replace-regexp-in-string "-dev" "" stdout))))
          (gitversion (elpaca-with-process (elpaca-process-call
                                            "git" "describe" "--match" "release*"
                                            "--abbrev=6" "HEAD")
@@ -56,9 +54,9 @@
      "--eval" "(add-to-list 'load-path \".\")"
      "--eval" "(load \"org-compat.el\")"
      "--eval" "(load \"../mk/org-fixup.el\")"
-     "--eval" "(org-make-org-loaddefs)" ; Should we handle autoloads?
+     "--eval" "(org-make-org-loaddefs)" ; @TODO: Should we handle autoloads?
      "--eval" (format "(org-make-org-version %S %S)" orgversion gitversion)
-     "--eval" "(cd \"../doc\")"
+     "--eval" "(cd \"../doc\")" ; @TOOD: Do we need this?
      "--eval" "(org-make-manuals)")))
 
 ;;;###autoload
