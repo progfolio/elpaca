@@ -1313,13 +1313,15 @@ Async wrapper for `elpaca-generate-autoloads'."
     (elpaca--update-info e (format "Generating autoloads: %s" default-directory) 'autoloads)))
 
 (defun elpaca--activate-package (e)
-  "Activate E's package."
+  "Activate E's package.
+Adds package's build dir to `load-path'.
+Loads or caches autoloads."
   (elpaca--update-info e "Activating package" 'activation)
   (let* ((build-dir (elpaca<-build-dir e))
          (default-directory build-dir)
          (package           (elpaca<-package e))
          (autoloads         (expand-file-name (format "%s-autoloads.el" package))))
-    (cl-pushnew default-directory load-path)
+    (cl-pushnew build-dir load-path)
     ;;@TODO: condition on a slot we set on the e to indicate cached recipe?
     (elpaca--update-info e "Package build dir added to load-path")
     (when (file-exists-p autoloads)
