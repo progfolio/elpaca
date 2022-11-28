@@ -75,7 +75,7 @@ It is not part of Elpaca.
 
 #+begin_src emacs-lisp :lexical t :exports none :results silent
 (defun elpaca-example-sort-plist (plist)
-  "Return copy of PLIST with :package followed by lexically sorted kew/val pairs."
+  "Return copy of PLIST with :package followed by lexically sorted key/val pairs."
   `(:package ,(plist-get plist :package)
              ,@(cl-loop for k in (cl-sort (cl-loop for key in plist by #'cddr
                                                    unless (eq key :package) collect key)
@@ -509,7 +509,6 @@ The following src block can be tangled to generate the [[./test/example-init.el]
 ;; End:
 #+end_src
 
-#  LocalWords:  elpaca Elpaca elisp repo minibuffer website init ui UI unmark Unmark plist alist MELPA programmatic
 * FAQs
 ** Why doesn't my after-init-hook function work with Elpaca?
 Elpaca processes your init file to build its order queue.
@@ -539,3 +538,5 @@ To fix the above example, the "Second" message can be wrapped in an `elpaca` cal
 (elpaca nil (message "Third"))  ; Third is queued
 (elpaca-process-queues) ; Queue is processed: First, Second, Third messaged.
 #+end_src
+
+#  LocalWords:  elpaca Elpaca elisp repo minibuffer website init ui UI unmark Unmark plist alist MELPA programmatic
