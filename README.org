@@ -60,8 +60,12 @@ You'll also want to disable package.el in your [[https://www.gnu.org/software/em
 e.g. calls to ~(package-activate-all)~.
 
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :tangle "./test/example-early-init.el"
+;; ELPACA example early-init.el
 (setq package-enable-at-startup nil)
+;; Local Variables:
+;; no-byte-compile: t
+;; End:
 #+end_src
 
 * Basic concepts
