@@ -123,7 +123,7 @@ It is a list of the form:
 (example :host "www.example.com")
   #+end_src
 
-- :repo :: A string of the form =USER/REPO= when used with the =:host= keyword; a local file path when =:host= is not used.
+- :repo :: A string of the form =USER/REPO= when used with the =:host= keyword; a local file path or remote URL when =:host= is not used.
 
 #+begin_src emacs-lisp :lexical t
 (example :host github :repo "user/example") ;;downloaded from github
@@ -131,6 +131,10 @@ It is a list of the form:
 
 #+begin_src emacs-lisp :lexical t
 (local :repo "~/repos/local/") ;;cloned from local filesystem
+#+end_src
+
+#+begin_src emacs-lisp :lexical t
+(remote :repo "https://foo.example/example.git") ;;remote clone
 #+end_src
 
 - :branch :: The repository branch to check out when installing the package.
