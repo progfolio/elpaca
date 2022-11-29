@@ -1864,6 +1864,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
   (elpaca--write-file path
     (pp (nreverse
          (cl-loop with seen
+                  with source = (file-name-base path)
                   for (item . e) in (elpaca--queued)
                   unless (member item seen)
                   for rev =
@@ -1876,7 +1877,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
                   for recipe = (copy-tree (elpaca<-recipe e))
                   do (setq recipe (plist-put recipe :ref rev))
                   ;;@MAYBE: recipe (plist-put recipe :pin t))
-                  collect (cons item (list :source "lockfile"
+                  collect (cons item (list :source source
                                            :date (current-time)
                                            :recipe recipe))
                   do (push item seen))))))
