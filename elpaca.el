@@ -1777,9 +1777,15 @@ If HIDE is non-nil, do not show `elpaca-log'."
                   (let ((default-directory (elpaca<-repo-dir e)))
                     (elpaca-with-process
                         (elpaca-process-call "git" "rev-parse" "HEAD")
-                      (when success (string-trim stdout))))
-                  when rev
-                  collect (cons item (plist-put (copy-tree (elpaca<-recipe e)) :ref rev))
+                      (if success
+                          (string-trim stdout)
+                        (error "Unable to write lockfile: %s %S" item stderr))))
+                  for recipe = (copy-tree (elpaca<-recipe e))
+                  do (setq recipe (plist-put recipe :rev rev))
+                  ;;@MAYBE: recipe (plist-put recipe :pin t))
+                  collect (cons item (list :source "lockfile"
+                                           :date (current-time)
+                                           :recipe recipe))
                   do (push item seen))))))
 
 ;;;###autoload
