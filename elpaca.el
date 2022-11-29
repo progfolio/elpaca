@@ -517,7 +517,7 @@ or nil if none apply."
              (and-let* ((e (cdr queued))
                         ((equal repo-dir (elpaca<-repo-dir e)))
                         e)))
-           (elpaca--queued)))
+           (reverse (elpaca--queued))))
 
 (defsubst elpaca--build-steps (recipe builtp clonedp mono-repo)
   "Return list of build functions for RECIPE.
@@ -594,13 +594,9 @@ If REPLACE is non-nil, the most recent log entry is replaced."
 (defun elpaca--queued (&optional n)
   "Return list of elpacas from Nth queue.
 If N is nil return a list of all queued elpacas."
-  (nreverse
-   (if n
-       (copy-sequence (elpaca-q<-elpacas (nth n (reverse elpaca--queues))))
-     ;;@TODO: should elpaca--queues be reversed here?
-     ;;That would allow us to update recipes by re-evaluating elpaca forms.
-     ;;However, this would require reworking mono-repo detection.
-     (cl-loop for queue in elpaca--queues append (elpaca-q<-elpacas queue)))))
+  (if n
+      (elpaca-q<-elpacas (nth n elpaca--queues))
+    (cl-loop for queue in elpaca--queues append (elpaca-q<-elpacas queue))))
 
 (defsubst elpaca--status-face (status &optional default)
   "Return face for STATUS or DEFAULT if not found."
