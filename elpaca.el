@@ -209,7 +209,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
 (defun elpaca--read-file (path)
   "Read file at PATH into memory."
   (when (file-exists-p path)
-    (condition-case err
+    (condition-case-unless-debug err
         (with-temp-buffer
           (insert-file-contents path)
           (read (current-buffer)))
@@ -1089,7 +1089,7 @@ The keyword's value is expected to be one of the following:
                       (eval (nth 4 (read (current-buffer))))
                     (let ((case-fold-search t))
                       (when (re-search-forward elpaca--package-requires-regexp nil 'noerror)
-                        (condition-case err
+                        (condition-case-unless-debug err
                             ;; Replace comment delimiters in multi-line package-requires metadata.
                             (read (replace-regexp-in-string ";" "" (match-string 1)))
                           ((error)
