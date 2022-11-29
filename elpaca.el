@@ -1516,13 +1516,17 @@ When called interactively, ORDER is immediately processed, otherwise it queued."
   (when-let ((e (elpaca-alist-get item (elpaca--queued))))
     (or (file-exists-p (elpaca<-repo-dir e)) (file-exists-p (elpaca<-build-dir e)))))
 
-;;@FIX: Should not delete user's declared package if it is a dependency
+;;@MAYBE: Should this delete user's declared package if it is a dependency?
 ;;;###autoload
 (defun elpaca-delete (id &optional force deps ignored)
   "Remove a package with ID from item cache and disk.
-If DEPS is non-nil dependencies other than IGNORED are deleted.
-If FORCE is non-nil do not confirm before deleting."
-  (interactive (list (elpaca--read-queued "Delete Package: ")))
+If DEPS is non-nil (interactively with \\[universal-argument]) delete dependencies.
+IGNORED dependencies are not deleted.
+If FORCE is non-nil (interacitvley with \\[universal-argument] \\[universal-argument])
+do not confirm before deleting package and DEPS."
+  (interactive (list (elpaca--read-queued "Delete Package: ")
+                     (equal current-prefix-arg '(16))
+                     (and current-prefix-arg (listp current-prefix-arg))))
   (when (or force (yes-or-no-p (format "Delete package %S?" id)))
     (if-let ((e (elpaca-alist-get id (elpaca--queued))))
         (let* ((repo-dir      (elpaca<-repo-dir  e))
