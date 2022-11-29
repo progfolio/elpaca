@@ -234,7 +234,7 @@ e.g. elisp forms may be printed via `prin1'."
   "Cache for menu candidates.")
 
 (defvar elpaca--package-requires-regexp
-  "\\(?:[[:space:]]*;+[[:space:]]*Package-Requires:[[:space:]]*\\(([^z-a]*?))\\)\\)"
+  "\\(?:[[:space:]]*;+[[:space:]]*Package-Requires[[:space:]]*:[[:space:]]*\\(([^z-a]*?))\\)\\)"
   "Regexp matching the Package-Requires metadata in an elisp source file.")
 
 (cl-defstruct (elpaca-q< (:constructor elpaca-q<-create)
