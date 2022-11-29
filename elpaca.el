@@ -1176,19 +1176,18 @@ The keyword's value is expected to be one of the following:
                      (plist-get recipe :branch)))
          (target (or ref tag branch)))
     (unless remotes
-      (elpaca--fail e (format "Invalid :remotes ((stringp listp) %s" remotes)))
-    (if (not target)
+      (elpaca--fail e (format "Invalid :remotes ((stringp listp) %s)" remotes)))
+    (if (null target)
         (progn
-          (elpaca--update-info e "No ref specified. Using default" 'ref-checked-out)
+          (elpaca--update-info e "remote's HEAD checked out" 'ref-checked-out)
           (elpaca--continue-build e))
-      (elpaca--update-info e (format "Checking out ref: %s" target))
       (cond
-       ((and ref branch)
-        (elpaca--update-info e "Recipe :ref overriding :branch"))
-       ((and ref tag)
-        (elpaca--update-info e "Recipe :ref overriding :tag %S"))
+       ((and ref (or branch tag))
+        (elpaca--update-info
+         e (format ":ref %S overriding %S %S" ref (if branch :branch :tag) (or branch tag))))
        ((and tag branch)
-        (elpaca--fail e "Recipe has :tag and :branch declared, ambiguous ref")))
+        (elpaca--fail e (format "Ambiguous ref: :tag %S, :branch %S" tag branch))))
+      (elpaca--update-info e (format "Checking out %S" target))
       (let ((process
              (make-process
               :name (format "elpaca-checkout-ref-%s" (elpaca<-package e))
@@ -1201,7 +1200,7 @@ The keyword's value is expected to be one of the following:
                                  (format "%s/%s" (elpaca--first remote) branch)))))
               :filter   #'elpaca--process-filter
               :sentinel (apply-partially #'elpaca--process-sentinel
-                                         (format "%s checked out" (or target "Default ref"))
+                                         (format "%S checked out" target)
                                          'ref-checked-out))))
         (process-put process :elpaca e)))))
 
