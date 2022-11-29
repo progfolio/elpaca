@@ -1785,7 +1785,7 @@ If HIDE is non-nil, do not show `elpaca-log'."
                           (string-trim stdout)
                         (error "Unable to write lockfile: %s %S" item stderr))))
                   for recipe = (copy-tree (elpaca<-recipe e))
-                  do (setq recipe (plist-put recipe :rev rev))
+                  do (setq recipe (plist-put recipe :ref rev))
                   ;;@MAYBE: recipe (plist-put recipe :pin t))
                   collect (cons item (list :source "lockfile"
                                            :date (current-time)
