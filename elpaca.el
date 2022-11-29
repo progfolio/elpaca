@@ -1853,10 +1853,19 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
                                     (format "+refs/heads/*:refs/remotes/%s/*" name))
                (elpaca-process-call "git" "fetch" "--unshallow" name)))))
 
-(defun elpaca-load-lockfile (&optional lockfile _force)
+(defun elpaca--create-lockfile-menu (items)
+  "Create lockfile menu from ITEMS."
+  (let ((source (plist-get (cdar items) :source)))
+    (eval `(defun ,(intern (concat "elpaca-lockfile-" source)) (request)
+             ,(format "A menu for the %s lockfile." source)
+             (when (eq request 'index) ',items))
+          t)))
+
+(defun elpaca-load-lockfile (lockfile &optional _force)
   "Load LOCKFILE. If FORCE is non-nil, @TODO."
   (interactive "fLockfile: ")
-  (message "%S" lockfile))
+  (let ((items (elpaca--read-file lockfile)))
+    (elpaca--create-lockfile-menu items)))
 
 (defun elpaca-write-lockfile (path)
   "Write lockfile to PATH for current state of package repositories."
