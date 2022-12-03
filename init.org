@@ -527,6 +527,7 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
 #+begin_src emacs-lisp :lexical t
 (+general-global-menu! "quit" "q"
   "q" 'save-buffers-kill-emacs
+  "r" 'restart-emacs
   "Q" 'kill-emacs)
 #+end_src
 **** spelling
