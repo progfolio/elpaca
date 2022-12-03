@@ -405,7 +405,7 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
 
 (defsubst elpaca--repo-name (string)
   "Return repo name portion of STRING."
-  (substring string (1+ (string-match-p "/" string))))
+  (file-name-base (substring string (- (string-match-p "/" (reverse string))))))
 
 (defsubst elpaca--repo-user (string)
   "Return user name portion of STRING."
@@ -441,9 +441,9 @@ or nil if none apply."
                  (file-name-base (directory-file-name (url-filename
                                                        (url-generic-parse-url url)))))
                 (repo
-                 (setq user (elpaca--repo-user repo))
                  (if (eq (elpaca--repo-type repo) 'local)
                      (file-name-base (directory-file-name repo))
+                   (when host (setq user (elpaca--repo-user repo)))
                    (elpaca--repo-name repo)))
                 (pkg pkg)
                 (t (error "Unable to determine repo name"))))
