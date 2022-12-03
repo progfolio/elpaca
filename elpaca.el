@@ -565,7 +565,7 @@ Keys are as follows:
                   :files files :build-steps build-steps :recipe recipe
                   :includes (and mono-repo (list mono-repo))
                   :log (list (list status nil info)))))
-    (when mono-repo (cl-pushnew elpaca (elpaca<-includes mono-repo)))
+    (when mono-repo (cl-pushnew id (elpaca<-includes mono-repo)))
     elpaca))
 
 (defsubst elpaca--status (e)
@@ -649,12 +649,15 @@ Print the elpaca status line in `elpaca-log-buffer'.
 If STATUS is non-nil and differs from E's current STATUS,
 signal E's depedentents to check (and possibly change) their statuses.
 If REPLACE is non-nil, E's log is updated instead of appended."
-  (when (and status (not (equal status (elpaca--status e))))
+  (when-let (((and status (not (equal status (elpaca--status e)))))
+             (queued (elpaca--queued)))
     (push status (elpaca<-statuses e))
     (when (memq status '(finished failed blocked))
-      (mapc #'elpaca--check-status (elpaca<-dependents e)))
+      (mapc (lambda (d) (elpaca--check-status (elpaca-alist-get d queued)))
+            (elpaca<-dependents e)))
     (when (eq status 'ref-checked-out)
-      (mapc #'elpaca--continue-mono-repo-dependency (elpaca<-includes e)))
+      (mapc (lambda (i) (elpaca--continue-mono-repo-dependency (elpaca-alist-get i queued)))
+            (elpaca<-includes e)))
     (when (eq status 'failed) (elpaca-status)))
   (when info (elpaca--log-event e info replace))
   (when elpaca--info-timer (cancel-timer elpaca--info-timer))
@@ -722,7 +725,8 @@ Accepted KEYS are :pre and :post which are hooks run around queue processing."
   "Declare E finished or failed."
   (let ((status (elpaca--status e)))
     (if (eq  status 'finished)
-        (cl-loop for dependent in (elpaca<-dependents e)
+        (cl-loop for item in (elpaca<-dependents e)
+                 for dependent = (elpaca-alist-get item (elpaca--queued))
                  unless (eq (elpaca--status dependent) 'finished)
                  do (elpaca--check-status dependent))
       (unless (eq (elpaca--status e) 'failed)
@@ -1054,44 +1058,43 @@ The keyword's value is expected to be one of the following:
                         (when (string-match-p regexp file) (expand-file-name file)))))))
 
 (defun elpaca--dependencies (e)
-  "Return a list of E's dependencies."
-  (or (mapcar (lambda (o) (cons (cadr o) nil)) (elpaca<-dependencies e))
-      (let* ((default-directory (elpaca<-repo-dir e))
-             (package (file-name-sans-extension (elpaca<-package e)))
-             (name (concat package ".el"))
-             (regexp (concat "^" name "$"))
-             (main (or
-                    (plist-get (elpaca<-recipe e) :main)
-                    (cl-some (lambda (f) (let ((e (expand-file-name f)))
-                                           (and (file-exists-p e) e)))
-                             (list (concat package "-pkg.el")
-                                   name
-                                   (concat "./lisp/" name)
-                                   (concat "./elisp/" name)))
-                    (car (directory-files default-directory nil regexp))
-                    (car (elpaca--directory-files-recursively default-directory regexp))
-                    ;; Best guess if there is no file matching the package name...
-                    (car (directory-files default-directory nil "\\.el$" 'nosort))
-                    (error "Unable to find main elisp file for %S" package)))
-             (deps
-              (if (not (file-exists-p default-directory))
-                  (error "Package repository not on disk: %S" (elpaca<-recipe e))
-                (with-temp-buffer
-                  (insert-file-contents-literally main)
-                  (goto-char (point-min))
-                  (if (string-suffix-p "-pkg.el" main)
-                      (eval (nth 4 (read (current-buffer))))
-                    (let ((case-fold-search t))
-                      (when (re-search-forward elpaca--package-requires-regexp nil 'noerror)
-                        (condition-case-unless-debug err
-                            ;; Replace comment delimiters in multi-line package-requires metadata.
-                            (read (replace-regexp-in-string ";" "" (match-string 1)))
-                          ((error)
-                           (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))))
-        (cl-loop for dep in deps ; convert naked symbol or (symbol) to (symbol "0")
-                 collect (if (or (symbolp dep) (null (cdr-safe dep)))
-                             (list (elpaca--first dep) "0")
-                           dep)))))
+  "Return a list of E's declared dependencies."
+  (let* ((default-directory (elpaca<-repo-dir e))
+         (package (file-name-sans-extension (elpaca<-package e)))
+         (name (concat package ".el"))
+         (regexp (concat "^" name "$"))
+         (main (or
+                (plist-get (elpaca<-recipe e) :main)
+                (cl-some (lambda (f) (let ((e (expand-file-name f)))
+                                       (and (file-exists-p e) e)))
+                         (list (concat package "-pkg.el")
+                               name
+                               (concat "./lisp/" name)
+                               (concat "./elisp/" name)))
+                (car (directory-files default-directory nil regexp))
+                (car (elpaca--directory-files-recursively default-directory regexp))
+                ;; Best guess if there is no file matching the package name...
+                (car (directory-files default-directory nil "\\.el$" 'nosort))
+                (error "Unable to find main elisp file for %S" package)))
+         (deps
+          (if (not (file-exists-p default-directory))
+              (error "Package repository not on disk: %S" (elpaca<-recipe e))
+            (with-temp-buffer
+              (insert-file-contents-literally main)
+              (goto-char (point-min))
+              (if (string-suffix-p "-pkg.el" main)
+                  (eval (nth 4 (read (current-buffer))))
+                (let ((case-fold-search t))
+                  (when (re-search-forward elpaca--package-requires-regexp nil 'noerror)
+                    (condition-case-unless-debug err
+                        ;; Replace comment delimiters in multi-line package-requires metadata.
+                        (read (replace-regexp-in-string ";" "" (match-string 1)))
+                      ((error)
+                       (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))))
+    (cl-loop for dep in deps ; convert naked symbol or (symbol) to (symbol "0")
+             collect (if (or (symbolp dep) (null (cdr-safe dep)))
+                         (list (elpaca--first dep) "0")
+                       dep))))
 
 
 ;;@DECOMPOSE: The body of this function is similar to `elpaca--clone-dependencies'.
@@ -1099,64 +1102,62 @@ The keyword's value is expected to be one of the following:
 (defun elpaca--queue-dependencies (e)
   "Queue E's dependencies."
   (elpaca--update-info e "Queueing Dependencies" 'queueing-deps)
-  (let* ((dependencies (or (elpaca<-dependencies e) (elpaca--dependencies e)))
-         (queued       (elpaca--queued))
-         (queued-deps
-          (cl-loop for (dependency . _) in dependencies
-                   unless (memq dependency elpaca-ignored-dependencies)
-                   for d = (or (elpaca-alist-get dependency queued)
-                               (elpaca--queue dependency))
-                   when d collect
-                   (progn
-                     (cl-pushnew d (elpaca<-dependencies e))
-                     (cl-pushnew e (elpaca<-dependents d))
-                     d))))
-    (if queued-deps
-        ;; We do this in two steps so that e is aware of all its
-        ;; dependencies before any single dependency starts its build.
-        ;; Otherwise a dependency may finish prior to other dependencies being
-        ;; registered. This will cause the dependent e to become unblocked
-        ;; multiple times and run its build steps simultaneously/out of order.
-        (mapc #'elpaca--continue-build queued-deps)
-      (elpaca--update-info e "No external dependencies detected")
-      (elpaca--continue-build e))))
+  (if-let ((queued (cl-loop
+                    with e-id = (elpaca<-id e)
+                    for (item . _) in (elpaca--dependencies e)
+                    for d = (and (not (memq item elpaca-ignored-dependencies))
+                                 (or (elpaca-alist-get item (elpaca--queued))
+                                     (elpaca--queue item)))
+                    when d collect
+                    (prog1 d
+                      (unless (memq item (elpaca<-dependencies e))
+                        (push item (elpaca<-dependencies e)))
+                      (unless (memq e-id (elpaca<-dependents d))
+                        (push e-id (elpaca<-dependents d)))))))
+      ;; We do this in two steps so that e is aware of all its
+      ;; dependencies before any single dependency starts its build.
+      ;; Otherwise a dependency may finish prior to other dependencies being
+      ;; registered. This will cause the dependent e to become unblocked
+      ;; multiple times and run its build steps simultaneously/out of order.
+      (mapc #'elpaca--continue-build queued)
+    (elpaca--update-info e "No external dependencies detected")
+    (elpaca--continue-build e)))
 
 ;;@TODO: fix possible race similar to queue--dependencies.
+;;@MAYBE: Package major version checks.
 (defun elpaca--clone-dependencies (e)
   "Clone E's dependencies."
   (elpaca--update-info e "Cloning Dependencies" 'cloning-deps)
-  (let* ((dependencies (elpaca--dependencies e))
-         (externals (cl-loop with seen
-                             for dependency in dependencies
-                             for item = (car dependency)
-                             unless (or (memq item elpaca-ignored-dependencies)
-                                        (memq item seen))
-                             collect dependency
-                             do (push item seen))))
-    (if-let ((emacs (assoc 'emacs dependencies))
-             ((version< emacs-version (cadr emacs))))
-        (elpaca--fail e (format "Requires %S; running %S" emacs emacs-version))
-      (if externals
-          ;;@TODO: Major Version conflict checks?
-          (let ((finished 0))
-            (dolist (spec externals)
-              (let* ((dependency (car spec))
-                     (queued     (elpaca-alist-get dependency (elpaca--queued)))
-                     (d          (or queued (elpaca--queue dependency)))
-                     (included   (member d (elpaca<-includes e)))
-                     (blocked    (eq (elpaca--status d) 'blocked)))
-                (cl-pushnew d (elpaca<-dependencies e))
-                (cl-pushnew e (elpaca<-dependents d))
-                (if queued
-                    (when (eq (elpaca--status queued) 'finished) (cl-incf finished))
-                  (if included
-                      ;; Unblock dependency published in same repo...
-                      (when blocked (elpaca--clone-dependencies d))
-                    (unless blocked (elpaca--continue-build d))))))
-            (when (= (length externals) finished) ; Our dependencies beat us to the punch
-              (elpaca--continue-build e)))
-        (elpaca--update-info e "No external dependencies detected")
-        (elpaca--continue-build e)))))
+  (if-let ((dependencies (elpaca--dependencies e))
+           (externals (cl-loop for dependency in dependencies
+                               for item = (car dependency)
+                               unless (memq item elpaca-ignored-dependencies)
+                               collect item)))
+      (if-let ((emacs (assoc 'emacs dependencies))
+               ((version< emacs-version (cadr emacs))))
+          (elpaca--fail e (format "Requires %S; running %S" emacs emacs-version))
+        (when (= (length externals) ; Our dependencies beat us to the punch
+                 (cl-loop with e-id = (elpaca<-id e)
+                          for dependency in externals
+                          for found = (elpaca-alist-get dependency (elpaca--queued))
+                          for d = (or found (elpaca--queue dependency))
+                          for d-id = (elpaca<-id d)
+                          for included = (member d-id (elpaca<-includes e))
+                          for blocked = (eq (elpaca--status d) 'blocked)
+                          do
+                          (unless (memq d-id (elpaca<-dependencies e))
+                            (push d-id (elpaca<-dependencies e)))
+                          (unless (memq e-id (elpaca<-dependents d))
+                            (push e-id (elpaca<-dependents d)))
+                          (unless found
+                            (if included
+                                ;; Unblock dependency published in same repo...
+                                (when blocked (elpaca--clone-dependencies d))
+                              (unless blocked (elpaca--continue-build d))))
+                          count (and found (eq (elpaca--status found) 'finished))))
+          (elpaca--continue-build e)))
+    (elpaca--update-info e "No external dependencies detected")
+    (elpaca--continue-build e)))
 
 (defun elpaca--checkout-ref (e)
   "Check out E's ref."
@@ -1202,17 +1203,20 @@ The keyword's value is expected to be one of the following:
   "Called when one of an E's dependencies change status.
 Kick off next build step, and/or change E's status."
   (unless (eq (elpaca--status e) 'finished)
-    (let (failed blocked)
-      (cl-loop for dependency in (elpaca<-dependencies e)
-               for status = (elpaca--status dependency)
-               unless (eq status 'finished)
-               do (push (elpaca<-package dependency)
-                        (if (eq status 'failed) failed blocked)))
-      (cond
-       (failed (elpaca--fail e (format "Failed dependencies: %S" failed)))
-       (blocked (elpaca--update-info
-                 e (format "Blocked by dependencies: %s" blocked) 'blocked))
-       (t (elpaca--continue-build e))))))
+    (cl-loop with failed
+             with blocked
+             with queued = (elpaca--queued)
+             for dependency in (elpaca<-dependencies e)
+             for found = (elpaca-alist-get dependency queued)
+             for status = (elpaca--status found)
+             unless (eq status 'finished)
+             do (push dependency (if (eq status 'failed) failed blocked))
+             finally
+             (cond
+              (failed (elpaca--fail e (format "Failed dependencies: %S" failed)))
+              (blocked (elpaca--update-info
+                        e (format "Blocked by dependencies: %s" blocked) 'blocked))
+              (t (elpaca--continue-build e))))))
 
 (defun elpaca--clone-process-sentinel (process _event)
   "Sentinel for clone PROCESS."
@@ -1402,8 +1406,7 @@ When INTERACTIVE is non-nil, message the list of dependents."
            (dependents (elpaca<-dependents e)))
       (let* ((transitives
               (cl-loop for dependent in dependents
-                       for i = (intern (elpaca<-package dependent))
-                       collect (cons i (elpaca-dependents i nil 'recurse))))
+                       collect (cons dependent (elpaca-dependents dependent nil 'recurse))))
              (deps (delete-dups (nreverse (flatten-tree transitives)))))
         (if interactive (message "%s" deps) deps))
     (when recurse item)))
