@@ -991,8 +991,7 @@ If it matches, the E associated with process has its STATUS updated."
       (elpaca--update-info e (format "%s steps finished" type))
       (elpaca--continue-build e))
      ((string-match-p "abnormally" event)
-      ;; We want the event prior to the last "exited abnormally" event.
-      (elpaca--fail e (nth 2 (car (last (elpaca<-log e) 2))))))))
+      (elpaca--fail e (format "%s command failed" type))))))
 
 (defun elpaca--dispatch-build-commands (e type)
   "Run E's TYPE commands for.
