@@ -658,7 +658,7 @@ If REPLACE is non-nil, E's log is updated instead of appended."
     (when (eq status 'ref-checked-out)
       (mapc (lambda (i) (elpaca--continue-mono-repo-dependency (elpaca-alist-get i queued)))
             (elpaca<-includes e)))
-    (when (eq status 'failed) (elpaca-status)))
+    (when (eq status 'failed) (elpaca-log "#unique !finished")))
   (when info (elpaca--log-event e info replace))
   (when elpaca--info-timer (cancel-timer elpaca--info-timer))
   (setq elpaca--info-timer
