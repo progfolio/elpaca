@@ -201,7 +201,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
   "When non-nil, show `elpaca-status' during build.")
 
 (defvar elpaca-ignored-dependencies
-  '(emacs cl-lib cl-generic nadvice org org-mode map seq json)
+  '(emacs cl-lib cl-generic nadvice org org-mode map seq json auth-source-pass)
   "Ignore these unless the user explicitly requests they be installed.")
 
 (defvar elpaca-overriding-prompt nil "Overriding prompt for interactive functions.")
