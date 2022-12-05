@@ -289,10 +289,6 @@ See `elpaca-menu-functions' for valid values of MENUS."
 Simplified version of `alist-get'."
   (cdr (assq key alist)))
 
-(defun elpaca-get-queued (item &optional queue)
-  "Return E associated with ITEM from QUEUE."
-  (elpaca-alist-get item (or queue (elpaca--queued))))
-
 (defsubst elpaca--first (obj)
   "Return `car' of OBJ if it is a list, else OBJ."
   (if (listp obj) (car obj) obj))
@@ -515,6 +511,13 @@ or nil if none apply."
   `(condition-case err ,try
      ((error) (setq status 'struct-failed info (format ,info err)) nil)))
 
+(defun elpaca--queued (&optional n)
+  "Return list of elpacas from Nth queue.
+If N is nil return a list of all queued elpacas."
+  (if n
+      (elpaca-q<-elpacas (nth n elpaca--queues))
+    (cl-loop for queue in elpaca--queues append (elpaca-q<-elpacas queue))))
+
 (defsubst elpaca--mono-repo (repo-dir)
   "Return previously queued E with REPO-DIR."
   (cl-some (lambda (queued)
@@ -595,12 +598,9 @@ If REPLACE is non-nil, the most recent log entry is replaced."
         (setf (car (elpaca<-log e)) event)
       (push event (elpaca<-log e)))))
 
-(defun elpaca--queued (&optional n)
-  "Return list of elpacas from Nth queue.
-If N is nil return a list of all queued elpacas."
-  (if n
-      (elpaca-q<-elpacas (nth n elpaca--queues))
-    (cl-loop for queue in elpaca--queues append (elpaca-q<-elpacas queue))))
+(defun elpaca-get-queued (item &optional queue)
+  "Return E associated with ITEM from QUEUE."
+  (elpaca-alist-get item (or queue (elpaca--queued))))
 
 (defsubst elpaca--status-face (status &optional default)
   "Return face for STATUS or DEFAULT if not found."
