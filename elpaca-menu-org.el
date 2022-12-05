@@ -47,17 +47,14 @@
                                            "--abbrev=6" "HEAD")
                        (if success (string-trim stdout) (message "%S" stderr) "N/A"))))
     (message "Org version: %s %s" orgversion gitversion)
-    (call-process
-     emacs nil "*elpaca-byte-compilation*" nil
-     "-Q" "--batch"
-     "--eval" "(setq vc-handled-backends nil org-startup-folded nil)"
-     "--eval" "(add-to-list 'load-path \".\")"
-     "--eval" "(load \"org-compat.el\")"
-     "--eval" "(load \"../mk/org-fixup.el\")"
-     "--eval" "(org-make-org-loaddefs)" ; @TODO: Should we handle autoloads?
-     "--eval" (format "(org-make-org-version %S %S)" orgversion gitversion)
-     "--eval" "(cd \"../doc\")" ; @TOOD: Do we need this?
-     "--eval" "(org-make-manuals)")))
+    (setq vc-handled-backends nil org-startup-folded nil)
+    (add-to-list 'load-path ".")
+    (load "org-compat.el")
+    (load "../mk/org-fixup.el")
+    (org-make-org-loaddefs)
+    (org-make-org-version orgversion gitversion)
+    (cd "../doc") ; @TOOD: Do we need this?
+    (org-make-manuals)))
 
 ;;;###autoload
 (defun elpaca-menu-org (request)
