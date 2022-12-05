@@ -39,7 +39,9 @@ It then builds and activates Elpaca.
            ((not (file-exists-p repo)))
            (buffer (get-buffer-create "*elpaca-bootstrap*")))
   (condition-case-unless-debug err
-      (if-let (((zerop (call-process "git" nil buffer t "clone"
+      (if-let (((pop-to-buffer buffer '((display-buffer-reuse-window
+                                         display-buffer-same-window))))
+               ((zerop (call-process "git" nil buffer t "clone"
                                      (plist-get order :repo) repo)))
                (default-directory repo)
                ((zerop (call-process "git" nil buffer t "checkout"
