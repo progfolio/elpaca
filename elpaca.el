@@ -724,8 +724,9 @@ Accepted KEYS are :pre and :post which are hooks run around queue processing."
   "Declare E finished or failed."
   (let ((status (elpaca--status e)))
     (if (eq  status 'finished)
-        (cl-loop for item in (elpaca<-dependents e)
-                 for dependent = (elpaca-alist-get item (elpaca--queued))
+        (cl-loop with queued = (elpaca--queued)
+                 for item in (elpaca<-dependents e)
+                 for dependent = (elpaca-alist-get item queued)
                  unless (eq (elpaca--status dependent) 'finished)
                  do (elpaca--check-status dependent))
       (unless (eq (elpaca--status e) 'failed)
@@ -1102,10 +1103,11 @@ The keyword's value is expected to be one of the following:
   "Queue E's dependencies."
   (elpaca--update-info e "Queueing Dependencies" 'queueing-deps)
   (if-let ((queued (cl-loop
+                    with queued = (elpaca--queued)
                     with e-id = (elpaca<-id e)
                     for (item . _) in (elpaca--dependencies e)
                     for d = (and (not (memq item elpaca-ignored-dependencies))
-                                 (or (elpaca-alist-get item (elpaca--queued))
+                                 (or (elpaca-alist-get item queued)
                                      (elpaca--queue item)))
                     when d collect
                     (prog1 d
