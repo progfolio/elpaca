@@ -640,11 +640,12 @@ If N is nil return a list of all queued elpacas."
 (declare-function elpaca-log "elpaca-log")
 (declare-function elpaca-status "elpaca-status")
 (declare-function elpaca-ui--update-search-filter "elpaca-ui")
-(defun elpaca--update-info-buffers ()
+(defun elpaca--update-log-buffer ()
   "Update views in `elpaca-log-buffer'."
   (when-let ((log (bound-and-true-p elpaca-log-buffer))
              ((get-buffer-window log t))) ;; log buffer visible
-    (elpaca-ui--update-search-filter log)))
+    (with-current-buffer log
+      (elpaca-ui--update-search-filter log))))
 
 (defun elpaca--update-info (e info &optional status replace)
   "Update E's INFO.
@@ -665,7 +666,7 @@ If REPLACE is non-nil, E's log is updated instead of appended."
   (when info (elpaca--log-event e info replace))
   (when elpaca--info-timer (cancel-timer elpaca--info-timer))
   (setq elpaca--info-timer
-        (run-at-time elpaca-info-timer-interval nil #'elpaca--update-info-buffers))
+        (run-at-time elpaca-info-timer-interval nil #'elpaca--update-log-buffer))
   nil)
 
 (defun elpaca--log-duration (e)
