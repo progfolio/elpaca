@@ -956,6 +956,7 @@ If it matches, the E associated with process has its STATUS updated."
 
 (defun elpaca--install-info-async (file dir e)
   "Asynchronously Install E's .info FILE in Info DIR."
+  (elpaca--update-info e (format "... %s/%s" dir file))
   (let ((process (make-process
                   :name (format "elpaca-install-info-%s" (elpaca<-package e))
                   :command (list elpaca-install-info-executable file dir)
@@ -965,10 +966,10 @@ If it matches, the E associated with process has its STATUS updated."
 
 (defun elpaca--install-info (e)
   "Install E's .info files."
-  (elpaca--update-info e "Installing Info files")
   (when-let ((dir (expand-file-name "dir" (elpaca<-build-dir e)))
              ((not (file-exists-p dir)))
              (specs (or (elpaca<-files e) (setf (elpaca<-files e) (elpaca--files e)))))
+    (elpaca--update-info e "Installing Info files")
     (cl-loop for (target . link) in specs
              for file = (cond
                          ((string-match-p "\\.info$" link) link)
