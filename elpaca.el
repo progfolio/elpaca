@@ -946,7 +946,6 @@ If it matches, the E associated with process has its STATUS updated."
     (elpaca--remove-build-steps e '(elpaca--install-info elpaca--add-info-path))
     (elpaca--continue-build e)))
 
-;;@TODO: DRY. Identical to compile-info sentinel
 (defun elpaca--install-info-process-sentinel (process event)
   "Sentinel for info installation PROCESS EVENT."
   (let ((e (process-get process :elpaca)))
