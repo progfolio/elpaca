@@ -609,7 +609,7 @@ If N is nil return a list of all queued elpacas."
 (defun elpaca--run-build-commands (commands)
   "Run build COMMANDS."
   (dolist (command (if (listp (car-safe commands)) commands (list commands)))
-    (message "running command: %S" command)
+    (message "Running command: %S" command)
     (if (cl-every #'stringp command)
         (elpaca-with-process (apply #'elpaca-process-call command)
           (if success
