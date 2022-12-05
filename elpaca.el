@@ -978,8 +978,8 @@ If it matches, the E associated with process has its STATUS updated."
              when (and file (file-exists-p file))
              do (setf (elpaca<-build-steps e)
                       (push (apply-partially #'elpaca--install-info-async file dir)
-                            (elpaca<-build-steps e)))
-             finally (elpaca--continue-build e))))
+                            (elpaca<-build-steps e)))))
+  (elpaca--continue-build e))
 
 (defun elpaca--dispatch-build-commands-process-sentinel (process event)
   "PROCESS EVENT."
