@@ -518,10 +518,11 @@ If N is nil return a list of all queued elpacas."
       (elpaca-q<-elpacas (nth n elpaca--queues))
     (cl-loop for queue in elpaca--queues append (elpaca-q<-elpacas queue))))
 
-(defsubst elpaca--mono-repo (repo-dir)
-  "Return previously queued E with REPO-DIR."
+(defsubst elpaca--mono-repo (id repo-dir)
+  "Return previously queued E with REPO-DIR other than ID."
   (cl-some (lambda (queued)
              (and-let* ((e (cdr queued))
+                        ((not (eq (elpaca<-id e) id)))
                         ((equal repo-dir (elpaca<-repo-dir e)))
                         e)))
            (reverse (elpaca--queued))))
@@ -562,7 +563,7 @@ Keys are as follows:
          (builtp (and clonedp (and build-dir (file-exists-p build-dir))))
          (mono-repo (or mono-repo
                         (when-let (((not builtp))
-                                   (e (elpaca--mono-repo repo-dir)))
+                                   (e (elpaca--mono-repo id repo-dir)))
                           (setq status 'blocked info (format "Waiting on monorepo %S" repo-dir))
                           e)))
          (build-steps (elpaca--build-steps recipe builtp clonedp mono-repo))
