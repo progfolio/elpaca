@@ -289,6 +289,10 @@ See `elpaca-menu-functions' for valid values of MENUS."
 Simplified version of `alist-get'."
   (cdr (assq key alist)))
 
+(defun elpaca-get-queued (item &optional queue)
+  "Return E associated with ITEM from QUEUE."
+  (elpaca-alist-get item (or queue (elpaca--queued))))
+
 (defsubst elpaca--first (obj)
   "Return `car' of OBJ if it is a list, else OBJ."
   (if (listp obj) (car obj) obj))
