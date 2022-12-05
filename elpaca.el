@@ -614,7 +614,6 @@ If N is nil return a list of all queued elpacas."
         (elpaca-with-process (apply #'elpaca-process-call command)
           (if success
               (message stdout)
-            (message "Build command error: %S" result)
             (error "Build command failed: %S" stderr)))
       (eval command t))))
 
