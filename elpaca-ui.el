@@ -340,7 +340,7 @@ ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
            (target (cdr found))
            (result (if (elpaca<-p target) ;;not marked
                        (if elpaca-ui--want-faces
-                           (propertize name 'face (elpaca--status-face (elpaca--status target)))
+                           (propertize name 'face (elpaca-alist-get (elpaca--status target) elpaca-status-faces 'default))
                          name)
                      (let* ((props  (cdr target))
                             (face   (or (plist-get props :face) 'elpaca-ui-marked-package))

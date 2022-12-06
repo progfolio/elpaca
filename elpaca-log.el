@@ -36,13 +36,13 @@
   "Return log's `tabulated-list-entries'."
   (cl-loop
    with queue-time = (elpaca-q<-time (car (last elpaca--queues)))
-   for (item . p) in (elpaca--queued)
-   for log = (elpaca<-log p)
-   for package = (elpaca<-package p)
+   for (item . e) in (elpaca--queued)
+   for log = (elpaca<-log e)
+   for package = (elpaca<-package e)
    append
    (cl-loop for (status time info) in log
             for delta = (format-time-string "%02s.%6N" (time-subtract time queue-time))
-            for pkg = (propertize package 'face (elpaca--status-face status) 'elpaca p)
+            for pkg = (propertize package 'face (elpaca-alist-get status elpaca-status-faces 'default) 'elpaca e)
             collect (list item (vector pkg (symbol-name status) info delta)))))
 
 (defun elpaca-log--build-entries (entries)
@@ -58,8 +58,7 @@
            (cl-loop
             for (status time info) in log
             until (eq status 'rebuilding)
-            for pkg =
-            (propertize package 'face (elpaca--status-face status) 'elpaca e)
+            for pkg = (propertize package 'face (elpaca-alist-get status elpaca-status-faces 'default) 'elpaca e)
             collect
             (list id (vector pkg (symbol-name status) info
                              (format-time-string

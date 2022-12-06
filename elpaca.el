@@ -63,6 +63,12 @@
   '((t (:weight bold :foreground "#FF1818")))
   "Indicates an order has failed.")
 
+(defcustom elpaca-status-faces '((blocked  . elpaca-blocked)
+                                 (finished . elpaca-finished)
+                                 (failed   . elpaca-failed))
+  "Alist mapping order statuses to faces."
+  :type 'alist)
+
 (defvar elpaca--info-timer nil "Timer to debounce order info printing.")
 
 (defvar elpaca--pre-built-steps
@@ -602,14 +608,6 @@ If REPLACE is non-nil, the most recent log entry is replaced."
 (defun elpaca-get-queued (item &optional queue)
   "Return E associated with ITEM from QUEUE."
   (elpaca-alist-get item (or queue (elpaca--queued))))
-
-(defsubst elpaca--status-face (status &optional default)
-  "Return face for STATUS or DEFAULT if not found."
-  (cond
-   ((eq status 'blocked)  'elpaca-blocked)
-   ((eq status 'finished) 'elpaca-finished)
-   ((eq status 'failed)   'elpaca-failed)
-   (t                     (or default 'default))))
 
 (defun elpaca--run-build-commands (commands)
   "Run build COMMANDS."
