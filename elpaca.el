@@ -284,10 +284,10 @@ See `elpaca-menu-functions' for valid values of MENUS."
           (elpaca--write-menu-cache))
         items)))
 
-(defsubst elpaca-alist-get (key alist)
-  "Return KEY's value in ALIST.
-Simplified version of `alist-get'."
-  (cdr (assq key alist)))
+(defsubst elpaca-alist-get (key alist &optional default)
+  "Return KEY's value in ALIST or DEFAULT.
+Simplified, faster version of `alist-get'."
+  (or (cdr (assq key alist)) default))
 
 (defsubst elpaca--first (obj)
   "Return `car' of OBJ if it is a list, else OBJ."
