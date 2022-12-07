@@ -145,6 +145,9 @@ It recieves one argument, the parsed search query list.")
 (defvar-local elpaca-ui--history nil "History for `elpaca-ui' minibuffer.")
 (defvar url-http-end-of-headers)
 
+(defvar elpaca-ui--string-cache nil
+  "Cache for propertized strings.")
+
 ;;;; Functions:
 (defun elpaca-ui--header-line (&optional prefix)
   "Set `header-line-format' to reflect query.
@@ -586,33 +589,35 @@ The current package is its sole argument."
 
 (defun elpaca-ui--byte-comp-warnings (entries)
   "Buttonize byte comp warnings in ENTRIES."
-  (mapcar
-   (lambda (entry)
-     (if-let ((cols (cadr entry))
-              ((equal (aref cols 1) "byte-compilation"))
-              (copy (copy-tree entry))
-              (info (aref (cadr copy) 2))
-              (e (get-text-property (point-min) 'elpaca (aref (cadr copy) 0))))
-         (progn
-           (when (string-match-p "\\(?:Error\\|Warning\\):" info)
-             (setf (aref (cadr copy) 2) (propertize info 'face 'elpaca-failed)))
-           (when (string-match "\\(?:\\([^z-a]*?\\):\\([[:digit:]]+?\\):\\([[:digit:]]*?\\)\\):" info)
-             (let ((file (match-string 1 (aref (cadr copy) 2)))
-                   (line  (match-string 2 (aref (cadr copy) 2)))
-                   (col (match-string 3 (aref (cadr copy) 2))))
-               (setf (aref (cadr copy) 2)
-                     (replace-match
-                      (elpaca-ui--buttonize
-                       (propertize (string-join (list file col line) ":") 'face nil)
-                       (lambda (&rest _)
-                         (elpaca-ui--visit-byte-comp-warning
-                          (expand-file-name file (elpaca<-build-dir e))
-                          (string-to-number line)
-                          (string-to-number col))))
-                      nil nil (aref (cadr copy) 2)))))
-           copy)
-       entry))
-   entries))
+  (let ((queued (elpaca--queued)))
+    (mapcar
+     (lambda (entry)
+       (if-let ((cols (cadr entry))
+                ((equal (aref cols 1) "byte-compilation"))
+                (copy (copy-tree entry))
+                (info (aref (cadr copy) 2))
+                (name (aref (cadr copy) 0))
+                (e (elpaca-alist-get (intern name) queued)))
+           (progn
+             (when (string-match-p "\\(?:Error\\|Warning\\):" info)
+               (setf (aref (cadr copy) 2) (propertize info 'face 'elpaca-failed)))
+             (when (string-match "\\(?:\\([^z-a]*?\\):\\([[:digit:]]+?\\):\\([[:digit:]]*?\\)\\):" info)
+               (let ((file (match-string 1 (aref (cadr copy) 2)))
+                     (line  (match-string 2 (aref (cadr copy) 2)))
+                     (col (match-string 3 (aref (cadr copy) 2))))
+                 (setf (aref (cadr copy) 2)
+                       (replace-match
+                        (elpaca-ui--buttonize
+                         (propertize (string-join (list file col line) ":") 'face nil)
+                         (lambda (&rest _)
+                           (elpaca-ui--visit-byte-comp-warning
+                            (expand-file-name file (elpaca<-build-dir e))
+                            (string-to-number line)
+                            (string-to-number col))))
+                        nil nil (aref (cadr copy) 2)))))
+             copy)
+         entry))
+     entries)))
 
 (defun elpaca-ui--commit-info (entries)
   "Apply faces to commit info in ENTRIES."

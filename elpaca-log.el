@@ -42,7 +42,11 @@
    append
    (cl-loop for (status time info) in log
             for delta = (format-time-string "%02s.%6N" (time-subtract time queue-time))
-            for pkg = (propertize package 'face (elpaca-alist-get status elpaca-status-faces 'default) 'elpaca e)
+            for pkg = (let ((found (alist-get item elpaca-ui--string-cache)))
+                        (if-let ((cached (alist-get status found)))
+                            cached
+                          (setf (alist-get status (alist-get item elpaca-ui--string-cache))
+                                (propertize package 'face (elpaca-alist-get status elpaca-status-faces 'default)))))
             collect (list item (vector pkg (symbol-name status) info delta)))))
 
 (defun elpaca-log--build-entries (entries)
@@ -58,7 +62,11 @@
            (cl-loop
             for (status time info) in log
             until (eq status 'rebuilding)
-            for pkg = (propertize package 'face (elpaca-alist-get status elpaca-status-faces 'default) 'elpaca e)
+            for pkg = (let ((found (alist-get id elpaca-ui--string-cache)))
+                        (if-let ((cached (alist-get status found)))
+                            cached
+                          (setf (alist-get status (alist-get id elpaca-ui--string-cache))
+                                (propertize package 'face (elpaca-alist-get status elpaca-status-faces 'default)))))
             collect
             (list id (vector pkg (symbol-name status) info
                              (format-time-string
