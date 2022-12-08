@@ -232,44 +232,49 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
           (setq char nil col nil))))
     (nreverse queries)))
 
+(defvar elpaca-ui--search-cache (make-hash-table :test #'equal))
+
 (defun elpaca-ui--parse-search (search)
   "Parse SEARCH." ;by abusing the elisp reader
-  (let ((adjustp (version< emacs-version "29"))
-        ops chunk finished tagp negatedp)
-    (with-temp-buffer
-      (insert search)
-      (goto-char (point-min))
-      (while (not finished)
-        (condition-case err
-            (while t
-              (let ((op (read (current-buffer))))
-                (cond
-                 ((or (symbolp op) (numberp op))
-                  (when (numberp op) (setq op (intern (number-to-string op))))
-                  (if (eq op '!)
-                      (setq negatedp t)
-                    (push (concat (and negatedp "!") (and tagp "#") (symbol-name op)) chunk)
-                    (setq tagp nil negatedp nil)))
-                 ((and (consp op) (memq (car op) '(quote \`)))
-                  (setf (car chunk) (concat (car chunk)
-                                            (if (eq (car op) 'quote) "'" "`")
-                                            (symbol-name (cadr op)))))
-                 (t
-                  (when chunk
-                    (push (elpaca-ui--parse-tokens (string-join (nreverse chunk) " ")) ops))
-                  (setq chunk nil)
-                  (push `((elisp ,op)) ops)))))
-          (end-of-file (setq finished t))
-          (invalid-read-syntax (when adjustp (forward-char))
-                               (when (and (or (equal (cadr err) "#")
-                                              (string-prefix-p "integer" (cadr err)))
-                                          (not (looking-back "#" nil)))
-                                 (setq tagp t)
-                                 (re-search-backward "#" nil 'noerror)
-                                 (forward-char)))))
-      (when chunk
-        (push (elpaca-ui--parse-tokens (string-join (nreverse chunk) " ")) ops))
-      (apply #'append (nreverse ops)))))
+  (or (gethash search elpaca-ui--search-cache)
+      (let ((adjustp (version< emacs-version "29"))
+            ops chunk finished tagp negatedp)
+        (with-temp-buffer
+          (insert search)
+          (goto-char (point-min))
+          (while (not finished)
+            (condition-case err
+                (while t
+                  (let ((op (read (current-buffer))))
+                    (cond
+                     ((or (symbolp op) (numberp op))
+                      (when (numberp op) (setq op (intern (number-to-string op))))
+                      (if (eq op '!)
+                          (setq negatedp t)
+                        (push (concat (and negatedp "!") (and tagp "#") (symbol-name op)) chunk)
+                        (setq tagp nil negatedp nil)))
+                     ((and (consp op) (memq (car op) '(quote \`)))
+                      (setf (car chunk) (concat (car chunk)
+                                                (if (eq (car op) 'quote) "'" "`")
+                                                (symbol-name (cadr op)))))
+                     (t
+                      (when chunk
+                        (push (elpaca-ui--parse-tokens (string-join (nreverse chunk) " ")) ops))
+                      (setq chunk nil)
+                      (push `((elisp ,op)) ops)))))
+              (end-of-file (setq finished t))
+              (invalid-read-syntax (when adjustp (forward-char))
+                                   (when (and (or (equal (cadr err) "#")
+                                                  (string-prefix-p "integer" (cadr err)))
+                                              (not (looking-back "#" nil)))
+                                     (setq tagp t)
+                                     (re-search-backward "#" nil 'noerror)
+                                     (forward-char)))))
+          (when chunk
+            (push (elpaca-ui--parse-tokens (string-join (nreverse chunk) " ")) ops))
+          (let ((parsed (apply #'append (nreverse ops))))
+            (puthash search parsed elpaca-ui--search-cache)
+            parsed)))))
 
 (defun elpaca-ui--search-fn (parsed)
   "Return query function from PARSED." ;;@TODO: Clean this up. Reptition.
