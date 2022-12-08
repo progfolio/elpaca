@@ -56,7 +56,7 @@
   "Indicates an order is finished.")
 
 (defface elpaca-blocked
-  '((t (:weight bold :foreground "#FFC1CC")))
+  '((t (:weight bold :foreground "#FFF01F")))
   "Indicates an order is blocked.")
 
 (defface elpaca-failed
