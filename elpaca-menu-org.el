@@ -81,7 +81,8 @@
                           :depth nil ; `org-version' depends on repository tags.
                           :pre-build '(progn (require 'elpaca-menu-org)
                                              (elpaca-menu-org--build))
-                          :build '(:not elpaca--generate-autoloads-async)
+                          :build '(:not elpaca--generate-autoloads-async
+                                        elpaca--compile-info)
                           :files '(:defaults ("etc/styles/" "etc/styles/*")))))
              (cons 'org-contrib
                    (list :source "Org"
