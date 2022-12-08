@@ -22,11 +22,9 @@
 
 ;; A elpaca menu for Org packages
 
-;; @FIX: info not buildling properly
-
 ;;; Code:
-(defvar elpaca-menu-org--index-cache nil "Cache of Org menu index.")
 (require 'elpaca)
+(defvar elpaca-menu-org--index-cache nil "Cache of Org menu index.")
 
 (defun elpaca-menu-org--build ()
   "Generate `org-version.el`.
