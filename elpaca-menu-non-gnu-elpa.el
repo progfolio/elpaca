@@ -78,6 +78,7 @@
                          :description (or (alist-get id metadata) "n/a")
                          :recipe `( :package ,(symbol-name id) :repo ,url :url ,url
                                     ,@(when-let ((ignored (plist-get props :ignored-files)))
+                                        (unless (listp ignored) (setq ignored (list ignored)))
                                         `(:files (:defaults (:exclude ,@ignored))))))))
 
 (defun elpaca-menu-non-gnu-elpa--write-cache ()
