@@ -1581,15 +1581,15 @@ If PROMPT is non-nil, it is used instead of the default."
            nil t)))
 
 ;;;###autoload
-(defun elpaca-rebuild (item &optional hide)
+(defun elpaca-rebuild (item &optional interactive)
   "Rebuild ITEM's associated package.
-When called interactively, prompt for ITEM.
-With a prefix argument, rebuild current file's package or prompt if none found.
-If HIDE is non-nil, do not display `elpaca-log-buffer'."
+When INTERACTIVE is non-nil, prompt for ITEM, immediately process.
+With a prefix argument, rebuild current file's package or prompt if none found."
   (interactive (list (or (and-let* ((current-prefix-arg)
                                     (queued (elpaca--file-package))
                                     ((car queued))))
-                         (elpaca--read-queued "Rebuild package: "))))
+                         (elpaca--read-queued "Rebuild package: "))
+                     t))
   (let* ((queued (assoc item (elpaca--queued)))
          (e (cdr queued)))
     (unless e (user-error "Package %S is not queued" item))
@@ -1607,8 +1607,11 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
     (setq elpaca-cache-autoloads nil)
     (setf (elpaca<-queue-time e) (current-time))
     (setf (elpaca<-statuses e) '(queued))
-    (unless hide (require 'elpaca-log) (elpaca-log--latest))
-    (elpaca--process queued)))
+    (setf (elpaca-q<-status (nth (elpaca<-queue-id e) (reverse elpaca--queues))) 'incomplete)
+    (when interactive
+      (require 'elpaca-log) ;@TODO: make conditional
+      (elpaca-log--latest)
+      (elpaca--process queued))))
 
 (defun elpaca--log-updates (e)
   "Log E's fetched commits."
@@ -1633,27 +1636,29 @@ If HIDE is non-nil, do not display `elpaca-log-buffer'."
     (process-put process :elpaca e)))
 
 ;;;###autoload
-(defun elpaca-fetch (item &optional hide)
+(defun elpaca-fetch (item &optional interactive)
   "Fetch ITEM's associated package remote commits.
 This does not merge changes or rebuild the packages.
-If HIDE is non-nil don't display `elpaca-log-buffer'."
-  (interactive (list (elpaca--read-queued "Fetch Package Updates: ")))
+If INTERACTIVE is non-nil immediately process, otherwise queue."
+  (interactive (list (elpaca--read-queued "Fetch Package Updates: ") t))
   (if-let ((queued (assoc item (elpaca--queued))))
       (let ((e (cdr queued)))
         (elpaca--update-info e "Fetching updates" 'fetching-updates)
         (setf (elpaca<-build-steps e) (list #'elpaca--fetch #'elpaca--log-updates))
         (setf (elpaca<-queue-time e) (current-time))
-        (elpaca--process queued)
-        (unless hide (require 'elpaca-log) (elpaca-log--latest)))
+        (when interactive
+          (require 'elpaca-log)
+          (elpaca-log--latest)
+          (elpaca--process queued)))
     (user-error "Package %S is not queued" item)))
 
 ;;;###autoload
-(defun elpaca-fetch-all (&optional hide)
+(defun elpaca-fetch-all (&optional interactive)
   "Fetch remote commits for queued elpacas.
-If HIDE is non-nil, do not show `elpaca-log-buffer'."
-  (interactive "P")
+INTERACTIVE is passed to `elpaca-fetch'."
+  (interactive (list t))
   (cl-loop for (item . _) in (cl-remove-duplicates (elpaca--queued) :key #'car)
-           do (elpaca-fetch item hide)))
+           do (elpaca-fetch item interactive)))
 
 (defun elpaca--merge-process-sentinel (process event)
   "Handle PROCESS EVENT."
@@ -1682,10 +1687,10 @@ If HIDE is non-nil, do not show `elpaca-log-buffer'."
   (elpaca--continue-build e))
 
 ;;;###autoload
-(defun elpaca-update (item &optional hide)
+(defun elpaca-update (item &optional interactive)
   "Update ITEM's associated package.
-If HIDE is non-nil, do not show `elpaca-log'."
-  (interactive (list (elpaca--read-queued "Update package: ")))
+If INTERACTIVE is non-nil, the queued order is processed immediately."
+  (interactive (list (elpaca--read-queued "Update package: ") t))
   (let* ((queued (assoc item (elpaca--queued)))
          (e (cdr queued))
          (recipe (elpaca<-recipe e))
@@ -1710,15 +1715,20 @@ If HIDE is non-nil, do not show `elpaca-log'."
                    elpaca--add-info-path
                    elpaca--run-post-build-commands))))
           (elpaca<-queue-time e) (current-time))
-    (unless hide (require 'elpaca-log) (elpaca-log--latest))
-    (elpaca--process queued)))
+    (setf (elpaca-q<-status (nth (elpaca<-queue-id e) (reverse elpaca--queues)))
+          'incomplete)
+    (when interactive
+      (require 'elpaca-log) ;@TODO: make conditional
+      (elpaca-log--latest)
+      (elpaca--process queued))))
 
 ;;;###autoload
-(defun elpaca-update-all ()
-  "Update all queued packages."
-  (interactive)
+(defun elpaca-update-all (&optional interactive)
+  "Update all queued packages.
+INTERACTIVE is passed to `elpaca-update'."
+  (interactive (list t))
   (cl-loop for (item . _) in (cl-remove-duplicates (elpaca--queued) :key #'car)
-           do (elpaca-update item)))
+           do (elpaca-update item interactive)))
 
 ;;; Lockfiles
 (defun elpaca-declared-p (item)

@@ -32,14 +32,16 @@
   '((delete  :prefix "💀" :face (:inherit default :weight bold :foreground "#FF0022")
              :action (lambda (i) (elpaca-delete i 'force 'deps)))
     (install :prefix "⚙️" :face (:inherit default :weight bold :foreground "#89cff0")
-             :setup (lambda () (require 'elpaca-log) (elpaca-log--latest))
+             :setup (lambda ()
+                      (elpaca-split-queue)
+                      (require 'elpaca-log) (elpaca-log--latest))
              :action elpaca-try)
     (rebuild :prefix "♻️️" :face (:inherit default :weight bold :foreground "#f28500")
              :setup (lambda () (require 'elpaca-log) (elpaca-log--latest))
-             :action (lambda (it) (elpaca-rebuild it 'hide)))
+             :action elpaca-rebuild)
     (update  :prefix "⬆️" ️️:face (:inherit default :weight bold :foreground "#f28500")
              :setup (lambda () (require 'elpaca-log) (elpaca-log--latest))
-             :action (lambda (it) (elpaca-update it 'hide))))
+             :action elpaca-update))
   "List of actions which can be taken on packages."
   :type 'list)
 
@@ -338,7 +340,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
 (defun elpaca-ui--print ()
   "Print table entries."
   (let ((elpaca-ui--print-cache (append elpaca-ui--marked-packages (elpaca--queued))))
-    (tabulated-list-print 'rembember-pos)))
+    (tabulated-list-print)))
 
 (defun elpaca-ui--apply-faces (id cols)
   "Propertize entries which are marked/installed.
@@ -547,31 +549,36 @@ The current package is its sole argument."
                 (user-error "Package %S is not installed" p))))
 
 (declare-function elpaca-log--latest "elpaca-log")
+(defvar elpaca-manager-buffer)
+(defun elpaca-ui--post-execute ()
+  "Refresh views."
+  (require 'elpaca-log)
+  (require 'elpaca-manager)
+  (when-let ((buffer (get-buffer elpaca-manager-buffer)))
+    (with-current-buffer buffer
+      (when (functionp elpaca-ui-entries-function)
+        (funcall elpaca-ui-entries-function))
+      (elpaca-ui-search-refresh buffer))))
+
 (defun elpaca-ui-execute-marks ()
   "Execute each action in `elpaca-ui-marked-packages'."
   (interactive)
   (when (null elpaca-ui--marked-packages) (user-error "No marked packages"))
   (deactivate-mark)
-  (eval
-   `(elpaca-queue
-     :pre  (lambda () (require 'elpaca-log) (require 'elpaca-manager) (elpaca-log--latest))
-     :post (lambda ()
-             (when-let ((buffer (get-buffer elpaca-log-buffer))
-                        (elpaca-log-auto-bury))
-               (bury-buffer buffer))
-             (when-let ((buffer (get-buffer elpaca-manager-buffer)))
-               (with-current-buffer buffer
-                 (when (functionp elpaca-ui-entries-function)
-                   (funcall elpaca-ui-entries-function))
-                 (elpaca-ui-search-refresh buffer))))
-     (elpaca nil
-       (with-current-buffer ,(current-buffer)
-         (cl-loop for (item action . props) in elpaca-ui--marked-packages
-                  for a = (plist-get props :action)
-                  when a do (funcall a item)
-                  do (pop elpaca-ui--marked-packages)))))
-   t)
-  (elpaca--process-queue (nth 1 elpaca--queues)))
+  (cl-loop with setups
+           with actions
+           for (item _ . props) in elpaca-ui--marked-packages
+           for action = (plist-get props :action)
+           for setup = (plist-get props :setup)
+           when (functionp setup) do (cl-pushnew setup setups)
+           when action do (cl-pushnew (list action item) actions)
+           (pop elpaca-ui--marked-packages)
+           finally do
+           (mapc #'funcall (nreverse setups))
+           (mapc #'apply actions))
+  (setf (elpaca-q<-post (car elpaca--queues))
+        #'elpaca-ui--post-execute)
+  (elpaca-process-queues))
 
 (defun elpaca-ui-send-input ()
   "Send input string to current process."
