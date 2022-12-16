@@ -1473,7 +1473,8 @@ When called interactively, ORDER is immediately processed, otherwise it queued."
     (elpaca-log--latest)
     (elpaca-queue
      (eval `(elpaca ,order
-              ,(when-let (((listp order))
+              ,(when-let (((equal current-prefix-arg '(4)))
+                          ((listp order))
                           (id (pop order)))
                  ;;@TODO: implement as a proper menu function?
                  ;;What would the semantics of an update be here?
