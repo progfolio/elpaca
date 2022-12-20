@@ -440,8 +440,10 @@ or nil if none apply."
          (mono-repo (alist-get info elpaca--repo-dirs))
          (name (cond
                 (local-repo
-                 (if mono-repo (error "Duplicate :local-repo %S" local-repo) local-repo))
-                (mono-repo mono-repo)
+                 (if (and mono-repo (not (equal (cdr mono-repo) pkg)))
+                     (error "Duplicate :local-repo %S" local-repo)
+                   local-repo))
+                (mono-repo (car mono-repo))
                 (url
                  (unless (featurep 'url-parse) (require 'url-parse))
                  (file-name-base (directory-file-name (url-filename
@@ -453,10 +455,10 @@ or nil if none apply."
                    (elpaca--repo-name repo)))
                 (pkg pkg)
                 (t (error "Unable to determine repo name"))))
-         (dir (if (and (not mono-repo) (rassoc name elpaca--repo-dirs))
-                  (string-join (list name (format "%s" host) user) ".")
+         (dir (if (and (not mono-repo) (rassoc name (mapcar #'cdr elpaca--repo-dirs)))
+                  (string-join (list name (and host (format "%s" host)) user) ".")
                 (and name (file-name-sans-extension name)))))
-    (unless mono-repo (push (cons info dir) elpaca--repo-dirs))
+    (unless mono-repo (push (cons info (cons dir pkg)) elpaca--repo-dirs))
     (expand-file-name (concat "repos/" dir) elpaca-directory)))
 
 (defun elpaca-build-dir (recipe)
