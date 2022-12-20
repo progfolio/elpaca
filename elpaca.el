@@ -1020,6 +1020,7 @@ The keyword's value is expected to be one of the following:
         (let* ((default-directory (elpaca<-repo-dir e))
                (emacs             (elpaca--emacs-path))
                (program           `(progn
+                                     (setq load-prefer-newer t)
                                      (require 'elpaca)
                                      (normal-top-level-add-subdirs-to-load-path)
                                      (setq gc-cons-percentage 1.0) ;; trade memory for gc speed
