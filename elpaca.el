@@ -1693,6 +1693,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
   (interactive (list (elpaca--read-queued "Update package: ") t))
   (let* ((queued (assoc item (elpaca--queued)))
          (e (cdr queued))
+         (queue (nth (elpaca<-queue-id e) (reverse elpaca--queues)))
          (recipe (elpaca<-recipe e))
          (pin (plist-get recipe :pin)))
     (unless queued (user-error "Package %S is not queued" item))
@@ -1715,8 +1716,8 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
                    elpaca--add-info-path
                    elpaca--run-post-build-commands))))
           (elpaca<-queue-time e) (current-time))
-    (setf (elpaca-q<-status (nth (elpaca<-queue-id e) (reverse elpaca--queues)))
-          'incomplete)
+    (setf (elpaca-q<-status queue) 'incomplete)
+    (cl-decf (elpaca-q<-processed queue))
     (when interactive
       (require 'elpaca-log) ;@TODO: make conditional
       (elpaca-log--latest)
@@ -1725,10 +1726,18 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
 ;;;###autoload
 (defun elpaca-update-all (&optional interactive)
   "Update all queued packages.
-INTERACTIVE is passed to `elpaca-update'."
+When INTERACTIVE, immediately process queue."
   (interactive (list t))
-  (cl-loop for (item . _) in (cl-remove-duplicates (elpaca--queued) :key #'car)
-           do (elpaca-update item interactive)))
+  (cl-loop with repos
+           for (item . e) in (reverse (elpaca--queued))
+           for repo = (elpaca<-repo-dir e)
+           unless (member repo repos) ;skip mono-repos
+           do (push repo repos)
+           (elpaca-update item))
+  (when interactive
+    (require 'elpaca-log)
+    (elpaca-log--latest)
+    (elpaca-process-queues)))
 
 ;;; Lockfiles
 (defun elpaca-declared-p (item)
