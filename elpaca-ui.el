@@ -638,7 +638,7 @@ The current package is its sole argument."
            collect
            (if-let (((equal (aref (cadr entry) 1) "update-log"))
                     (copy (copy-tree entry))
-                    (e (get-text-property (point-min) 'elpaca (aref (cadr copy) 0)))
+                    (e (elpaca-get-queued (car entry)))
                     (repo (elpaca<-repo-dir e))
                     (cols (cadr copy))
                     (info (aref cols 2))
