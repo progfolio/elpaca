@@ -3330,15 +3330,15 @@ https://github.com/ternjs/tern
     (padscape))
 
   (evil-make-intercept-map speedo-mode-map)
-  (let ((interval 0.5)
-        timer)
-    (defun +speedo-debounced-mistake (advised)
-      "Execute `speedo-mistake' after last key press.
+
+  (defvar +speedo-debounce-interval 0.5)
+  (defvar +speedo-debounce-timer nil)
+  (defun +speedo-debounced-mistake (advised)
+    "Execute `speedo-mistake' after last key press.
 This allows me to spam the button to get through the retry screen
 as fast as possible without recording multiple mistakes."
-      (when timer (cancel-timer timer))
-      (setq timer (run-at-time interval nil advised))))
-
+    (when +speedo-debounce-timer (cancel-timer +speedo-debounce-timer))
+    (setq +speedo-debounce-timer (run-at-time +speedo-debounce-interval nil advised)))
   (advice-add 'speedo-mistake :around #'+speedo-debounced-mistake)
 
   (defun +speedo-ensure-controller-support ()
@@ -3350,7 +3350,6 @@ as fast as possible without recording multiple mistakes."
        :noquery t ; Don't ask to kill this process when exiting Emacs.
        :buffer "*antimicrox*"
        :command '("antimicrox" "--tray"))))
-
   (add-hook 'speedo-mode-hook #'+speedo-ensure-controller-support))
 
 (use-feature speedo-review
