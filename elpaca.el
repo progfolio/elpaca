@@ -239,10 +239,6 @@ e.g. elisp forms may be printed via `prin1'."
   (elpaca--read-file (expand-file-name "menu-items.eld" elpaca-cache-directory))
   "Cache for menu candidates.")
 
-(defvar elpaca--package-requires-regexp
-  "\\(?:[[:space:]]*;+[[:space:]]*Package-Requires[[:space:]]*:[[:space:]]*\\(([^z-a]*?))\\)\\)"
-  "Regexp matching the Package-Requires metadata in an elisp source file.")
-
 (cl-defstruct (elpaca-q< (:constructor elpaca-q<-create)
                          (:type list)
                          (:copier nil)
@@ -1092,17 +1088,21 @@ The keyword's value is expected to be one of the following:
               (if (string-suffix-p "-pkg.el" main)
                   (eval (nth 4 (read (current-buffer))))
                 (let ((case-fold-search t))
-                  (when (re-search-forward elpaca--package-requires-regexp nil 'noerror)
-                    (condition-case-unless-debug err
-                        ;; Replace comment delimiters in multi-line package-requires metadata.
-                        (read (replace-regexp-in-string ";" "" (match-string 1)))
-                      ((error)
-                       (error "Unable to parse %S Package-Requires metadata: %S" main err))))))))))
+                  (when (re-search-forward "^;+[  ]+\\(Package-Requires\\)[   ]*:[  ]*"
+                                           nil 'noerror)
+                    (let ((deps (list (buffer-substring-no-properties (point) (line-end-position)))))
+                      (forward-line 1)
+                      (while (looking-at "^;+\\(\t\\|[\t\s]\\{2,\\}\\)\\(.+\\)")
+                        (push (match-string-no-properties 2) deps)
+                        (forward-line 1))
+                      (condition-case err
+                          (read (mapconcat #'identity (nreverse deps) " "))
+                        ((error)
+                         (error "Unable to parse %S Package-Requires metadata: %S" main err)))))))))))
     (cl-loop for dep in deps ; convert naked symbol or (symbol) to (symbol "0")
              collect (if (or (symbolp dep) (null (cdr-safe dep)))
                          (list (elpaca--first dep) "0")
                        dep))))
-
 
 ;;@DECOMPOSE: The body of this function is similar to `elpaca--clone-dependencies'.
 ;; Refactor into a macro to operate on dependencies?
