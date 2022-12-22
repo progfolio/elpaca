@@ -21,6 +21,7 @@ Emacs 27.0 introduced an early-init file. It allows customization before package
 #+begin_src emacs-lisp :lexical t
 (setq package-enable-at-startup nil)
 #+end_src
+
 #+begin_src emacs-lisp :lexical t
 (setq native-comp-async-report-warnings-errors nil)
 #+end_src
