@@ -1722,8 +1722,9 @@ A package for miscellaneous functions.
                      :repo "progfolio/miscellany.el"
                      :local-repo "miscellany"
                      :branch "master"
-                     :pre-build ("/usr/bin/emacs" "--batch" "--execute"
-                                 "(progn (require 'ob-tangle) (org-babel-tangle-file \"./miscellany.org\"))"))
+                     :pre-build ((require 'ob-tangle)
+                                 (setq org-confirm-babel-evaluate nil)
+                                 (org-babel-tangle-file "./miscellany.org")))
   :after (general)
   :commands (+alternate-buffer
              +change-theme
