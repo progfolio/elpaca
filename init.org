@@ -10,7 +10,7 @@ Tangling this file creates an Elisp file, =~/.emacs.d/lisp/init.el=.
 * Bootstrapping
 ** early-init
 :PROPERTIES:
-:header-args: :tangle-mode (identity #o444) :results silent :tangle ~/.emacs.d/early-init.el
+:header-args: :tangle-mode o444 :results silent :tangle ~/.emacs.d/early-init.el
 :END:
 Emacs 27.0 introduced an early-init file. It allows customization before package and UI initialization.
 #+begin_src emacs-lisp :lexical t
