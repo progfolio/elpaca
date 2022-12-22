@@ -830,7 +830,7 @@ https://github.com/jorgenschaefer/emacs-buttercup
   :commands (buttercup-run-at-point))
 #+end_src
 ** cleanroom
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :tangle no
 (elpaca-use-package (cleanroom :host github :repo "progfolio/cleanroom" :protocol ssh)
   :defer t)
 #+end_src
