@@ -1333,7 +1333,6 @@ https://github.com/emacs-helm/helm
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (elpaca-use-package helm
-  :init (require 'helm-config)
   :defer 1
   :custom
   (helm-echo-input-in-header-line t)
