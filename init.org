@@ -3549,3 +3549,17 @@ https://github.com/NicolasPetton/zerodark-theme
 (elpaca-use-package (yodel :host github :repo "progfolio/yodel" :depth nil :protocol ssh)
   :defer t)
 #+end_src
+** spiel
+#+begin_src emacs-lisp :lexical t
+(elpaca-use-package (spiel :host github :repo "progfolio/spiel" :depth nil :protocol ssh)
+  :defer t
+  :config
+  (with-eval-after-load "evil"
+    (when (fboundp 'evil-set-initial-state)
+      (evil-set-initial-state 'spiel-input-mode 'insert))))
+#+end_src
+** greg
+#+begin_src emacs-lisp :lexical t
+(elpaca-use-package (greg :host github :repo "progfolio/greg" :depth nil :protocol ssh)
+  :defer t)
+#+end_src
