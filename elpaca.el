@@ -432,7 +432,7 @@ or nil if none apply."
          (pkg (plist-get recipe :package))
          (host (or (plist-get recipe :host) (plist-get recipe :fetcher)))
          (user nil)
-         (info (intern (concat url repo (and host (format "%s" host)))))
+         (info (intern (concat url repo (and host (symbol-name host)))))
          (mono-repo (alist-get info elpaca--repo-dirs))
          (name (cond
                 (local-repo
@@ -452,7 +452,7 @@ or nil if none apply."
                 (pkg pkg)
                 (t (error "Unable to determine repo name"))))
          (dir (if (and (not mono-repo) (rassoc name (mapcar #'cdr elpaca--repo-dirs)))
-                  (string-join (list name (and host (format "%s" host)) user) ".")
+                  (string-join (list name (and host (symbol-name host)) user) ".")
                 (and name (file-name-sans-extension name)))))
     (unless mono-repo (push (cons info (cons dir pkg)) elpaca--repo-dirs))
     (expand-file-name (concat "repos/" dir) elpaca-directory)))
@@ -568,11 +568,11 @@ Keys are as follows:
          (mono-repo (or mono-repo
                         (when-let (((not builtp))
                                    (e (elpaca--mono-repo id repo-dir)))
-                          (setq status 'blocked info (format "Waiting on monorepo %S" repo-dir))
+                          (setq status 'blocked info (concat "Waiting on monorepo " repo-dir))
                           e)))
          (build-steps (elpaca--build-steps recipe builtp clonedp mono-repo))
          (elpaca (elpaca<--create
-                  :id id :package (format "%S" id) :item item :statuses (list status)
+                  :id id :package (symbol-name id) :item item :statuses (list status)
                   :repo-dir repo-dir :build-dir build-dir :mono-repo mono-repo
                   :files files :build-steps build-steps :recipe recipe
                   :includes (and mono-repo (list mono-repo))
@@ -939,7 +939,7 @@ If it matches, the E associated with process has its STATUS updated."
                      when f collect f))
            (command `(,elpaca-makeinfo-executable ,@(apply #'append files)))
            (process (make-process
-                     :name (format "elpaca-compile-info-%s" (elpaca<-package e))
+                     :name (concat "elpaca-compile-info-" (elpaca<-package e))
                      :command command
                      :filter   #'elpaca--process-filter
                      :sentinel #'elpaca--compile-info-process-sentinel)))
@@ -959,9 +959,9 @@ If it matches, the E associated with process has its STATUS updated."
 
 (defun elpaca--install-info-async (file dir e)
   "Asynchronously Install E's .info FILE in Info DIR."
-  (elpaca--update-info e (format "... %s/%s" dir file))
+  (elpaca--update-info e (concat "... " dir "/" file))
   (let ((process (make-process
-                  :name (format "elpaca-install-info-%s" (elpaca<-package e))
+                  :name (concat "elpaca-install-info-" (elpaca<-package e))
                   :command (list elpaca-install-info-executable file dir)
                   :filter #'elpaca--process-filter
                   :sentinel #'elpaca--install-info-process-sentinel)))
@@ -990,7 +990,7 @@ If it matches, the E associated with process has its STATUS updated."
         (type (process-get process :build-type)))
     (cond
      ((equal event "finished\n")
-      (elpaca--update-info e (format "%s steps finished" type))
+      (elpaca--update-info e (concat type " steps finished"))
       (elpaca--continue-build e))
      ((string-match-p "abnormally" event)
       (elpaca--fail e (format "%s command failed" type))))))
@@ -1011,10 +1011,11 @@ The keyword's value is expected to be one of the following:
   - nil, in which case no commands are executed.
     Note if :build is nil, :pre/post-build commands are not executed."
   (if-let ((recipe   (elpaca<-recipe e))
-           (commands (plist-get recipe type)))
+           (commands (plist-get recipe type))
+           (name (symbol-name type)))
       (progn
-        (elpaca--update-info e (format "Running %S commands" type)
-                             (intern (substring (symbol-name type) 1)))
+        (elpaca--update-info e (concat "Running " name " commands")
+                             (intern (substring name 1)))
         (let* ((default-directory (elpaca<-repo-dir e))
                (emacs             (elpaca--emacs-path))
                (program           `(progn
@@ -1024,7 +1025,7 @@ The keyword's value is expected to be one of the following:
                                      (setq gc-cons-percentage 1.0) ;; trade memory for gc speed
                                      (elpaca--run-build-commands ',commands)))
                (process (make-process
-                         :name (format "elpaca-%s-%s" type (plist-get recipe :package))
+                         :name (concat "elpaca-" name "-" (plist-get recipe :package))
                          :command (list
                                    emacs "-Q"
                                    "-L" "./"
@@ -1035,7 +1036,7 @@ The keyword's value is expected to be one of the following:
                          :filter   #'elpaca--process-filter
                          :sentinel #'elpaca--dispatch-build-commands-process-sentinel)))
           (process-put process :elpaca e)
-          (process-put process :build-type type)))
+          (process-put process :build-type name)))
     (elpaca--continue-build e)))
 
 (defun elpaca--run-pre-build-commands (e)
@@ -1190,7 +1191,7 @@ The keyword's value is expected to be one of the following:
          e (format ":ref %S overriding %S %S" ref (if branch :branch :tag) (or branch tag))))
        ((and tag branch)
         (elpaca--fail e (format "Ambiguous ref: :tag %S, :branch %S" tag branch))))
-      (elpaca--update-info e (format "Checking out %S" target))
+      (elpaca--update-info e (concat "Checking out " target))
       (let ((process
              (make-process
               :name (format "elpaca-checkout-ref-%s" (elpaca<-package e))
@@ -1200,10 +1201,10 @@ The keyword's value is expected to be one of the following:
                    (ref    (list "checkout" ref))
                    (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
                    (branch (list "switch" "-C" branch
-                                 (format "%s/%s" (elpaca--first remote) branch)))))
+                                 (concat (elpaca--first remote) "/" branch)))))
               :filter   #'elpaca--process-filter
               :sentinel (apply-partially #'elpaca--process-sentinel
-                                         (format "%S checked out" target)
+                                         (concat target " checked out")
                                          'ref-checked-out))))
         (process-put process :elpaca e)))))
 
@@ -1223,7 +1224,7 @@ Kick off next build step, and/or change E's status."
              (cond
               (failed (elpaca--fail e (format "Failed dependencies: %S" failed)))
               (blocked (elpaca--update-info
-                        e (format "Blocked by dependencies: %s" blocked) 'blocked))
+                        e (concat "Blocked by dependencies: " (prin1-to-string blocked)) 'blocked))
               (t (elpaca--continue-build e))))))
 
 (defun elpaca--clone-process-sentinel (process _event)
@@ -1245,7 +1246,7 @@ Kick off next build step, and/or change E's status."
     (push 'cloning (elpaca<-statuses e))
     (let ((process
            (make-process
-            :name     (format "elpaca-clone-%s" package)
+            :name     (concat "elpaca-clone-" package)
             :command  `("git" "clone"
                         ;;@TODO: Some refs will need a full clone or specific branch.
                         ,@(when (numberp depth)
@@ -1265,7 +1266,7 @@ Kick off next build step, and/or change E's status."
   "Generate autoloads in DIR for PACKAGE."
   (let* ((feature (or (require 'loaddefs-gen nil t) (require 'autoload)))
          (default-directory dir)
-         (name (format "%s-autoloads.el" package))
+         (name (concat package "-autoloads.el"))
          (output    (expand-file-name name dir))
          (generated-autoload-file output)
          (autoload-timestamps nil)
@@ -1310,12 +1311,12 @@ Async wrapper for `elpaca-generate-autoloads'."
                                      (format "%S" program))))
          (process
           (make-process
-           :name     (format "elpaca-autoloads-%s" package)
+           :name     (concat "elpaca-autoloads-" package)
            :command  command
            :filter   #'elpaca--process-filter
            :sentinel (apply-partially #'elpaca--process-sentinel "Autoloads Generated" nil))))
     (process-put process :elpaca e)
-    (elpaca--update-info e (format "Generating autoloads: %s" default-directory) 'autoloads)))
+    (elpaca--update-info e (concat "Generating autoloads: " default-directory) 'autoloads)))
 
 (defun elpaca--activate-package (e)
   "Activate E's package.
@@ -1325,7 +1326,7 @@ Loads or caches autoloads."
   (let* ((build-dir (elpaca<-build-dir e))
          (default-directory build-dir)
          (package           (elpaca<-package e))
-         (autoloads         (expand-file-name (format "%s-autoloads.el" package))))
+         (autoloads         (expand-file-name (concat package "-autoloads.el"))))
     (cl-pushnew build-dir load-path)
     ;;@TODO: condition on a slot we set on the e to indicate cached recipe?
     (elpaca--update-info e "Package build dir added to load-path")
@@ -1379,7 +1380,7 @@ Loads or caches autoloads."
          (print-circle nil)
          (process
           (make-process
-           :name     (format "elpaca-byte-compile-%s" (elpaca<-package e))
+           :name     (concat "elpaca-byte-compile-" (elpaca<-package e))
            :command  `(,emacs "-Q" "--batch" "--eval" ,(format "%S" program))
            :filter   #'elpaca--process-filter
            :sentinel (apply-partially #'elpaca--process-sentinel "Byte compilation complete" nil))))
@@ -1621,7 +1622,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
   (elpaca--update-info e "Update Log" 'update-log)
   (let* ((default-directory (elpaca<-repo-dir e))
          (process (make-process
-                   :name (format "elpaca-log-updates-%s" (elpaca<-package e))
+                   :name (concat "elpaca-log-updates-" (elpaca<-package e))
                    ;; Pager will break this process. Complains about terminal functionality.
                    :command (list "git" "--no-pager" "log" "..@{u}")
                    :filter   #'elpaca--process-filter
@@ -1632,7 +1633,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
   "Fetch E's remotes' commits."
   (let* ((default-directory (elpaca<-repo-dir e))
          (process (make-process
-                   :name (format "elpaca-fetch-%s" (elpaca<-package e))
+                   :name (concat "elpaca-fetch-" (elpaca<-package e))
                    :command  '("git" "fetch" "--all")
                    :filter   #'elpaca--process-filter
                    :sentinel (apply-partially #'elpaca--process-sentinel "Remotes fetched" nil))))
@@ -1676,7 +1677,7 @@ INTERACTIVE is passed to `elpaca-fetch'."
   "Merge E's fetched commits."
   (let* ((default-directory (elpaca<-repo-dir e))
          (process (make-process
-                   :name (format "elpaca-merge-%s" (elpaca<-package e))
+                   :name (concat "elpaca-merge-" (elpaca<-package e))
                    :command  '("git" "merge" "--ff-only")
                    :filter (lambda (process output)
                              (elpaca--process-filter process output "fatal" 'failed))
