@@ -858,7 +858,7 @@ Completion Overlay Region FUnction
 https://github.com/minad/corfu
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(elpaca-use-package (corfu :host github :repo "minad/corfu" :files (:defaults "extensions"))
+(elpaca-use-package (corfu :host github :repo "minad/corfu" :files (:defaults "extensions/*"))
   :defer 5
   :custom
   (corfu-cycle t)
