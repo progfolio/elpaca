@@ -940,6 +940,7 @@ If it matches, the E associated with process has its STATUS updated."
            (command `(,elpaca-makeinfo-executable ,@(apply #'append files)))
            (process (make-process
                      :name (concat "elpaca-compile-info-" (elpaca<-package e))
+                     :connection-type 'pipe
                      :command command
                      :filter   #'elpaca--process-filter
                      :sentinel #'elpaca--compile-info-process-sentinel)))
@@ -962,6 +963,7 @@ If it matches, the E associated with process has its STATUS updated."
   (elpaca--update-info e (concat "... " dir "/" file))
   (let ((process (make-process
                   :name (concat "elpaca-install-info-" (elpaca<-package e))
+                  :connection-type 'pipe
                   :command (list elpaca-install-info-executable file dir)
                   :filter #'elpaca--process-filter
                   :sentinel #'elpaca--install-info-process-sentinel)))
@@ -1195,6 +1197,7 @@ The keyword's value is expected to be one of the following:
       (let ((process
              (make-process
               :name (format "elpaca-checkout-ref-%s" (elpaca<-package e))
+              :connection-type 'pipe
               :command
               `("git" "-c" "advice.detachedHead=false" ;ref, tag may detach HEAD
                 ,@(cond
@@ -1312,6 +1315,7 @@ Async wrapper for `elpaca-generate-autoloads'."
          (process
           (make-process
            :name     (concat "elpaca-autoloads-" package)
+           :connection-type 'pipe
            :command  command
            :filter   #'elpaca--process-filter
            :sentinel (apply-partially #'elpaca--process-sentinel "Autoloads Generated" nil))))
@@ -1381,6 +1385,7 @@ Loads or caches autoloads."
          (process
           (make-process
            :name     (concat "elpaca-byte-compile-" (elpaca<-package e))
+           :connection-type 'pipe
            :command  `(,emacs "-Q" "--batch" "--eval" ,(format "%S" program))
            :filter   #'elpaca--process-filter
            :sentinel (apply-partially #'elpaca--process-sentinel "Byte compilation complete" nil))))
@@ -1623,6 +1628,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
   (let* ((default-directory (elpaca<-repo-dir e))
          (process (make-process
                    :name (concat "elpaca-log-updates-" (elpaca<-package e))
+                   :connection-type 'pipe
                    ;; Pager will break this process. Complains about terminal functionality.
                    :command (list "git" "--no-pager" "log" "..@{u}")
                    :filter   #'elpaca--process-filter
@@ -1678,6 +1684,7 @@ INTERACTIVE is passed to `elpaca-fetch'."
   (let* ((default-directory (elpaca<-repo-dir e))
          (process (make-process
                    :name (concat "elpaca-merge-" (elpaca<-package e))
+                   :connection-type 'pipe
                    :command  '("git" "merge" "--ff-only")
                    :filter (lambda (process output)
                              (elpaca--process-filter process output "fatal" 'failed))
