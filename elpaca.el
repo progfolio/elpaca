@@ -1616,6 +1616,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
     (setq elpaca-cache-autoloads nil)
     (setf (elpaca<-queue-time e) (current-time))
     (setf (elpaca<-statuses e) '(queued))
+    (setf (elpaca<-files e) nil)
     (setf (elpaca-q<-status (nth (elpaca<-queue-id e) (reverse elpaca--queues))) 'incomplete)
     (when interactive
       (require 'elpaca-log) ;@TODO: make conditional
