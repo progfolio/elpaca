@@ -172,12 +172,12 @@ We can also enable the profiler to view a report after init.
 (add-hook 'elpaca-after-init-hook (lambda () (profiler-stop) (profiler-report)))
 #+end_src
 ELP is useful for seeing which functions in a package are "hot".
-#+begin_src emacs-lisp :lexical t :tangle no
+#+begin_src emacs-lisp :var file="elpaca" :lexical t :tangle no
 (require 'elp)
-(with-eval-after-load 'elpaca
-  (elp-instrument-package "elpaca"))
+(with-eval-after-load file
+  (elp-instrument-package file))
 (add-hook 'elpaca-after-init-hook
-          (lambda () (elp-results) (elp-restore-package 'elpaca)))
+          (lambda () (elp-results) (elp-restore-package (intern file))))
 #+end_src
 ** initial-buffer-choice
 #+begin_src emacs-lisp :lexical t
