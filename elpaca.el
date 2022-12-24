@@ -117,7 +117,7 @@ Setting this to too low may cause the status buffer to block more.
 Setting it too high causes prints fewer status updates."
   :type 'number)
 
-(defcustom elpaca--process-busy-interval 5
+(defcustom elpaca--process-busy-interval 60 ;;@TODO: lower if :pre/:post-build messaging implemented
   "Seconds to wait between subprocess outputs before declaring process blocked."
   :type 'number)
 
