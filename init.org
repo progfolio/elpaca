@@ -1231,7 +1231,7 @@ https://www.flycheck.org/en/latest/
 #+begin_src emacs-lisp :lexical t
 (elpaca-use-package flycheck
   :commands (flycheck-mode)
-  :custom (flycheck-emacs-lisp-load-path 'inherit "necessary with straight.el"))
+  :custom (flycheck-emacs-lisp-load-path 'inherit "necessary with alternatives to package.el"))
 #+end_src
 *** flycheck-package
 =package-lint= integration for flycheck.
