@@ -300,7 +300,7 @@ Packages that I'm developing or aren't part of any online repositories go in =~/
 #+begin_src emacs-lisp :lexical t
 (setq literate-file (concat user-emacs-directory "init.org"))
 #+end_src
-**  terminal utf-8
+** terminal utf-8
 #+begin_src emacs-lisp :lexical t
 (defun +terminal ()
   "Set the terimnal coding system."
