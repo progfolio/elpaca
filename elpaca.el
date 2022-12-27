@@ -1345,11 +1345,10 @@ Loads or caches autoloads."
                   (while t (push (read (current-buffer)) forms))
                 ((end-of-file)))
               (push `(let ((load-file-name ,autoloads)
-                           (load-in-progress t)
-                           (package ,package))
+                           (load-in-progress t))
                        (condition-case err
-                           (eval '(progn ,@(nreverse forms)) t)
-                         ((error) (warn "Error loading %S autoloads: %S" package err))))
+                           (progn ,@(nreverse forms))
+                         ((error) (warn "Error loading %S autoloads: %S" ,package err))))
                     (elpaca-q<-autoloads (car (last elpaca--queues (1+ (elpaca<-queue-id e)))))))
             (elpaca--update-info e "Autoloads cached"))
         (condition-case err
