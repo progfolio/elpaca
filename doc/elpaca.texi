@@ -1,0 +1,877 @@
+\input texinfo    @c -*- texinfo -*-
+@c %**start of header
+@setfilename elpaca.texi
+@settitle Elpaca User Manual
+@documentencoding UTF-8
+@documentlanguage en
+@c %**end of header
+
+@dircategory Emacs
+@direntry
+* Elpaca: (elpaca).     Elisp Package Manager.
+@end direntry
+
+@finalout
+@titlepage
+@title Elpaca User Manual
+@subtitle version 0.0.0
+@author Nicholas Vollmer
+@end titlepage
+
+@contents
+
+@ifnottex
+@node Top
+@top Elpaca User Manual
+
+@noindent
+Elpaca is an elisp package manager.
+It allows users to find, install, update, and remove third-party packages for Emacs.
+It is a replacement for the built-in Emacs package manager, package.el.
+
+@quotation
+Copyright (C) 2022-2023 Nicholas Vollmer
+
+You can redistribute this document and/or modify it under the terms of the GNU
+General Public License as published by the Free Software Foundation, either
+version 3 of the License, or (at your option) any later version.
+
+This document is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE@.  See the GNU
+General Public License for more details.
+
+@end quotation
+@end ifnottex
+
+@menu
+* Installation::                 Installing Elpaca.
+* Usage::                        Using Elpaca.
+* UI::                           Elpaca's package management UI.
+
+@detailmenu
+--- The Detailed Node Listing ---
+
+Installation
+
+* Requirements::                 The required software environment for Elpaca.
+* Bootstrap Snippet::            A script responsible for installing Elpaca.
+
+Usage
+
+* Quick Start::
+* Basic concepts::
+
+Basic concepts
+
+* Recipes::                      The recipe format description.
+* Menus::                        Where recipes come from.
+* Orders::                       Incomplete, or custom recipes.
+* Queues::                       Order processing groups.
+* Installing Packages::
+
+UI
+
+* Searching::                    How to search within the Elpaca UI.
+* Search tags::
+
+@end detailmenu
+@end menu
+
+@node Installation
+@chapter Installation
+
+@menu
+* Requirements::                 The required software environment for Elpaca.
+* Bootstrap Snippet::            A script responsible for installing Elpaca.
+@end menu
+
+@node Requirements
+@section Requirements
+
+Elpaca requires:
+@itemize
+@item
+Emacs >= 27.1
+@item
+git (minimum version TBD)
+@item
+Windows users must be able to create symlinks.
+@end itemize
+
+@node Bootstrap Snippet
+@section Bootstrap Snippet
+
+To install Elpaca, add the following bootstrapping snippet to your init.el.
+It must come before any calls to other Elpaca functions/macros.
+This will clone Elpaca into your @samp{user-emacs-directory} under the @samp{elpaca} subdirectory.
+It then builds and activates Elpaca.
+
+@lisp
+(defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
+(defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
+(defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
+                              :ref nil
+                              :build (:not elpaca--activate-package)))
+(when-let ((repo  (expand-file-name "repos/elpaca/" elpaca-directory))
+           (build (expand-file-name "elpaca/" elpaca-builds-directory))
+           (order (cdr elpaca-order))
+           ((add-to-list 'load-path (if (file-exists-p build) build repo)))
+           ((not (file-exists-p repo))))
+  (condition-case-unless-debug err
+      (if-let ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+               ((zerop (call-process "git" nil buffer t "clone"
+                                     (plist-get order :repo) repo)))
+               (default-directory repo)
+               ((zerop (call-process "git" nil buffer t "checkout"
+                                     (or (plist-get order :ref) "--")))))
+          (progn
+            (byte-recompile-directory repo 0 'force)
+            (require 'elpaca)
+            (and (fboundp 'elpaca-generate-autoloads)
+                 (elpaca-generate-autoloads "elpaca" repo))
+            (kill-buffer buffer))
+        (error "%s" (with-current-buffer buffer (buffer-string))))
+    ((error)
+     (warn "%s" err)
+     (delete-directory repo 'recursive))))
+(require 'elpaca-autoloads)
+(add-hook 'after-init-hook #'elpaca-process-queues)
+(elpaca `(,@@elpaca-order))
+@end lisp
+
+You'll also want to disable package.el in your early-init file@footnote{@uref{https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html}}:
+
+@lisp
+(setq package-enable-at-startup nil)
+@end lisp
+
+And remove anything related to package.el in your init file. e.g. calls to @code{(package-activate-all)}.
+
+@node Usage
+@chapter Usage
+
+@menu
+* Quick Start::
+* Basic concepts::
+@end menu
+
+@node Quick Start
+@section Quick Start
+
+@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@headitem Operation
+@tab UI (keys apply in elpaca-ui-mode)
+@tab completing-read interface commands
+@item Finding Packages
+@tab @code{M-x elpaca-manager}
+@tab @code{elpaca-try}
+@item Trying Packages (for current session)
+@tab @code{i} @code{x}
+@tab @code{elpaca-try}
+@item Updating Packages
+@tab @code{u} @code{x}
+@tab @code{elpaca-update} or @code{M-x} @code{elpaca-update-all}
+@item Rebuilding Packages
+@tab @code{r} @code{x}
+@tab @code{elpaca-rebuild}
+@item Deleting Packages
+@tab @code{d} @code{x}
+@tab @code{elpaca-delete}
+@item View Package Logs
+@tab @code{l} filters log to current package
+@tab @code{elpaca-log}
+@item View Package Statuses
+@tab @code{t} show most recent log entries
+@tab @code{elpaca-status}
+@item Visit Package Repository Directory
+@tab @code{v}
+@tab @code{elpaca-visit}
+@item Visit Package Build Directory
+@tab @code{C-u} @code{v}
+@tab @code{C-u} @code{elpaca-visit}
+@item Browse Package Website
+@tab @code{b}
+@tab @code{elpaca-browse}
+@end multitable
+
+Packages installed via the above commands are not loaded on subsequent Emacs sessions (after restarting).
+To install and load packages persistently (across Emacs restarts), use the @samp{elpaca} or @samp{elpaca-use-package} macros in your init file after bootstrapping. (@ref{Bootstrap Snippet, , bootstrap snippet})
+
+For example:
+
+@lisp
+;; Install use-package
+(elpaca 'use-package
+  ;; Customize/Configure the package in the BODY of the macro.
+  (setq use-package-always-defer t))
+
+;; Expands to: (elpaca evil (use-package evil :demand t))
+(elpaca-use-package 'evil :demand t)
+
+;; Don't install anything. Defer execution of BODY
+(elpaca nil (message "deferred"))
+@end lisp
+
+@strong{IMPORTANT}:
+
+Elpaca installs and activates packages asynchronously.
+Elpaca processes its package queues @emph{after} Emacs reads the init file.@footnote{This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.} 
+Consider the following example:
+
+@lisp
+(elpaca nil (message "First")) ; Queue First
+(message "Second") ; Second messaged
+(elpaca nil (message "Third")) ; Queue Third
+(elpaca-process-queues) ; Process queue: First messaged, Third messaged.
+@end lisp
+
+``Second'' will be message @emph{before} ``First'' and ``Third''.
+Defer forms which are dependent on deferred forms.
+Wrapping the ``Second'' message in an @samp{elpaca} declaration will fix the above example:
+
+@lisp
+(elpaca nil (message "First"))  ; Queue First
+(elpaca nil (message "Second")) ; Queue Second
+(elpaca nil (message "Third"))  ; Queue Third
+(elpaca-process-queues) ; Process queue: First, Second, Third messaged.
+@end lisp
+
+Add any configuration which relies on @samp{after-init-hook}, @samp{emacs-startup-hook}, etc to @samp{elpaca-after-init-hook} so it runs after Elpaca has activated all queued packages.
+
+@node Basic concepts
+@section Basic concepts
+
+The @samp{elpaca-example} macro in the following examples reduces verbosity.
+It is not part of Elpaca.
+
+@lisp
+(defun elpaca-example-sort-plist (plist)
+  "Return copy of PLIST with :package followed by lexically sorted key/val pairs."
+  `(:package ,(plist-get plist :package)
+             ,@@(cl-loop for k in (cl-sort (cl-loop for key in plist by #'cddr
+                                                   unless (eq key :package) collect key)
+                                          #'string< :key #'symbol-name)
+                        append (list k (plist-get plist k)))))
+
+(defmacro elpaca-example (&rest body)
+  "Execute BODY with a clean elpaca environment."
+  `(let (elpaca-cache-menu-items
+         elpaca-order-functions
+         elpaca-recipe-functions
+         (elpaca-menu-functions '(elpaca-example-menu)))
+     (elpaca-example-sort-plist ,@@body)))
+@end lisp
+
+Examples will use the following recipe menu.
+(@ref{Menus, , recipe menu})
+It offers a ``burger'' package recipe:
+
+@lisp
+(defun elpaca-example-menu (_)
+  '((burger . (:recipe ( :buns 2
+                         :lettuce t
+                         :tomato t
+                         :beef t
+                         :cheese t
+                         :cook well-done
+                         :from elpaca-example-menu)))))
+@end lisp
+
+@menu
+* Recipes::                      The recipe format description.
+* Menus::                        Where recipes come from.
+* Orders::                       Incomplete, or custom recipes.
+* Queues::                       Order processing groups.
+* Installing Packages::
+@end menu
+
+@node Recipes
+@subsection Recipes
+
+A recipe provides Elpaca with the metadata necessary to build and install a package.
+It is a list of the form:
+
+@lisp
+(ITEM . PROPS)
+@end lisp
+
+@emph{ITEM} is a symbol uniquely identifying the package.
+@emph{PROPS} is a plist with any of the following recipe keywords:
+
+@table @asis
+@item :host | :fetcher
+A symbol or string representing the hosting service of the repository.
+@end table
+
+@lisp
+(example :host github)
+(example :fetcher gitlab)
+(example :host "www.example.com")
+@end lisp
+
+@table @asis
+@item :repo
+A string of the form @samp{USER/REPO} when used with the @samp{:host} keyword; a local file path or remote URL when @samp{:host} is not used.
+@end table
+
+@lisp
+(example :host github :repo "user/example") ;;downloaded from github
+@end lisp
+
+@lisp
+(local :repo "~/repos/local/") ;;cloned from local filesystem
+@end lisp
+
+@lisp
+(remote :repo "https://foo.example/example.git") ;;remote clone
+@end lisp
+
+@table @asis
+@item :branch
+The repository branch to check out when installing the package.
+@end table
+
+@lisp
+(example :host github :repo "user/example" :branch "main")
+@end lisp
+
+@table @asis
+@item :tag
+The tag to check out when installing the package.
+@end table
+
+@lisp
+(example :host github :repo "user/example" :tag "v1.0")
+@end lisp
+
+@table @asis
+@item :ref
+The git ref@footnote{@uref{https://git-scm.com/book/en/v2/Git-Internals-Git-References, git ref}} to check out when installing the package.
+@end table
+
+@lisp
+(example :host github :repo "user/example" :ref "a76ca0a") ;; Check out a specific commit.
+@end lisp
+
+@table @asis
+@item :pin
+When non-nil, ignore the package during update commands.
+@end table
+
+@lisp
+(example :pin t)
+@end lisp
+
+@table @asis
+@item :depth
+The package repository's history depth.
+@end table
+
+@lisp
+(example :depth 1) ;; Shallow clone with history truncated to 1 commit.
+(example :depth nil) ;; Full repository clone.
+@end lisp
+
+@table @asis
+@item :remotes
+A list of repository remotes@footnote{@uref{https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes, remotes}}.
+@end table
+The first element is the default remote when installing the package.
+If it is a string, it names the default remote.
+The remaining elements are lists of the form:
+
+@lisp
+(NAME . PROPS)
+@end lisp
+
+@emph{NAME} is a string used to name the remote.
+@emph{PROPS} are recipe keyword/value pairs used to override values previously declared in the recipe.
+
+@lisp
+(example :remotes ("origin"))
+@end lisp
+
+@lisp
+(example :host github :repo "original/example"
+         :remotes ("origin"
+                   ("fork" :host gitlab :repo "user/example-fork.el")))
+@end lisp
+
+@table @asis
+@item :main
+The name of the main elisp file.
+When provided this can speed up the process of cloning and loading a package's dependencies.
+@end table
+
+@lisp
+(example :main "example.el")
+@end lisp
+
+@table @asis
+@item :build
+A list of build steps, nil or t.
+To remove steps from @samp{elpaca-default-build-steps} by starting the list with the @samp{:not} keyword.
+@end table
+
+@lisp
+(example :build (:not elpaca--byte-compile))
+@end lisp
+
+@table @asis
+@item :inherit
+When non-nil, inherit @emph{PROPS} from @samp{elpaca-order-functions} and possibly @samp{elpaca-menu-functions}.
+For example, without inheritance:
+@end table
+
+@lisp
+(elpaca-example (elpaca-recipe '(burger :inherit nil)))
+@end lisp
+
+returns the recipe as declared:
+
+@lisp
+(:package "burger" :inherit nil)
+@end lisp
+
+With inheritance enabled:
+
+@lisp
+(elpaca-example (elpaca-recipe '(burger :inherit t)))
+@end lisp
+
+the elpaca-example-menu provides the rest of the ``burger'' recipe.
+
+@lisp
+(:package "burger" :inherit t)
+@end lisp
+
+@enumerate
+@item
+@anchor{Inheritance precedence}Inheritance precedence
+
+
+The following list shows the order of precedence for inheritance.
+Each item takes precedence over the items which follow it.
+
+@itemize
+@item
+elpaca-recipe-functions
+@item
+declared recipe
+@item
+elpaca-order-functions
+@item
+elpaca-menu-functions
+@end itemize
+
+@lisp
+(elpaca-example
+ (let ((elpaca-recipe-functions (lambda (recipe) '(:from recipe-functions :cheese extra)))
+       (elpaca-order-functions (lambda (order) '(:from order-functions :tomato nil))))
+   (elpaca-recipe '(burger))))
+@end lisp
+
+@lisp
+(:package "burger" :cheese extra :from recipe-functions :tomato nil)
+@end lisp
+
+@item
+@anchor{elpaca-recipe-functions}elpaca-recipe-functions
+
+
+The abnormal hook @samp{elpaca-recipe-functions} runs via @samp{run-hook-with-args-until-success} just before installing the package.
+Each function in the list should accept the current recipe as its sole argument and return either nil or a plist.
+The first function to return a plist has its return value merged with the current recipe.
+
+This is useful if you want to guarantee the values of certain keywords despite allowing recipe inheritance.
+
+@lisp
+(elpaca-example
+ (let ((elpaca-recipe-functions
+        '((lambda (recipe)
+            "If a recipe calls for cheese, I always want extra."
+            (when (plist-get recipe :cheese) (list :cheese 'extra))))))
+   (elpaca-recipe '(burger))))
+@end lisp
+
+@lisp
+(:package "burger")
+@end lisp
+@end enumerate
+
+@node Menus
+@subsection Menus
+
+A menu is a function which returns an alist of the form:
+@lisp
+((ITEM . DATA)...)
+@end lisp
+
+@emph{ITEM} is a symbol uniquely identifying a package.
+@emph{DATA} is a plist of package metadata.
+@emph{DATA} must contain the following keywords:
+
+@table @asis
+@item :recipe
+A package recipe. (@ref{Recipes, , recipe})
+@item :source
+A string naming the menu.
+@end table
+
+It may also provide additional information about a package.
+For example, the Elpaca UI utilizes the following keywords when present:
+
+@table @asis
+@item :url
+The package's website URL@.
+@item :description
+A description of the package.
+@item :date
+The time of package's last update.
+@end table
+
+The function must accept one of the following @emph{REQUEST} symbols as an argument:
+
+@table @asis
+@item index
+Return the alist described above
+@item update
+update the menu's alist.
+@end table
+
+@lisp
+(defun elpaca-menu-minimal (request_)
+  "A minimal menu example.
+Ignore REQUEST, as this is a static, curated list of packages."
+  '((example :source "EXAMPLE" :recipe (example :host github :repo "user/example"))
+    (two :source "EXAMPLE" :recipe (two :host gitlab :repo "user/two"))))
+@end lisp
+
+Menus allow one to offer Elpaca users curated lists of package recipes.
+For example, @uref{https://www.github.com/progfolio/melpulls, melpulls} implements an Elpaca menu for pending MELPA packages.
+
+@enumerate
+@item
+@anchor{elpaca-menu-functions}elpaca-menu-functions
+
+
+The @samp{elpaca-menu-functions} variable contains menu functions for the following package sources by default:
+
+@itemize
+@item
+@uref{https://www.github.com/melpa/melpa, MELPA}
+@item
+@uref{https://git.savannah.gnu.org/cgit/emacs/org-mode.git/, Org}
+@item
+@uref{https://git.sr.ht/~bzg/org-contrib, Org-contrib}
+@item
+@uref{https://www.github.com/emacs-straight/gnu-elpa-mirror, GNU ELPA Mirror}
+@item
+@uref{https://elpa.nongnu.org, NonGNU ELPA}
+@end itemize
+
+Menus are checked in order until one returns the requested menu item or the menu list is exhausted.
+@end enumerate
+
+@node Orders
+@subsection Orders
+
+At a minimum, an order is a symbol which represents the name of a menu item (@ref{Menus, , menu}):
+
+@lisp
+(elpaca example)
+@end lisp
+
+An order may also be a partial or full recipe:
+
+@lisp
+(elpaca (example :host gitlab))
+(elpaca (example :host gitlab :repo "user/example" :inherit nil))
+@end lisp
+
+@enumerate
+@item
+@anchor{elpaca-order-functions}elpaca-order-functions
+
+
+The abnormal hook @samp{elpaca-order-functions} runs via @samp{run-hook-with-args-until-success} before @samp{elpaca-menu-functions}.
+Each function in the list should accept the current order as its sole argument and return either nil or a plist.
+The first function to return a plist has its return value merged with the current order.
+
+This is useful for declaring default order properties.
+For example, the following function disables recipe inheritance by default:
+
+@lisp
+(elpaca-example
+ (let ((elpaca-order-functions '((lambda (_) '(:inherit nil)))))
+   (elpaca-recipe 'burger)))
+@end lisp
+
+@lisp
+(:package "burger" :inherit nil)
+@end lisp
+@end enumerate
+
+@node Queues
+@subsection Queues
+
+Elpaca installs packages asynchronously.
+Orders (@ref{Orders, , orders}) are automatically queued in a list.
+When all of a queues orders have either finished or failed Elpaca considers it ``processed''.
+
+Queues ensure packages installation, activation, and configuration take place prior to packages in other queues.
+The @samp{elpaca-queue} macro wraps calls to @samp{elpaca}. It places orders in its @emph{BODY} in their own queue.
+This is especially useful when one wants to install a package to use later on in their init file.
+For example, a package which implements an Elpaca menu (@ref{Menus, , menu}):
+
+@lisp
+(elpaca-queue
+ (elpaca (melpulls :host github :repo "progfolio/melpulls")
+   (add-to-list 'elpaca-menu-functions #'melpulls)
+   (elpaca-update-menus #'melpulls)))
+;; Implicitly queued into a new queue.
+(elpaca menu-item-available-in-melpulls)
+@end lisp
+
+@node Installing Packages
+@subsection Installing Packages
+
+@table @asis
+@item elpaca
+@samp{(order &rest body)}
+@end table
+Installs @emph{ORDER} (@ref{Orders, , orders}) and executes @emph{BODY} after processing ORDER's queue (@ref{Queues, , queue}).
+
+This macro is for programmatic use in one's init file.
+Any of the following will install the ``example'' package:
+
+@lisp
+(elpaca example) ;; recipe looked up in `elpaca-menu-functions'.
+@end lisp
+
+@lisp
+(elpaca example (message "Messaged after the order's queue has processed."))
+@end lisp
+
+@lisp
+(elpaca (example :host github :repo "user/example"))
+@end lisp
+
+@lisp
+(elpaca `(example :host github :repo "user/example"
+                  ,@@(when (eq system-type 'darwin) ;; backqouting supported
+                      (list :pre-build ((message "Mac specific pre-build"))))))
+@end lisp
+
+If @emph{ORDER} is nil, @emph{BODY} is still executed after processing the current queue.
+
+@lisp
+(elpaca first (message "First configured"))
+;; If this weren't wrapped in an `elpaca' call, it would execute FIRST
+;; Due to the "first" and "third" package installing asynchronously.
+(elpaca nil (message "Second"))
+(elpaca third (message "Third configured"))
+@end lisp
+
+@table @asis
+@item elpaca-use-package
+@samp{(order &rest body)}
+
+A wrapper for the use-package@footnote{@uref{https://git-scm.com/book/en/v2/Git-Internals-Git-References, git ref}} macro.
+@emph{ORDER} is the same as above.
+@emph{BODY} must conform to use-package's @emph{ARGS}.
+
+@lisp
+(elpaca use-package (require 'use-package)) ; install use-package
+(elpaca-use-package (example :host github :repo "user/example")
+  :config (message "Example configured"))
+@end lisp
+@end table
+
+@node UI
+@chapter UI
+
+Elpaca has a UI mode available for managing packages.
+The main entry points to the UI are the @samp{elpaca-manager}, @samp{elpaca-log}, and @samp{elpaca-status} commands.
+Each of these commands utilize @samp{elpaca-ui-mode}.
+
+The following commands are available in the @samp{elpaca-ui-mode}:
+
+@lisp
+(with-temp-buffer
+  (describe-map-tree elpaca-ui-mode-map)
+  (goto-char (point-min))
+  (let (rows)
+    (while (re-search-forward "elpaca" nil 'noerror)
+      (push (split-string (buffer-substring-no-properties
+                           (line-beginning-position) (line-end-position))
+                          "\t+")
+            rows))
+    (setq rows (mapcar (lambda (it)
+                         (append
+                          (list (car (split-string
+                                      (documentation (intern (cadr it)))
+                                      "\n")))
+                          it))
+                       rows))
+    (setq rows (cl-sort (mapcar #'nreverse rows) #'string< :key #'cadr))
+    (push 'hline rows)
+    (push (list "Command" "Binding" "Description") rows)
+    rows))
+@end lisp
+
+@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@headitem Command
+@tab Binding
+@tab Description
+@item elpaca-ui-send-input
+@tab !
+@tab Send input string to current process.
+@item elpaca-ui-search-installed
+@tab I
+@tab Search for ``#unique #installed''
+@item elpaca-ui-search-marked
+@tab M
+@tab Search for ``#unique #marked''
+@item elpaca-ui-search-orphaned
+@tab O
+@tab Search for ``#unique #orphan''
+@item elpaca-ui-search-refresh
+@tab R
+@tab Rerun the current search for BUFFER@.
+@item elpaca-ui-search-tried
+@tab T
+@tab Search for ``#unique #installed !#declared''
+@item elpaca-ui-unmark
+@tab U
+@tab Unmark current package.
+@item elpaca-ui-browse-package
+@tab b
+@tab Browse current package’s URL via ‘browse-url’.
+@item elpaca-ui-mark-delete
+@tab d
+@tab Mark package for delete action.
+@item elpaca-ui-mark-install
+@tab i
+@tab Mark package for install action.
+@item elpaca-log
+@tab l
+@tab Display ‘elpaca-log-buffer’.
+@item elpaca-manager
+@tab m
+@tab Display elpaca’s package management UI@.
+@item elpaca-ui-mark-rebuild
+@tab r
+@tab Mark package for rebuild action.
+@item elpaca-ui-search
+@tab s
+@tab Filter current buffer by QUERY@. If QUERY is nil, prompt for it.
+@item elpaca-status
+@tab t
+@tab Log most recent events for packages.
+@item elpaca-ui-mark-update
+@tab u
+@tab Mark package for update action.
+@item elpaca-visit
+@tab v
+@tab Open ITEM’s local repository directory.
+@item elpaca-ui-execute-marks
+@tab x
+@tab Execute each action in ‘elpaca-ui-marked-packages’.
+@end multitable
+
+@defun elpaca-manager 
+Display packages registered with Elpaca.
+Packages can searched for, installed, updated, rebuilt, and deleted from this interface.
+When @samp{RECACHE} is non-nil, via lisp or interactively via the @samp{universal-argument}, recompute Elpaca's menu item cache before display.
+@end defun
+
+@defun elpaca-log 
+Display the log for queued packages.
+When @samp{FILTER} is non-nil, filter entries by the given query.
+For acceptable values for @samp{FILTER} see @ref{Searching, , searching}.
+@end defun
+
+@defun elpaca-status
+Display the log for the most recent events for queued packages.
+This allows one to quickly determine the status and reason for the status of each queued package.
+@end defun
+
+@menu
+* Searching::                    How to search within the Elpaca UI.
+* Search tags::
+@end menu
+
+@node Searching
+@section Searching
+
+The @samp{elpaca-ui-search} command (@samp{s}) prompts the user for a search query in the minibuffer.
+Altering the query updates the UI table.
+Calling with a @samp{universal-argument} (@samp{C-u}) populates the minibuffer with the current search query for editing.
+Setting the query to an empty string sets the filter to @samp{elpaca-ui-default-query}.
+The buffer's header line displays the current query.
+
+Queries are regular expressions checked against each row of the UI table.
+For example, @samp{test} will match any row which contains the string ``test''.
+Some characters change the matching behavior in queries.
+
+The pipe character, @samp{|}, will delimit text searches to specific columns of the table.
+Considering the following table:
+
+@multitable {aaaaaa} {aaaaa} {aaaaa} {a}
+@headitem number
+@tab A
+@tab B
+@tab C
+@item 1
+@tab one
+@tab two
+@tab 3
+@item 2
+@tab four
+@tab five
+@tab 6
+@item 3
+@tab seven
+@tab eight
+@tab 9
+@end multitable
+
+The query @samp{o} will match rows 1 (on @samp{one}) and 2 (on @samp{four}).
+The query @samp{3|} will only search for @samp{3} in the first column and match row three.
+While @samp{|||3} Will search for @samp{3} in the 4th column of the table and match row 1.
+
+The pound (a.k.a. hash) character, @samp{#}, followed by the name of a search tag filters table entries.
+For example @samp{#random} will display 10 random entries.
+If the search tag accepts arguments they may passed by wrapping the tag name in parenthesis.
+e.g. @samp{#(random 20)} will display 20 random entries.
+
+@node Search tags
+@section Search tags
+
+@defopt elpaca-ui-search-tags
+An alist of with elements of the form (NAME . FILTER).
+@samp{NAME} is a unique symbol describing the filter function.
+The user types name after @samp{#} in the minibuffer to apply the filter.
+@samp{FILTER} is a function which must accept a list of @samp{tabulated-list-entries} as its first argument.
+It may accept additional, optional arguments.
+The function must return a list of @samp{tabulated-list-entries}.
+
+For example, the following search tag will embolden the first column of the @samp{elpaca-manager} table when the search query contains @samp{#bold-names}:
+@end defopt
+
+@lisp
+(defun +elpaca-bold-names (entries)
+  (cl-loop for entry in entries
+           for copy = (copy-tree entry)
+           for cols = (cadr copy)
+           for name = (aref cols 0)
+           do (setf (aref cols 0) (propertize name 'face '(:weight bold)))
+           collect copy))
+
+(cl-pushnew (cons 'bold-names #'+elpaca-bold-names) elpaca-ui-search-tags)
+@end lisp
+
+Emacs 30.0.50 (Org mode 9.6)
+@bye

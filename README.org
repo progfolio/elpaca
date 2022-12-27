@@ -1,32 +1,32 @@
-#+title: Elpaca: An Elisp Package Manager
+#+options: exports:both timestamp:nil title:nil
 #+author: Nicholas Vollmer
-#+options: exports:both
 #+property: header-args :noweb yes
 
-#+html: <p align="center"><img src="./images/elpaca.svg" /></p>
-
-#+html: <p align="center"> "Chews data, spits packages."</p>
+* Elpaca: An Elisp Package Manager
+#+html: <p align="center"><img src="./images/elpaca.svg"/></p>
+#+html: <p align="center">"Chews data, spits packages."</p>
 
 Elpaca is an elisp package manager.
 It allows users to find, install, update, and remove third-party packages for Emacs.
 It is a replacement for the built-in Emacs package manager, package.el.
 
-* Installation
-If you're impatient, take a look at the [[./test/example-init.el][example configuration]]
-** Requirements
+* Video Tour
+
+#+html: <p align="center"><a href="https://www.youtube.com"><img src="./images/elpaca-manager-install.gif"/></a></p>
+
+** Installation
+*** Requirements
+Elpaca requires:
 - Emacs >= 27.1
 - git (minimum version TBD)
 - Windows users must be able to create symlinks.
-** Bootstrap Snippet
-:PROPERTIES:
-:header-args: :noweb-ref bootstrap
-:END:
+*** Bootstrap Snippet
 To install Elpaca, add the following bootstrapping snippet to your init.el.
 It must come before any calls to other Elpaca functions/macros.
 This will clone Elpaca into your =user-emacs-directory= under the =elpaca= subdirectory.
 It then builds and activates Elpaca.
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
@@ -36,11 +36,9 @@ It then builds and activates Elpaca.
            (build (expand-file-name "elpaca/" elpaca-builds-directory))
            (order (cdr elpaca-order))
            ((add-to-list 'load-path (if (file-exists-p build) build repo)))
-           ((not (file-exists-p repo)))
-           (buffer (get-buffer-create "*elpaca-bootstrap*")))
+           ((not (file-exists-p repo))))
   (condition-case-unless-debug err
-      (if-let (((pop-to-buffer buffer '((display-buffer-reuse-window
-                                         display-buffer-same-window))))
+      (if-let ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
                ((zerop (call-process "git" nil buffer t "clone"
                                      (plist-get order :repo) repo)))
                (default-directory repo)
@@ -61,491 +59,75 @@ It then builds and activates Elpaca.
 (elpaca `(,@elpaca-order))
 #+end_src
 
-You'll also want to disable package.el in your [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html][early-init file]], and remove anything related to package.el in your init file.
-e.g. calls to ~(package-activate-all)~.
+You'll also want to disable package.el in your early-init file[fn:-1-2]:
 
-
-#+begin_src emacs-lisp :lexical t :tangle "./test/example-early-init.el" :noweb-ref ""
-;; ELPACA example early-init.el
+#+begin_src emacs-lisp
 (setq package-enable-at-startup nil)
-;; Local Variables:
-;; no-byte-compile: t
-;; End:
 #+end_src
 
-* Basic concepts
+And remove anything related to package.el in your init file. e.g. calls to ~(package-activate-all)~.
 
-The =elpaca-example= macro in the following examples reduces verbosity.
-It is not part of Elpaca.
+[fn:-1-2] [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html]]
 
-#+begin_src emacs-lisp :lexical t :exports none :results silent
-(defun elpaca-example-sort-plist (plist)
-  "Return copy of PLIST with :package followed by lexically sorted key/val pairs."
-  `(:package ,(plist-get plist :package)
-             ,@(cl-loop for k in (cl-sort (cl-loop for key in plist by #'cddr
-                                                   unless (eq key :package) collect key)
-                                          #'string< :key #'symbol-name)
-                        append (list k (plist-get plist k)))))
+** Quick Start
+| Operation                             | UI (keys apply in elpaca-ui-mode)  | completing-read interface commands           |
+|---------------------------------------+------------------------------------+----------------------------------------------|
+| Finding Packages                      | ~M-x elpaca-manager~               | ~elpaca-try~                                 |
+| Trying Packages (for current session) | ~i~ ~x~                            | ~elpaca-try~                                 |
+| Updating Packages                     | ~u~ ~x~                            | ~elpaca-update~ or ~M-x~ ~elpaca-update-all~ |
+| Rebuilding Packages                   | ~r~ ~x~                            | ~elpaca-rebuild~                             |
+| Deleting Packages                     | ~d~ ~x~                            | ~elpaca-delete~                              |
+| View Package Logs                     | ~l~ filters log to current package | ~elpaca-log~                                 |
+| View Package Statuses                 | ~t~ show most recent log entries   | ~elpaca-status~                              |
+| Visit Package Repository Directory    | ~v~                                | ~elpaca-visit~                               |
+| Visit Package Build Directory         | ~C-u~ ~v~                          | ~C-u~ ~elpaca-visit~                         |
+| Browse Package Website                | ~b~                                | ~elpaca-browse~                              |
 
-(defmacro elpaca-example (&rest body)
-  "Execute BODY with a clean elpaca environment."
-  `(let (elpaca-cache-menu-items
-         elpaca-order-functions
-         elpaca-recipe-functions
-         (elpaca-menu-functions '(elpaca-example-menu)))
-     (elpaca-example-sort-plist ,@body)))
-#+end_src
+Packages installed via the above commands are not loaded on subsequent Emacs sessions (after restarting).
+To install and load packages persistently (across Emacs restarts), use the =elpaca= or =elpaca-use-package= macros in your init file after bootstrapping. ([[#bootstrap-snippet][bootstrap snippet]])
 
-Examples will use the following [[#menus][recipe menu]], which offers a "burger" package recipe:
+For example:
 
-#+begin_src emacs-lisp :lexical t :results silent
-(defun elpaca-example-menu (_)
-  '((burger . (:recipe (:buns 2 :lettuce t :tomato t :beef t :cheese t :cook well-done :from elpaca-example-menu)))))
-#+end_src
-
-** Recipes
-:PROPERTIES:
-:CUSTOM_ID: recipes
-:END:
-A recipe provides Elpaca with the metadata necessary to build and install a package.
-It is a list of the form:
-
-#+begin_src emacs-lisp :lexical t
-(ITEM . PROPS)
-#+end_src
-
-/ITEM/ is a symbol uniquely identifying the package.
-/PROPS/ is a plist with any of the following recipe keywords:
-
-- :host | :fetcher :: A symbol or string representing the hosting service of the repository.
-
-  #+begin_src emacs-lisp :lexical t
-(example :host github)
-(example :fetcher gitlab)
-(example :host "www.example.com")
-  #+end_src
-
-- :repo :: A string of the form =USER/REPO= when used with the =:host= keyword; a local file path or remote URL when =:host= is not used.
-
-#+begin_src emacs-lisp :lexical t
-(example :host github :repo "user/example") ;;downloaded from github
-#+end_src
-
-#+begin_src emacs-lisp :lexical t
-(local :repo "~/repos/local/") ;;cloned from local filesystem
-#+end_src
-
-#+begin_src emacs-lisp :lexical t
-(remote :repo "https://foo.example/example.git") ;;remote clone
-#+end_src
-
-- :branch :: The repository branch to check out when installing the package.
-
-#+begin_src emacs-lisp :lexical t
-(example :host github :repo "user/example" :branch "main")
-#+end_src
-
-- :tag :: The tag to check out when installing the package.
-
-#+begin_src emacs-lisp :lexical t
-(example :host github :repo "user/example" :tag "v1.0")
-#+end_src
-
-- :ref :: The [[https://git-scm.com/book/en/v2/Git-Internals-Git-References][git ref]] to check out when installing the package.
-
-  #+begin_src emacs-lisp :lexical t
-(example :host github :repo "user/example" :ref "a76ca0a") ;; Check out a specific commit.
-  #+end_src
-
-- :pin :: When non-nil, ignore the package during update commands.
-
-  #+begin_src emacs-lisp :lexical t
-(example :pin t)
-  #+end_src
-
-- :depth :: The package repository's history depth.
-
-  #+begin_src emacs-lisp :lexical t
-(example :depth 1) ;; Shallow clone with history truncated to 1 commit.
-(example :depth nil) ;; Full repository clone.
-  #+end_src
-
-- :remotes :: A list of repository [[https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes][remotes]].
-The first element is the default remote when installing the package.
-If it is a string, it names the default remote.
-The remaining elements are lists of the form:
-
-#+begin_src emacs-lisp :lexical t
-(NAME . PROPS)
-#+end_src
-
-/NAME/ is a string used to name the remote.
-/PROPS/ are recipe keyword/value pairs used to override values previously declared in the recipe.
-
-#+begin_src emacs-lisp :lexical t
-(example :remotes ("origin"))
-#+end_src
-
-#+begin_src emacs-lisp :lexical t
-(example :host github :repo "original/example"
-         :remotes ("origin"
-                   ("fork" :host gitlab :repo "user/example-fork.el")))
-#+end_src
-
-- :main :: The name of the main elisp file.
-  When provided this can speed up the process of cloning and loading a package's dependencies.
-
-  #+begin_src emacs-lisp :lexical t
-(example :main "example.el")
-  #+end_src
-
-- :build :: A list of build steps, nil or t.
-  If the list starts with the symbol =:not=. The set difference of =elpaca-default-build-steps= and the remaining elements of the list are used.
-
-  #+begin_src emacs-lisp :lexical t
-(example :build (:not elpaca--byte-compile))
-  #+end_src
-
-- :inherit :: When non-nil, inherit /PROPS/ from =elpaca-order-functions= and possibly =elpaca-menu-functions=.
-  For example, without inheritance:
-#+name: recipe-inheritance-nil
-#+begin_src emacs-lisp :lexical t :results raw code :exports both
-(elpaca-example (elpaca-recipe '(burger :inherit nil)))
-#+end_src
-
-returns the recipe as declared:
-
-#+results: recipe-inheritance-nil
 #+begin_src emacs-lisp
-(:package "burger" :inherit nil)
-#+end_src
-
-With inheritance enabled:
-#+name: recipe-inheritance-menu
-#+begin_src emacs-lisp :lexical t :results raw code :exports both
-(elpaca-example (elpaca-recipe '(burger :inherit t)))
-#+end_src
-
-the elpaca-example-menu provides the rest of the "burger" recipe.
-
-#+results: recipe-inheritance-menu
-#+begin_src emacs-lisp
-(:package "burger" :beef t :buns 2 :cheese t :cook well-done :from elpaca-example-menu :inherit t :lettuce t :tomato t)
-#+end_src
-
-*** Inheritance precedence
-:PROPERTIES:
-:CUSTOM_ID: inheritance-precedence
-:END:
-The following list shows the order of precedence for inheritance.
-Each item takes precedence over the items which follow it.
-
-- elpaca-recipe-functions
-- declared recipe
-- elpaca-order-functions
-- elpaca-menu-functions
-
-#+name: recipe-inheritance-precedence
-#+begin_src emacs-lisp :lexical t :results raw code :exports both
-(elpaca-example
- (let ((elpaca-recipe-functions (lambda (recipe) '(:from recipe-functions :cheese extra)))
-       (elpaca-order-functions (lambda (order) '(:from order-functions :tomato nil))))
-   (elpaca-recipe '(burger))))
-#+end_src
-
-#+results: recipe-inheritance-precedence
-#+begin_src emacs-lisp
-(:package "burger" :beef t :buns 2 :cheese extra :cook well-done :from recipe-functions :lettuce t :tomato nil)
-#+end_src
-
-*** elpaca-recipe-functions
-:PROPERTIES:
-:CUSTOM_ID: elpaca-recipe-functions
-:END:
-The abnormal hook =elpaca-recipe-functions= runs via =run-hook-with-args-until-success= just before installing the package.
-Each function in the list should accept the current recipe as its sole argument and return either nil or a plist.
-The first function to return a plist has its return value merged with the current recipe.
-
-This is useful if you want to guarantee the values of certain keywords despite allowing recipe inheritance.
-
-#+name: recipe-functions-example
-#+begin_src emacs-lisp :lexical t :exports both :results raw code
-(elpaca-example
- (let ((elpaca-recipe-functions
-        '((lambda (recipe)
-            "If a recipe calls for cheese, I always want extra."
-            (when (plist-get recipe :cheese) (list :cheese 'extra))))))
-   (elpaca-recipe '(burger))))
-#+end_src
-
-#+results: recipe-functions-example
-#+begin_src emacs-lisp
-(:package "burger" :beef t :buns 2 :cheese extra :cook well-done :from elpaca-example-menu :lettuce t :tomato t)
-#+end_src
-
-** Menus
-:PROPERTIES:
-:CUSTOM_ID: menus
-:END:
-A menu is a function which returns an alist of the form:
-#+begin_src emacs-lisp :lexical t
-((ITEM . DATA)...)
-#+end_src
-
-/ITEM/ is a symbol uniquely identifying a package.
-/DATA/ is a plist of package metadata.
-/DATA/ must contain the following keywords:
-
-- :recipe :: A package [[#recipes][recipe.]]
-- :source :: A string naming the menu.
-
-It may also provide additional information about a package.
-For example, the Elpaca UI utilizes the following keywords when present:
-
-- :url :: The package's website URL.
-- :description :: A description of the package.
-- :date :: The time of package's last update.
-
-The function must accept one of the following /REQUEST/ symbols as an argument:
-
-- index :: Return the alist described above
-- update :: update the menu's alist.
-
-#+begin_src emacs-lisp :lexical t
-(defun elpaca-menu-minimal (request_)
-  "A minimal menu example.
-Ignore REQUEST, as this is a static, curated list of packages."
-  '((example :source "EXAMPLE" :recipe (example :host github :repo "user/example"))
-    (two :source "EXAMPLE" :recipe (two :host gitlab :repo "user/two"))))
-#+end_src
-
-Menus allow one to offer Elpaca users curated lists of package recipes.
-For example, [[https://www.github.com/progfolio/melpulls][melpulls]] implements an Elpaca menu for pending MELPA packages.
-
-*** elpaca-menu-functions
-The =elpaca-menu-functions= variable contains menu functions for the following package sources by default:
-
-- [[https://www.github.com/melpa/melpa][MELPA]]
-- [[https://git.savannah.gnu.org/cgit/emacs/org-mode.git/][Org]]
-- [[https://git.sr.ht/~bzg/org-contrib][Org-contrib]]
-- [[https://www.github.com/emacs-straight/gnu-elpa-mirror][GNU ELPA Mirror]]
-- [[https://elpa.nongnu.org][NonGNU ELPA]]
-
-Menus are checked in order until one returns the requested menu item or the menu list is exhausted.
-
-** Orders
-:PROPERTIES:
-:CUSTOM_ID: orders
-:END:
-
-At a minimum, an order is a symbol which represents the name of a [[#menus][menu]] item:
-
-#+begin_src emacs-lisp :lexical t
-(elpaca example)
-#+end_src
-
-An order may also be a partial or full recipe:
-
-#+begin_src emacs-lisp :lexical t
-(elpaca (example :host gitlab))
-(elpaca (example :host gitlab :repo "user/example" :inherit nil))
-#+end_src
-
-*** elpaca-order-functions
-The abnormal hook =elpaca-order-functions= runs via =run-hook-with-args-until-success= before =elpaca-menu-functions=.
-Each function in the list should accept the current order as its sole argument and return either nil or a plist.
-The first function to return a plist has its return value merged with the current order.
-
-This is useful for declaring default order properties.
-For example, the following function disables recipe inheritance by default:
-
-#+begin_src emacs-lisp :lexical t :results raw code :exports both
-(elpaca-example
- (let ((elpaca-order-functions '((lambda (_) '(:inherit nil)))))
-   (elpaca-recipe 'burger)))
-#+end_src
-
-#+RESULTS:
-#+begin_src emacs-lisp
-(:package "burger" :inherit nil)
-#+end_src
-
-** Queues
-:PROPERTIES:
-:CUSTOM_ID: queues
-:END:
-Elpaca installs packages asynchronously.
-[[#orders][Orders]] are automatically queued in a list.
-A queue is considered "processed" when all of its orders have either finished or failed.
-
-Queues make it possible to ensure a package is installed, activated, and configured prior to other packages.
-The =elpaca-queue= macro wraps calls to =elpaca=, ensuring those orders are processed in their own queue.
-This is especially useful when one wants to install a package to use later on in their init file.
-For example, a package which implements an Elpaca [[#menus][menu]]:
-
-#+begin_src emacs-lisp :lexical t
-(elpaca-queue (elpaca (melpulls :host github :repo "progfolio/melpulls"))
-              (add-to-list 'elpaca-menu-functions #'melpulls)
-              (elpaca-update-menus #'melpulls))
-;; Implicitly queued into a new queue.
-(elpaca menu-item-available-in-melpulls)
-#+end_src
-
-* Installing Packages
-
-- elpaca :: =(order &rest body)=
-Installs /ORDER/ and executes /BODY/ after processing ORDER's [[#queues][queue]].
-
-/ORDER/ is an [[#orders][order]] as described above.
-
-This macro is for programmatic use in one's init file.
-Any of the following will install the "example" package:
-
-#+begin_src emacs-lisp :lexical t
-(elpaca example) ;; recipe looked up in `elpaca-menu-functions'.
-#+end_src
-
-#+begin_src emacs-lisp :lexical t
-(elpaca example (message "Messaged after the order's queue has processed."))
-#+end_src
-
-#+begin_src emacs-lisp :lexical t
-(elpaca (example :host github :repo "user/example"))
-#+end_src
-
-#+begin_src emacs-lisp :lexical t
-(elpaca `(example :host github :repo "user/example"
-                  ,@(when (eq system-type 'darwin) ;; backqouting supported
-                      (list :pre-build ((message "Mac specific pre-build"))))))
-#+end_src
-
-If /ORDER/ is nil, /BODY/ is still executed after processing the current [[#queues][queue]].
-
-#+begin_src emacs-lisp :lexical t
-(elpaca first (message "First configured"))
-;; If this weren't wrapped in an `elpaca' call, it would be executed FIRST
-;; Due to the "first" and "third" package installing asynchronously.
-(elpaca nil (message "Second"))
-(elpaca third (message "Third configured"))
-#+end_src
-
-- elpaca-use-package :: =(order &rest body)=
-
-  A wrapper for the [[https://github.com/jwiegley/use-package][use-package]] macro.
-  /ORDER/ is the same as above.
-  /BODY/ must conform to use-package's /ARGS/.
-
-  #+begin_src emacs-lisp :lexical t
-(elpaca use-package (require 'use-package)) ; install use-package
-(elpaca-use-package (example :host github :repo "user/example")
-  :config (message "Example configured"))
-  #+end_src
-
-* Finding, Updating, Removing Packages
-The =elpaca-manger= command will pop to the Elpaca manager buffer.
-From this buffer you can search and act on all the packages Elpaca knows about.
-
-The following commands are available in the Elpaca manager buffer:
-
-#+begin_src emacs-lisp :lexical t :exports results table replace
-(with-temp-buffer
-  (describe-map-tree elpaca-ui-mode-map)
-  (goto-char (point-min))
-  (let (rows)
-    (while (re-search-forward "elpaca" nil 'noerror)
-      (push (split-string (buffer-substring-no-properties
-                           (line-beginning-position) (line-end-position))
-                          "\t+")
-            rows))
-    (setq rows (mapcar (lambda (it)
-                         (append
-                          (list (car (split-string
-                                      (documentation (intern (cadr it)))
-                                      "\n")))
-                          it))
-                       rows))
-    (setq rows (cl-sort (mapcar #'nreverse rows) #'string< :key #'cadr))
-    (push 'hline rows)
-    (push (list "Command" "Default Binding" "Description") rows)
-    rows))
-#+end_src
-
-#+RESULTS:
-| Command                    | Default Binding | Description                                                     |
-|----------------------------+-----------------+-----------------------------------------------------------------|
-| elpaca-ui-send-input       | !               | Send input string to current process.                           |
-| elpaca-ui-search-installed | I               | Search for "#unique #installed"                                 |
-| elpaca-ui-search-marked    | M               | Search for "#unique #marked"                                    |
-| elpaca-ui-search-orphaned  | O               | Search for "#unique #orphan"                                    |
-| elpaca-ui-search-refresh   | R               | Rerun the current search for BUFFER.                            |
-| elpaca-ui-search-tried     | T               | Search for "#unique #installed !#declared"                      |
-| elpaca-ui-unmark           | U               | Unmark current package.                                         |
-| elpaca-ui-browse-package   | b               | Browse current package’s URL via ‘browse-url’.                  |
-| elpaca-ui-mark-delete      | d               | Mark package for delete action.                                 |
-| elpaca-ui-mark-install     | i               | Mark package for install action.                                |
-| elpaca-log                 | l               | Display ‘elpaca-log-buffer’.                                    |
-| elpaca-manager             | m               | Display elpaca’s package management UI.                         |
-| elpaca-ui-mark-rebuild     | r               | Mark package for rebuild action.                                |
-| elpaca-ui-search           | s               | Filter current buffer by QUERY. If QUERY is nil, prompt for it. |
-| elpaca-status              | t               | Log most recent events for packages.                            |
-| elpaca-ui-mark-update      | u               | Mark package for update action.                                 |
-| elpaca-visit               | v               | Open ITEM’s local repository directory.                         |
-| elpaca-ui-execute-marks    | x               | Execute each action in ‘elpaca-ui-marked-packages’.             |
-
-
-* Example configuration
-:PROPERTIES:
-:CUSTOM_ID: example-configuration
-:END:
-
-The following src block can be tangled to generate the [[./test/example-init.el][example configuration]]
-
-#+begin_src emacs-lisp :lexical t :tangle ./test/example-init.el :results silent
-;;; init-elpaca.el --- ELPACA INIT DEMO   -*- lexical-binding: t; -*-
-
-;; Bootstrap Elpaca
-<<bootstrap>>
-
 ;; Install use-package
-(elpaca use-package (require 'use-package))
-;; Install evil and configure via `use-package'
-(elpaca-use-package evil :demand t)
-;; Install a package from a user-provided recipe
-(elpaca (yodel :host github :repo "progfolio/yodel"))
+(elpaca 'use-package
+  ;; Customize/Configure the package in the BODY of the macro.
+  (setq use-package-always-defer t))
 
-;; Local Variables:
-;; no-byte-compile: t
-;; End:
+;; Expands to: (elpaca evil (use-package evil :demand t))
+(elpaca-use-package 'evil :demand t)
+
+;; Don't install anything. Defer execution of BODY
+(elpaca nil (message "deferred"))
 #+end_src
 
-* FAQs
-** Why doesn't my after-init-hook function work with Elpaca?
-Elpaca processes your init file to build its order queue.
-=after-init-hook= is run immediately after the order queue is built, but
-before Elpaca has installed any packages or run their configuration bodies.
-=elpaca-after-init-hook= runs after all orders queued during init have finished processing.
-It is only run once after init.
-** Why did my init file execute out of order?
+*IMPORTANT*:
+
 Elpaca installs and activates packages asynchronously.
-The entire init file is read /before/ any of Elpaca's queues are processed.
+Elpaca processes its package queues /after/ Emacs reads the init file.[fn:-1-1] 
 Consider the following example:
 
-#+begin_src emacs-lisp :lexical t
-(elpaca nil (message "First")) ; First is queued
-(message "Second") ; Second is messaged
-(elpaca nil (message "Third")) ; Third is queued
-(elpaca-process-queues) ; Queue is processed: First messaged, Third messaged.
+#+begin_src emacs-lisp
+(elpaca nil (message "First")) ; Queue First
+(message "Second") ; Second messaged
+(elpaca nil (message "Third")) ; Queue Third
+(elpaca-process-queues) ; Process queue: First messaged, Third messaged.
 #+end_src
 
-"Second" will be messaged /before/ "First" and "Third".
-Any forms which are dependent on deferred forms should be deferred as well.
-To fix the above example, the "Second" message can be wrapped in an `elpaca` call:
+"Second" will be message /before/ "First" and "Third".
+Defer forms which are dependent on deferred forms.
+Wrapping the "Second" message in an =elpaca= declaration will fix the above example:
 
-#+begin_src emacs-lisp :lexical t
-(elpaca nil (message "First"))  ; First is queued
-(elpaca nil (message "Second")) ; Second is queued
-(elpaca nil (message "Third"))  ; Third is queued
-(elpaca-process-queues) ; Queue is processed: First, Second, Third messaged.
+#+begin_src emacs-lisp
+(elpaca nil (message "First"))  ; Queue First
+(elpaca nil (message "Second")) ; Queue Second
+(elpaca nil (message "Third"))  ; Queue Third
+(elpaca-process-queues) ; Process queue: First, Second, Third messaged.
 #+end_src
 
-#  LocalWords:  elpaca Elpaca elisp repo minibuffer website init ui UI unmark Unmark plist alist MELPA programmatic
+Add any configuration which relies on =after-init-hook=, =emacs-startup-hook=, etc to =elpaca-after-init-hook= so it runs after Elpaca has activated all queued packages.
+
+See the [[file:./doc/manual.md][manual]] for in-depth information on Elpaca usage, customization, and development.
+Users who wish to experiment with Elpaca may find the example [[file:./doc/init.el][init.el]] and [[file:./doc/early-init.el][early-init.el]] files useful.
+
+[fn:-1-1] This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.

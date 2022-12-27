@@ -1,0 +1,186 @@
+#+title: Common documentation
+#+author: Nicholas Vollmer
+
+* Preamble                                                         :noexport:
+This document contains documentation included in the README file as well as the Info manual.
+In order to export after saving changes, evaluate the following source blocks:
+
+
+#+begin_src emacs-lisp :lexical t :results silent
+
+(require 'ox-org)
+(defun +elpaca-export-readme ()
+  (with-current-buffer (find-file-noselect "./readme.org")
+    (org-export-to-file 'org "../README.org")))
+(add-hook 'after-save-hook #'+elpaca-export-readme nil t)
+
+(require 'ox-texinfo)
+(defun +elpaca-export-manual ()
+  (with-current-buffer (find-file-noselect "./manual.org")
+    (org-export-to-file 'texinfo "./elpaca.texi")))
+(add-hook 'after-save-hook #'+elpaca-export-manual nil t)
+
+(require 'ox-md)
+(defun +elpaca-export-md ()
+  (with-current-buffer (find-file-noselect "./manual.org")
+    (org-export-to-file 'md "./manual.md")))
+(add-hook 'after-save-hook #'+elpaca-export-md nil t)
+
+(add-hook 'after-save-hook #'org-babel-tangle nil t)
+#+end_src
+
+* Introduction
+Elpaca is an elisp package manager.
+It allows users to find, install, update, and remove third-party packages for Emacs.
+It is a replacement for the built-in Emacs package manager, package.el.
+* Installation
+:PROPERTIES:
+:DESCRIPTION: Installing Elpaca.
+:END:
+** Requirements
+:PROPERTIES:
+:DESCRIPTION: The required software environment for Elpaca.
+:END:
+Elpaca requires:
+- Emacs >= 27.1
+- git (minimum version TBD)
+- Windows users must be able to create symlinks.
+** Bootstrap Snippet
+:PROPERTIES:
+:CUSTOM_ID: bootstrap-snippet
+:DESCRIPTION: A script responsible for installing Elpaca.
+:END:
+To install Elpaca, add the following bootstrapping snippet to your init.el.
+It must come before any calls to other Elpaca functions/macros.
+This will clone Elpaca into your =user-emacs-directory= under the =elpaca= subdirectory.
+It then builds and activates Elpaca.
+
+#+begin_src emacs-lisp :lexical t :eval never :tangle "./init.el" :exports none
+;; Example Elpaca configuration -*- lexical-binding: t; -*-
+#+end_src
+
+#+begin_src emacs-lisp :lexical t :eval never :tangle "./init.el"
+(defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
+(defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
+(defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
+                              :ref nil
+                              :build (:not elpaca--activate-package)))
+(when-let ((repo  (expand-file-name "repos/elpaca/" elpaca-directory))
+           (build (expand-file-name "elpaca/" elpaca-builds-directory))
+           (order (cdr elpaca-order))
+           ((add-to-list 'load-path (if (file-exists-p build) build repo)))
+           ((not (file-exists-p repo))))
+  (condition-case-unless-debug err
+      (if-let ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+               ((zerop (call-process "git" nil buffer t "clone"
+                                     (plist-get order :repo) repo)))
+               (default-directory repo)
+               ((zerop (call-process "git" nil buffer t "checkout"
+                                     (or (plist-get order :ref) "--")))))
+          (progn
+            (byte-recompile-directory repo 0 'force)
+            (require 'elpaca)
+            (and (fboundp 'elpaca-generate-autoloads)
+                 (elpaca-generate-autoloads "elpaca" repo))
+            (kill-buffer buffer))
+        (error "%s" (with-current-buffer buffer (buffer-string))))
+    ((error)
+     (warn "%s" err)
+     (delete-directory repo 'recursive))))
+(require 'elpaca-autoloads)
+(add-hook 'after-init-hook #'elpaca-process-queues)
+(elpaca `(,@elpaca-order))
+#+end_src
+
+#+begin_src emacs-lisp :lexical t :eval never :exports none
+;; Local Variables:
+;; no-byte-compile: t
+;; End:
+#+end_src
+
+You'll also want to disable package.el in your early-init file[fn:2]:
+
+#+begin_src emacs-lisp :lexical t :tangle "./init.el" :eval never :exports none
+;; Example Elpaca ealry-init.el -*- lexical-binding: t; -*-
+#+end_src
+
+#+begin_src emacs-lisp :lexical t :tangle "./early-init.el" :eval never
+(setq package-enable-at-startup nil)
+#+end_src
+
+#+begin_src emacs-lisp :lexical t :tangle "./early-init.el" :eval never :exports none
+;; Local Variables:
+;; no-byte-compile: t
+;; End:
+#+end_src
+
+And remove anything related to package.el in your init file. e.g. calls to ~(package-activate-all)~.
+
+* Quick Start
+:PROPERTIES:
+:CUSTOM_ID: quick-start
+:END:
+
+| Operation                             | UI (keys apply in elpaca-ui-mode) | completing-read interface commands     |
+|---------------------------------------+-----------------------------------+----------------------------------------|
+| Finding Packages                      | ~M-x elpaca-manager~                | ~elpaca-try~                             |
+| Trying Packages (for current session) | ~i~ ~x~                               | ~elpaca-try~                             |
+| Updating Packages                     | ~u~ ~x~                               | ~elpaca-update~ or ~M-x~ ~elpaca-update-all~ |
+| Rebuilding Packages                   | ~r~ ~x~                               | ~elpaca-rebuild~                         |
+| Deleting Packages                     | ~d~ ~x~                               | ~elpaca-delete~                          |
+| View Package Logs                     | ~l~ filters log to current package  | ~elpaca-log~                             |
+| View Package Statuses                 | ~t~ show most recent log entries    | ~elpaca-status~                          |
+| Visit Package Repository Directory    | ~v~                                 | ~elpaca-visit~                           |
+| Visit Package Build Directory         | ~C-u~ ~v~                             | ~C-u~ ~elpaca-visit~                       |
+| Browse Package Website                | ~b~                                 | ~elpaca-browse~                          |
+
+Packages installed via the above commands are not loaded on subsequent Emacs sessions (after restarting).
+To install and load packages persistently (across Emacs restarts), use the =elpaca= or =elpaca-use-package= macros in your init file after bootstrapping. ([[#bootstrap-snippet][bootstrap snippet]])
+
+For example:
+
+#+begin_src emacs-lisp :lexical t :eval never :tangle "./init.el"
+;; Install use-package
+(elpaca 'use-package
+  ;; Customize/Configure the package in the BODY of the macro.
+  (setq use-package-always-defer t))
+
+;; Expands to: (elpaca evil (use-package evil :demand t))
+(elpaca-use-package 'evil :demand t)
+
+;; Don't install anything. Defer execution of BODY
+(elpaca nil (message "deferred"))
+#+end_src
+
+*IMPORTANT*:
+
+Elpaca installs and activates packages asynchronously.
+Elpaca processes its package queues /after/ Emacs reads the init file.[fn:1] 
+Consider the following example:
+
+#+begin_src emacs-lisp :lexical t
+(elpaca nil (message "First")) ; Queue First
+(message "Second") ; Second messaged
+(elpaca nil (message "Third")) ; Queue Third
+(elpaca-process-queues) ; Process queue: First messaged, Third messaged.
+#+end_src
+
+"Second" will be message /before/ "First" and "Third".
+Defer forms which are dependent on deferred forms.
+Wrapping the "Second" message in an =elpaca= declaration will fix the above example:
+
+#+begin_src emacs-lisp :lexical t
+(elpaca nil (message "First"))  ; Queue First
+(elpaca nil (message "Second")) ; Queue Second
+(elpaca nil (message "Third"))  ; Queue Third
+(elpaca-process-queues) ; Process queue: First, Second, Third messaged.
+#+end_src
+
+Add any configuration which relies on =after-init-hook=, =emacs-startup-hook=, etc to =elpaca-after-init-hook= so it runs after Elpaca has activated all queued packages.
+
+* Footnotes
+
+[fn:2] [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html]]
+
+[fn:1] This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages. 
+

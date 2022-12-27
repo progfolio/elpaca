@@ -1,0 +1,35 @@
+#+title: Elpaca: An Elisp Package Manager
+#+author: Nicholas Vollmer
+#+options: exports:both timestamp:nil title:nil
+#+property: header-args :noweb yes
+
+* Preamble                                                         :noexport:
+This file generates the README.org file.
+The reason for keeping this separate is so we can include data common to both the manual and the readme.
+
+To export:
+
+#+begin_src emacs-lisp :lexical t :results silent
+(require 'ox-org)
+(defun +elpaca-export-readme ()
+  (with-current-buffer (find-file-noselect "./readme.org")
+    (org-export-to-file 'org "../README.org")))
+(add-hook 'after-save-hook #'+elpaca-export-readme nil t)
+#+end_src
+
+* Elpaca: An Elisp Package Manager
+#+html: <p align="center"><img src="./images/elpaca.svg"/></p>
+#+html: <p align="center">"Chews data, spits packages."</p>
+
+#+include: "./common.org::introduction" :only-contents t
+
+* Video Tour
+
+#+html: <p align="center"><a href="https://www.youtube.com"><img src="./images/elpaca-manager-install.gif"/></a></p>
+
+#+include: "./common.org::installation"
+
+#+include: "./common.org::Quick Start"
+
+See the [[./doc/manual.md][manual]] for in-depth information on Elpaca usage, customization, and development.
+Users who wish to experiment with Elpaca may find the example [[./doc/init.el][init.el]] and [[./doc/early-init.el][early-init.el]] files useful.

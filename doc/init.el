@@ -1,6 +1,5 @@
-;;; init-elpaca.el --- ELPACA INIT DEMO   -*- lexical-binding: t; -*-
+;; Example Elpaca configuration -*- lexical-binding: t; -*-
 
-;; Bootstrap Elpaca
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
@@ -10,11 +9,9 @@
            (build (expand-file-name "elpaca/" elpaca-builds-directory))
            (order (cdr elpaca-order))
            ((add-to-list 'load-path (if (file-exists-p build) build repo)))
-           ((not (file-exists-p repo)))
-           (buffer (get-buffer-create "*elpaca-bootstrap*")))
+           ((not (file-exists-p repo))))
   (condition-case-unless-debug err
-      (if-let (((pop-to-buffer buffer '((display-buffer-reuse-window
-                                         display-buffer-same-window))))
+      (if-let ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
                ((zerop (call-process "git" nil buffer t "clone"
                                      (plist-get order :repo) repo)))
                (default-directory repo)
@@ -34,13 +31,15 @@
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
 
-;; Install use-package
-(elpaca use-package (require 'use-package))
-;; Install evil and configure via `use-package'
-(elpaca-use-package evil :demand t)
-;; Install a package from a user-provided recipe
-(elpaca (yodel :host github :repo "progfolio/yodel"))
+;; Example Elpaca ealry-init.el -*- lexical-binding: t; -*-
 
-;; Local Variables:
-;; no-byte-compile: t
-;; End:
+;; Install use-package
+(elpaca 'use-package
+  ;; Customize/Configure the package in the BODY of the macro.
+  (setq use-package-always-defer t))
+
+;; Expands to: (elpaca evil (use-package evil :demand t))
+(elpaca-use-package 'evil :demand t)
+
+;; Don't install anything. Defer execution of BODY
+(elpaca nil (message "deferred"))
