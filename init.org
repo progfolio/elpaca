@@ -3239,7 +3239,7 @@ https://depp.brause.cc/shackle/
                      :depth nil
                      :repo "raxod502/straight.el"
                      :branch "develop"
-                     :files (:defaults (:exclude "indent.el"))
+                     :files ("straight*.el")
                      :protocol ssh
                      :remotes ("origin"
                                ("fork" :repo "progfolio/straight.el"))))
