@@ -612,10 +612,7 @@ If REPLACE is non-nil, the most recent log entry is replaced."
   (dolist (command (if (listp (car-safe commands)) commands (list commands)))
     (message "Running command: %S" command)
     (if (cl-every #'stringp command)
-        (elpaca-with-process (apply #'elpaca-process-call command)
-          (if success
-              (message stdout)
-            (error "Build command failed: %S" stderr)))
+        (apply #'elpaca-process-poll command)
       (eval command t))))
 
 (defsubst elpaca--info (e)
