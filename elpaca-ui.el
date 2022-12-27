@@ -465,11 +465,8 @@ If SILENT is non-nil, supress update message."
 (defun elpaca-ui-browse-package ()
   "Browse current package's URL via `browse-url'."
   (interactive)
-  (if-let ((item (elpaca-ui-current-package))
-           (candidate (elpaca-alist-get item (elpaca--menu-items t)))
-           (url (plist-get candidate :url)))
-      (browse-url url)
-    (user-error "No URL associated with current line")))
+  (when-let ((item (elpaca-ui-current-package)))
+    (elpaca-browse item)))
 
 (defun elpaca-ui-package-marked-p (package)
   "Return t if PACKAGE is marked."

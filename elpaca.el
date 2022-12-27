@@ -1854,5 +1854,13 @@ When BUILD is non-nil visit ITEM's build directory."
         (user-error "Directory does not exist: %S" dir))
     (user-error "%S is not a queued package" item)))
 
+;;;###autoload
+(defun elpaca-browse (item)
+  "Browse ITEM's :url."
+  (interactive (list (elpaca-menu-item)))
+  (if-let ((url (plist-get item :url)))
+      (browse-url url)
+    (user-error "No URL associated with current line")))
+
 (provide 'elpaca)
 ;;; elpaca.el ends here
