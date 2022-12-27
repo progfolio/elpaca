@@ -1857,8 +1857,9 @@ When BUILD is non-nil visit ITEM's build directory."
 ;;;###autoload
 (defun elpaca-browse (item)
   "Browse ITEM's :url."
-  (interactive (list (elpaca-menu-item)))
-  (if-let ((url (plist-get item :url)))
+  (interactive (list (car (elpaca-menu-item))))
+  (if-let ((found (alist-get item (elpaca--menu-items)))
+           (url (plist-get found :url)))
       (browse-url url)
     (user-error "No URL associated with current line")))
 

@@ -465,8 +465,8 @@ If SILENT is non-nil, supress update message."
 (defun elpaca-ui-browse-package ()
   "Browse current package's URL via `browse-url'."
   (interactive)
-  (when-let ((item (elpaca-ui-current-package)))
-    (elpaca-browse item)))
+  (when-let ((id (elpaca-ui-current-package)))
+    (elpaca-browse id)))
 
 (defun elpaca-ui-package-marked-p (package)
   "Return t if PACKAGE is marked."
