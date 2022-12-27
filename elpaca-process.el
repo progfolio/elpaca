@@ -50,13 +50,17 @@ If the process is unable to start, return an elisp error object."
     (condition-case err
         (with-temp-buffer
           (list (apply #'call-process program nil
-                       (list (current-buffer) elpaca-process--stderr)
+                       (list t elpaca-process--stderr)
                        nil args)
-                (let ((s (buffer-string))) (unless (string-empty-p s) s))
+                (when-let ((s (buffer-substring-no-properties (point-min) (point-max)))
+                           ((not (= 0 (length s)))))
+                  s)
                 (with-current-buffer (find-file-noselect elpaca-process--stderr
                                                          'nowarn 'raw)
-                  (prog1 (let ((s (buffer-string))) (unless (string-empty-p s) s))
-                    (kill-buffer)))))
+                  (when-let ((s (buffer-substring-no-properties (point-min) (point-max)))
+                             ((kill-buffer))
+                             ((not (= 0 (length s)))))
+                    s))))
       (error err))))
 
 (defmacro elpaca-with-process (result &rest body)
