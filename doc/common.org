@@ -20,10 +20,10 @@ In order to export after saving changes, evaluate the following source blocks:
     (org-export-to-file 'texinfo "./elpaca.texi")))
 (add-hook 'after-save-hook #'+elpaca-export-manual nil t)
 
-(require 'ox-md)
+(require 'ox-gfm)
 (defun +elpaca-export-md ()
   (with-current-buffer (find-file-noselect "./manual.org")
-    (org-export-to-file 'md "./manual.md")))
+    (org-export-to-file 'gfm "./manual.md")))
 (add-hook 'after-save-hook #'+elpaca-export-md nil t)
 
 (add-hook 'after-save-hook #'org-babel-tangle nil t)

@@ -37,7 +37,7 @@ To export:
 
 #+begin_src emacs-lisp :lexical t :results silent
 (require 'ox-texinfo)
-(require 'ox-md)
+(require 'ox-gfm) ;;@MAYBE: Remove external dep?
 
 (defun +elpaca-export-manual ()
   (with-current-buffer (find-file-noselect "./manual.org")
@@ -46,8 +46,8 @@ To export:
 
 (defun +elpaca-export-md ()
   (with-current-buffer (find-file-noselect "./manual.org")
-    (let ((org-md-headline-style 'setext))
-      (org-export-to-file 'md "./manual.md"))))
+    (org-export-to-file 'gfm "./manual.md")))
+
 (add-hook 'after-save-hook #'+elpaca-export-md nil t)
 #+end_src
 
