@@ -1,18 +1,18 @@
 
 # Table of Contents
 
-1.  [Installation](#orgde4f146)
-    1.  [Requirements](#orgd9053f9)
+1.  [Installation](#orgb3d9a87)
+    1.  [Requirements](#orga7782c1)
     2.  [Bootstrap Snippet](#bootstrap-snippet)
-2.  [Usage](#org396f6f5)
+2.  [Usage](#org4808ad9)
     1.  [Quick Start](#quick-start)
-    2.  [Basic concepts](#org70db091)
+    2.  [Basic concepts](#org669e89d)
         1.  [Recipes](#recipes)
         2.  [Menus](#menus)
         3.  [Orders](#orders)
         4.  [Queues](#queues)
-        5.  [Installing Packages](#orgbcfbc4a)
-3.  [UI](#orgd303e15)
+        5.  [Installing Packages](#orge24b65d)
+3.  [UI](#org01396c7)
     1.  [Searching](#searching)
     2.  [Search tags](#search-tags)
 
@@ -32,12 +32,12 @@ It is a replacement for the built-in Emacs package manager, package.el.
 > General Public License for more details.
 
 
-<a id="orgde4f146"></a>
+<a id="orgb3d9a87"></a>
 
 # Installation
 
 
-<a id="orgd9053f9"></a>
+<a id="orga7782c1"></a>
 
 ## Requirements
 
@@ -95,7 +95,7 @@ You&rsquo;ll also want to disable package.el in your early-init file<sup><a id="
 And remove anything related to package.el in your init file. e.g. calls to `(package-activate-all)`.
 
 
-<a id="org396f6f5"></a>
+<a id="org4808ad9"></a>
 
 # Usage
 
@@ -233,7 +233,7 @@ Wrapping the &ldquo;Second&rdquo; message in an `elpaca` declaration will fix th
 Add any configuration which relies on `after-init-hook`, `emacs-startup-hook`, etc to `elpaca-after-init-hook` so it runs after Elpaca has activated all queued packages.
 
 
-<a id="org70db091"></a>
+<a id="org669e89d"></a>
 
 ## Basic concepts
 
@@ -495,7 +495,7 @@ For example, a package which implements an Elpaca menu ([menu](#menus)):
     (elpaca menu-item-available-in-melpulls)
 
 
-<a id="orgbcfbc4a"></a>
+<a id="orge24b65d"></a>
 
 ### Installing Packages
 
@@ -526,7 +526,7 @@ If *ORDER* is nil, *BODY* is still executed after processing the current queue.
 
 -   **elpaca-use-package:** `(order &rest body)`
     
-    A wrapper for the use-package<sup><a id="fnr.3.100" class="footref" href="#fn.3" role="doc-backlink">3</a></sup> macro.
+    A wrapper for the use-package<sup><a id="fnr.5" class="footref" href="#fn.5" role="doc-backlink">5</a></sup> macro.
     *ORDER* is the same as above.
     *BODY* must conform to use-package&rsquo;s *ARGS*.
     
@@ -535,7 +535,7 @@ If *ORDER* is nil, *BODY* is still executed after processing the current queue.
           :config (message "Example configured"))
 
 
-<a id="orgd303e15"></a>
+<a id="org01396c7"></a>
 
 # UI
 
@@ -831,3 +831,5 @@ e.g. `#(random 20)` will display 20 random entries.
 <sup><a id="fn.3" href="#fnr.3">3</a></sup> [git ref](https://git-scm.com/book/en/v2/Git-Internals-Git-References)
 
 <sup><a id="fn.4" href="#fnr.4">4</a></sup> [remotes](https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes)
+
+<sup><a id="fn.5" href="#fnr.5">5</a></sup> <https://github.com/jwiegley/use-package>

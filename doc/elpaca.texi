@@ -678,7 +678,7 @@ If @emph{ORDER} is nil, @emph{BODY} is still executed after processing the curre
 @item elpaca-use-package
 @samp{(order &rest body)}
 
-A wrapper for the use-package@footnote{@uref{https://git-scm.com/book/en/v2/Git-Internals-Git-References, git ref}} macro.
+A wrapper for the use-package@footnote{@uref{https://github.com/jwiegley/use-package}} macro.
 @emph{ORDER} is the same as above.
 @emph{BODY} must conform to use-package's @emph{ARGS}.
 
