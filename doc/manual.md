@@ -1,18 +1,18 @@
 
 # Table of Contents
 
-1.  [Installation](#orgb3d9a87)
-    1.  [Requirements](#orga7782c1)
+1.  [Installation](#org75699f6)
+    1.  [Requirements](#org8f377d5)
     2.  [Bootstrap Snippet](#bootstrap-snippet)
-2.  [Usage](#org4808ad9)
+2.  [Usage](#orgbe3c95b)
     1.  [Quick Start](#quick-start)
-    2.  [Basic concepts](#org669e89d)
+    2.  [Basic concepts](#org1c75a79)
         1.  [Recipes](#recipes)
         2.  [Menus](#menus)
         3.  [Orders](#orders)
         4.  [Queues](#queues)
-        5.  [Installing Packages](#orge24b65d)
-3.  [UI](#org01396c7)
+        5.  [Installing Packages](#orgb69b544)
+3.  [UI](#orge6b95a4)
     1.  [Searching](#searching)
     2.  [Search tags](#search-tags)
 
@@ -32,12 +32,12 @@ It is a replacement for the built-in Emacs package manager, package.el.
 > General Public License for more details.
 
 
-<a id="orgb3d9a87"></a>
+<a id="org75699f6"></a>
 
 # Installation
 
 
-<a id="orga7782c1"></a>
+<a id="org8f377d5"></a>
 
 ## Requirements
 
@@ -95,7 +95,7 @@ You&rsquo;ll also want to disable package.el in your early-init file<sup><a id="
 And remove anything related to package.el in your init file. e.g. calls to `(package-activate-all)`.
 
 
-<a id="org4808ad9"></a>
+<a id="orgbe3c95b"></a>
 
 # Usage
 
@@ -200,12 +200,12 @@ To install and load packages persistently (across Emacs restarts), use the `elpa
 For example:
 
     ;; Install use-package
-    (elpaca 'use-package
+    (elpaca use-package
       ;; Customize/Configure the package in the BODY of the macro.
       (setq use-package-always-defer t))
     
     ;; Expands to: (elpaca evil (use-package evil :demand t))
-    (elpaca-use-package 'evil :demand t)
+    (elpaca-use-package evil :demand t)
     
     ;; Don't install anything. Defer execution of BODY
     (elpaca nil (message "deferred"))
@@ -233,7 +233,7 @@ Wrapping the &ldquo;Second&rdquo; message in an `elpaca` declaration will fix th
 Add any configuration which relies on `after-init-hook`, `emacs-startup-hook`, etc to `elpaca-after-init-hook` so it runs after Elpaca has activated all queued packages.
 
 
-<a id="org669e89d"></a>
+<a id="org1c75a79"></a>
 
 ## Basic concepts
 
@@ -495,7 +495,7 @@ For example, a package which implements an Elpaca menu ([menu](#menus)):
     (elpaca menu-item-available-in-melpulls)
 
 
-<a id="orge24b65d"></a>
+<a id="orgb69b544"></a>
 
 ### Installing Packages
 
@@ -535,7 +535,7 @@ If *ORDER* is nil, *BODY* is still executed after processing the current queue.
           :config (message "Example configured"))
 
 
-<a id="org01396c7"></a>
+<a id="orge6b95a4"></a>
 
 # UI
 
