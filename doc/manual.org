@@ -46,7 +46,8 @@ To export:
 
 (defun +elpaca-export-md ()
   (with-current-buffer (find-file-noselect "./manual.org")
-    (org-export-to-file 'md "./manual.md")))
+    (let ((org-md-headline-style 'setext))
+      (org-export-to-file 'md "./manual.md"))))
 (add-hook 'after-save-hook #'+elpaca-export-md nil t)
 #+end_src
 
