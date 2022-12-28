@@ -1450,7 +1450,12 @@ The expansion is a string indicating the package has been disabled."
         (setq o (if (null (nth (1+ ensure) body)) nil order)
               body (append (cl-subseq body 0 ensure)
                            (cl-subseq body (+ ensure 2)))))
-      `(elpaca ,o (use-package ,(elpaca--first order) ,@body)))))
+      `(elpaca ,o (use-package
+                    ,(if-let (((memq (car-safe order) '(quote \`)))
+                              (feature (flatten-tree order)))
+                         (cadr feature)
+                       (elpaca--first order))
+                    ,@body)))))
 
 (defvar elpaca--try-package-history nil "History for `elpaca-try'.")
 (declare-function elpaca-log--latest "elpaca-log")
