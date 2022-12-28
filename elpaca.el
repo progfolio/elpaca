@@ -957,7 +957,7 @@ If it matches, the E associated with process has its STATUS updated."
 
 (defun elpaca--install-info-async (file dir e)
   "Asynchronously Install E's .info FILE in Info DIR."
-  (elpaca--update-info e (concat "... " dir "/" file))
+  (elpaca--update-info e file)
   (let ((process (make-process
                   :name (concat "elpaca-install-info-" (elpaca<-package e))
                   :connection-type 'pipe
