@@ -75,6 +75,7 @@
   '(elpaca--queue-dependencies elpaca--add-info-path elpaca--activate-package)
   "List of steps for packages which are already built.")
 
+(defvar elpaca-after-init-time nil "Time after `elpaca-after-init-hook' is run.")
 (defcustom elpaca-after-init-hook nil
   "Elpaca's analogue to `after-init-hook'.
 This is run after all orders queued during init have finished processing.
@@ -709,11 +710,13 @@ Accepted KEYS are :pre and :post which are hooks run around queue processing."
                 ((error) (warn "Package Config Error %s: %S" item err))))
   (setf (elpaca-q<-status q) 'complete)
   (let ((next (nth (1+ (elpaca-q<-id q)) (reverse elpaca--queues))))
-    (if (and (eq (elpaca-q<-type q) 'init)
+    (if (and (null elpaca-after-init-time)
+             (eq (elpaca-q<-type q) 'init)
              (or (null next)
                  (not (eq (elpaca-q<-type next) 'init))))
         (progn
           (run-hooks 'elpaca-after-init-hook)
+          (setq elpaca-after-init-time (current-time))
           (elpaca-split-queue))
       (when-let ((post (elpaca-q<-post q))) (funcall post))
       (run-hooks 'elpaca-post-queue-hook)
