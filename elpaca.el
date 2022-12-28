@@ -1856,8 +1856,12 @@ When BUILD is non-nil visit ITEM's build directory."
 (defun elpaca-browse (item)
   "Browse ITEM's :url."
   (interactive (list (car (elpaca-menu-item))))
-  (if-let ((found (alist-get item (elpaca--menu-items)))
-           (url (plist-get found :url)))
+  (if-let ((url (or (when-let ((found (elpaca-get-queued item))
+                               (recipe (elpaca<-recipe found)))
+                      (file-name-sans-extension
+                       (elpaca--repo-uri (elpaca-merge-plists recipe '(:protocol https)))))
+                    (when-let ((found (alist-get item (elpaca--menu-items))))
+                      (plist-get found :url)))))
       (browse-url url)
     (user-error "No URL associated with current line")))
 
