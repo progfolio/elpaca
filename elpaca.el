@@ -1466,12 +1466,12 @@ The expansion is a string indicating the package has been disabled."
 (defvar elpaca--try-package-history nil "History for `elpaca-try'.")
 (declare-function elpaca-log--latest "elpaca-log")
 ;;;###autoload
-(defun elpaca-try (order)
+(defun elpaca-try (order &optional interactive)
   "Try ORDER.
 Install the repo/build files on disk.
 Activate the corresponding package for the current session.
 ORDER's package is not made available during subsequent sessions.
-When called interactively, ORDER is immediately processed, otherwise it queued."
+When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
   (interactive (list
                 (if-let (((equal current-prefix-arg '(4)))
                          (input (read-string "elpaca-try: " nil 'elpaca--try-package-history)))
@@ -1483,8 +1483,9 @@ When called interactively, ORDER is immediately processed, otherwise it queued."
                                    (not (elpaca-alist-get (car candidate)
                                                           (elpaca--queued)))))))
                     (append (list (intern (plist-get recipe :package)))
-                            recipe)))))
-  (if (not (called-interactively-p 'interactive))
+                            recipe)))
+                t))
+  (if (not interactive)
       (elpaca--queue (elpaca--first order))
     (require 'elpaca-log)
     (elpaca-log--latest)
