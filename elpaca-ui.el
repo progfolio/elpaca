@@ -571,8 +571,10 @@ The current package is its sole argument."
            finally do
            (mapc #'funcall (nreverse setups))
            (mapc #'apply actions))
-  (setf (elpaca-q<-post (car elpaca--queues))
-        #'elpaca-ui--post-execute)
+  (when-let ((q (cl-find-if (lambda (q) (and (eq (elpaca-q<-status q) 'incomplete)
+                                             (elpaca-q<-elpacas q)))
+                            elpaca--queues)))
+    (setf (elpaca-q<-post q) #'elpaca-ui--post-execute))
   (elpaca-process-queues))
 
 (defun elpaca-ui-send-input ()
