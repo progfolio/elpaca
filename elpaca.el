@@ -1103,7 +1103,7 @@ The keyword's value is expected to be one of the following:
                       (condition-case err
                           (read (mapconcat #'identity (nreverse deps) " "))
                         ((error)
-                         (error "Unable to parse %S Package-Requires metadata: %S" main err)))))))))))
+                         (error "%S Package-Requires error: %S" main err)))))))))))
     (cl-loop for dep in deps ; convert naked symbol or (symbol) to (symbol "0")
              collect (if (or (symbolp dep) (null (cdr-safe dep)))
                          (list (elpaca--first dep) "0")
