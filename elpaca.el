@@ -1600,7 +1600,7 @@ If PROMPT is non-nil, it is used instead of the default."
            nil t)))
 
 (defun elpaca--unprocess (e)
-  "Decrement E's queue processed package count."
+  "Mark E as unprocessed in its queue."
   (when-let ((id (elpaca<-queue-id e))
              (q  (nth id (reverse elpaca--queues))))
     (cl-decf (elpaca-q<-processed q))
