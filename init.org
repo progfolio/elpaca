@@ -3036,6 +3036,16 @@ https://github.com/integral-dw/org-superstar-mode
 (elpaca-use-package (org-superstar :host github :repo "integral-dw/org-superstar-mode")
   :after (org))
 #+end_src
+
+** ox-gfm
+#+begin_quote
+Github flavored Markdown back-end for Org export engine
+
+https://github.com/larstvei/ox-gfm
+#+end_quote
+#+begin_src emacs-lisp :lexical t
+(elpaca-use-package ox-gfm :defer t)
+#+end_src
 ** ox-twbs
 #+begin_quote
 Export org-mode docs as HTML compatible with Twitter Bootstrap.
