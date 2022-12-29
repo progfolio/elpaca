@@ -31,10 +31,6 @@
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
 
-;; Local Variables:
-;; no-byte-compile: t
-;; End:
-
 ;; Install use-package
 (elpaca use-package
   ;; Customize/Configure the package in the BODY of the macro.
@@ -45,3 +41,7 @@
 
 ;; Don't install anything. Defer execution of BODY
 (elpaca nil (message "deferred"))
+
+;; Local Variables:
+;; no-byte-compile: t
+;; End:

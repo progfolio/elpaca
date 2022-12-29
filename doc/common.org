@@ -97,12 +97,6 @@ It then builds and activates Elpaca.
 (elpaca `(,@elpaca-order))
 #+end_src
 
-#+begin_src emacs-lisp :lexical t :tangle "./init.el" :eval never :exports none
-;; Local Variables:
-;; no-byte-compile: t
-;; End:
-#+end_src
-
 You'll also want to disable package.el in your early-init file[fn:2]:
 
 #+begin_src emacs-lisp :lexical t :tangle "./early-init.el" :eval never :exports none
@@ -155,6 +149,12 @@ For example:
 
 ;; Don't install anything. Defer execution of BODY
 (elpaca nil (message "deferred"))
+#+end_src
+
+#+begin_src emacs-lisp :lexical t :tangle "./init.el" :eval never :exports none
+;; Local Variables:
+;; no-byte-compile: t
+;; End:
 #+end_src
 
 *IMPORTANT*:
