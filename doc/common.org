@@ -92,7 +92,7 @@ It then builds and activates Elpaca.
 (elpaca `(,@elpaca-order))
 #+end_src
 
-#+begin_src emacs-lisp :lexical t :eval never :exports none
+#+begin_src emacs-lisp :lexical t :tangle "./init.el" :eval never :exports none
 ;; Local Variables:
 ;; no-byte-compile: t
 ;; End:
@@ -100,7 +100,7 @@ It then builds and activates Elpaca.
 
 You'll also want to disable package.el in your early-init file[fn:2]:
 
-#+begin_src emacs-lisp :lexical t :tangle "./init.el" :eval never :exports none
+#+begin_src emacs-lisp :lexical t :tangle "./early-init.el" :eval never :exports none
 ;; Example Elpaca ealry-init.el -*- lexical-binding: t; -*-
 #+end_src
 

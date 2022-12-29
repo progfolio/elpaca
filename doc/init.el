@@ -31,7 +31,9 @@
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
 
-;; Example Elpaca ealry-init.el -*- lexical-binding: t; -*-
+;; Local Variables:
+;; no-byte-compile: t
+;; End:
 
 ;; Install use-package
 (elpaca use-package
