@@ -399,8 +399,7 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
     (if (not interactive)
         recipe
       (kill-new (format "%S" recipe))
-      (message "%S recipe copied to kill-ring:\n%S"
-               (plist-get recipe :package) recipe))))
+      (message "%S recipe copied to kill-ring:\n%S" (plist-get recipe :package) recipe))))
 
 (defsubst elpaca--emacs-path ()
   "Return path to running Emacs."
@@ -1071,19 +1070,18 @@ The keyword's value is expected to be one of the following:
          (package (file-name-sans-extension (elpaca<-package e)))
          (name (concat package ".el"))
          (regexp (concat "^" name "$"))
-         (main (or
-                (plist-get (elpaca<-recipe e) :main)
-                (cl-some (lambda (f) (let ((e (expand-file-name f)))
-                                       (and (file-exists-p e) e)))
-                         (list (concat package "-pkg.el")
-                               name
-                               (concat "./lisp/" name)
-                               (concat "./elisp/" name)))
-                (car (directory-files default-directory nil regexp))
-                (car (elpaca--directory-files-recursively default-directory regexp))
-                ;; Best guess if there is no file matching the package name...
-                (car (directory-files default-directory nil "\\.el$" 'nosort))
-                (error "Unable to find main elisp file for %S" package)))
+         (main (or (plist-get (elpaca<-recipe e) :main)
+                   (cl-some (lambda (f) (let ((e (expand-file-name f)))
+                                          (and (file-exists-p e) e)))
+                            (list (concat package "-pkg.el")
+                                  name
+                                  (concat "./lisp/" name)
+                                  (concat "./elisp/" name)))
+                   (car (directory-files default-directory nil regexp))
+                   (car (elpaca--directory-files-recursively default-directory regexp))
+                   ;; Best guess if there is no file matching the package name...
+                   (car (directory-files default-directory nil "\\.el$" 'nosort))
+                   (error "Unable to find main elisp file for %S" package)))
          (deps
           (if (not (file-exists-p default-directory))
               (error "Package repository not on disk: %S" (elpaca<-recipe e))
