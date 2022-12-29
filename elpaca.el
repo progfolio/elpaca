@@ -620,16 +620,18 @@ If REPLACE is non-nil, the most recent log entry is replaced."
   "Return E's most recent log event info."
   (nth 2 (car (elpaca<-log e))))
 
-(defsubst elpaca--continue-build (e)
+(defun elpaca--continue-build (e)
   "Run E's next build step."
-  (let ((fn (or (pop (elpaca<-build-steps e)) #'elpaca--finalize)))
-    (condition-case-unless-debug err
-        (funcall fn e)
-      ((error) (elpaca--fail e (format "%s: %S" fn err))))))
+  (unless (eq (elpaca--status e) 'blocked)
+    (let ((fn (or (pop (elpaca<-build-steps e)) #'elpaca--finalize)))
+      (condition-case-unless-debug err
+          (funcall fn e)
+        ((error) (elpaca--fail e (format "%s: %S" fn err)))))))
 
 (defun elpaca--continue-mono-repo-dependency (e)
   "Continue processing E after its mono-repo is in the proper state."
   (elpaca--remove-build-steps e '(elpaca--clone elpaca--add-remotes elpaca--checkout-ref))
+  (elpaca--update-info e "" 'unblocked-mono-repo)
   (elpaca--continue-build e))
 
 (declare-function elpaca-log "elpaca-log")
@@ -1228,7 +1230,8 @@ Kick off next build step, and/or change E's status."
               (failed (elpaca--fail e (format "Failed dependencies: %S" failed)))
               (blocked (elpaca--update-info
                         e (concat "Blocked by dependencies: " (prin1-to-string blocked)) 'blocked))
-              (t (elpaca--continue-build e))))))
+              (t (elpaca--update-info e "unblocked by dependency" 'unblocked)
+                 (elpaca--continue-build e))))))
 
 (defun elpaca--clone-process-sentinel (process _event)
   "Sentinel for clone PROCESS."
