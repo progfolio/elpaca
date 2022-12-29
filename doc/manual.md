@@ -366,7 +366,7 @@ It may also provide additional information about a package. For example, the Elp
 
 -   **:url:** The package&rsquo;s website URL.
 -   **:description:** A description of the package.
--   **:date:** The time of package&rsquo;s last update.
+-   **:date :** The time of package&rsquo;s last update.
 
 The function must accept one of the following *REQUEST* symbols as an argument:
 

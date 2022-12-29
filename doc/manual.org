@@ -305,7 +305,7 @@ For example, the Elpaca UI utilizes the following keywords when present:
 
 - :url :: The package's website URL.
 - :description :: A description of the package.
-- :date :: The time of package's last update.
+- :date  :: The time of package's last update.
 
 The function must accept one of the following /REQUEST/ symbols as an argument:
 

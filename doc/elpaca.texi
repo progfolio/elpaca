@@ -527,7 +527,7 @@ For example, the Elpaca UI utilizes the following keywords when present:
 The package's website URL@.
 @item :description
 A description of the package.
-@item :date
+@item :date 
 The time of package's last update.
 @end table
 
