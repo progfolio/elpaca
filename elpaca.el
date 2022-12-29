@@ -1597,6 +1597,13 @@ If PROMPT is non-nil, it is used instead of the default."
            (sort (cl-delete-duplicates (mapcar #'car (elpaca--queued))) #'string<)
            nil t)))
 
+(defun elpaca--unprocess (e)
+  "Decrement E's queue processed package count."
+  (when-let ((id (elpaca<-queue-id e))
+             (q  (nth id (reverse elpaca--queues))))
+    (cl-decf (elpaca-q<-processed q))
+    (setf (elpaca-q<-status q) 'incomplete)))
+
 ;;;###autoload
 (defun elpaca-rebuild (item &optional interactive)
   "Rebuild ITEM's associated package.
@@ -1622,10 +1629,10 @@ With a prefix argument, rebuild current file's package or prompt if none found."
                                  elpaca--activate-package))))
     (elpaca--update-info e "Rebuilding" 'rebuilding)
     (setq elpaca-cache-autoloads nil)
+    (elpaca--unprocess e)
     (setf (elpaca<-queue-time e) (current-time))
     (setf (elpaca<-statuses e) '(queued))
     (setf (elpaca<-files e) nil)
-    (setf (elpaca-q<-status (nth (elpaca<-queue-id e) (reverse elpaca--queues))) 'incomplete)
     (when interactive
       (require 'elpaca-log) ;@TODO: make conditional
       (elpaca-log--latest)
@@ -1713,7 +1720,6 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
   (interactive (list (elpaca--read-queued "Update package: ") t))
   (let* ((queued (assoc item (elpaca--queued)))
          (e (cdr queued))
-         (queue (nth (elpaca<-queue-id e) (reverse elpaca--queues)))
          (recipe (elpaca<-recipe e))
          (pin (plist-get recipe :pin)))
     (unless queued (user-error "Package %S is not queued" item))
@@ -1736,8 +1742,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
                    elpaca--add-info-path
                    elpaca--run-post-build-commands))))
           (elpaca<-queue-time e) (current-time))
-    (setf (elpaca-q<-status queue) 'incomplete)
-    (cl-decf (elpaca-q<-processed queue))
+    (elpaca--unprocess e)
     (when interactive
       (require 'elpaca-log) ;@TODO: make conditional
       (elpaca-log--latest)
