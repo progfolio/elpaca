@@ -1507,7 +1507,7 @@ When called interactively, ORDER is immediately processed, otherwise it queued."
 (defun elpaca--process (queued)
   "Process QUEUED elpaca."
   (let ((e (cdr queued)))
-    (unless (memq (elpaca--status e) '(failed blocked)) (elpaca--continue-build e))))
+    (unless (memq (elpaca--status e) '(failed blocked finished)) (elpaca--continue-build e))))
 
 (defun elpaca--process-queue (q)
   "Process elpacas in Q."
