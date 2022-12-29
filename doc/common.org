@@ -30,16 +30,21 @@ In order to export after saving changes, evaluate the following source blocks:
 #+end_src
 
 * Introduction
+:PROPERTIES:
+:CUSTOM_ID: introduction
+:END:
 Elpaca is an elisp package manager.
 It allows users to find, install, update, and remove third-party packages for Emacs.
 It is a replacement for the built-in Emacs package manager, package.el.
 * Installation
 :PROPERTIES:
 :DESCRIPTION: Installing Elpaca.
+:CUSTOM_ID: installation
 :END:
 ** Requirements
 :PROPERTIES:
 :DESCRIPTION: The required software environment for Elpaca.
+:CUSTOM_ID: installation-requirements
 :END:
 Elpaca requires:
 - Emacs >= 27.1

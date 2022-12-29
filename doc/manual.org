@@ -54,11 +54,15 @@ To export:
 * Usage
 :PROPERTIES:
 :DESCRIPTION: Using Elpaca.
+:CUSTOM_ID: usage
 :END:
 
 #+include: "./common.org::Quick Start"
 
 ** Basic concepts
+:PROPERTIES:
+:CUSTOM_ID: basic-concepts
+:END:
 
 The =elpaca-example= macro in the following examples reduces verbosity.
 It is not part of Elpaca.
@@ -392,6 +396,9 @@ For example, a package which implements an Elpaca menu ([[#menus][menu]]):
 #+end_src
 
 *** Installing Packages
+:PROPERTIES:
+:CUSTOM_ID: installing-packages
+:END:
 
 - elpaca :: =(order &rest body)=
 Installs /ORDER/ ([[#orders][orders]]) and executes /BODY/ after processing ORDER's queue ([[#queues][queue]]).
@@ -442,6 +449,7 @@ If /ORDER/ is nil, /BODY/ is still executed after processing the current queue.
 * UI
 :PROPERTIES:
 :DESCRIPTION: Elpaca's package management UI.
+:CUSTOM_ID: ui
 :END:
 Elpaca has a UI mode available for managing packages.
 The main entry points to the UI are the =elpaca-manager=, =elpaca-log=, and =elpaca-status= commands.
