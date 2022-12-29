@@ -1475,8 +1475,9 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
   (interactive (list
                 (if-let (((equal current-prefix-arg '(4)))
                          (input (read-string "elpaca-try: " nil 'elpaca--try-package-history)))
-                    (read (concat (or (string-prefix-p "(" input) "(")
-                                  input (or (string-suffix-p ")" input) ")")))
+                    (read (concat (and (not (string-prefix-p "(" input)) "(")
+                                  input
+                                  (and (not (string-suffix-p ")" input) ")"))))
                   (let ((recipe (elpaca-menu-item
                                  nil nil nil
                                  (lambda (candidate)
