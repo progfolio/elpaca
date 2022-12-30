@@ -1471,11 +1471,9 @@ Activate the corresponding package for the current session.
 ORDER's package is not made available during subsequent sessions.
 When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
   (interactive (list
-                (if-let (((equal current-prefix-arg '(4)))
-                         (input (read-string "elpaca-try: " nil 'elpaca--try-package-history)))
-                    (read (concat (and (not (string-prefix-p "(" input)) "(")
-                                  input
-                                  (and (not (string-suffix-p ")" input) ")"))))
+                (if (equal current-prefix-arg '(4))
+                    (minibuffer-with-setup-hook #'backward-char
+                      (read (read-string "elpaca-try: " "()" 'elpaca--try-package-history)))
                   (let ((recipe (elpaca-menu-item
                                  nil nil nil
                                  (lambda (candidate)
