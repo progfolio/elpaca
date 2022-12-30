@@ -1386,7 +1386,7 @@ https://github.com/emacsorphanage/helm-ag
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (elpaca-use-package helm-ag
-  :commands (helm-ag helm-ag-project-root))
+  :commands (helm-ag helm-projectile-ag))
 #+end_src
 *** helm-describe-modes
 #+begin_quote
@@ -1438,7 +1438,7 @@ Necessary for completion of multiple tags with Helm.
   :after (helm)
   :general
   (+general-global-project
-    "a" 'helm-ag-project-root
+    "a" 'helm-projectile-ag
     "bb" 'helm-projectile-switch-to-buffer
     "d" 'helm-projectile-find-dir
     "f" 'helm-projectile-find-file
