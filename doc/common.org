@@ -60,11 +60,11 @@ It must come before any calls to other Elpaca functions/macros.
 This will clone Elpaca into your =user-emacs-directory= under the =elpaca= subdirectory.
 It then builds and activates Elpaca.
 
-#+begin_src emacs-lisp :lexical t :eval never :tangle "./init.el" :exports none
+#+begin_src emacs-lisp :lexical t :eval never-export :tangle "./init.el" :exports none
 ;; Example Elpaca configuration -*- lexical-binding: t; -*-
 #+end_src
 
-#+begin_src emacs-lisp :lexical t :eval never :tangle "./init.el"
+#+begin_src emacs-lisp :lexical t :eval never-export :tangle "./init.el"
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
@@ -97,17 +97,17 @@ It then builds and activates Elpaca.
 (elpaca `(,@elpaca-order))
 #+end_src
 
-You'll also want to disable package.el in your early-init file[fn:2]:
+You'll also want to disable package.el in your early-init file[fn:1]:
 
-#+begin_src emacs-lisp :lexical t :tangle "./early-init.el" :eval never :exports none
+#+begin_src emacs-lisp :lexical t :tangle "./early-init.el" :eval never-export :exports none
 ;; Example Elpaca ealry-init.el -*- lexical-binding: t; -*-
 #+end_src
 
-#+begin_src emacs-lisp :lexical t :tangle "./early-init.el" :eval never
+#+begin_src emacs-lisp :lexical t :tangle "./early-init.el" :eval never-export
 (setq package-enable-at-startup nil)
 #+end_src
 
-#+begin_src emacs-lisp :lexical t :tangle "./early-init.el" :eval never :exports none
+#+begin_src emacs-lisp :lexical t :tangle "./early-init.el" :eval never-export :exports none
 ;; Local Variables:
 ;; no-byte-compile: t
 ;; End:
@@ -138,7 +138,7 @@ To install and load packages persistently (across Emacs restarts), use the =elpa
 
 For example:
 
-#+begin_src emacs-lisp :lexical t :eval never :tangle "./init.el"
+#+begin_src emacs-lisp :lexical t :eval never-export :tangle "./init.el" :exports code
 ;; Install use-package
 (elpaca use-package
   ;; Customize/Configure the package in the BODY of the macro.
@@ -151,7 +151,7 @@ For example:
 (elpaca nil (message "deferred"))
 #+end_src
 
-#+begin_src emacs-lisp :lexical t :tangle "./init.el" :eval never :exports none
+#+begin_src emacs-lisp :lexical t :tangle "./init.el" :eval never-export :exports none
 ;; Local Variables:
 ;; no-byte-compile: t
 ;; End:
@@ -160,10 +160,10 @@ For example:
 *IMPORTANT*:
 
 Elpaca installs and activates packages asynchronously.
-Elpaca processes its package queues /after/ Emacs reads the init file.[fn:1] 
+Elpaca processes its package queues /after/ Emacs reads the init file.[fn:2]
 Consider the following example:
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :eval never-export
 (elpaca nil (message "First")) ; Queue First
 (message "Second") ; Second messaged
 (elpaca nil (message "Third")) ; Queue Third
@@ -174,7 +174,7 @@ Consider the following example:
 Defer forms which are dependent on deferred forms.
 Wrapping the "Second" message in an =elpaca= declaration will fix the above example:
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :eval never-export
 (elpaca nil (message "First"))  ; Queue First
 (elpaca nil (message "Second")) ; Queue Second
 (elpaca nil (message "Third"))  ; Queue Third
@@ -185,7 +185,6 @@ Add any configuration which relies on =after-init-hook=, =emacs-startup-hook=, e
 
 * Footnotes
 
-[fn:2] [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html]]
+[fn:1] [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html]]
 
-[fn:1] This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages. 
-
+[fn:2] This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.

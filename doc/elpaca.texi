@@ -216,7 +216,7 @@ For example:
 @strong{IMPORTANT}:
 
 Elpaca installs and activates packages asynchronously.
-Elpaca processes its package queues @emph{after} Emacs reads the init file.@footnote{This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.} 
+Elpaca processes its package queues @emph{after} Emacs reads the init file.@footnote{This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.}
 Consider the following example:
 
 @lisp
@@ -697,29 +697,6 @@ The main entry points to the UI are the @samp{elpaca-manager}, @samp{elpaca-log}
 Each of these commands utilize @samp{elpaca-ui-mode}.
 
 The following commands are available in the @samp{elpaca-ui-mode}:
-
-@lisp
-(with-temp-buffer
-  (describe-map-tree elpaca-ui-mode-map)
-  (goto-char (point-min))
-  (let (rows)
-    (while (re-search-forward "elpaca" nil 'noerror)
-      (push (split-string (buffer-substring-no-properties
-                           (line-beginning-position) (line-end-position))
-                          "\t+")
-            rows))
-    (setq rows (mapcar (lambda (it)
-                         (append
-                          (list (car (split-string
-                                      (documentation (intern (cadr it)))
-                                      "\n")))
-                          it))
-                       rows))
-    (setq rows (cl-sort (mapcar #'nreverse rows) #'string< :key #'cadr))
-    (push 'hline rows)
-    (push (list "Command" "Binding" "Description") rows)
-    rows))
-@end lisp
 
 @multitable {aaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @headitem Command

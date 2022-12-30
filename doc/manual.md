@@ -505,29 +505,6 @@ Elpaca has a UI mode available for managing packages. The main entry points to t
 
 The following commands are available in the `elpaca-ui-mode`:
 
-```emacs-lisp
-(with-temp-buffer
-  (describe-map-tree elpaca-ui-mode-map)
-  (goto-char (point-min))
-  (let (rows)
-    (while (re-search-forward "elpaca" nil 'noerror)
-      (push (split-string (buffer-substring-no-properties
-                           (line-beginning-position) (line-end-position))
-                          "\t+")
-            rows))
-    (setq rows (mapcar (lambda (it)
-                         (append
-                          (list (car (split-string
-                                      (documentation (intern (cadr it)))
-                                      "\n")))
-                          it))
-                       rows))
-    (setq rows (cl-sort (mapcar #'nreverse rows) #'string< :key #'cadr))
-    (push 'hline rows)
-    (push (list "Command" "Binding" "Description") rows)
-    rows))
-```
-
 | Command                    | Binding | Description                                                     |
 |-------------------------- |------- |--------------------------------------------------------------- |
 | elpaca-ui-send-input       | !       | Send input string to current process.                           |

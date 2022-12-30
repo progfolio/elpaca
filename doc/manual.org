@@ -89,7 +89,7 @@ Examples will use the following recipe menu.
 ([[#menus][recipe menu]])
 It offers a "burger" package recipe:
 
-#+begin_src emacs-lisp :lexical t :results silent
+#+begin_src emacs-lisp :lexical t :results silent :eval never-export
 (defun elpaca-example-menu (_)
   '((burger . (:recipe ( :buns 2
                          :lettuce t
@@ -108,7 +108,7 @@ It offers a "burger" package recipe:
 A recipe provides Elpaca with the metadata necessary to build and install a package.
 It is a list of the form:
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :eval never-export
 (ITEM . PROPS)
 #+end_src
 
@@ -117,7 +117,7 @@ It is a list of the form:
 
 - :host | :fetcher :: A symbol or string representing the hosting service of the repository.
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :eval never-export
 (example :host github)
 (example :fetcher gitlab)
 (example :host "www.example.com")
@@ -125,45 +125,45 @@ It is a list of the form:
 
 - :repo :: A string of the form =USER/REPO= when used with the =:host= keyword; a local file path or remote URL when =:host= is not used.
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :eval never-export
 (example :host github :repo "user/example") ;;downloaded from github
 #+end_src
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :eval never-export
 (local :repo "~/repos/local/") ;;cloned from local filesystem
 #+end_src
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :eval never-export
 (remote :repo "https://foo.example/example.git") ;;remote clone
 #+end_src
 
 - :branch :: The repository branch to check out when installing the package.
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :eval never-export
 (example :host github :repo "user/example" :branch "main")
 #+end_src
 
 - :tag :: The tag to check out when installing the package.
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :eval never-export
 (example :host github :repo "user/example" :tag "v1.0")
 #+end_src
 
 - :ref :: The git ref[fn:1] to check out when installing the package.
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :eval never-export
 (example :host github :repo "user/example" :ref "a76ca0a") ;; Check out a specific commit.
 #+end_src
 
 - :pin :: When non-nil, ignore the package during update commands.
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :eval never-export
 (example :pin t)
 #+end_src
 
 - :depth :: The package repository's history depth.
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :eval never-export
 (example :depth 1) ;; Shallow clone with history truncated to 1 commit.
 (example :depth nil) ;; Full repository clone.
 #+end_src
@@ -173,18 +173,18 @@ The first element is the default remote when installing the package.
 If it is a string, it names the default remote.
 The remaining elements are lists of the form:
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :eval never-export
 (NAME . PROPS)
 #+end_src
 
 /NAME/ is a string used to name the remote.
 /PROPS/ are recipe keyword/value pairs used to override values previously declared in the recipe.
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :eval never-export
 (example :remotes ("origin"))
 #+end_src
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :eval never-export
 (example :host github :repo "original/example"
          :remotes ("origin"
                    ("fork" :host gitlab :repo "user/example-fork.el")))
@@ -193,14 +193,14 @@ The remaining elements are lists of the form:
 - :main :: The name of the main elisp file.
   When provided this can speed up the process of cloning and loading a package's dependencies.
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :eval never-export
 (example :main "example.el")
 #+end_src
 
 - :build :: A list of build steps, nil or t.
   To remove steps from =elpaca-default-build-steps= by starting the list with the =:not= keyword.
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :eval never-export
 (example :build (:not elpaca--byte-compile))
 #+end_src
 
@@ -457,8 +457,9 @@ Each of these commands utilize =elpaca-ui-mode=.
 
 The following commands are available in the =elpaca-ui-mode=:
 
-#+begin_src emacs-lisp :lexical t :exports results table replace
+#+begin_src emacs-lisp :lexical t :exports results :results table
 (with-temp-buffer
+  (require 'elpaca-ui)
   (describe-map-tree elpaca-ui-mode-map)
   (goto-char (point-min))
   (let (rows)
