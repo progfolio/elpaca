@@ -1553,7 +1553,8 @@ do not confirm before deleting package and DEPS."
                (ignored       (if (listp ignored) ignored (list ignored)))
                (dependents    (cl-set-difference (elpaca-dependents id) ignored))
                (dependencies  (and deps repo-p
-                                   (elpaca-dependencies id elpaca-ignored-dependencies)))
+                                   (ignore-errors (elpaca-dependencies
+                                                   id elpaca-ignored-dependencies))))
                (recipe        (elpaca<-recipe e))
                (url           (plist-get recipe :url))
                (repo          (plist-get recipe :repo))
