@@ -488,14 +488,14 @@ or nil if none apply."
            (concat (car p) h (cdr p) (when (eq host 'sourcehut) "~") repo
                    (unless (eq host 'sourcehut) ".git")))))))
 
-(defun elpaca--build-steps1 (recipe)
-  "Return a list of build functions from RECIPE."
+(defun elpaca--build-steps1 (recipe defaults)
+  "Return a list of build functions from RECIPE and DEFAULTS."
   (let* ((build (plist-member recipe :build))
          (steps (cadr build))
          (removep (and (eq (car-safe steps) :not) (pop steps))))
     (cond
-     ((or (not build) (eq steps t)) elpaca-build-steps)
-     (removep (cl-set-difference elpaca-build-steps steps))
+     ((or (not build) (eq steps t)) defaults)
+     (removep (cl-set-difference defaults steps))
      ((listp steps) steps))))
 
 (cl-defstruct (elpaca< (:constructor elpaca<--create) (:type list) (:named))
@@ -531,13 +531,13 @@ If N is nil return a list of all queued elpacas."
                         e)))
            (reverse (elpaca--queued))))
 
-(defsubst elpaca--build-steps (recipe builtp clonedp mono-repo)
+(defun elpaca--build-steps (recipe &optional builtp clonedp mono-repo)
   "Return list of build functions for RECIPE.
 BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
-  (when-let ((steps (elpaca--build-steps1 recipe)))
+  (when-let ((defaults (if builtp elpaca--pre-built-steps elpaca-build-steps))
+             (steps (elpaca--build-steps1 recipe defaults)))
     (if builtp
-        ;;@FIX: should this be hardcoded?
-        (cons 'elpaca--queue-dependencies (cl-intersection elpaca--pre-built-steps steps))
+        steps
       (unless elpaca-hide-status-during-build (setq elpaca--show-status t))
       (when (and mono-repo (memq 'ref-checked-out (elpaca<-statuses mono-repo)))
         (setq steps
@@ -1620,7 +1620,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
     (when (eq (elpaca--status e) 'finished)
       ;;@MAYBE: remove Info/load-path entries?
       (setf (elpaca<-build-steps e)
-            (cl-set-difference (elpaca--build-steps (elpaca<-recipe e) nil nil nil)
+            (cl-set-difference (elpaca--build-steps (elpaca<-recipe e))
                                '(elpaca--clone
                                  elpaca--add-remotes
                                  elpaca--fetch
@@ -1731,8 +1731,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
               elpaca--log-updates
               elpaca--merge
               ,@(cl-intersection
-                 (elpaca--build-steps recipe nil t
-                                      (elpaca<-mono-repo e))
+                 (elpaca--build-steps recipe nil 'cloned (elpaca<-mono-repo e))
                  '(elpaca--run-pre-build-commands
                    elpaca--link-build-files
                    elpaca--byte-compile
