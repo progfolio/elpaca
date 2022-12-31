@@ -4,6 +4,7 @@
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
                               :ref nil
+                              :files (:defaults (:exclude "extensions"))
                               :build (:not elpaca--activate-package)))
 (when-let ((repo  (expand-file-name "repos/elpaca/" elpaca-directory))
            (build (expand-file-name "elpaca/" elpaca-builds-directory))
@@ -31,10 +32,15 @@
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
 
-;; Install use-package
-(elpaca use-package
-  ;; Customize/Configure the package in the BODY of the macro.
-  (setq use-package-always-defer t))
+;; Install use-package support
+(elpaca elpaca-use-package
+  ;; Enable :elpaca use-package keyword.
+  (elpaca-use-package-mode)
+  ;; Assume :elpaca t unless otherwise specified.
+  (setq elpaca-use-package-by-default t))
+
+;; Block until current queue processed.
+(elpaca-wait)
 
 ;; Expands to: (elpaca evil (use-package evil :demand t))
 (use-package evil :demand t)
