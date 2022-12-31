@@ -200,8 +200,8 @@ Each function is passed a request, which may be any of the follwoing symbols:
      Updates the menu's package candidate list."
   :type 'hook)
 
-(defcustom elpaca-hide-status-during-build nil
-  "When non-nil, don't display `elpaca-status' when a package requires a build."
+(defcustom elpaca-hide-initial-build nil
+  "When non-nil, hide `elpaca-log' during init time builds."
   :type 'boolean)
 
 (defvar elpaca--show-status nil
@@ -540,7 +540,7 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
              (steps (elpaca--build-steps1 recipe defaults)))
     (if builtp
         steps
-      (unless elpaca-hide-status-during-build (setq elpaca--show-status t))
+      (unless elpaca-hide-initial-build (setq elpaca--show-status t))
       (when (and mono-repo (memq 'ref-checked-out (elpaca<-statuses mono-repo)))
         (setq steps
               (cl-set-difference steps '(elpaca--clone elpaca--add-remotes elpaca--checkout-ref))))
@@ -1508,15 +1508,18 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
   (let ((e (cdr queued)))
     (unless (memq (elpaca--status e) '(failed blocked finished)) (elpaca--continue-build e))))
 
+(defvar elpaca--initial-buffer-choice initial-buffer-choice "User's `initial-buffer-choice'.")
+(defun elpaca--initial-status-buffer ()
+  "Return initial status buffer if `elpaca-hide-initial-build' is nil."
+  (elpaca-log "#unique !finished")
+  (when (eq initial-buffer-choice #'elpaca--initial-status-buffer)
+    (setq initial-buffer-choice elpaca--initial-buffer-choice))
+  (when (bound-and-true-p elpaca-log-buffer) (get-buffer-create elpaca-log-buffer)))
+
 (defun elpaca--process-queue (q)
   "Process elpacas in Q."
-  ;;@FIX: Do this without resorting to `initial-buffer-choice'.
-  (when elpaca--show-status
-    (setq initial-buffer-choice
-          (lambda ()
-            (require 'elpaca-log)
-            (elpaca-log "#unique !finished")
-            (when (bound-and-true-p elpaca-log-buffer) (get-buffer-create elpaca-log-buffer)))))
+  (when (and elpaca--show-status (not after-init-time))
+    (setq initial-buffer-choice #'elpaca--initial-status-buffer))
   (when-let ((pre (elpaca-q<-pre q))) (funcall pre))
   (if (and (not (elpaca-q<-elpacas q)) (elpaca-q<-forms q))
       (elpaca--finalize-queue q)
