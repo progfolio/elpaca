@@ -5,9 +5,7 @@
 This document contains documentation included in the README file as well as the Info manual.
 In order to export after saving changes, evaluate the following source blocks:
 
-
 #+begin_src emacs-lisp :lexical t :results silent
-
 (require 'ox-org)
 (defun +elpaca-export-readme ()
   (with-current-buffer (find-file-noselect "./readme.org")
@@ -134,7 +132,7 @@ And remove anything related to package.el in your init file. e.g. calls to ~(pac
 | Browse Package Website                | ~b~                                 | ~elpaca-browse~                          |
 
 Packages installed via the above commands are not loaded on subsequent Emacs sessions (after restarting).
-To install and load packages persistently (across Emacs restarts), use the =elpaca= or =elpaca-use-package= macros in your init file after bootstrapping. ([[#bootstrap-snippet][bootstrap snippet]])
+To install and load packages persistently (across Emacs restarts), use the =elpaca= macro in your init file after bootstrapping. ([[#bootstrap-snippet][bootstrap snippet]])
 
 For example:
 
@@ -145,7 +143,7 @@ For example:
   (setq use-package-always-defer t))
 
 ;; Expands to: (elpaca evil (use-package evil :demand t))
-(elpaca-use-package evil :demand t)
+(use-package evil :demand t)
 
 ;; Don't install anything. Defer execution of BODY
 (elpaca nil (message "deferred"))

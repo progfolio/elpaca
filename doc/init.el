@@ -37,7 +37,7 @@
   (setq use-package-always-defer t))
 
 ;; Expands to: (elpaca evil (use-package evil :demand t))
-(elpaca-use-package evil :demand t)
+(use-package evil :demand t)
 
 ;; Don't install anything. Defer execution of BODY
 (elpaca nil (message "deferred"))

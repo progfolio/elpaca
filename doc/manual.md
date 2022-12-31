@@ -108,7 +108,7 @@ And remove anything related to package.el in your init file. e.g. calls to `(pac
 | Visit Package Build Directory         | `C-u` `v`                          | `C-u` `elpaca-visit`                         |
 | Browse Package Website                | `b`                                | `elpaca-browse`                              |
 
-Packages installed via the above commands are not loaded on subsequent Emacs sessions (after restarting). To install and load packages persistently (across Emacs restarts), use the `elpaca` or `elpaca-use-package` macros in your init file after bootstrapping. ([bootstrap snippet](#bootstrap-snippet))
+Packages installed via the above commands are not loaded on subsequent Emacs sessions (after restarting). To install and load packages persistently (across Emacs restarts), use the `elpaca` macro in your init file after bootstrapping. ([bootstrap snippet](#bootstrap-snippet))
 
 For example:
 
@@ -119,7 +119,7 @@ For example:
   (setq use-package-always-defer t))
 
 ;; Expands to: (elpaca evil (use-package evil :demand t))
-(elpaca-use-package evil :demand t)
+(use-package evil :demand t)
 
 ;; Don't install anything. Defer execution of BODY
 (elpaca nil (message "deferred"))
