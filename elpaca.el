@@ -1880,5 +1880,14 @@ When BUILD is non-nil visit ITEM's build directory."
       (browse-url url)
     (user-error "No URL associated with current line")))
 
+;;;###autoload
+(defun elpaca-version (&optional message)
+  "Return elpaca version information string.
+If MESSAGE is non-nil, the information is messaged."
+  (interactive '(t))
+  (let* ((default-directory (expand-file-name "repos/elpaca/" elpaca-directory))
+         (info (string-trim (elpaca-process-output "git" "log" "--pretty=%h %D" "-1"))))
+    (if message (message "Elpaca version: %s" info) info)))
+
 (provide 'elpaca)
 ;;; elpaca.el ends here
