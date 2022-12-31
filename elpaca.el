@@ -307,6 +307,10 @@ Simplified, faster version of `alist-get'."
   "Return E's Q."
   (and e (car (last elpaca--queues (1+ (elpaca<-queue-id e))))))
 
+(defsubst elpaca--emacs-path ()
+  "Return path to running Emacs."
+  (concat invocation-directory invocation-name))
+
 ;;;###autoload
 (defun elpaca-menu-item (symbol &optional items interactive)
   "Return menu item matching SYMBOL in ITEMS or `elpaca-menu-functions' cache.
@@ -331,6 +335,10 @@ If it returns nil, the candidate is removed from the candidate list."
       (kill-new (format "%S" item)))
     item))
 
+(defun elpaca--update-menus-filter (process chunk)
+  "Add CHUNK to PROCESS :output."
+  (setf (process-get process :output) (concat (process-get process :output) chunk)))
+
 ;;;###autoload
 (defun elpaca-update-menus (&rest menus)
   "Update all menus in MENUS or `elpaca-menu-functions'.
@@ -340,8 +348,59 @@ When called interactively with \\[universal-argument] update all menus."
                  (mapcar #'intern (completing-read-multiple "Update Menus: "
                                                             elpaca-menu-functions))))
   (let ((elpaca-menu-functions (or menus elpaca-menu-functions)))
-    (run-hook-with-args 'elpaca-menu-functions 'update))
-  (elpaca--menu-items 'recache))
+    (cl-loop with items = nil
+             with fnindex = -1
+             with fnlen = (float (length elpaca-menu-functions))
+             for fn in elpaca-menu-functions
+             for program = `(condition-case err
+                                (progn
+                                  (setq load-prefer-newer t)
+                                  (let ((default-directory ,elpaca-builds-directory))
+                                    (normal-top-level-add-subdirs-to-load-path))
+                                  ;;@TODO: error handling
+                                  (let ((index nil)
+                                        (print-length nil)
+                                        (print-level nil))
+                                    (let ((inhibit-message t))
+                                      ,@(let ((sym (symbol-file fn)))
+                                          (if (string-match-p "/" sym)
+                                              `((load ,(file-name-sans-extension sym)))
+                                            `((require ',(intern sym)))))
+                                      (require 'elpaca)
+                                      (require 'elpaca-autoloads)
+                                      (,fn 'update)
+                                      (setq index (,fn 'index)))
+                                    (prin1 (cons ,(cl-incf fnindex) index))))
+                              ((error) (prin1 (cons 'error (cons ,(symbol-name fn) err)))))
+             do (make-process
+                 :name (concat "elpaca-update-menu-" (symbol-name fn))
+                 :stderr " *elpaca-update-menu*" ; Prevent mixing stderr with stdout.
+                 :connection-type 'pipe
+                 :command (list (elpaca--emacs-path) "-Q"
+                                "--batch" "--eval" (pp-to-string program))
+                 :filter #'elpaca--update-menus-filter
+                 :sentinel (lambda (process _event)
+                             (unless (process-live-p process)
+                               (push (ignore-errors (read (process-get process :output)))
+                                     items))))
+             finally return (with-timeout (60 (user-error "Pending menu update timed out"))
+                              (let ((updated nil)
+                                    (previous -1))
+                                (while (< (setq updated (length items)) fnlen)
+                                  (unless (= previous updated)
+                                    (message "updating menus C-g to quit...%%%.2f" (* 100 (/ updated fnlen))))
+                                  (setq previous updated)
+                                  (discard-input)
+                                  ;;@TODO: make configurable
+                                  (sit-for 0.15)))
+                              (message "%s" "updating menus C-g to quit...%100.0")
+                              (cl-loop for item in items
+                                       when (eq (car item) 'error)
+                                       do (error "%s error: %S" (cadr item) (cddr item)))
+                              (let* ((sorted  (cl-sort items #'< :key #'car))
+                                     (menus (mapcar #'cdr sorted)))
+                                ;;@TODO: sort, set cache
+                                (apply #'append menus))))))
 
 (defsubst elpaca--inheritance-disabled-p (obj)
   "Return t if OBJ explicitly has :inherit nil key val, nil otherwise."
@@ -384,10 +443,6 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
       (kill-new (format "%S" r))
       (message "%S recipe copied to kill-ring:\n%S" (plist-get r :package) r))
     r))
-
-(defsubst elpaca--emacs-path ()
-  "Return path to running Emacs."
-  (concat invocation-directory invocation-name))
 
 (defsubst elpaca--repo-name (string)
   "Return repo name portion of STRING."
