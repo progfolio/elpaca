@@ -1301,15 +1301,14 @@ Kick off next build step, and/or change E's status."
 (defun elpaca--generate-autoloads-async (e)
   "Generate E's autoloads.
 Async wrapper for `elpaca-generate-autoloads'."
-  (let* ((emacs             (elpaca--emacs-path))
-         (package           (elpaca<-package  e))
+  (let* ((package           (elpaca<-package  e))
          (build-dir         (elpaca<-build-dir e))
          (default-directory build-dir)
          (elpaca            (expand-file-name "repos/elpaca/" elpaca-directory))
          (program           `(progn (setq gc-cons-percentage 1.0)
                                     (elpaca-generate-autoloads ,package ,build-dir)))
          (command
-          (list emacs "-Q"
+          (list (elpaca--emacs-path) "-Q"
                 "-L" elpaca
                 "-L" build-dir ; Is this necessary?
                 "-l" (expand-file-name "elpaca.el" elpaca)
