@@ -488,16 +488,6 @@ or nil if none apply."
            (concat (car p) h (cdr p) (when (eq host 'sourcehut) "~") repo
                    (unless (eq host 'sourcehut) ".git")))))))
 
-(defun elpaca--build-steps1 (recipe defaults)
-  "Return a list of build functions from RECIPE and DEFAULTS."
-  (let* ((build (plist-member recipe :build))
-         (steps (cadr build))
-         (removep (and (eq (car-safe steps) :not) (pop steps))))
-    (cond
-     ((or (not build) (eq steps t)) defaults)
-     (removep (cl-set-difference defaults steps))
-     ((listp steps) steps))))
-
 (cl-defstruct (elpaca< (:constructor elpaca<--create) (:type list) (:named))
   "Order for queued processing."
   id package item statuses
@@ -531,13 +521,18 @@ If N is nil return a list of all queued elpacas."
                         e)))
            (reverse (elpaca--queued))))
 
-;;@TODO: move build-steps1 here and rename it to something better
 ;;@TODO: dependenies in mono-repo should not do double work of adding to load-path, info building, etc
 (defun elpaca--build-steps (recipe &optional builtp clonedp mono-repo)
   "Return list of build functions for RECIPE.
 BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
   (when-let ((defaults (if builtp elpaca--pre-built-steps elpaca-build-steps))
-             (steps (elpaca--build-steps1 recipe defaults)))
+             (steps (let* ((build (plist-member recipe :build))
+                           (steps (cadr build))
+                           (removep (and (eq (car-safe steps) :not) (pop steps))))
+                      (cond
+                       ((or (not build) (eq steps t)) defaults)
+                       (removep (cl-set-difference defaults steps))
+                       ((listp steps) steps)))))
     (if builtp
         steps
       (unless elpaca-hide-initial-build (setq elpaca--show-status t))
