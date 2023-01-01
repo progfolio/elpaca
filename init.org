@@ -61,14 +61,12 @@ Skipping a bunch of regular expression searching in the =file-name-handler-alist
 (setq file-name-handler-alist nil)
 #+end_src
 
-*** gc-cons threshold
-Emacs collects garbage every 800KB.
-This is overly aggressive on a modern machine during our init.
-Temporarily turning it off should decrease startup times.
-Resetting it afterward will ensure that normal operations don't suffer from a large GC period.
+*** Garbage Collection
+=gc-cons-threshold= (800 KB) and =gc-cons-percentage= (0.1) control when the Emacs garbage collector can kick in.
+Temporarily turning these off during init should decrease startup time.
+Resetting them afterward will ensure that normal operations don't suffer from a large GC periods.
 
-I'm still not sure on the optimal gc-cons-threshold value. The following is a
-table of values from popular Emacs configurations.
+The following is a table shows values from popular Emacs configurations.
 
 | Distribution | gc-cons-threshold |
 |--------------+-------------------|
@@ -77,7 +75,8 @@ table of values from popular Emacs configurations.
 | Spacemacs    |         100000000 |
 
 #+begin_src emacs-lisp :lexical t
-(setq gc-cons-threshold most-positive-fixnum)
+(setq gc-cons-threshold most-positive-fixnum
+      gc-cons-percentage 1)
 
 (defun +gc-after-focus-change ()
   "Run GC when frame loses focus."
@@ -92,6 +91,7 @@ table of values from popular Emacs configurations.
    1 nil
    (lambda ()
      (setq file-name-handler-alist default-file-name-handler-alist
+           gc-cons-percentage 0.1
            gc-cons-threshold 100000000)
      (message "gc-cons-threshold & file-name-handler-alist restored")
      (when (boundp 'after-focus-change-function)
