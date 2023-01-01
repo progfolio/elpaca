@@ -1534,6 +1534,7 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
     (or (file-exists-p (elpaca<-repo-dir e)) (file-exists-p (elpaca<-build-dir e)))))
 
 ;;@MAYBE: Should this delete user's declared package if it is a dependency?
+;;@MAYBE: user option for deletion policy when repo is dirty.
 ;;;###autoload
 (defun elpaca-delete (id &optional force deps ignored)
   "Remove a package with ID from item cache and disk.
