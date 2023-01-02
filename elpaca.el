@@ -1635,7 +1635,6 @@ With a prefix argument, rebuild current file's package or prompt if none found."
 
 (defun elpaca--log-updates (e)
   "Log E's fetched commits."
-  (elpaca--signal e "Update Log" 'update-log)
   (let* ((default-directory (elpaca<-repo-dir e))
          (process (make-process
                    :name (concat "elpaca-log-updates-" (elpaca<-package e))

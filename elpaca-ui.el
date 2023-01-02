@@ -638,8 +638,7 @@ The current package is its sole argument."
                     (e (elpaca-get-queued (car entry)))
                     (repo (elpaca<-repo-dir e))
                     (cols (cadr copy))
-                    (info (aref cols 2))
-                    ((not (equal info "Update Log"))))
+                    (info (aref cols 2)))
                (progn
                  (setf (aref (cadr copy) 2)
                        (cond
