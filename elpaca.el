@@ -1650,7 +1650,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
   (let* ((default-directory (elpaca<-repo-dir e))
          (process (make-process
                    :name (concat "elpaca-fetch-" (elpaca<-package e))
-                   :command  '("git" "fetch" "--all")
+                   :command  '("git" "fetch" "--all") ;;@TODO: make --all optional
                    :filter   #'elpaca--process-filter
                    :sentinel (apply-partially #'elpaca--process-sentinel "Remotes fetched" nil))))
     (process-put process :elpaca e)))
