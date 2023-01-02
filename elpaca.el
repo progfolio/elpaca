@@ -431,8 +431,9 @@ or nil if none apply."
          (repo (plist-get recipe :repo))
          (pkg (plist-get recipe :package))
          (host (or (plist-get recipe :host) (plist-get recipe :fetcher)))
+         (hostname (and host (prin1-to-string host 'noescape)))
          (user nil)
-         (info (intern (concat url repo (and host (symbol-name host)))))
+         (info (intern (concat url repo hostname)))
          (mono-repo (alist-get info elpaca--repo-dirs))
          (name (cond
                 (local-repo
@@ -451,11 +452,11 @@ or nil if none apply."
                    (elpaca--repo-name repo)))
                 (pkg pkg)
                 (t (error "Unable to determine repo name"))))
-         (dir (if (and (not mono-repo) (rassoc name (mapcar #'cdr elpaca--repo-dirs)))
-                  (string-join (list name (and host (symbol-name host)) user) ".")
-                (and name (file-name-sans-extension name)))))
+         (dir (if (and (not mono-repo) (assoc name (mapcar #'cdr elpaca--repo-dirs)))
+                  (string-join (list name hostname user) ".")
+                (and name (replace-regexp-in-string "\\.el$" "" name)))))
     (unless mono-repo (push (cons info (cons dir pkg)) elpaca--repo-dirs))
-    (expand-file-name (concat "repos/" dir) elpaca-directory)))
+    (file-name-as-directory (expand-file-name (concat "repos/" dir) elpaca-directory))))
 
 (defun elpaca-build-dir (recipe)
   "Return RECIPE's build dir."
