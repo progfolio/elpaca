@@ -577,9 +577,7 @@ Keys are as follows:
     (when mono-repo (cl-pushnew id (elpaca<-includes mono-repo)))
     elpaca))
 
-(defsubst elpaca--status (e)
-  "Return `car' of E's statuses."
-  (car (elpaca<-statuses e)))
+(defsubst elpaca--status (e) "Return E's status." (car (elpaca<-statuses e)))
 
 (defun elpaca--fail (e &optional reason)
   "Fail E for REASON."
