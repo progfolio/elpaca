@@ -70,18 +70,18 @@ And remove anything related to package.el in your init file. e.g. calls to ~(pac
 [fn:-1-1] [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html]]
 
 ** Quick Start
-| Operation                             | UI (keys apply in elpaca-ui-mode) | completing-read interface commands     |
-|---------------------------------------+-----------------------------------+----------------------------------------|
-| Finding Packages                      | ~M-x elpaca-manager~                | ~elpaca-try~                             |
-| Trying Packages (for current session) | ~i~ ~x~                               | ~elpaca-try~                             |
-| Updating Packages                     | ~u~ ~x~                               | ~elpaca-update~ or ~M-x~ ~elpaca-update-all~ |
-| Rebuilding Packages                   | ~r~ ~x~                               | ~elpaca-rebuild~                         |
-| Deleting Packages                     | ~d~ ~x~                               | ~elpaca-delete~                          |
-| View Package Logs                     | ~l~ filters log to current package  | ~elpaca-log~                             |
-| View Package Statuses                 | ~t~ show most recent log entries    | ~elpaca-status~                          |
-| Visit Package Repository Directory    | ~v~                                 | ~elpaca-visit~                           |
-| Visit Package Build Directory         | ~C-u~ ~v~                             | ~C-u~ ~elpaca-visit~                       |
-| Browse Package Website                | ~b~                                 | ~elpaca-browse~                          |
+| Operation                             | UI (keys apply in elpaca-ui-mode)  | completing-read interface commands           |
+|---------------------------------------+------------------------------------+----------------------------------------------|
+| Finding Packages                      | ~M-x elpaca-manager~               | ~elpaca-try~                                 |
+| Trying Packages (for current session) | ~i~ ~x~                            | ~elpaca-try~                                 |
+| Updating Packages                     | ~u~ ~x~                            | ~elpaca-update~ or ~M-x~ ~elpaca-update-all~ |
+| Rebuilding Packages                   | ~r~ ~x~                            | ~elpaca-rebuild~                             |
+| Deleting Packages                     | ~d~ ~x~                            | ~elpaca-delete~                              |
+| View Package Logs                     | ~l~ filters log to current package | ~elpaca-log~                                 |
+| View Package Statuses                 | ~t~ show most recent log entries   | ~elpaca-status~                              |
+| Visit Package Repository Directory    | ~v~                                | ~elpaca-visit~                               |
+| Visit Package Build Directory         | ~C-u~ ~v~                          | ~C-u~ ~elpaca-visit~                         |
+| Browse Package Website                | ~b~                                | ~elpaca-browse~                              |
 
 Packages installed via the above commands are not loaded on subsequent Emacs sessions (after restarting).
 To install and load packages persistently (across Emacs restarts), use the =elpaca= or =elpaca-use-package= macros in your init file after bootstrapping. ([[#bootstrap-snippet][bootstrap snippet]])
