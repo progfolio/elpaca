@@ -1635,6 +1635,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
 
 (defun elpaca--log-updates (e)
   "Log E's fetched commits."
+  (elpaca--signal e nil 'update-log)
   (let* ((default-directory (elpaca<-repo-dir e))
          (process (make-process
                    :name (concat "elpaca-log-updates-" (elpaca<-package e))
@@ -1724,16 +1725,13 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
             `(elpaca--fetch
               elpaca--log-updates
               elpaca--merge
-              ,@(cl-intersection
+              ,@(cl-set-difference
                  (elpaca--build-steps recipe nil 'cloned (elpaca<-mono-repo e))
-                 '(elpaca--run-pre-build-commands
-                   elpaca--link-build-files
-                   elpaca--byte-compile
-                   elpaca--generate-autoloads-async
-                   elpaca--compile-info
-                   elpaca--install-info
-                   elpaca--add-info-path
-                   elpaca--run-post-build-commands))))
+                 '(elpaca--add-remotes
+                   elpaca--fetch
+                   elpaca--checkout-ref
+                   elpaca--clone-dependencies
+                   elpaca--activate-package))))
           (elpaca<-queue-time e) (current-time))
     (elpaca--unprocess e)
     (when interactive
