@@ -201,11 +201,12 @@ Each function is passed a request, which may be any of the follwoing symbols:
   :type 'hook)
 
 (defcustom elpaca-hide-initial-build nil
-  "When non-nil, hide `elpaca-log' during init time builds."
-  :type 'boolean)
-
-(defvar elpaca--show-status nil
-  "When non-nil, show `elpaca-status' during build.")
+  "When non-nil, hide `elpaca-log' during init time builds." :type 'boolean)
+(defvar elpaca--ibc initial-buffer-choice "User's `initial-buffer-choice'.")
+(defun elpaca--set-ibc (_ new &rest _)
+  "Update `elpaca--ibc' when `initial-buffer-choice' set to NEW."
+  (unless (eq new #'elpaca--ibs) (setq elpaca--ibc new)))
+(add-variable-watcher 'initial-buffer-choice #'elpaca--set-ibc)
 
 (defvar elpaca-ignored-dependencies
   '(emacs cl-lib cl-generic nadvice org org-mode map seq json project auth-source-pass)
@@ -536,12 +537,17 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
                        ((listp steps) steps)))))
     (if builtp
         steps
-      (unless elpaca-hide-initial-build (setq elpaca--show-status t))
       (when (and mono-repo (memq 'ref-checked-out (elpaca<-statuses mono-repo)))
         (setq steps
               (cl-set-difference steps '(elpaca--clone elpaca--add-remotes elpaca--checkout-ref))))
       (when clonedp (setq steps (delq 'elpaca--clone steps)))
       steps)))
+
+(defun elpaca--ibs ()
+  "Return initial status buffer if `elpaca-hide-initial-build' is nil."
+  (elpaca-log "#unique !finished")
+  (when (equal initial-buffer-choice #'elpaca--ibs) (setq initial-buffer-choice elpaca--ibc))
+  (when (bound-and-true-p elpaca-log-buffer) (get-buffer-create elpaca-log-buffer)))
 
 (cl-defun elpaca<-create
     (item &key recipe repo-dir build-dir files mono-repo)
@@ -576,6 +582,8 @@ Keys are as follows:
                   :includes (and mono-repo (list mono-repo))
                   :log (list (list status nil info)))))
     (when mono-repo (cl-pushnew id (elpaca<-includes mono-repo)))
+    (unless (or builtp elpaca-hide-initial-build elpaca-after-init-time)
+      (setq initial-buffer-choice #'elpaca--ibs elpaca-hide-initial-build t))
     elpaca))
 
 (defsubst elpaca--status (e) "Return E's status." (car (elpaca<-statuses e)))
@@ -714,6 +722,7 @@ Accepted KEYS are :pre and :post which are hooks run around queue processing."
         (progn
           (run-hooks 'elpaca-after-init-hook)
           (setq elpaca-after-init-time (current-time))
+          (remove-variable-watcher 'initial-buffer-choice #'elpaca--set-ibc)
           (elpaca-split-queue))
       (when-let ((post (elpaca-q<-post q))) (funcall post))
       (run-hooks 'elpaca-post-queue-hook)
@@ -1500,18 +1509,8 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
   (let ((e (cdr queued)))
     (unless (memq (elpaca--status e) '(failed blocked finished)) (elpaca--continue-build e))))
 
-(defvar elpaca--initial-buffer-choice initial-buffer-choice "User's `initial-buffer-choice'.")
-(defun elpaca--initial-status-buffer ()
-  "Return initial status buffer if `elpaca-hide-initial-build' is nil."
-  (elpaca-log "#unique !finished")
-  (when (eq initial-buffer-choice #'elpaca--initial-status-buffer)
-    (setq initial-buffer-choice elpaca--initial-buffer-choice))
-  (when (bound-and-true-p elpaca-log-buffer) (get-buffer-create elpaca-log-buffer)))
-
 (defun elpaca--process-queue (q)
   "Process elpacas in Q."
-  (when (and elpaca--show-status (not after-init-time))
-    (setq initial-buffer-choice #'elpaca--initial-status-buffer))
   (when-let ((pre (elpaca-q<-pre q))) (funcall pre))
   (if (and (not (elpaca-q<-elpacas q)) (elpaca-q<-forms q))
       (elpaca--finalize-queue q)
