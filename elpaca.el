@@ -1843,21 +1843,23 @@ TYPE is either `:repo' or `:build' for ITEM's repo or build directory."
 
 (declare-function elpaca-ui-current-package "elpaca-ui")
 ;;;###autoload
-(defun elpaca-visit (item &optional build)
+(defun elpaca-visit (&optional item build)
   "Open ITEM's local repository directory.
 When BUILD is non-nil visit ITEM's build directory."
-  (interactive
-   (list (if (derived-mode-p 'elpaca-ui-mode)
-             (elpaca-ui-current-package)
-           (elpaca--read-queued (format "Visit package %s dir "
-                                        (if current-prefix-arg "build" "repo"))))
-         current-prefix-arg))
-  (if-let ((e (alist-get item (elpaca--queued)))
-           (dir (if build (elpaca<-build-dir e) (elpaca<-repo-dir e))))
-      (if (file-exists-p dir)
-          (find-file dir)
-        (user-error "Directory does not exist: %S" dir))
-    (user-error "%S is not a queued package" item)))
+  (interactive (list (or (ignore-errors (elpaca-ui-current-package))
+                         (elpaca--read-queued
+                          (format "Visit %s dir: " (if current-prefix-arg "build" "repo"))))
+                     current-prefix-arg))
+  (when (eq item '##) (setq item nil)) ; Empty `elpaca--read-queued' response
+  (if (not item)
+      (find-file (or (and build elpaca-builds-directory)
+                     (expand-file-name "./repos/" elpaca-directory)))
+    (if-let ((e (alist-get item (elpaca--queued)))
+             (dir (if build (elpaca<-build-dir e) (elpaca<-repo-dir e))))
+        (if (file-exists-p dir)
+            (find-file dir)
+          (user-error "Directory does not exist: %S" dir))
+      (user-error "%S is not a queued package" item))))
 
 ;;;###autoload
 (defun elpaca-browse (item)
