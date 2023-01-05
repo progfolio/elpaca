@@ -208,6 +208,9 @@ Each function is passed a request, which may be any of the follwoing symbols:
   (unless (eq new #'elpaca--ibs) (setq elpaca--ibc new)))
 (add-variable-watcher 'initial-buffer-choice #'elpaca--set-ibc)
 
+(defcustom elpaca-verbosity 0 "Maximum event verbosity level shown in logs."
+  :type 'integer)
+
 (defvar elpaca-ignored-dependencies
   '(emacs cl-lib cl-generic nadvice org org-mode map seq json project auth-source-pass)
   "Ignore these unless the user explicitly requests they be installed.")
@@ -588,10 +591,11 @@ Keys are as follows:
 
 (defsubst elpaca--status (e) "Return E's status." (car (elpaca<-statuses e)))
 
-(defun elpaca--signal (e &optional info status replace)
+(defun elpaca--signal (e &optional info status replace verbosity)
   "Signal a change to E.
 If INFO is non-nil, log and possibly print it in `elpaca-log-buffer'.
 If REPLACE is non-nil, E's log is updated instead of appended.
+If VERBOSITY is non-nil, log event is given that verbosity number.
 If STATUS is non-nil and is not E's current STATUS, signal E's depedentents to
 check (and possibly change) their statuses."
   (when-let (((and status (not (eq status (elpaca--status e)))))
@@ -604,11 +608,13 @@ check (and possibly change) their statuses."
       (mapc (lambda (i) (elpaca--continue-mono-repo-dependency (elpaca-alist-get i queued)))
             (elpaca<-includes e)))
     (when (eq status 'failed) (elpaca-log "#unique !finished")))
-  (when info (elpaca--log-event e info replace))
-  (when elpaca--info-timer (cancel-timer elpaca--info-timer))
-  (setq elpaca--info-timer
-        (and info (run-at-time elpaca-info-timer-interval nil #'elpaca--update-log-buffer)))
-  nil)
+  (when info (elpaca--log-event e info verbosity replace))
+  (when-let ((verbosity (or verbosity 0))
+             ((<= verbosity elpaca-verbosity)))
+    (when elpaca--info-timer (cancel-timer elpaca--info-timer))
+    (setq elpaca--info-timer
+          (and info (run-at-time elpaca-info-timer-interval nil #'elpaca--update-log-buffer)))
+    nil))
 
 (defun elpaca--fail (e &optional reason)
   "Fail E for REASON."
@@ -620,11 +626,11 @@ check (and possibly change) their statuses."
     (elpaca--signal e reason 'failed)
     (elpaca--finalize e)))
 
-(defun elpaca--log-event (e text &optional replace)
+(defun elpaca--log-event (e text &optional verbosity replace)
   "Store TEXT in E's log.
-Each event is of the form: (STATUS TIME TEXT)
+Each event is of the form: (STATUS TIME TEXT (or VERBOSITY 0))
 If REPLACE is non-nil, the most recent log entry is replaced."
-  (let ((event (list (elpaca--status e) (current-time) text)))
+  (let ((event (list (elpaca--status e) (current-time) text (or verbosity 0))))
     (if replace
         (setf (car (elpaca<-log e)) event)
       (push event (elpaca<-log e)))))
@@ -775,7 +781,9 @@ RECURSE is used to keep track of recursive calls."
       (pcase remotes
         ("origin" nil)
         ((and (pred stringp) remote)
-         (elpaca-process-call "git" "remote" "rename" "origin" remote))
+         (let ((command (list "git" "remote" "rename" "origin" remote)))
+           (elpaca--signal e (concat "$" (string-join command " ")) nil nil 1)
+           (apply #'elpaca-process-call command)))
         ((pred listp)
          (dolist (spec remotes)
            (if (stringp spec)
@@ -792,12 +800,15 @@ RECURSE is used to keep track of recursive calls."
                            (repo     recipe-repo)
                            &allow-other-keys
                            &aux
-                           (recipe (list :host host :protocol protocol :repo repo)))
+                           (recipe (list :host host :protocol protocol :repo repo))
+                           (command (list "git" "remote" "add" remote (elpaca--repo-uri recipe))))
                      props
-                   (elpaca-process-call
-                    "git" "remote" "add" remote (elpaca--repo-uri recipe))
+                   (elpaca--signal e (concat "$" (string-join command " ")) nil nil 1)
+                   (apply #'elpaca-process-call command)
                    (unless (equal remote "origin")
-                     (elpaca-process-call "git" "remote" "rename" "origin" remote))))))))
+                     (let ((command (list "git" "remote" "rename" "origin" remote)))
+                       (elpaca--signal e (concat "$" (string-join command " ")) nil nil 1)
+                       (apply #'elpaca-process-call command)))))))))
         (_ (elpaca--fail e (format "(wrong-type-argument ((stringp listp)) %S" remotes))))))
   (unless recurse (elpaca--continue-build e)))
 
@@ -890,6 +901,9 @@ If it matches, the E associated with process has its STATUS updated."
          (lines   (split-string chunk "\n"))
          (returnp (string-match-p "" chunk))
          (linep   (string-empty-p (car (last lines)))))
+    (unless (process-get process :messaged)
+      (elpaca--signal e (concat "$" (string-join (process-command process) " ")) nil nil 1)
+      (process-put process :messaged t))
     (when timer (cancel-timer timer))
     (process-put process :timer (run-at-time elpaca--process-busy-interval nil
                                              (lambda () (elpaca--process-busy process))))
@@ -1249,18 +1263,20 @@ Kick off next build step, and/or change E's status."
          (depth   (plist-get recipe :depth))
          (repodir (elpaca<-repo-dir e))
          (URI     (elpaca--repo-uri recipe))
-         (default-directory elpaca-directory))
-    (push 'cloning (elpaca<-statuses e))
+         (default-directory elpaca-directory)
+         (command
+          `("git" "clone"
+            ;;@TODO: Some refs will need a full clone or specific branch.
+            ,@(when (numberp depth)
+                (if (plist-get recipe :ref)
+                    (elpaca--signal e "ignoring :depth in favor of :ref")
+                  (list "--depth" (number-to-string depth) "--no-single-branch")))
+            ,URI ,repodir)))
+    (elpaca--signal e "Cloning" 'cloning)
     (let ((process
            (make-process
             :name     (concat "elpaca-clone-" package)
-            :command  `("git" "clone"
-                        ;;@TODO: Some refs will need a full clone or specific branch.
-                        ,@(when (numberp depth)
-                            (if (plist-get recipe :ref)
-                                (elpaca--signal e "ignoring :depth in favor of :ref")
-                              (list "--depth" (number-to-string depth) "--no-single-branch")))
-                        ,URI ,repodir)
+            :command  command
             :filter   (lambda (process output)
                         (elpaca--process-filter
                          process output

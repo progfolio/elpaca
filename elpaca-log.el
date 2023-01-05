@@ -32,6 +32,14 @@
   :type 'string
   :group 'elpaca)
 
+(defun elpaca-log-verbosity (items &optional limit)
+  (if (not (eq (current-buffer) (get-buffer elpaca-log-buffer)))
+      (message "#verbosity tag only applicable in elpaca-log-buffer")
+    (unless (= limit elpaca-verbosity) (setq-local elpaca-verbosity limit)
+            (run-at-time 0 nil (lambda (b) (with-current-buffer b (elpaca-ui-search-refresh)))
+                         (current-buffer))))
+  items)
+
 (defun elpaca-log--entries ()
   "Return log's `tabulated-list-entries'."
   (cl-loop
@@ -40,14 +48,20 @@
    for log = (elpaca<-log e)
    for package = (elpaca<-package e)
    append
-   (cl-loop for (status time info) in log
-            for delta = (format-time-string "%02s.%6N" (time-subtract time queue-time))
-            for pkg = (let ((found (alist-get item elpaca-ui--string-cache)))
-                        (if-let ((cached (alist-get status found)))
-                            cached
-                          (setf (alist-get status (alist-get item elpaca-ui--string-cache))
-                                (propertize package 'face (elpaca-alist-get status elpaca-status-faces 'default)))))
-            collect (list item (vector pkg (symbol-name status) info delta)))))
+   (cl-loop
+    for (status time info verbosity) in log
+    for entry =
+    (when-let
+        (((<= verbosity elpaca-verbosity))
+         (delta (format-time-string "%02s.%6N" (time-subtract time queue-time)))
+         (pkg (let ((found (alist-get item elpaca-ui--string-cache)))
+                (if-let ((cached (alist-get status found)))
+                    cached
+                  (setf (alist-get status (alist-get item elpaca-ui--string-cache))
+                        (propertize
+                         package 'face (elpaca-alist-get status elpaca-status-faces 'default)))))))
+      (list item (vector pkg (symbol-name status) info delta)))
+    when entry collect entry)))
 
 (defun elpaca-log--build-entries (entries)
   "Return a list of ENTRIES filtered to last builds."

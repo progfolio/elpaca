@@ -77,7 +77,9 @@
                               finally return results))))
     (installed . (lambda (items) (cl-remove-if-not #'elpaca-installed-p items :key #'car)))
     (marked    . (lambda (items) (cl-loop for (item . _) in elpaca-ui--marked-packages
-                                          collect (assoc item items)))))
+                                          collect (assoc item items))))
+    (verbosity . elpaca-log-verbosity))
+
   "Alist of search tags.
 Each cell is of form (NAME FILTER).
 FILTER must be a unary function which takes a list of menu items and returns a

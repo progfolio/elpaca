@@ -69,6 +69,9 @@ If the process is unable to start, return an elisp error object."
 PATTERN is a string which is checked against the entire process output.
 If it matches, singal ERROR if non-nil."
   (process-put process :raw-output (concat (process-get process :raw-output) output))
+  (unless (process-get process :messaged)
+    (message "$%s" (string-join (process-command process) " "))
+    (process-put process :messaged t))
   (let* ((result  (process-get process :result))
          (chunk   (concat result output))
          (lines   (split-string chunk "\n"))
