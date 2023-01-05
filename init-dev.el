@@ -6,6 +6,7 @@
 ;; Cleaner to keep this in a separate file rather than a long single line at the top of init.org
 
 ;;; Code:
+(setq-local org-confirm-babel-evaluate nil)
 (require 'auto-tangle-mode)
 (auto-tangle-mode)
 (add-hook 'auto-tangle-before-tangle-hook #'check-parens)
