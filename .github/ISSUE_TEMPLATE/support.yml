@@ -7,11 +7,11 @@ body:
     attributes:
       value: Please keep issues focused to a single topic and provide all the requested details.
   - type: textarea
-    id: emacs-version
+    id: elpaca-version
     attributes:
-      label: Emacs Version
-      description: Output of the emacs-version command
-      placeholder: M-x emacs-version
+      label: Elpaca Version
+      description: Output of the elpaca-version command
+      placeholder: M-x elpaca-version
     validations:
       required: true
   - type: textarea

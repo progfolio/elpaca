@@ -1881,7 +1881,7 @@ If MESSAGE is non-nil, the information is messaged."
   (interactive '(t))
   (let* ((default-directory (expand-file-name "repos/elpaca/" elpaca-directory))
          (info (string-trim (elpaca-process-output "git" "log" "--pretty=%h %D" "-1"))))
-    (if message (message "Elpaca version: %s" info) info)))
+    (if message (message "Elpaca version: %s\n%s" info (emacs-version)) info)))
 
 (provide 'elpaca)
 ;;; elpaca.el ends here

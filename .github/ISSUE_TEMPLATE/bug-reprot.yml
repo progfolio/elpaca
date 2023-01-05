@@ -9,11 +9,11 @@ body:
         Thanks for taking the time to fill out a bug report.
         Please keep reports focused to a single issue and provide all the requested details.
   - type: textarea
-    id: emacs-version
+    id: elpaca-version
     attributes:
-      label: Emacs Version
-      description: Output of the emacs-version command
-      placeholder: M-x emacs-version
+      label: Elpaca Version
+      description: Output of the elpaca-version command
+      placeholder: M-x elpaca-version
     validations:
       required: true
   - type: textarea
