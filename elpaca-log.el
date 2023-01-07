@@ -32,13 +32,20 @@
   :type 'string
   :group 'elpaca)
 
-(defun elpaca-log-verbosity (items &optional limit)
-  (if (not (eq (current-buffer) (get-buffer elpaca-log-buffer)))
-      (message "#verbosity tag only applicable in elpaca-log-buffer")
-    (unless (= limit elpaca-verbosity) (setq-local elpaca-verbosity limit)
-            (run-at-time 0 nil (lambda (b) (with-current-buffer b (elpaca-ui-search-refresh)))
-                         (current-buffer))))
-  items)
+(defun elpaca-log-verbosity (_ &optional limit)
+  "Filter ITEMS according to `elpaca-verbosity' LIMIT or `most-postiive-fixnum'."
+  (let* ((elpaca-verbosity (or limit most-positive-fixnum))
+         (elpaca-ui-search-filter
+          (replace-regexp-in-string
+           "\\(?:#(?verbosity[^z-a]*?)\\|#verbosity\\)"
+           ""
+           (or (with-selected-window (minibuffer-window)
+                 (when-let ((s (buffer-substring-no-properties (point-min) (point-max)))
+                            ((string-match-p elpaca-ui-search-prompt s)))
+                   (substring s (length elpaca-ui-search-prompt))))
+               elpaca-ui-search-filter))))
+    (elpaca-ui-search-refresh (get-buffer elpaca-log-buffer) 'silent)
+    tabulated-list-entries))
 
 (defun elpaca-log--entries ()
   "Return log's `tabulated-list-entries'."

@@ -433,13 +433,14 @@ If QUERY is nil, the contents of the minibuffer are used instead."
   (unless (derived-mode-p 'elpaca-ui-mode)
     (user-error "Cannot search outside of `elpaca-ui-mode'")))
 
+(defvar elpaca-ui-search-prompt "Search (empty to clear): ")
 (defun elpaca-ui-search (&optional query)
   "Filter current buffer by QUERY. If QUERY is nil, prompt for it."
   (interactive
    (progn (elpaca-ui--ensure-mode)
           (list (string-trim
                  (condition-case nil
-                     (read-from-minibuffer "Search (empty to clear): "
+                     (read-from-minibuffer elpaca-ui-search-prompt
                                            (and current-prefix-arg elpaca-ui-search-filter)
                                            nil nil elpaca-ui--history)
                    (quit elpaca-ui-search-filter))))))
