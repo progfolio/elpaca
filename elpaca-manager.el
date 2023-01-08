@@ -69,6 +69,7 @@ If RECACHE is non-nil, recompute menu items from `elpaca-menu-item-functions'."
                                      ("Source" 20 t)]
               elpaca-ui-entries-function #'elpaca-manager--entries
               elpaca-ui-header-line-prefix (propertize "Elpaca Manager" 'face '(:weight bold))
+              elpaca-ui-want-tail nil
               tabulated-list-use-header-line nil
               elpaca-ui--history 'elpaca-manager--history
               elpaca-ui-default-query elpaca-manager-default-search-query)
