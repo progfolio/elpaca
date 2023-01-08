@@ -181,15 +181,11 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
 
 (defun elpaca-ui--minibuffer-setup ()
   "Set up the minibuffer for live filtering."
-  (let ((continue nil)
-        (buffer nil))
-    (with-minibuffer-selected-window
-      (setq continue (and (derived-mode-p 'elpaca-ui-mode)
-                          (eq this-command 'elpaca-ui-search))
-            buffer   (current-buffer)))
-    (when continue
-      (add-hook 'post-command-hook (lambda () (elpaca-ui--debounce-search buffer))
-                nil :local))))
+  (when-let ((buffer (with-minibuffer-selected-window
+                       (and (derived-mode-p 'elpaca-ui-mode)
+                            (eq this-command 'elpaca-ui-search)
+                            (current-buffer)))))
+    (add-hook 'post-command-hook (lambda () (elpaca-ui--debounce-search buffer)) nil :local)))
 
 ;;TODO: clean this up.
 (defun elpaca-ui--parse-tokens (search)
