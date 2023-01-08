@@ -495,13 +495,11 @@ The action's function is passed the name of the package as its sole argument."
   "Toggle ACTION mark for current package.
 TEST is a unary function evaluated prior to toggling the mark.
 The current package is its sole argument."
-  (if-let ((package (elpaca-ui-current-package)))
-      (progn
-        (when test (funcall test package))
-        (if (elpaca-ui-package-marked-p package)
-            (elpaca-ui-unmark)
-          (elpaca-ui-mark package action)))
-    (user-error "No package associated with current line")))
+  (let ((package (elpaca-ui-current-package)))
+    (when test (funcall test package))
+    (if (elpaca-ui-package-marked-p package)
+        (elpaca-ui-unmark)
+      (elpaca-ui-mark package action))))
 
 (defmacro elpaca-ui-defmark (name test)
   "Define a marking command with NAME and TEST."
