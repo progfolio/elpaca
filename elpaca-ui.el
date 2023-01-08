@@ -149,13 +149,11 @@ It recieves one argument, the parsed search query list.")
   "Set `header-line-format' to reflect query.
 If PREFIX is non-nil it is displayed before the rest of the header-line."
   (setq header-line-format
-        (list
-         (concat
-          (or prefix "")
-          (propertize (format " (%d matches) " (length tabulated-list-entries))
-                      'face '(:weight bold))
-          " "
-          elpaca-ui-search-filter))))
+        (list (concat
+               prefix
+               (propertize (format " (%d matches) " (length tabulated-list-entries))
+                           'face '(:weight bold))
+               " " elpaca-ui-search-filter))))
 
 (defun elpaca-ui--fallback-date (e)
   "Return time of last modification for E's built elisp, otherwise nil."
