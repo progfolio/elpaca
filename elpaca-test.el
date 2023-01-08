@@ -170,7 +170,7 @@ The following keys are recognized:
                              `("-q" ; Approximate startup.el sequence
                                "--eval" "(setq debug-on-error t)"
                                "--eval" (format "(setq user-emacs-directory %S)" default-directory)
-                               "-l" "./early-init.el"
+                               ,@(when early '("-l" "./early-init.el"))
                                "--eval" "(run-hooks 'before-init-hook)"
                                "-l" "./init.el"
                                "--eval" "(setq after-init-time (current-time))"
