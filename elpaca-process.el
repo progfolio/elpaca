@@ -104,8 +104,8 @@ This allows for output to be passed back to the parent Emacs process."
                 nil t)
                (while (accept-process-output p)))))
          (process (make-process
-                   :name   (concat "elpaca-process-poll" program)
-                   :buffer (concat "elpaca-process-poll" program)
+                   :name   (concat "elpaca-process-poll-" program)
+                   :buffer (concat "elpaca-process-poll-" program)
                    :connecton-type 'pipe
                    :command (list (elpaca--emacs-path) "-Q" "--batch" "--eval"
                                   (format "%S" subprocess))
