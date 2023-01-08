@@ -407,13 +407,9 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
 
 (defun elpaca--repo-type (string)
   "Return type of :repo STRING.
-Type will be any of the following symbols:
-   - local: a local filesystem path
-   - remote: a remote repo URL
-or nil if none apply."
-  (cond
-   ((string-match-p "^[/~]" string) 'local)
-   ((string-match-p ":" string) 'remote)))
+Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
+  (cond ((string-match-p "^[/~]" string) 'local)
+        ((string-match-p ":" string) 'remote)))
 
 (defvar elpaca--repo-dirs nil "List of registered repository directories.")
 (defun elpaca-repo-dir (recipe)
