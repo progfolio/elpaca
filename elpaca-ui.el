@@ -141,10 +141,8 @@ It recieves one argument, the parsed search query list.")
 (defvar-local elpaca-ui-entries-function nil
   "Function responsible for returning the UI buffer's `tabulated-list-entries'.")
 (defvar-local elpaca-ui--history nil "History for `elpaca-ui' minibuffer.")
+(defvar elpaca-ui--string-cache nil "Cache for propertized strings.")
 (defvar url-http-end-of-headers)
-
-(defvar elpaca-ui--string-cache nil
-  "Cache for propertized strings.")
 
 ;;;; Functions:
 (defun elpaca-ui--header-line (&optional prefix)
