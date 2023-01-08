@@ -246,10 +246,11 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                           (setq negatedp t)
                         (push (concat (and negatedp "!") (and tagp "#") (symbol-name op)) chunk)
                         (setq tagp nil negatedp nil)))
-                     ((and (consp op) (memq (car op) '(quote \`)))
-                      (setf (car chunk) (concat (car chunk)
-                                                (if (eq (car op) 'quote) "'" "`")
-                                                (symbol-name (cadr op)))))
+                     ((memq (car-safe op) '(quote \`))
+                      (unless chunk (setq chunk (cons nil nil)))
+                      (setcar chunk (concat (car chunk)
+                                            (if (eq (car op) 'quote) "'" "`")
+                                            (symbol-name (cadr op)))))
                      (t
                       (when chunk
                         (push (elpaca-ui--parse-tokens (string-join (nreverse chunk) " ")) ops))
