@@ -51,16 +51,13 @@
   :group 'elpaca
   :prefix "elpaca-")
 
-(defface elpaca-finished
-  '((t (:weight bold :foreground "#00FF00")))
+(defface elpaca-finished '((t (:weight bold :foreground "#00FF00")))
   "Indicates an order is finished.")
 
-(defface elpaca-blocked
-  '((t (:weight bold :foreground "#FFF01F")))
+(defface elpaca-blocked '((t (:weight bold :foreground "#FFF01F")))
   "Indicates an order is blocked.")
 
-(defface elpaca-failed
-  '((t (:weight bold :foreground "#FF1818")))
+(defface elpaca-failed '((t (:weight bold :foreground "#FF1818")))
   "Indicates an order has failed.")
 
 (defcustom elpaca-status-faces '((blocked  . elpaca-blocked)
@@ -107,8 +104,7 @@ Results in faster start-up time."
   "Path of the makeinfo executable."
   :type 'string)
 
-(defcustom elpaca-install-info-executable
-  (executable-find "install-info")
+(defcustom elpaca-install-info-executable (executable-find "install-info")
   "Path of the install-info executable."
   :type 'string)
 
@@ -150,13 +146,10 @@ Setting it too high causes prints fewer status updates."
 It is also spliced in at any point where the `:defaults' keyword
 is used in a `:files' directive.")
 
-(defvar elpaca-order-defaults
-  (list :protocol 'https :remotes "origin" :inherit t :depth 1)
+(defvar elpaca-order-defaults (list :protocol 'https :remotes "origin" :inherit t :depth 1)
   "Default order modifications.")
 
-(defun elpaca-order-defaults (_order)
-  "Matches any order."
-  elpaca-order-defaults)
+(defun elpaca-order-defaults (_order) "Matches any order." elpaca-order-defaults)
 
 (defcustom elpaca-order-functions '(elpaca-order-defaults)
   "Abnormal hook run to alter orders.
@@ -221,9 +214,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
   "Read file at PATH into memory."
   (when (file-exists-p path)
     (condition-case-unless-debug err
-        (with-temp-buffer
-          (insert-file-contents path)
-          (read (current-buffer)))
+        (with-temp-buffer (insert-file-contents path) (read (current-buffer)))
       ((error) (warn "Error reading %S into memory: %S" path err) nil))))
 
 (defmacro elpaca--write-file (file &rest body)
@@ -234,9 +225,7 @@ e.g. elisp forms may be printed via `prin1'."
   `(let ((coding-system-for-write 'utf-8))
      (with-temp-file ,file
        (let* ((standard-output (current-buffer))
-              (print-circle nil)
-              (print-level  nil)
-              (print-length nil))
+              print-circle print-level print-length)
          ,@body
          nil))))
 
@@ -282,9 +271,8 @@ If CACHE may be any of the following symbols:
   `recache` Invalidate and recompute cache considering MENUS.
 See `elpaca-menu-functions' for valid values of MENUS."
   (or (and (eq cache t) elpaca--menu-items-cache)
-      (let ((items (sort (copy-tree
-                          (cl-loop for fn in (or menus elpaca-menu-functions)
-                                   append (and (functionp fn) (funcall fn 'index))))
+      (let ((items (sort (copy-tree (cl-loop for fn in (or menus elpaca-menu-functions)
+                                             append (and (functionp fn) (funcall fn 'index))))
                          (lambda (a b) (string-lessp (car a) (car b))))))
         (when cache
           (setq elpaca--menu-items-cache items)
@@ -513,8 +501,7 @@ or nil if none apply."
 (defun elpaca--queued (&optional n)
   "Return list of elpacas from Nth queue.
 If N is nil return a list of all queued elpacas."
-  (if n
-      (elpaca-q<-elpacas (nth n elpaca--queues))
+  (if n (elpaca-q<-elpacas (nth n elpaca--queues))
     (cl-loop for queue in elpaca--queues append (elpaca-q<-elpacas queue))))
 
 (defsubst elpaca--mono-repo (id repo-dir)
