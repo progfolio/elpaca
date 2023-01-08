@@ -30,14 +30,12 @@
   "Regexp matching return or newline in process output.")
 
 (defconst elpaca-process--stderr
-  (expand-file-name (format "elpaca-stderr-%s" (emacs-pid))
-                    temporary-file-directory)
+  (expand-file-name (format "elpaca-stderr-%s" (emacs-pid)) temporary-file-directory)
   "File for storing proccesses' stderr.")
 
 (defun elpaca--delete-stderr-file ()
   "Remove `elpaca-process--stderr' file."
-  (when (and (boundp 'elpaca-process--stderr)
-             (file-exists-p elpaca-process--stderr))
+  (when (and (boundp 'elpaca-process--stderr) (file-exists-p elpaca-process--stderr))
     (delete-file elpaca-process--stderr)))
 
 (add-hook 'kill-emacs-hook #'elpaca--delete-stderr-file)
@@ -49,8 +47,7 @@ If the process is unable to start, return an elisp error object."
   (let* ((program (if (string-match-p "/" program) (expand-file-name program) program)))
     (condition-case err
         (with-temp-buffer
-          (list (apply #'call-process program nil
-                       (list t elpaca-process--stderr)
+          (list (apply #'call-process program nil (list t elpaca-process--stderr)
                        nil args)
                 (when-let ((s (buffer-substring-no-properties (point-min) (point-max)))
                            ((not (= 0 (length s)))))
@@ -79,8 +76,7 @@ If it matches, singal ERROR if non-nil."
     (unless linep
       (process-put process :result (car (last lines)))
       (setq lines (butlast lines)))
-    (dolist (line lines)
-      (unless (= 0 (length line)) (message "%s" line)))
+    (dolist (line lines) (unless (= 0 (length line)) (message "%s" line)))
     (when (and pattern error (string-match-p pattern output))
       (process-put process :result nil)
       (error "Subprocess filter error: %S" error))))
@@ -139,8 +135,7 @@ Anaphroic bindings provided:
 (defun elpaca-process-output (program &rest args)
   "Return result of running PROGRAM with ARGS.
 If the command cannot be run or returns a nonzero exit code, throw an error."
-  (elpaca-with-process
-      (apply #'elpaca-process-call program args)
+  (elpaca-with-process (apply #'elpaca-process-call program args)
     (cond
      (success       (concat stdout stderr)) ; Programs may exit normally and print to stderr
      ((not invoked) (error "%S" result))
