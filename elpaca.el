@@ -660,9 +660,7 @@ If REPLACE is non-nil, the most recent log entry is replaced."
 
 (defun elpaca--log-duration (e)
   "Return E's log duration."
-  (let* ((log (elpaca<-log e))
-         (end (nth 1 (car log))))
-    (time-subtract end (elpaca<-queue-time e))))
+  (time-subtract (nth 1 (car (elpaca<-log e))) (elpaca<-queue-time e)))
 
 ;;;###autoload
 (defun elpaca-split-queue (&rest args)
