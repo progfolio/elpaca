@@ -746,8 +746,15 @@ Accepted KEYS are :pre and :post which are hooks run around queue processing."
         (elpaca--signal e info status))
       e)))
 
-(defun elpaca--add-remotes (e &optional recurse)
-  "Add E's repo remotes.
+(defun elpaca--command-string (strings &optional prefix)
+  "Return string of form PREFIX STRINGS."
+  (concat (or prefix "$") (string-join strings " ")))
+
+(defun elpaca--call-with-log (e verbosity &rest command)
+  "Call and Log E's COMMAND with VERBOSITY."
+  (elpaca--signal e (elpaca--command-string command) nil nil verbosity)
+  (apply #'elpaca-process-call command))
+
 RECURSE is used to keep track of recursive calls."
   (let ((default-directory (elpaca<-repo-dir e))
         (recipe            (elpaca<-recipe   e)))
@@ -762,9 +769,7 @@ RECURSE is used to keep track of recursive calls."
       (pcase remotes
         ("origin" nil)
         ((and (pred stringp) remote)
-         (let ((command (list "git" "remote" "rename" "origin" remote)))
-           (elpaca--signal e (concat "$" (string-join command " ")) nil nil 1)
-           (apply #'elpaca-process-call command)))
+         (elpaca--call-with-log e 1 "git" "remote" "rename" "origin" remote))
         ((pred listp)
          (dolist (spec remotes)
            (if (stringp spec)
@@ -781,15 +786,11 @@ RECURSE is used to keep track of recursive calls."
                            (repo     recipe-repo)
                            &allow-other-keys
                            &aux
-                           (recipe (list :host host :protocol protocol :repo repo))
-                           (command (list "git" "remote" "add" remote (elpaca--repo-uri recipe))))
+                           (recipe (list :host host :protocol protocol :repo repo)))
                      props
-                   (elpaca--signal e (concat "$" (string-join command " ")) nil nil 1)
-                   (apply #'elpaca-process-call command)
+                   (elpaca--call-with-log e 1 "git" "remote" "add" remote (elpaca--repo-uri recipe))
                    (unless (equal remote "origin")
-                     (let ((command (list "git" "remote" "rename" "origin" remote)))
-                       (elpaca--signal e (concat "$" (string-join command " ")) nil nil 1)
-                       (apply #'elpaca-process-call command)))))))))
+                     (elpaca--call-with-log e 1 "git" "remote" "rename" "origin" remote))))))))
         (_ (elpaca--fail e (format "(wrong-type-argument ((stringp listp)) %S" remotes))))))
   (unless recurse (elpaca--continue-build e)))
 
@@ -883,7 +884,7 @@ If it matches, the E associated with process has its STATUS updated."
          (returnp (string-match-p "" chunk))
          (linep   (string-empty-p (car (last lines)))))
     (unless (process-get process :messaged)
-      (elpaca--signal e (concat "$" (string-join (process-command process) " ")) nil nil 1)
+      (elpaca--signal e (elpaca--command-string (process-command process)) nil nil 1)
       (process-put process :messaged t))
     (when timer (cancel-timer timer))
     (process-put process :timer (run-at-time elpaca--process-busy-interval nil
