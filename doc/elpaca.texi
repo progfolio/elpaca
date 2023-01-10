@@ -375,27 +375,41 @@ The package repository's history depth.
 
 @table @asis
 @item :remotes
-A list of repository remotes@footnote{@uref{https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes, remotes}}.
+Configures the repository remotes@footnote{@uref{https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes, remotes}}.
 @end table
-The first element is the default remote when installing the package.
-If it is a string, it names the default remote.
-The remaining elements are lists of the form:
+
+The value must be a single remote spec or a list of remote specs.
+The first remote given will have its ref checked out when cloning the repository.
+A spec may be a string to rename the default remote.
+The following will rename the cloned remote (usually ``origin'' by git convention) to ``upstream'':
 
 @lisp
-(NAME . PROPS)
+(example :remotes "upstream")
 @end lisp
 
-@emph{NAME} is a string used to name the remote.
-@emph{PROPS} are recipe keyword/value pairs used to override values previously declared in the recipe.
+In order to add a another remote, a spec may be a list of the form:
 
 @lisp
-(example :remotes ("origin"))
+("NAME" [PROPS])
 @end lisp
 
+@emph{NAME} is a string indicating the name of the remote.
+@emph{PROPS} is an optional plist used to override inherited recipe keywords.
+
+For example:
+
 @lisp
-(example :host github :repo "original/example"
-         :remotes ("origin"
-                   ("fork" :host gitlab :repo "user/example-fork.el")))
+(example :host github :repo "upstream/example"
+         :remotes ("fork" :repo "fork/zenburn-emacs"))
+@end lisp
+
+Will add a remote named fork which points to a repository hosted on the same forge as the upstream remote.
+The following does the same above, additionally adding a third remote at a different forge.
+
+@lisp
+(example :host github :repo "upstream/example"
+         :remotes (("fork" :repo "fork/zenburn-emacs") ; :host github inherited from above
+                   ("other" :host gitlab :repo "other/zenburn-emacs")))
 @end lisp
 
 @table @asis

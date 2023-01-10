@@ -119,8 +119,7 @@ Setting it too high causes prints fewer status updates."
   :type 'number)
 
 (defcustom elpaca-build-steps '(elpaca--clone
-                                elpaca--add-remotes
-                                elpaca--fetch
+                                elpaca--configure-remotes
                                 elpaca--checkout-ref
                                 elpaca--run-pre-build-commands
                                 elpaca--clone-dependencies
@@ -203,6 +202,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
 
 (defcustom elpaca-verbosity 0 "Maximum event verbosity level shown in logs."
   :type 'integer)
+(defcustom elpaca-default-remote-name "origin" "Default remote name." :type 'string)
 
 (defvar elpaca-ignored-dependencies
   '(emacs cl-lib cl-generic nadvice org org-mode map seq json project auth-source-pass)
@@ -525,7 +525,7 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
         steps
       (when (and mono-repo (memq 'ref-checked-out (elpaca<-statuses mono-repo)))
         (setq steps
-              (cl-set-difference steps '(elpaca--clone elpaca--add-remotes elpaca--checkout-ref))))
+              (cl-set-difference steps '(elpaca--clone elpaca--configure-remotes elpaca--checkout-ref))))
       (when clonedp (setq steps (delq 'elpaca--clone steps)))
       steps)))
 
@@ -644,7 +644,7 @@ If REPLACE is non-nil, the most recent log entry is replaced."
 
 (defun elpaca--continue-mono-repo-dependency (e)
   "Continue processing E after its mono-repo is in the proper state."
-  (elpaca--remove-build-steps e '(elpaca--clone elpaca--add-remotes elpaca--checkout-ref))
+  (elpaca--remove-build-steps e '(elpaca--clone elpaca--configure-remotes elpaca--checkout-ref))
   (elpaca--signal e nil 'unblocked-mono-repo)
   (elpaca--continue-build e))
 
@@ -755,44 +755,32 @@ Accepted KEYS are :pre and :post which are hooks run around queue processing."
   (elpaca--signal e (elpaca--command-string command) nil nil verbosity)
   (apply #'elpaca-process-call command))
 
-RECURSE is used to keep track of recursive calls."
-  (let ((default-directory (elpaca<-repo-dir e))
-        (recipe            (elpaca<-recipe   e)))
-    (cl-destructuring-bind
-        ( &key remotes
-          ((:host recipe-host))
-          ((:protocol recipe-protocol))
-          ((:repo recipe-repo))
-          &allow-other-keys)
-        recipe
-      (unless recurse (elpaca--signal e "Adding Remotes"))
-      (pcase remotes
-        ("origin" nil)
-        ((and (pred stringp) remote)
-         (elpaca--call-with-log e 1 "git" "remote" "rename" "origin" remote))
-        ((pred listp)
-         (dolist (spec remotes)
-           (if (stringp spec)
-               (elpaca--add-remotes (let ((copy (copy-elpaca< e)))
-                                      (setf (elpaca<-recipe copy)
-                                            (plist-put (copy-tree recipe) :remotes spec))
-                                      copy)
-                                    'recurse)
-             (pcase-let ((`(,remote . ,props) spec))
-               (when props
-                 (cl-destructuring-bind
-                     (&key (host     recipe-host)
-                           (protocol recipe-protocol)
-                           (repo     recipe-repo)
-                           &allow-other-keys
-                           &aux
-                           (recipe (list :host host :protocol protocol :repo repo)))
-                     props
-                   (elpaca--call-with-log e 1 "git" "remote" "add" remote (elpaca--repo-uri recipe))
-                   (unless (equal remote "origin")
-                     (elpaca--call-with-log e 1 "git" "remote" "rename" "origin" remote))))))))
-        (_ (elpaca--fail e (format "(wrong-type-argument ((stringp listp)) %S" remotes))))))
-  (unless recurse (elpaca--continue-build e)))
+(defun elpaca--configure-remotes (e)
+  "Add and/or rename E's repo remotes."
+  (let ((fetchp nil))
+    (when-let ((default-directory (elpaca<-repo-dir e))
+               (recipe            (elpaca<-recipe   e))
+               (remotes           (plist-get recipe :remotes)))
+      (elpaca--signal e "Configuring Remotes" 'adding-remotes)
+      (when (or (stringp remotes) ; Normalize :remotes value
+                (not (cl-every (lambda (spec) (or (stringp spec) (listp spec))) remotes)))
+        (setq remotes (listp remotes)))
+      (cl-loop with renamed for spec in remotes do
+               (if (stringp spec)
+                   (if renamed
+                       (elpaca--signal e (format "ignoring :remotes rename %S" spec))
+                     (unless (equal spec elpaca-default-remote-name)
+                       (elpaca--call-with-log
+                        e 1 "git" "remote" "rename" elpaca-default-remote-name spec))
+                     (setq renamed spec))
+                 (when-let ((remote    (car spec))
+                            (props     (cdr spec))
+                            (inherited (elpaca-merge-plists recipe props))
+                            (URI       (elpaca--repo-uri inherited)))
+                   (setq fetchp t)
+                   (elpaca--call-with-log e 1 "git" "remote" "add" remote URI)))))
+    (when fetchp (push #'elpaca--fetch (elpaca<-build-steps e))))
+  (elpaca--continue-build e))
 
 (defun elpaca--remove-build-steps (e spec)
   "Remove each step in SPEC from E."
@@ -1167,23 +1155,39 @@ The keyword's value is expected to be one of the following:
     (elpaca--signal e "No external dependencies detected")
     (elpaca--continue-build e)))
 
+(defun elpaca--remote-default (remote)
+  "Return REMOTE's \"default\" branch.
+This is the branch that would be checked out upon cloning."
+  (elpaca-with-process (elpaca-process-call "git" "remote" "show" remote)
+    (if success
+        (if (string-match "\\(?:[^z-a]*HEAD branch:[[:space:]]+\\([^z-a]*?\\)$\\)" stdout)
+            (match-string 1 stdout)
+          (error "Unable to determie remote default branch"))
+      (error (format "Remote default branch error: %S" stderr)))))
+
 (defun elpaca--checkout-ref (e)
   "Check out E's ref."
   (let* ((recipe            (elpaca<-recipe   e))
          (default-directory (elpaca<-repo-dir e))
          (remotes (plist-get recipe :remotes))
-         (remote (elpaca--first remotes))
+         (remote (when-let ((first (elpaca--first remotes)))
+                   (if (stringp first) first
+                     (setq recipe (elpaca-merge-plists recipe (cdr first)))
+                     (car-safe first))))
          (ref (plist-get recipe :ref))
          (tag (plist-get recipe :tag))
-         (branch (or (plist-get (cdr-safe (car-safe remotes)) :branch)
-                     (plist-get recipe :branch)))
+         (branch (plist-get recipe :branch))
          (target (or ref tag branch)))
-    (unless remotes
-      (elpaca--fail e (format "Invalid :remotes ((stringp listp) %s)" remotes)))
     (if (null target)
-        (progn
-          (elpaca--signal e "remote's HEAD checked out" 'ref-checked-out)
-          (elpaca--continue-build e))
+        (progn (when-let (((and remotes (listp remotes)))
+                          (branch (condition-case err
+                                      (elpaca--remote-default remote)
+                                    (elpaca--fail e "Remote default branch err: %S" err)))
+                          (name (concat remote "/" branch)))
+                 (elpaca--call-with-log e 1 "git" "checkout" "-b" name "--track" name)
+                 (elpaca--signal e (concat (elpaca--first remote) " HEAD checked out")
+                                 'ref-checked-out))
+               (elpaca--continue-build e))
       (cond
        ((and ref (or branch tag))
         (elpaca--signal
@@ -1617,7 +1621,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
       (setf (elpaca<-build-steps e)
             (cl-set-difference (elpaca--build-steps (elpaca<-recipe e))
                                '(elpaca--clone
-                                 elpaca--add-remotes
+                                 elpaca--configure-remotes
                                  elpaca--fetch
                                  elpaca--checkout-ref
                                  elpaca--clone-dependencies
@@ -1648,10 +1652,11 @@ With a prefix argument, rebuild current file's package or prompt if none found."
 
 (defun elpaca--fetch (e)
   "Fetch E's remotes' commits."
+  (elpaca--signal e nil 'fetching-remotes)
   (let* ((default-directory (elpaca<-repo-dir e))
          (process (make-process
                    :name (concat "elpaca-fetch-" (elpaca<-package e))
-                   :command  '("git" "fetch" "--all") ;;@TODO: make --all optional
+                   :command  '("git" "fetch" "--all" "-v") ;;@TODO: make --all optional
                    :filter   #'elpaca--process-filter
                    :sentinel (apply-partially #'elpaca--process-sentinel "Remotes fetched" nil))))
     (process-put process :elpaca e)))
@@ -1727,7 +1732,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
               elpaca--merge
               ,@(cl-set-difference
                  (elpaca--build-steps recipe nil 'cloned (elpaca<-mono-repo e))
-                 '(elpaca--add-remotes
+                 '(elpaca--configure-remotes
                    elpaca--fetch
                    elpaca--checkout-ref
                    elpaca--clone-dependencies

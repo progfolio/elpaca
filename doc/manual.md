@@ -251,24 +251,35 @@ A recipe provides Elpaca with the metadata necessary to build and install a pack
 (example :depth nil) ;; Full repository clone.
 ```
 
--   **:remotes:** A list of repository remotes<sup><a id="fnr.4" class="footref" href="#fn.4" role="doc-backlink">4</a></sup>.
+-   **:remotes:** Configures the repository remotes<sup><a id="fnr.4" class="footref" href="#fn.4" role="doc-backlink">4</a></sup>.
 
-The first element is the default remote when installing the package. If it is a string, it names the default remote. The remaining elements are lists of the form:
+The value must be a single remote spec or a list of remote specs. The first remote given will have its ref checked out when cloning the repository. A spec may be a string to rename the default remote. The following will rename the cloned remote (usually &ldquo;origin&rdquo; by git convention) to &ldquo;upstream&rdquo;:
 
 ```emacs-lisp
-(NAME . PROPS)
+(example :remotes "upstream")
 ```
 
-*NAME* is a string used to name the remote. *PROPS* are recipe keyword/value pairs used to override values previously declared in the recipe.
+In order to add a another remote, a spec may be a list of the form:
 
 ```emacs-lisp
-(example :remotes ("origin"))
+("NAME" [PROPS])
 ```
 
+*NAME* is a string indicating the name of the remote. *PROPS* is an optional plist used to override inherited recipe keywords.
+
+For example:
+
 ```emacs-lisp
-(example :host github :repo "original/example"
-         :remotes ("origin"
-                   ("fork" :host gitlab :repo "user/example-fork.el")))
+(example :host github :repo "upstream/example"
+         :remotes ("fork" :repo "fork/zenburn-emacs"))
+```
+
+Will add a remote named fork which points to a repository hosted on the same forge as the upstream remote. The following does the same above, additionally adding a third remote at a different forge.
+
+```emacs-lisp
+(example :host github :repo "upstream/example"
+         :remotes (("fork" :repo "fork/zenburn-emacs") ; :host github inherited from above
+                   ("other" :host gitlab :repo "other/zenburn-emacs")))
 ```
 
 -   **:main:** The name of the main elisp file. When provided this can speed up the process of cloning and loading a package&rsquo;s dependencies.

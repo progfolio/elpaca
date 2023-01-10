@@ -168,26 +168,40 @@ It is a list of the form:
 (example :depth nil) ;; Full repository clone.
 #+end_src
 
-- :remotes :: A list of repository remotes[fn:2].
-The first element is the default remote when installing the package.
-If it is a string, it names the default remote.
-The remaining elements are lists of the form:
+- :remotes :: Configures the repository remotes[fn:2].
 
-#+begin_src emacs-lisp :lexical t :eval never-export
-(NAME . PROPS)
+The value must be a single remote spec or a list of remote specs.
+The first remote given will have its ref checked out when cloning the repository.
+A spec may be a string to rename the default remote.
+The following will rename the cloned remote (usually "origin" by git convention) to "upstream":
+
+#+begin_src emacs-lisp :lexical t
+(example :remotes "upstream")
 #+end_src
 
-/NAME/ is a string used to name the remote.
-/PROPS/ are recipe keyword/value pairs used to override values previously declared in the recipe.
+In order to add a another remote, a spec may be a list of the form:
 
-#+begin_src emacs-lisp :lexical t :eval never-export
-(example :remotes ("origin"))
+#+begin_src emacs-lisp :lexical t
+("NAME" [PROPS])
 #+end_src
 
-#+begin_src emacs-lisp :lexical t :eval never-export
-(example :host github :repo "original/example"
-         :remotes ("origin"
-                   ("fork" :host gitlab :repo "user/example-fork.el")))
+/NAME/ is a string indicating the name of the remote.
+/PROPS/ is an optional plist used to override inherited recipe keywords.
+
+For example:
+
+#+begin_src emacs-lisp :lexical t
+(example :host github :repo "upstream/example"
+         :remotes ("fork" :repo "fork/zenburn-emacs"))
+#+end_src
+
+Will add a remote named fork which points to a repository hosted on the same forge as the upstream remote.
+The following does the same above, additionally adding a third remote at a different forge.
+
+#+begin_src emacs-lisp :lexical t
+(example :host github :repo "upstream/example"
+         :remotes (("fork" :repo "fork/zenburn-emacs") ; :host github inherited from above
+                   ("other" :host gitlab :repo "other/zenburn-emacs")))
 #+end_src
 
 - :main :: The name of the main elisp file.
