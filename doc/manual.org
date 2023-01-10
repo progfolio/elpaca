@@ -168,6 +168,15 @@ It is a list of the form:
 (example :depth nil) ;; Full repository clone.
 #+end_src
 
+- :protocol :: The protocol to use when cloning repositories.
+
+The value must be a symbol, either =https= or =ssh=.
+
+#+begin_src emacs-lisp :lexical t
+(example :protocol https) ; Use the https protocol.
+(example :protocol ssh) ; Use the ssh protocol.
+#+end_src
+
 - :remotes :: Configures the repository remotes[fn:2].
 
 The value must be a single remote spec or a list of remote specs.

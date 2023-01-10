@@ -374,6 +374,18 @@ The package repository's history depth.
 @end lisp
 
 @table @asis
+@item :protocol
+The protocol to use when cloning repositories.
+@end table
+
+The value must be a symbol, either @samp{https} or @samp{ssh}.
+
+@lisp
+(example :protocol https) ; Use the https protocol.
+(example :protocol ssh) ; Use the ssh protocol.
+@end lisp
+
+@table @asis
 @item :remotes
 Configures the repository remotes@footnote{@uref{https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes, remotes}}.
 @end table

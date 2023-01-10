@@ -251,6 +251,15 @@ A recipe provides Elpaca with the metadata necessary to build and install a pack
 (example :depth nil) ;; Full repository clone.
 ```
 
+-   **:protocol:** The protocol to use when cloning repositories.
+
+The value must be a symbol, either `https` or `ssh`.
+
+```emacs-lisp
+(example :protocol https) ; Use the https protocol.
+(example :protocol ssh) ; Use the ssh protocol.
+```
+
 -   **:remotes:** Configures the repository remotes<sup><a id="fnr.4" class="footref" href="#fn.4" role="doc-backlink">4</a></sup>.
 
 The value must be a single remote spec or a list of remote specs. The first remote given will have its ref checked out when cloning the repository. A spec may be a string to rename the default remote. The following will rename the cloned remote (usually &ldquo;origin&rdquo; by git convention) to &ldquo;upstream&rdquo;:
