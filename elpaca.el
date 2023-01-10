@@ -532,8 +532,11 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
 (defun elpaca--ibs ()
   "Return initial status buffer if `elpaca-hide-initial-build' is nil."
   (elpaca-log "#unique !finished")
-  (when (equal initial-buffer-choice #'elpaca--ibs) (setq initial-buffer-choice elpaca--ibc))
-  (when (bound-and-true-p elpaca-log-buffer) (get-buffer-create elpaca-log-buffer)))
+  (when (bound-and-true-p elpaca-log-buffer)
+    (with-current-buffer (get-buffer-create elpaca-log-buffer)
+      (when (equal initial-buffer-choice #'elpaca--ibs) (setq initial-buffer-choice elpaca--ibc))
+      (setq-local elpaca-ui-want-tail nil)
+      (current-buffer))))
 
 (cl-defun elpaca<-create
     (item &key recipe repo-dir build-dir files mono-repo)
