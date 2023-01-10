@@ -54,7 +54,14 @@
                   (setq acc nil)
                   (push form results))
              finally do (when acc (user-error "Missing first keyword"))
-             finally return results)))
+             finally return results))
+
+  (defun elpaca-test--delete-files (files)
+    "Delete FILES."
+    (dolist (path files)
+      (when-let ((expanded (expand-file-name path)))
+        (if (file-directory-p expanded) (delete-directory expanded 'recursive)
+          (delete-file expanded))))))
 
 ;;;###autoload
 (defmacro elpaca-test (&rest body)
@@ -68,11 +75,13 @@ The following keys are recognized:
   :dir `user-emacs-directory' name expanded in `temporary-file-irectory'.
     Only relative paths are accepted.
 
-  :init (:file \"path/to/init.el\") or forms...
-    Content of the init.el file
+  :init `user', (:file \"path/to/init.el\") or forms...
+    Content of the init.el file.
+    `user' is shorthand for `user-emacs-diretory'/init.el.
 
-  :early-init (:file \"path/to/early-init.el\") or forms...
-    Content of the early-init.el file
+  :early-init `user', (:file \"path/to/early-init.el\") or forms...
+    Content of the early-init.el file.
+    `user' is shorthand for `user-emacs-diretory'/early-init.el.
 
   :keep t or a list containing any of the following symbols:
     `builds'
@@ -88,9 +97,11 @@ The following keys are recognized:
          (keep-cache-p  (or keep-all-p (member 'cache  keep)))
          (keep-repos-p  (or keep-all-p (member 'repos  keep)))
          (init (plist-get args :init))
-         (init-filep (eq (car-safe (car-safe init)) :file))
+         (init-filep (or (eq (car-safe (car-safe init)) :file)
+                         (eq (car-safe init) 'user)))
          (early (plist-get args :early-init))
-         (early-filep (eq (car-safe (car-safe early)) :file))
+         (early-filep (or (eq (car-safe (car-safe early)) :file)
+                          (eq (car-safe early) 'user)))
          (ref (car (plist-get args :ref)))
          (localp (eq ref 'local))
          (test-builds "./elpaca/builds/")
@@ -99,29 +110,23 @@ The following keys are recognized:
          (dir (car (plist-get args :dir))))
     (when-let ((dir)
                (expanded (file-name-as-directory (expand-file-name dir))))
-      (when (equal expanded (file-name-as-directory dir)) (user-error ":dir must be relative path"))
+      (when (equal expanded (file-name-as-directory dir))
+        (user-error ":dir must be relative path"))
       (when (equal expanded (expand-file-name user-emacs-directory))
         (user-error ":dir cannot be user-emacs-directory")))
     (when-let (((listp keep))
                (err (cl-remove-if (lambda (el) (memq el '(builds cache repos))) keep)))
       (user-error "Unknown :keep value %S" err))
-    `(let ((default-directory ,@`(,(if dir
-                                       `(expand-file-name ,dir temporary-file-directory)
-                                     '(make-temp-file "elpaca." 'directory)))))
+    `(let ((default-directory ,(if dir `(expand-file-name ,dir temporary-file-directory)
+                                 '(make-temp-file "elpaca." 'directory))))
        (unless (file-exists-p default-directory) (make-directory default-directory 'parents))
-       ;;delete unwanted files/directories
-       (dolist (path ',(delq nil `(,(unless keep-builds-p test-builds)
-                                   ,(unless keep-repos-p  test-repos)
-                                   ,(unless keep-cache-p  test-cache)
-                                   "./early-init.el"
-                                   "./init.el"
-                                   ,@(and localp '("./elpaca/repos/elpaca"
-                                                   "./elpaca/builds/elpaca")))))
-         (when-let ((expanded (expand-file-name path)))
-           (if (file-directory-p expanded)
-               (delete-directory expanded 'recursive)
-             (delete-file expanded))))
-       ;;install local repo/build/cache
+       (elpaca-test--delete-files ',`(,@(unless keep-builds-p (list test-builds))
+                                      ,@(unless keep-repos-p  (list test-repos))
+                                      ,@(unless keep-cache-p  (list test-cache))
+                                      "./early-init.el"
+                                      "./init.el"
+                                      ,@(and localp '("./elpaca/repos/elpaca"
+                                                      "./elpaca/builds/elpaca"))))
        ,@(when localp
            '((dolist (path '("./repos/elpaca" "./builds/elpaca" "./cache/"))
                (when-let ((local (expand-file-name path elpaca-directory))
@@ -131,12 +136,18 @@ The following keys are recognized:
        ,@(when early
            `((with-temp-buffer
                ,@(if early-filep
-                     `((insert-file-contents (expand-file-name ,(cadar early))))
+                     `((insert-file-contents
+                        (expand-file-name ,(if (eq (car-safe early) 'user)
+                                               (locate-user-emacs-file "./early-init.el")
+                                             (cadar early)))))
                    `((insert ,(pp-to-string `(progn ,@early)))))
                (write-file (expand-file-name "./early-init.el")))))
        (with-temp-buffer
          ,@`(,(cond
-               (init-filep `(insert-file-contents (expand-file-name ,(cadar init))))
+               (init-filep `(insert-file-contents
+                             (expand-file-name ,(if (eq (car-safe init) 'user)
+                                                    (locate-user-emacs-file "./init.el")
+                                                  (cadar init)))))
                (localp '(insert-file-contents
                          (expand-file-name "./repos/elpaca/doc/init.el" elpaca-directory)))
                ;;@TODO :repo arg which alllows to specify different URL.
