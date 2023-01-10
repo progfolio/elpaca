@@ -1500,7 +1500,8 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
                                 :recipe '(:package ,(symbol-name id) ,@order)))
                     (elpaca--write-menu-cache))))
            t))
-    (elpaca--process-queue (nth 1 elpaca--queues))))
+    (elpaca--process-queue (nth 1 elpaca--queues)))
+  nil)
 
 (defun elpaca--process (queued)
   "Process QUEUED elpaca."
