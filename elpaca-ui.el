@@ -564,7 +564,7 @@ The current package is its sole argument."
                                              (elpaca-q<-elpacas q)))
                             elpaca--queues)))
     (setf (elpaca-q<-post q) #'elpaca-ui--post-execute))
-  (elpaca-process-queues))
+  (elpaca-process-queues (lambda (qs) (cl-remove-if-not #'elpaca-q<-elpacas qs))))
 
 (defun elpaca-ui-send-input ()
   "Send input string to current process."

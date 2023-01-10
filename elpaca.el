@@ -1516,10 +1516,13 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
     (mapc #'elpaca--process (reverse (elpaca-q<-elpacas q)))))
 
 ;;;###autoload
-(defun elpaca-process-queues ()
-  "Process the incomplete queues."
+(defun elpaca-process-queues (&optional filter)
+  "Process the incomplete queues.
+FILTER must be a unary function which accepts and returns a queue list."
   (setq debug-on-error elpaca--debug-init elpaca--debug-init nil)
-  (if-let ((incomplete (cl-find 'incomplete (reverse elpaca--queues) :key #'elpaca-q<-status)))
+  (if-let ((queues (if filter (funcall filter (reverse elpaca--queues))
+                     (reverse elpaca--queues)))
+           (incomplete (cl-find 'incomplete queues :key #'elpaca-q<-status)))
       (elpaca--process-queue incomplete)
     (message "No incomplete queues to process")))
 
