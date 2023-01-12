@@ -364,7 +364,13 @@ The global definer allows me to use a leader key in most states.
 (global-definer
   "!"   'shell-command
   ":"   'eval-expression
-  "."   'repeat)
+  "."   'repeat
+  "z"   '((lambda (local) (interactive "p")
+            (unless repeat-mode (repeat-mode))
+            (let ((local current-prefix-arg)
+                  (current-prefix-arg nil))
+              (call-interactively (if local #'text-scale-adjust #'global-text-scale-adjust))))
+          :which-key "zoom"))
 #+end_src
 
 We define a global-leader definer to access major-mode specific bindings:
@@ -562,7 +568,7 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
 #+begin_src emacs-lisp :lexical t
 (+general-global-menu! "window" "w"
   "?" 'split-window-vertically
-  "=" 'balance-windows-area
+  "=" 'balance-windows
   "/" 'split-window-horizontally
   "O" 'delete-other-windows
   "X" '((lambda () (interactive) (call-interactively #'other-window) (kill-buffer-and-window))
@@ -577,6 +583,21 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
           "toggle window dedication"
           (set-window-dedicated-p (selected-window) (not (window-dedicated-p))))
         :which-key "toggle window dedication")
+  "."  '(:ingore :which-key "resize")
+  ".h" '((lambda () (interactive)
+           (call-interactively (if (window-prev-sibling) #'enlarge-window-horizontally
+                                 #'shrink-window-horizontally)))
+         :which-key "divider left")
+  ".l" '((lambda () (interactive)
+           (call-interactively (if (window-next-sibling) #'enlarge-window-horizontally
+                                 #'shrink-window-horizontally)))
+         :which-key "divider right")
+  ".j" '((lambda () (interactive)
+           (call-interactively (if (window-next-sibling) #'enlarge-window #'shrink-window)))
+         :which-key "divider up")
+  ".k" '((lambda () (interactive)
+           (call-interactively (if (window-prev-sibling) #'enlarge-window #'shrink-window)))
+         :which-key "divider down")
   "x" 'kill-buffer-and-window)
 #+end_src
 **** vim completion
@@ -1508,50 +1529,6 @@ This is necessary for exporting Org files to HTML.
 #+begin_src emacs-lisp :lexical t
 (elpaca-use-package htmlize
   :defer t)
-#+end_src
-** hydra
-#+begin_quote
-This is a package for GNU Emacs that can be used to tie related commands into a family of short bindings with a common prefix: a Hydra.
-
-https://github.com/abo-abo/hydra
-#+end_quote
-#+begin_src emacs-lisp :lexical t
-(elpaca-use-package hydra
-  :after (general)
-  :config
-  (defhydra +hydra-zoom (:pre (setq which-key-inhibit t)
-                              :post (setq which-key-inhibit nil)
-                              :hint none)
-            ;;newline is necessary here!
-            "
-^Zoom ^ ^-----^ _i_ in _o_ out _r_ reset (capital for all frames)"
-            ;;Entry
-            ("i" text-scale-increase "in")
-            ("I" default-text-scale-increase "all in")
-            ("o" text-scale-decrease "out")
-            ("O" default-text-scale-decrease "all out")
-            ("r" (text-scale-adjust 0) "reset")
-            ("R" default-text-scale-reset "reset all"))
-  (defhydra +hydra-window-resize (:pre (setq which-key-inhibit t)
-                                       :post (setq which-key-inhibit nil))
-            ;;newline is necessary here!
-            "
-^Resize Windows^ "
-            ;;Entry
-            ("H" (lambda () (interactive) (shrink-window-horizontally 5)) "shrink-horizontal" :column "Large")
-            ("J" (lambda () (interactive) (enlarge-window 5)) "enlarge-vertical")
-            ("K" (lambda () (interactive) (shrink-window 5)) "shrink-vertical")
-            ("L" (lambda () (interactive) (enlarge-window-horizontally 5)) "enlarge-horizontal")
-            ("=" (lambda () (interactive) (balance-windows)) "balance-windows" :column "Balance")
-            ("h" (lambda () (interactive) (shrink-window-horizontally 1)) "shrink-horizontal" :column "Small")
-            ("j" (lambda () (interactive) (enlarge-window 1)) "enlarge-vertical")
-            ("k" (lambda () (interactive) (shrink-window 1)) "shrink-vertical")
-            ("l" (lambda () (interactive) (enlarge-window-horizontally 1)) "enlarge-horizontal"))
-  :general
-  (global-definer
-    "z"   '(+hydra-zoom/body :which-key "zoom"))
-  (+general-global-window
-    "." '(+hydra-window-resize/body :which-key "window-resize")))
 #+end_src
 ** ielm
 #+begin_quote
