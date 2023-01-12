@@ -958,8 +958,7 @@ https://github.com/seagle0128/doom-modeline
   (column-number-mode 1)
   (doom-modeline-mode)
   :custom
-  (doom-modeline-icon t "Show icons in the modeline")
-  (doom-modeline-mu4e t "modeline email alert"))
+  (doom-modeline-icon t "Show icons in the modeline"))
 #+end_src
 ** doom-themes
 #+begin_quote
@@ -1778,6 +1777,7 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
                                                           (expand-file-name "~/bin/mu") 'ok-if-exists)))
   :commands (mu4e mu4e-update-index)
   :custom
+  (mu4e-update-interval 900 "Update every fifteen minutes")
   (mail-user-agent 'mu4e-user-agent)
   (mu4e-org-support t)
   (message-mail-user-agent 'mu4e-user-agent "Use mu4e as default email program.")
@@ -1793,15 +1793,6 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
   (mu4e-change-filenames-when-moving t "Needed for mbsync")
   (mu4e-confirm-quit nil)
   (mu4e-html2text-command  'mu4e-shr2text)
-  ;;(mu4e-html2text-command "w3m -dump \
-  ;;                             -T text/html \
-  ;;                             -cols 72 \
-  ;;                             -o display_link_number=true \
-  ;;                             -o auto_image=false \
-  ;;                             -o display_image=false \
-  ;;                             -o ignore_null_img_alt=true"
-  ;;                        "Readable HTML email rendering")
-  ;;contexts
   (mu4e-context-policy 'pick-first)
   (mu4e-compose-context-policy 'always-ask)
   :config
@@ -1850,11 +1841,16 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
 
   (add-to-list 'mu4e-view-actions
                '("ViewInBrowser" . mu4e-action-view-in-browser) t)
-
   (add-to-list 'mu4e-bookmarks
                '( :name "straight.el"
                   :query "list:straight.el.raxod502.github.com"
-                  :key ?s))
+                  :key ?s)
+               'append)
+  (add-to-list 'mu4e-bookmarks
+               '( :name "Elpaca"
+                  :query "list:elpaca.progfolio.github.com"
+                  :key ?e)
+               'append)
 
   (defun +mu4e-view-settings ()
     "Settings for mu4e-view-mode."
@@ -1868,30 +1864,6 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
   (global-leader
     :keymaps '(mu4e-compose-mode-map)
     "a" 'mml-attach-file))
-#+end_src
-** mu4e-alert
-#+begin_quote
-mu4e-alert is an Emacs extension providing desktop notifications for mu4e.
-Additionally it can display the number of unread emails in the mode-line.
-
-https://github.com/iqbalansari/mu4e-alert
-#+end_quote
-#+begin_src emacs-lisp :lexical t
-(elpaca-use-package (mu4e-alert
-                     :host github
-                     :remotes (("fork"
-                                :repo "progfolio/mu4e-alert"
-                                :branch "fix/mu4e--switch-context-advice")
-                               "origin"))
-  :defer 20
-  :after (org)
-  :config
-  (setq mu4e-alert-set-window-urgency nil)
-  (mu4e-alert-enable-mode-line-display)
-  (mu4e-alert-enable-notifications)
-  (mu4e-alert-enable-mode-line-display)
-  (mu4e-alert-enable-notifications)
-  (advice-add #'mu4e-quit :after #'mu4e-alert-update-mail-count-modeline))
 #+end_src
 ** nov (epub)
 #+begin_quote
