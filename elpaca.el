@@ -568,7 +568,7 @@ Keys are as follows:
                   :id id :package (symbol-name id) :item item :statuses (list status)
                   :repo-dir repo-dir :build-dir build-dir :mono-repo mono-repo
                   :files files :build-steps build-steps :recipe recipe
-                  :includes (and mono-repo (list mono-repo))
+                  :includes (and mono-repo (list (cadr mono-repo)))
                   :log (list (list status nil info)))))
     (when mono-repo (cl-pushnew id (elpaca<-includes mono-repo)))
     (unless (or builtp elpaca-hide-initial-build elpaca-after-init-time)
