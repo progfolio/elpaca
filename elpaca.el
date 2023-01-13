@@ -590,10 +590,10 @@ check (and possibly change) their statuses."
     (when (memq status '(finished failed blocked))
       (mapc (lambda (d) (elpaca--check-status (elpaca-alist-get d queued)))
             (elpaca<-dependents e)))
-    (when (eq status 'ref-checked-out)
-      (mapc (lambda (i) (elpaca--continue-mono-repo-dependency (elpaca-alist-get i queued)))
-            (elpaca<-includes e)))
     (when (eq status 'failed) (elpaca-log "#unique !finished")))
+  (when (memq 'ref-checked-out (elpaca<-statuses e))
+    (mapc (lambda (i) (elpaca--continue-mono-repo-dependency (elpaca-alist-get i (elpaca--queued))))
+          (elpaca<-includes e)))
   (when info (elpaca--log-event e info verbosity replace))
   (when-let ((verbosity (or verbosity 0))
              ((<= verbosity elpaca-verbosity)))
@@ -647,9 +647,13 @@ If REPLACE is non-nil, the most recent log entry is replaced."
 
 (defun elpaca--continue-mono-repo-dependency (e)
   "Continue processing E after its mono-repo is in the proper state."
-  (elpaca--remove-build-steps e '(elpaca--clone elpaca--configure-remotes elpaca--checkout-ref))
-  (elpaca--signal e nil 'unblocked-mono-repo)
-  (elpaca--continue-build e))
+  (when-let ((statuses (elpaca<-statuses e))
+             ((not (or (memq 'unblocked-mono-repo statuses)
+                       (memq 'ref-checked-out statuses)))))
+    (elpaca--remove-build-steps e '(elpaca--clone elpaca--configure-remotes elpaca--checkout-ref))
+    (elpaca--signal e nil 'ref-checked-out)
+    (elpaca--signal e nil 'unblocked-mono-repo)
+    (elpaca--continue-build e)))
 
 (declare-function elpaca-log "elpaca-log")
 (declare-function elpaca-status "elpaca-status")
@@ -1141,7 +1145,11 @@ The keyword's value is expected to be one of the following:
                           for found = (elpaca-alist-get dependency (elpaca--queued))
                           for d = (or found (elpaca--queue dependency))
                           for d-id = (elpaca<-id d)
-                          for included = (member d-id (elpaca<-includes e))
+                          for includes = (elpaca<-includes e)
+                          for included =
+                          (member d-id (append includes (cl-loop for i in includes
+                                                                 append (elpaca<-includes
+                                                                         (elpaca-get-queued i)))))
                           for blocked = (eq (elpaca--status d) 'blocked)
                           do
                           (unless (memq d-id (elpaca<-dependencies e))
@@ -1151,7 +1159,9 @@ The keyword's value is expected to be one of the following:
                           (unless found
                             (if included
                                 ;; Unblock dependency published in same repo...
-                                (when blocked (elpaca--clone-dependencies d))
+                                (when blocked
+                                  (elpaca--signal d nil 'unblocked-mono-repo)
+                                  (elpaca--clone-dependencies d))
                               (unless blocked (elpaca--continue-build d))))
                           count (and found (eq (elpaca--status found) 'finished))))
           (elpaca--continue-build e)))
@@ -1182,14 +1192,16 @@ This is the branch that would be checked out upon cloning."
          (branch (plist-get recipe :branch))
          (target (or ref tag branch)))
     (if (null target)
-        (progn (when-let (((and remotes (listp remotes)))
-                          (branch (condition-case err
-                                      (elpaca--remote-default remote)
-                                    (elpaca--fail e "Remote default branch err: %S" err)))
-                          (name (concat remote "/" branch)))
-                 (elpaca--call-with-log e 1 "git" "checkout" "-b" name "--track" name)
-                 (elpaca--signal e (concat (elpaca--first remote) " HEAD checked out")
-                                 'ref-checked-out))
+        (progn (if-let (((and remotes (listp remotes)))
+                        (branch (condition-case err
+                                    (elpaca--remote-default remote)
+                                  (elpaca--fail e "Remote default branch err: %S" err)))
+                        (name (concat remote "/" branch)))
+                   (progn
+                     (elpaca--call-with-log e 1 "git" "checkout" "-b" name "--track" name)
+                     (elpaca--signal e (concat (elpaca--first remote) " HEAD checked out")
+                                     'ref-checked-out))
+                 (elpaca--signal e nil 'ref-checked-out))
                (elpaca--continue-build e))
       (cond
        ((and ref (or branch tag))
