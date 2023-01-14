@@ -39,7 +39,7 @@
 
 ;;; Code:
 (require 'elpaca)
-(defvar elpaca-test--keywords '(:ref :dir :init :early-init :keep :name))
+(defvar elpaca-test--keywords '(:before :dir :early-init :init :keep :name :ref))
 (eval-and-compile
   (defun elpaca-test--args (body)
     "Return arg plist from BODY."
@@ -172,7 +172,9 @@ The following keys are recognized:
                (re-search-backward "^;; Install" nil 'noerror)
                (delete-region (point) (point-max))
                (insert ,(pp-to-string `(progn ,@init)))))
+         (elisp-enable-lexical-binding)
          (write-file (expand-file-name "./init.el")))
+       ,@(plist-get args :before)
        (make-process
         :name "elpaca-test"
         :command (list ,(elpaca--emacs-path)
