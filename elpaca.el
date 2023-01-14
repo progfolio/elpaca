@@ -771,7 +771,7 @@ Accepted KEYS are :pre and :post which are hooks run around queue processing."
       (elpaca--signal e "Configuring Remotes" 'adding-remotes)
       (when (or (stringp remotes) ; Normalize :remotes value
                 (not (cl-every (lambda (spec) (or (stringp spec) (listp spec))) remotes)))
-        (setq remotes (listp remotes)))
+        (setq remotes (list remotes)))
       (cl-loop with renamed for spec in remotes do
                (if (stringp spec)
                    (if renamed
@@ -1198,7 +1198,12 @@ This is the branch that would be checked out upon cloning."
                                   (elpaca--fail e "Remote default branch err: %S" err)))
                         (name (concat remote "/" branch)))
                    (progn
-                     (elpaca--call-with-log e 1 "git" "checkout" "-b" name "--track" name)
+                     (elpaca--call-with-log
+                      e 1 "git" "branch" "-m"
+                      (string-trim
+                       (elpaca-process-output
+                        "git" "rev-parse" "--abbrev-ref" "--symbolic-full-name" "@{u}")))
+                     (elpaca--call-with-log e 1 "git" "checkout" "-b" branch "--track" name)
                      (elpaca--signal e (concat (elpaca--first remote) " HEAD checked out")
                                      'ref-checked-out))
                  (elpaca--signal e nil 'ref-checked-out))
@@ -1270,6 +1275,9 @@ Kick off next build step, and/or change E's status."
                 (if (plist-get recipe :ref)
                     (elpaca--signal e "ignoring :depth in favor of :ref")
                   (list "--depth" (number-to-string depth) "--no-single-branch")))
+            ,@(when-let ((remotes (plist-get recipe :remotes))
+                         ((listp remotes)))
+                '("--no-checkout"))
             ,URI ,repodir)))
     (elpaca--signal e "Cloning" 'cloning)
     (let ((process
