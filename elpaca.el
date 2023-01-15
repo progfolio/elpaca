@@ -481,8 +481,8 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
   "Order for queued processing."
   id package item statuses
   repo-dir build-dir mono-repo
-  files build-steps recipe
-  dependencies dependents includes
+  files build-steps recipe includes
+  dependencies dependents -dependencies
   (queue-id (1- (length elpaca--queues)))
   (queue-time (current-time))
   (init (not after-init-time))
@@ -1056,13 +1056,22 @@ The keyword's value is expected to be one of the following:
                             (elpaca--directory-files-recursively file regexp))
                         (when (string-match-p regexp file) (expand-file-name file)))))))
 
-(defun elpaca--dependencies (e)
-  "Return a list of E's declared dependencies."
-  (let* ((default-directory (elpaca<-repo-dir e))
+(defun elpaca--dependencies (e &optional force)
+  "Return a list of E's declared dependencies.
+If FORCE is non-nil, do not use cached dependencies."
+  (or
+   (and (not force) (elpaca<--dependencies e))
+   (setf
+    (elpaca<--dependencies e)
+    (when-let
+        ((default-directory (elpaca<-repo-dir e))
+         (recipe (elpaca<-recipe e))
+         ((or (file-exists-p default-directory)
+              (error "Package repository not on disk: %S" recipe)))
          (package (file-name-sans-extension (elpaca<-package e)))
          (name (concat package ".el"))
          (regexp (concat "^" name "$"))
-         (main (or (plist-get (elpaca<-recipe e) :main)
+         (main (or (plist-get recipe :main)
                    (cl-some (lambda (f) (let ((e (expand-file-name f)))
                                           (and (file-exists-p e) e)))
                             (list (concat package "-pkg.el")
@@ -1074,30 +1083,25 @@ The keyword's value is expected to be one of the following:
                    ;; Best guess if there is no file matching the package name...
                    (car (directory-files default-directory nil "\\.el$" 'nosort))
                    (error "Unable to find main elisp file for %S" package)))
-         (deps
-          (if (not (file-exists-p default-directory))
-              (error "Package repository not on disk: %S" (elpaca<-recipe e))
-            (with-temp-buffer
-              (insert-file-contents-literally main)
-              (goto-char (point-min))
-              (if (string-suffix-p "-pkg.el" main)
-                  (eval (nth 4 (read (current-buffer))))
-                (let ((case-fold-search t))
-                  (when (re-search-forward "^;+[  ]+\\(Package-Requires\\)[   ]*:[  ]*"
-                                           nil 'noerror)
-                    (let ((deps (list (buffer-substring-no-properties (point) (line-end-position)))))
-                      (forward-line 1)
-                      (while (looking-at "^;+\\(\t\\|[\t\s]\\{2,\\}\\)\\(.+\\)")
-                        (push (match-string-no-properties 2) deps)
-                        (forward-line 1))
-                      (condition-case err
-                          (read (mapconcat #'identity (nreverse deps) " "))
-                        ((error)
-                         (error "%S Package-Requires error: %S" main err)))))))))))
-    (cl-loop for dep in deps ; convert naked symbol or (symbol) to (symbol "0")
-             collect (if (or (symbolp dep) (null (cdr-safe dep)))
-                         (list (elpaca--first dep) "0")
-                       dep))))
+         (deps (with-temp-buffer
+                 (insert-file-contents-literally main)
+                 (if (string-suffix-p "-pkg.el" main)
+                     (eval (nth 4 (read (current-buffer))))
+                   (when-let ((case-fold-search t)
+                              ((re-search-forward
+                                "^;+[  ]+\\(Package-Requires\\)[   ]*:[  ]*" nil 'noerror))
+                              (deps (list (buffer-substring-no-properties (point) (line-end-position)))))
+                     (forward-line 1)
+                     (while (looking-at "^;+\\(\t\\|[\t\s]\\{2,\\}\\)\\(.+\\)")
+                       (push (match-string-no-properties 2) deps)
+                       (forward-line 1))
+                     (condition-case err
+                         (read (mapconcat #'identity (nreverse deps) " "))
+                       ((error) (error "%S Package-Requires error: %S" main err))))))))
+      (cl-loop for dep in deps ; convert naked symbol or (symbol) to (symbol "0")
+               collect (if (or (symbolp dep) (null (cdr-safe dep)))
+                           (list (elpaca--first dep) "0")
+                         dep))))))
 
 ;;@DECOMPOSE: The body of this function is similar to `elpaca--clone-dependencies'.
 ;; Refactor into a macro to operate on dependencies?
