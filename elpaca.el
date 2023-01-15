@@ -168,9 +168,6 @@ This hook is run via `run-hook-with-args-until-success'."
                ((string-match-p "depp.brause.cc" url)))
       (push nil plist)
       (push :depth plist))
-    (when (equal (plist-get recipe :package) "org")
-      (push nil plist)
-      (push :depth plist))
     plist))
 
 (defcustom elpaca-recipe-functions '(elpaca-recipe-defaults)
