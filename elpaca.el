@@ -766,9 +766,7 @@ Accepted KEYS are :pre and :post which are hooks run around queue processing."
                (recipe            (elpaca<-recipe   e))
                (remotes           (plist-get recipe :remotes)))
       (elpaca--signal e "Configuring Remotes" 'adding-remotes)
-      (when (or (stringp remotes) ; Normalize :remotes value
-                (not (cl-every (lambda (spec) (or (stringp spec) (listp spec))) remotes)))
-        (setq remotes (list remotes)))
+      (unless (ignore-errors (mapcar #'length remotes)) (setq remotes (list remotes)))
       (cl-loop with renamed for spec in remotes do
                (if (stringp spec)
                    (if renamed
@@ -1169,7 +1167,7 @@ If FORCE is non-nil, do not use cached dependencies."
     (elpaca--signal e "No external dependencies detected")
     (elpaca--continue-build e)))
 
-(defun elpaca--remote-default (remote)
+(defun elpaca--remote-default-branch (remote)
   "Return REMOTE's \"default\" branch.
 This is the branch that would be checked out upon cloning."
   (elpaca-with-process (elpaca-process-call "git" "remote" "show" remote)
@@ -1179,58 +1177,60 @@ This is the branch that would be checked out upon cloning."
           (error "Unable to determie remote default branch"))
       (error (format "Remote default branch error: %S" stderr)))))
 
+(defun elpaca--remote (remotes)
+  "Return default remote from :REMOTES."
+  (and remotes (if (ignore-errors (mapcar #'length remotes)) (car remotes) remotes)))
+
 (defun elpaca--checkout-ref (e)
   "Check out E's ref."
-  (let* ((recipe            (elpaca<-recipe   e))
+  (let* ((recipe (elpaca<-recipe e))
          (default-directory (elpaca<-repo-dir e))
-         (remotes (plist-get recipe :remotes))
-         (remote (when-let ((first (elpaca--first remotes)))
-                   (if (stringp first) first
-                     (setq recipe (elpaca-merge-plists recipe (cdr first)))
-                     (car-safe first))))
-         (ref (plist-get recipe :ref))
-         (tag (plist-get recipe :tag))
+         (remotes(plist-get recipe :remotes))
+         (remote (let ((default (elpaca--remote remotes)))
+                   (when (listp default) (setq recipe (elpaca-merge-plists recipe (cdr default))))
+                   default))
+         (ref    (plist-get recipe :ref))
+         (tag    (plist-get recipe :tag))
          (branch (plist-get recipe :branch))
          (target (or ref tag branch)))
+    (when-let ((name    (car-safe remote))
+               (default (elpaca-process-output "git" "rev-parse" "--abbrev-ref" "HEAD")))
+      (elpaca--call-with-log e 1 "git" "checkout" "--detach")
+      (elpaca--call-with-log e 1 "git" "branch"   "--delete" (string-trim default))
+      (elpaca--call-with-log e 1 "git" "config"   "checkout.defaultRemote" name)
+      (when-let (((not branch))
+                 (default-branch
+                  (condition-case err ;;@FIX: will this stop if we fail elpaca?
+                      (elpaca--remote-default-branch name)
+                    (t (elpaca--fail e (format "Remote default branch err: %S" err))))))
+        (setq branch default-branch target branch)))
     (if (null target)
-        (progn (if-let (((and remotes (listp remotes)))
-                        (branch (condition-case err
-                                    (elpaca--remote-default remote)
-                                  (elpaca--fail e "Remote default branch err: %S" err)))
-                        (name (concat remote "/" branch)))
-                   (progn
-                     (elpaca--call-with-log
-                      e 1 "git" "branch" "-m"
-                      (string-trim
-                       (elpaca-process-output
-                        "git" "rev-parse" "--abbrev-ref" "--symbolic-full-name" "@{u}")))
-                     (elpaca--call-with-log e 1 "git" "checkout" "-b" branch "--track" name)
-                     (elpaca--signal e (concat (elpaca--first remote) " HEAD checked out")
-                                     'ref-checked-out))
-                 (elpaca--signal e nil 'ref-checked-out))
-               (elpaca--continue-build e))
+        (unless (eq (elpaca--status e) 'failed)
+          (elpaca--signal e nil 'ref-checked-out)
+          (elpaca--continue-build e))
       (cond
        ((and ref (or branch tag))
         (elpaca--signal
          e (format ":ref %S overriding %S %S" ref (if branch :branch :tag) (or branch tag))))
        ((and tag branch)
         (elpaca--fail e (format "Ambiguous ref: :tag %S, :branch %S" tag branch))))
-      (elpaca--signal e (concat "Checking out " target))
-      (let ((process
-             (make-process
-              :name (format "elpaca-checkout-ref-%s" (elpaca<-package e))
-              :connection-type 'pipe
-              :command
-              `("git" "-c" "advice.detachedHead=false" ;ref, tag may detach HEAD
-                ,@(cond
-                   (ref    (list "checkout" ref))
-                   (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
-                   (branch (list "switch" "-C" branch
-                                 (concat (elpaca--first remote) "/" branch)))))
-              :filter   #'elpaca--process-filter
-              :sentinel (apply-partially #'elpaca--process-sentinel
-                                         (concat target " checked out")
-                                         'ref-checked-out))))
+      (elpaca--signal e (concat "Checking out " target) 'checking-out-ref)
+      (when-let (((not (eq (elpaca--status e) 'failed)))
+                 (process
+                  (make-process
+                   :name (format "elpaca-checkout-ref-%s" (elpaca<-package e))
+                   :connection-type 'pipe
+                   :command
+                   `("git" "-c" "advice.detachedHead=false" ;ref, tag may detach HEAD
+                     ,@(cond
+                        (ref    (list "checkout" ref))
+                        (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
+                        (branch (list "switch" "-C" branch ; "--no-guess"?
+                                      (concat (elpaca--first remote) "/" branch)))))
+                   :filter   #'elpaca--process-filter
+                   :sentinel (apply-partially #'elpaca--process-sentinel
+                                              (concat target " checked out")
+                                              'ref-checked-out))))
         (process-put process :elpaca e)))))
 
 (defun elpaca--check-status (e)
