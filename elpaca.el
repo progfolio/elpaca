@@ -526,6 +526,7 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
       (when clonedp (setq steps (delq 'elpaca--clone steps)))
       steps)))
 
+(declare-function elpaca-log "elpaca-log")
 (defun elpaca--ibs ()
   "Return initial status buffer if `elpaca-hide-initial-build' is nil."
   (elpaca-log "#unique !finished")
@@ -573,6 +574,14 @@ Keys are as follows:
     elpaca))
 
 (defsubst elpaca--status (e) "Return E's status." (car (elpaca<-statuses e)))
+
+(declare-function elpaca-status "elpaca-status")
+(declare-function elpaca-ui--update-search-filter "elpaca-ui")
+(defun elpaca--update-log-buffer ()
+  "Update views in `elpaca-log-buffer'."
+  (when-let ((log (bound-and-true-p elpaca-log-buffer))
+             ((get-buffer-window log t))) ;; log buffer visible
+    (with-current-buffer log (elpaca-ui--update-search-filter log))))
 
 (defun elpaca--signal (e &optional info status replace verbosity)
   "Signal a change to E.
@@ -651,16 +660,6 @@ If REPLACE is non-nil, the most recent log entry is replaced."
     (elpaca--signal e nil 'ref-checked-out)
     (elpaca--signal e nil 'unblocked-mono-repo)
     (elpaca--continue-build e)))
-
-(declare-function elpaca-log "elpaca-log")
-(declare-function elpaca-status "elpaca-status")
-(declare-function elpaca-ui--update-search-filter "elpaca-ui")
-(defun elpaca--update-log-buffer ()
-  "Update views in `elpaca-log-buffer'."
-  (when-let ((log (bound-and-true-p elpaca-log-buffer))
-             ((get-buffer-window log t))) ;; log buffer visible
-    (with-current-buffer log
-      (elpaca-ui--update-search-filter log))))
 
 (defun elpaca--log-duration (e)
   "Return E's log duration."
