@@ -899,7 +899,8 @@ If it matches, the E associated with process has its STATUS updated."
            ((and (equal event "finished\n") (not (eq (elpaca--status e) 'failed)))))
       (progn (elpaca--signal e info status)
              (elpaca--continue-build e))
-    (elpaca--fail e (process-get process :output))))
+    (setf (car (car (elpaca<-log e))) 'failed)
+    (elpaca--update-log-buffer)))
 
 (defun elpaca--compile-info-process-sentinel (process event)
   "Sentinel for info compilation PROCESS EVENT."
