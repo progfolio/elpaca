@@ -877,8 +877,9 @@ If it matches, the E associated with process has its STATUS updated."
       (elpaca--signal e (elpaca--command-string (process-command process)) nil nil 1)
       (process-put process :messaged t))
     (when timer (cancel-timer timer))
-    (process-put process :timer (run-at-time elpaca--process-busy-interval nil
-                                             (lambda () (elpaca--process-busy process))))
+    (unless (eq (elpaca--status e) 'failed)
+      (process-put process :timer (run-at-time elpaca--process-busy-interval nil
+                                               (lambda () (elpaca--process-busy process)))))
     (unless linep
       (process-put process :result (car (last lines)))
       (setq lines (butlast lines)))
