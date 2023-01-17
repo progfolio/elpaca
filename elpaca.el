@@ -1908,8 +1908,10 @@ When BUILD is non-nil visit ITEM's build directory."
 If MESSAGE is non-nil, the information is messaged."
   (interactive '(t))
   (let* ((default-directory (expand-file-name "repos/elpaca/" elpaca-directory))
-         (info (string-trim (elpaca-process-output "git" "log" "--pretty=%h %D" "-1"))))
-    (if message (message "Elpaca version: %s\n%s" info (emacs-version)) info)))
+         (git  (string-trim (elpaca-process-output "git" "--version")))
+         (repo (string-trim (elpaca-process-output "git" "log" "--pretty=%h %D" "-1")))
+         (info (format "elpaca-version: %s\nemacs-version:  %s\ngit --version:  %s" repo (emacs-version) git)))
+    (funcall (if message #'message #'identity) info)))
 
 (provide 'elpaca)
 ;;; elpaca.el ends here

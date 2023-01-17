@@ -231,5 +231,25 @@ If FILTER is non-nil, it is used as the initial search query."
   (with-current-buffer (elpaca-log)
     (let (elpaca-ui-want-tail) (elpaca-log "#unique"))))
 
+;;;###autoload
+(defun elpaca-log-write (file)
+  "Output full elpaca log to FILE."
+  (interactive "Fwrite elpaca log to: ")
+  (let ((elpaca-verbosity most-positive-fixnum)
+        (time (format "Elpaca log @ %s\n" (format-time-string "%Y-%m-%d %H:%M:%S %z"))))
+    (with-temp-buffer
+      (insert (string-join
+               (append (list time (elpaca-version) "")
+                       (mapcar (lambda (event) (let ((info (cadr event)))
+                                                 (format "%-10s %-30s %-20s %s"
+                                                         (aref info 3)
+                                                         (aref info 0)
+                                                         (aref info 1)
+                                                         (aref info 2))))
+                               (reverse (elpaca-log--entries))))
+               "\n"))
+      (when (or (not (file-exists-p file)) (yes-or-no-p (format "Overwrite %s?" file)))
+        (write-region (point-min) (point-max) file nil nil nil)))))
+
 (provide 'elpaca-log)
 ;;; elpaca-log.el ends here
