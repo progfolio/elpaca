@@ -1276,7 +1276,7 @@ Kick off next build step, and/or change E's status."
             ;;@TODO: Some refs will need a full clone or specific branch.
             ,@(when (numberp depth)
                 (if (plist-get recipe :ref)
-                    (elpaca--signal e "ignoring :depth in favor of :ref")
+                    (elpaca--signal e "Ignoring :depth in favor of :ref")
                   (list "--depth" (number-to-string depth) "--no-single-branch")))
             ,@(when-let ((remote (elpaca--remote (plist-get recipe :remotes)))
                          ((not (stringp remote))))
