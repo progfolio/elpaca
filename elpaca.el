@@ -859,7 +859,7 @@ FILES and NOCONS are used recursively."
   "Update E's status when PROCESS has stopped producing output."
   (when-let (((eq (process-status process) 'run))
              (e (process-get process :elpaca)))
-    (elpaca--signal e (process-get process :result) 'blocked)))
+    (elpaca--signal e (process-get process :parsed) 'blocked)))
 
 (defun elpaca--process-filter (process output &optional pattern status)
   "Filter PROCESS OUTPUT.
@@ -867,9 +867,9 @@ PATTERN is a string which is checked against the entire process output.
 If it matches, the E associated with process has its STATUS updated."
   (process-put process :raw-output (concat (process-get process :raw-output) output))
   (let* ((e       (process-get process :elpaca))
-         (result  (process-get process :result))
+         (parsed  (process-get process :parsed))
          (timer   (process-get process :timer))
-         (chunk   (concat result output))
+         (chunk   (concat parsed output))
          (lines   (split-string chunk "\n"))
          (returnp (string-match-p "" chunk))
          (linep   (string-empty-p (car (last lines)))))
@@ -881,17 +881,17 @@ If it matches, the E associated with process has its STATUS updated."
       (process-put process :timer (run-at-time elpaca--process-busy-interval nil
                                                (lambda () (elpaca--process-busy process)))))
     (unless linep
-      (process-put process :result (car (last lines)))
+      (process-put process :parsed (car (last lines)))
       (setq lines (butlast lines)))
     (dolist (line lines)
       (unless (string-empty-p line)
         (elpaca--signal e (car (last (split-string line "" t)))
                         (and pattern (string-match-p pattern line) status) returnp)))
     (when (and pattern (string-match-p pattern output))
-      (process-put process :result nil)
       (if (eq status 'failed)
           (elpaca--fail e output)
-        (elpaca--signal e output status)))))
+        (elpaca--signal e (process-get process :parsed) status)
+        (process-put process :parsed nil)))))
 
 (defun elpaca--process-sentinel (&optional info status process event)
   "Update E's INFO and STATUS when PROCESS EVENT is finished."
