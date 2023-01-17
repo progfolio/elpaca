@@ -1177,10 +1177,6 @@ This is the branch that would be checked out upon cloning."
           (error "Unable to determie remote default branch"))
       (error (format "Remote default branch error: %S" stderr)))))
 
-(defun elpaca--remote (remotes)
-  "Return default remote from :REMOTES."
-  (and remotes (if (ignore-errors (mapcar #'length remotes)) (car remotes) remotes)))
-
 (defun elpaca--checkout-ref (e)
   "Check out E's ref."
   (let* ((recipe (elpaca<-recipe e))
@@ -1261,6 +1257,10 @@ Kick off next build step, and/or change E's status."
         (elpaca--fail e (nth 2 (car (elpaca<-log e))))
       (elpaca--continue-build e))))
 
+(defun elpaca--remote (remotes)
+  "Return default remote from :REMOTES."
+  (and remotes (if (ignore-errors (mapcar #'length remotes)) (car remotes) remotes)))
+
 (defun elpaca--clone (e)
   "Clone E's repo to `elpaca-directory'."
   (let* ((recipe  (elpaca<-recipe   e))
@@ -1276,8 +1276,8 @@ Kick off next build step, and/or change E's status."
                 (if (plist-get recipe :ref)
                     (elpaca--signal e "ignoring :depth in favor of :ref")
                   (list "--depth" (number-to-string depth) "--no-single-branch")))
-            ,@(when-let ((remotes (plist-get recipe :remotes))
-                         ((listp remotes)))
+            ,@(when-let ((remote (elpaca--remote (plist-get recipe :remotes)))
+                         ((not (stringp remote))))
                 '("--no-checkout"))
             ,URI ,repodir)))
     (elpaca--signal e "Cloning" 'cloning)
