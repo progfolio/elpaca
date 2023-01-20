@@ -1606,10 +1606,8 @@ do not confirm before deleting package and DEPS."
 (defun elpaca--file-package (&optional file)
   "Return queued E if current buffer's FILE is part of a repo, nil otherwise."
   (when-let ((name (or file (buffer-file-name))))
-    (cl-find-if (lambda (e)
-                  (string-prefix-p (file-name-as-directory (elpaca<-repo-dir e))
-                                   (file-name-directory name)))
-                (elpaca--queued) :key #'cdr)))
+    (cl-find-if (lambda (e) (assoc name (elpaca--files e)))
+                (reverse (elpaca--queued)) :key #'cdr)))
 
 (defun elpaca--read-queued (&optional prompt)
   "Return queued item.
