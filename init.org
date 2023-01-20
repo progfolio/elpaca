@@ -410,6 +410,7 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
 #+begin_src emacs-lisp :lexical t
 (+general-global-menu! "application" "a"
   "p" '(:ignore t "elpaca")
+  "pb" 'elpaca-browse
   "pr"  '((lambda () (interactive)
             (let ((current-prefix-arg '(4)))
               (call-interactively #'elpaca-rebuild)))
