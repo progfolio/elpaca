@@ -312,8 +312,9 @@ This is faster (what you want with non-interactive calls)."
                 c
               (mapcar (lambda (candidate)
                         (propertize
-                         (format "%-30s %s" (car candidate)
-                                 (or (plist-get (cdr candidate) :description) ""))
+                         (format "%-30s %s %s" (car candidate)
+                                 (or (plist-get (cdr candidate) :description) "")
+                                 (or (plist-get (cdr candidate) :source) ""))
                          'candidate candidate))
                       c))))
          (symbol (or symbol
