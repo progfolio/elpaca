@@ -161,7 +161,7 @@ The following keys are recognized:
                           (error "Unable to download %S %S" url
                                  url-http-response-status))
                         (delete-region (point-min) url-http-end-of-headers)
-                        (buffer-string)))))))
+                        (string-trim (buffer-string))))))))
          ,@(unless (or (null ref) init-filep localp)
              `((goto-char (point-min))
                (re-search-forward ":ref nil")
