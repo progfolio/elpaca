@@ -155,20 +155,6 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                            'face '(:weight bold))
                " " elpaca-ui-search-filter))))
 
-(defun elpaca-ui--fallback-date (e)
-  "Return time of last modification for E's built elisp, otherwise nil."
-  (file-attribute-modification-time
-   (file-attributes (expand-file-name (concat (elpaca<-package e) ".el")
-                                      (elpaca<-build-dir e)))))
-
-(defun elpaca-ui--custom-candidates ()
-  "Return declared candidate list with no recipe in `elpaca-menu-functions'."
-  (cl-loop for (item . e) in (elpaca--queued)
-           unless (elpaca-menu-item nil item nil nil 'no-descriptions)
-           collect (list item :source "Init file"
-                         :date (ignore-errors (elpaca-ui--fallback-date e))
-                         :description "Not available in menu functions")))
-
 (define-derived-mode elpaca-ui-mode tabulated-list-mode "elpaca-ui"
   "Major mode to manage packages."
   (setq tabulated-list-printer #'elpaca-ui--apply-faces)

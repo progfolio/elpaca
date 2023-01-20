@@ -1890,18 +1890,42 @@ When BUILD is non-nil visit ITEM's build directory."
           (user-error "Directory does not exist: %S" dir))
       (user-error "%S is not a queued package" item))))
 
+(defun elpaca--fallback-date (e)
+  "Return time of last modification for E's built elisp, otherwise nil."
+  (file-attribute-modification-time
+   (file-attributes (expand-file-name (concat (elpaca<-package e) ".el")
+                                      (elpaca<-build-dir e)))))
+
+;;@MAYBE: refactor into menu function; add to elpaca-menu-functions after init.
+(defun elpaca--custom-candidates (&rest _)
+  "Return declared candidate list with no recipe in `elpaca-menu-functions'."
+  (cl-loop with seen
+           for (item . e) in (elpaca--queued)
+           unless (or (member item seen)
+                      (elpaca-menu-item nil item nil nil 'no-descriptions))
+           collect (list item :source "Init file"
+                         :date (ignore-errors (elpaca--fallback-date e))
+                         :recipe (elpaca<-recipe e)
+                         :description "Not available in menu functions")
+           do (push item seen)))
+
 ;;;###autoload
 (defun elpaca-browse (item)
   "Browse ITEM's :url."
-  (interactive (list (car (elpaca-menu-item))))
-  (if-let ((url (or (when-let ((found (elpaca-get-queued item))
-                               (recipe (elpaca<-recipe found)))
-                      (file-name-sans-extension
-                       (elpaca--repo-uri (elpaca-merge-plists recipe '(:protocol https)))))
-                    (when-let ((found (alist-get item (elpaca--menu-items))))
-                      (plist-get found :url)))))
-      (browse-url url)
-    (user-error "No URL associated with current line")))
+  (interactive (list (let ((item (elpaca-menu-item nil nil (append elpaca-menu-functions
+                                                                   '(elpaca--custom-candidates)))))
+                       (intern (plist-get item :package)))))
+  (if-let ((found (or (elpaca-get-queued item)
+                      (alist-get item (elpaca--menu-items t))
+                      (alist-get item (elpaca--custom-candidates))))
+           (url (or (plist-get found :url)
+                    (file-name-sans-extension
+                     (elpaca--repo-uri (elpaca-merge-plists
+                                        (or (plist-get found :recipe)
+                                            (and (elpaca<-p found) (elpaca<-recipe found))
+                                            (user-error "No URL associated with item %S" item))
+                                        '(:protocol https)))))))
+      (browse-url url)))
 
 ;;;###autoload
 (defun elpaca-version (&optional message)

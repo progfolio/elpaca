@@ -42,7 +42,7 @@ If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
           (setq elpaca-manager--entry-cache
                 (cl-loop
                  for (item . data) in (append (elpaca--menu-items (or (and recache 'recache) t))
-                                              (elpaca-ui--custom-candidates))
+                                              (elpaca--custom-candidates))
                  collect (list item
                                (vector (symbol-name item)
                                        (or (plist-get data :description) "")
