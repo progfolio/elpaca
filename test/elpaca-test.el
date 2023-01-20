@@ -1,6 +1,6 @@
 ;;; elpaca-test.el --- test suite for elpaca.el      -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2022 Nicholas Vollmer
+;; Copyright (C) 2022-2023 Nicholas Vollmer
 
 ;; Author: Nicholas Vollmer
 ;; Keywords:
