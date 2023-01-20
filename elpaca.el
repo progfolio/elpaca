@@ -46,10 +46,7 @@
 (defvar Info-directory-list)
 (unless (executable-find "git") (error "Elpaca unable to find git executable"))
 
-(defgroup elpaca nil
-  "An elisp package manager."
-  :group 'elpaca
-  :prefix "elpaca-")
+(defgroup elpaca nil "An elisp package manager." :group 'applications :prefix "elpaca-")
 
 (defface elpaca-finished '((t (:weight bold :foreground "#00FF00")))
   "Indicates an order is finished.")
