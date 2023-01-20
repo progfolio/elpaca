@@ -200,7 +200,8 @@ Each function is passed a request, which may be any of the follwoing symbols:
 (defcustom elpaca-default-remote-name "origin" "Default remote name." :type 'string)
 
 (defvar elpaca-ignored-dependencies
-  '(emacs cl-lib cl-generic nadvice org org-mode map seq json project auth-source-pass)
+  `(emacs cl-lib cl-generic nadvice org org-mode map seq json project auth-source-pass
+          ,@(unless (version< emacs-version "29.1") '(use-package)))
   "Ignore these unless the user explicitly requests they be installed.")
 
 (defvar elpaca-overriding-prompt nil "Overriding prompt for interactive functions.")
