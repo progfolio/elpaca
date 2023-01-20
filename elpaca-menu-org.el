@@ -41,13 +41,8 @@
             (when failure (error "Failed to parse ORGVERSION: %S" result))
             (string-trim (replace-regexp-in-string "-dev" "" stdout))))
          (gitversion
-          (elpaca-with-process (elpaca-process-call "git" "ls-remote" "--tags")
-            (if-let  ((success)
-                      (tag (car (last (split-string stdout "[[:space:]]+" 'omit-nulls))))
-                      (ref (elpaca-process-output "git" "rev-parse" "--short=6" "HEAD")))
-                (replace-regexp-in-string "\\(?:refs/tags/\\([^z-a]*\\)\\^{}\\)"
-                                          (concat "\\1-n/a-g" (string-trim ref))
-                                          tag)
+          (elpaca-with-process (elpaca-process-call "git" "rev-parse" "--short=6" "HEAD")
+            (if success (concat orgversion "-n/a-g" stdout)
               (message "%S" stderr)
               "N/A"))))
     (message "Org version: %s %s" orgversion gitversion)
@@ -82,9 +77,7 @@
                           :package "org"
                           :local-repo "org"
                           :repo "https://git.savannah.gnu.org/git/emacs/org-mode.git"
-                          :depth nil ; `org-version' depends on repository tags.
-                          :pre-build '(progn (require 'elpaca-menu-org)
-                                             (elpaca-menu-org--build))
+                          :pre-build '(progn (require 'elpaca-menu-org) (elpaca-menu-org--build))
                           :build '(:not elpaca--generate-autoloads-async
                                         elpaca--compile-info)
                           :files '(:defaults ("etc/styles/" "etc/styles/*")))))
