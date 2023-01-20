@@ -296,7 +296,7 @@ If it returns nil, the candidate is not considered for selection.
 If NO-DESCRIPTIONS is non-nil, candidate descriptions are not included.
 This is faster (what you want with non-interactive calls)."
   (interactive "P")
-  (let* ((omenus menus)
+  (let* ((menuarg menus)
          (menus (if (equal interactive '(4))
                     (mapcar #'intern-soft
                             (cl-remove-duplicates
@@ -306,8 +306,8 @@ This is faster (what you want with non-interactive calls)."
                   (or menus elpaca-menu-functions (user-error "No menus found"))))
          (candidates
           (let ((c (if filter
-                       (cl-remove-if-not filter (elpaca--menu-items (not omenus) menus))
-                     (elpaca--menu-items (not omenus) menus))))
+                       (cl-remove-if-not filter (elpaca--menu-items (not menuarg) menus))
+                     (elpaca--menu-items (not menuarg) menus))))
             (if no-descriptions
                 c
               (mapcar (lambda (candidate)
