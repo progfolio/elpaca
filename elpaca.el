@@ -194,6 +194,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
   "Update `elpaca--ibc' when `initial-buffer-choice' set to NEW."
   (unless (eq new #'elpaca--ibs) (setq elpaca--ibc new)))
 (add-variable-watcher 'initial-buffer-choice #'elpaca--set-ibc)
+(defvar elpaca--ibs-set nil)
 
 (defcustom elpaca-verbosity 0 "Maximum event verbosity level shown in logs."
   :type 'integer)
@@ -569,8 +570,8 @@ Keys are as follows:
                   :includes (and mono-repo (list (cadr mono-repo)))
                   :log (list (list status nil info)))))
     (when mono-repo (cl-pushnew id (elpaca<-includes mono-repo)))
-    (unless (or builtp elpaca-hide-initial-build elpaca-after-init-time)
-      (setq initial-buffer-choice #'elpaca--ibs elpaca-hide-initial-build t))
+    (unless (or builtp elpaca--ibs-set elpaca-hide-initial-build elpaca-after-init-time)
+      (setq initial-buffer-choice #'elpaca--ibs elpaca--ibs-set t))
     elpaca))
 
 (defsubst elpaca--status (e) "Return E's status." (car (elpaca<-statuses e)))
