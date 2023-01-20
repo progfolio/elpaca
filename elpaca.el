@@ -186,6 +186,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
      Updates the menu's package candidate list."
   :type 'hook)
 
+;;@FIX: emacsclient doesn't show build when server needs to be started.
 (defcustom elpaca-hide-initial-build nil
   "When non-nil, hide `elpaca-log' during init time builds." :type 'boolean)
 (defvar elpaca--ibc initial-buffer-choice "User's `initial-buffer-choice'.")
