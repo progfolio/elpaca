@@ -310,7 +310,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
              ,@(mapcar (lambda (form) `(setq entries ,form)) (nreverse body))))))))
 
 (defvar-local elpaca-ui--print-cache nil "Used when printing entries via `elpaca-ui--apply-faces'.")
-(defvar-local elpaca-ui-want-tail "If non-nil, point is moved to end of buffer as entries are printed.")
+(defvar-local elpaca-ui-want-tail nil "If non-nil, point is moved to end of buffer as entries are printed.")
 (defun elpaca-ui--print ()
   "Print table entries."
   (let ((elpaca-ui--print-cache (append elpaca-ui--marked-packages (elpaca--queued))))
