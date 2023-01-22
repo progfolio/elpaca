@@ -1639,11 +1639,11 @@ With a prefix argument, rebuild current file's package or prompt if none found."
                                  elpaca--clone-dependencies
                                  elpaca--activate-package))))
     (elpaca--signal e "Rebuilding" 'rebuilding)
-    (setq elpaca-cache-autoloads nil)
     (elpaca--unprocess e)
-    (setf (elpaca<-queue-time e) (current-time))
-    (setf (elpaca<-statuses e) '(queued))
-    (setf (elpaca<-files e) nil)
+    (setf elpaca-cache-autoloads nil
+          (elpaca<-queue-time e) (current-time)
+          (elpaca<-statuses e) '(queued)
+          (elpaca<-files e) nil)
     (when interactive
       (require 'elpaca-log) ;@TODO: make conditional
       (elpaca-log--latest)
@@ -1682,8 +1682,8 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
   (if-let ((queued (assoc item (elpaca--queued))))
       (let ((e (cdr queued)))
         (elpaca--signal e "Fetching updates" 'fetching-updates)
-        (setf (elpaca<-build-steps e) (list #'elpaca--fetch #'elpaca--log-updates))
-        (setf (elpaca<-queue-time e) (current-time))
+        (setf (elpaca<-build-steps e) (list #'elpaca--fetch #'elpaca--log-updates)
+              (elpaca<-queue-time e)  (current-time))
         (when interactive
           (require 'elpaca-log)
           (elpaca-log--latest)
