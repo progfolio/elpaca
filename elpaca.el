@@ -538,42 +538,31 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
       (setq-local elpaca-ui-want-tail nil)
       (current-buffer))))
 
-(cl-defun elpaca<-create
-    (item &key recipe repo-dir build-dir files mono-repo)
-  "Create a new elpaca struct from ITEM.
-Keys are as follows:
-  :RECIPE metadata for building package
-  :REPO-DIR package's build-dir
-  :BUILD-DIR package's repo-dir
-  :CACHED whether or not the package was read from the cache
-  :FILES list of package's linked files
-  :MONO-REPO E which is responsible for cloning repo current E is in."
+(defun elpaca<-create (item)
+  "Create a new elpaca struct from ITEM."
   (let* ((status 'queued)
          (info "Package queued")
          (id (elpaca--first item))
-         (recipe (or recipe (elpaca--required-arg (elpaca-recipe item) "No recipe: %S")))
-         (repo-dir
-          (or repo-dir (and recipe (elpaca--required-arg (elpaca-repo-dir recipe)
-                                     "Unable to determine repo dir: %S"))))
-         (build-dir (or build-dir (and recipe (elpaca-build-dir recipe))))
+         (recipe (elpaca--required-arg (elpaca-recipe item) "No recipe: %S"))
+         (repo-dir (and recipe (elpaca--required-arg (elpaca-repo-dir recipe)
+                                 "Unable to determine repo dir: %S")))
+         (build-dir (and recipe (elpaca-build-dir recipe)))
          (clonedp (and repo-dir (file-exists-p repo-dir)))
-         (builtp (and clonedp (and build-dir (file-exists-p build-dir))))
-         (mono-repo (or mono-repo
-                        (when-let (((not builtp))
-                                   (e (elpaca--mono-repo id repo-dir)))
-                          (setq status 'blocked info (concat "Waiting on monorepo " repo-dir))
-                          e)))
-         (build-steps (elpaca--build-steps recipe builtp clonedp mono-repo))
-         (elpaca (elpaca<--create
-                  :id id :package (symbol-name id) :item item :statuses (list status)
-                  :repo-dir repo-dir :build-dir build-dir :mono-repo mono-repo
-                  :files files :build-steps build-steps :recipe recipe
-                  :includes (and mono-repo (list (cadr mono-repo)))
-                  :log (list (list status nil info)))))
-    (when mono-repo (cl-pushnew id (elpaca<-includes mono-repo)))
+         (builtp (and clonedp build-dir (file-exists-p build-dir)))
+         (mono-repo (when-let (((not builtp))
+                               (e (elpaca--mono-repo id repo-dir)))
+                      (setq status 'blocked info (concat "Waiting on monorepo " repo-dir))
+                      (cl-pushnew id (elpaca<-includes e))
+                      e))
+         (build-steps (elpaca--build-steps recipe builtp clonedp mono-repo)))
     (unless (or builtp elpaca--ibs-set elpaca-hide-initial-build elpaca-after-init-time)
       (setq initial-buffer-choice #'elpaca--ibs elpaca--ibs-set t))
-    elpaca))
+    (elpaca<--create
+     :id id :package (symbol-name id) :item item :statuses (list status)
+     :repo-dir repo-dir :build-dir build-dir :mono-repo mono-repo
+     :build-steps build-steps :recipe recipe
+     :includes (and mono-repo (list (cadr mono-repo)))
+     :log (list (list status nil info)))))
 
 (defsubst elpaca--status (e) "Return E's status." (car (elpaca<-statuses e)))
 
