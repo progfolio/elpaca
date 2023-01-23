@@ -120,6 +120,7 @@ exclamation point to it. e.g. #!installed."
                              (define-key m (kbd "T") (elpaca-defsearch 'tried "#unique #installed !#declared"))
                              (define-key m (kbd "U") 'elpaca-ui-unmark)
                              (define-key m (kbd "b") 'elpaca-ui-browse-package)
+                             (define-key m (kbd "c") 'elpaca-ui-copy)
                              (define-key m (kbd "d") 'elpaca-ui-mark-delete)
                              (define-key m (kbd "i") 'elpaca-ui-mark-install)
                              (define-key m (kbd "l") 'elpaca-log)
@@ -562,6 +563,25 @@ The current package is its sole argument."
       (let* ((input (read-string (format "Send input to %S: " (process-name process)))))
         (process-send-string process (concat input "\n")))
     (user-error "No running process associated with %S" (elpaca<-package e))))
+
+(defun elpaca-ui-copy (entries)
+  "Copy formatted UI view ENTRIES to clipboard."
+  (interactive (list (or tabulated-list-entries (user-error "Buffer not in elpaca-ui-mode"))))
+  (unless window-system (user-error "Cannot copy in current window-system"))
+  (let ((cols (mapconcat (lambda (col) (format "<th>%s</th>" (car col))) tabulated-list-format))
+        (filter elpaca-ui-search-filter))
+    (with-temp-buffer
+      (insert "<details><summary>Log @" (format-time-string "%Y-%m-%d %H:%M:%S %z")
+              "</summary>\n" "search filter: " (format "%S" filter) "\n"
+              "<table>\n<thead>" cols "</thead>\n<tbody>\n"
+              (mapconcat (lambda (entry)
+                           (format "<tr>%s</tr>\n"
+                                   (mapconcat (lambda (data) (concat "<td>" data "</td>"))
+                                              (cl-coerce (cadr entry) 'list))))
+                         entries)
+              "</tbody>\n</table>\n</details>")
+      (clipboard-kill-region (point-min) (point-max)))
+    (message "Elpaca UI view copied to clipboard")))
 
 (provide 'elpaca-ui)
 ;;; elpaca-ui.el ends here
