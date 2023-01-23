@@ -1000,11 +1000,10 @@ The keyword's value is expected to be one of the following:
         (elpaca--signal e (concat "Running " name " commands") (intern (substring name 1)))
         (let* ((default-directory (elpaca<-repo-dir e))
                (emacs             (elpaca--emacs-path))
-               (program           `(progn
-                                     (setq load-prefer-newer t)
+               (program           `(let ((load-prefer-newer t)
+                                         (gc-cons-percentage 1.0))
                                      (require 'elpaca)
                                      (normal-top-level-add-subdirs-to-load-path)
-                                     (setq gc-cons-percentage 1.0) ;; trade memory for gc speed
                                      (elpaca--run-build-commands ',commands)))
                (process (make-process
                          :name (concat "elpaca-" name "-" (plist-get recipe :package))
@@ -1389,12 +1388,11 @@ Loads or caches autoloads."
                    when item
                    for build-dir = (elpaca<-build-dir (elpaca-alist-get item (elpaca--queued)))
                    when build-dir collect build-dir))
-         (program `(progn
+         (program `(let ((gc-cons-percentage 1.0)) ;; trade memory for gc speed
                      (mapc (lambda (dir) (let ((default-directory dir))
                                            (add-to-list 'load-path dir)
                                            (normal-top-level-add-subdirs-to-load-path)))
                            ',(append dependency-dirs (list build-dir)))
-                     (setq gc-cons-percentage 1.0) ;; trade memory for gc speed
                      (byte-recompile-directory ,build-dir 0 'force)))
          (print-level nil)
          (print-circle nil)
