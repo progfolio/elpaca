@@ -1921,8 +1921,9 @@ If MESSAGE is non-nil, the information is messaged."
   (let* ((default-directory (expand-file-name "repos/elpaca/" elpaca-directory))
          (git  (string-trim (elpaca-process-output "git" "--version")))
          (repo (string-trim (elpaca-process-output "git" "log" "--pretty=%h %D" "-1")))
-         (info (format "elpaca-version: %s\nemacs-version:  %s\ngit --version:  %s" repo (emacs-version) git)))
-    (funcall (if message #'message #'identity) info)))
+         (info (format "elpaca-version: %s\nemacs-version:  %s\ngit --version:  %s"
+                       repo (emacs-version) git)))
+    (if message (message "%s" info) info)))
 
 (provide 'elpaca)
 ;;; elpaca.el ends here
