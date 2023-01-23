@@ -251,6 +251,19 @@ A recipe provides Elpaca with the metadata necessary to build and install a pack
 (example :depth nil) ;; Full repository clone.
 ```
 
+-   **:files:** The files linked from the package&rsquo;s repository to its build directory.
+    
+    Each element of the list is either:
+    
+    -   The symbol `:defaults`, which expands to `elpaca-default-files-directive`.
+    -   A string naming files or folders. Shell glob patterns may be used to match multiple files.
+    -   A list starting with the `:exclude` keyword. The remaining elements are not linked.
+
+```emacs-lisp
+(example :files (:defaults "extensions/*")) ;; Link everything in the extensions folder.
+(example :files (:defaults (:exclude "*.c"))) ;; Exclude all files with the "c" file extension.
+```
+
 -   **:protocol:** The protocol to use when cloning repositories.
 
 The value must be a symbol, either `https` or `ssh`.
@@ -535,6 +548,7 @@ The following commands are available in the `elpaca-ui-mode`:
 | elpaca-ui-search-tried     | T       | Search for &ldquo;#unique #installed !#declared&rdquo;          |
 | elpaca-ui-unmark           | U       | Unmark current package.                                         |
 | elpaca-ui-browse-package   | b       | Browse current package’s URL via ‘browse-url’.                  |
+| elpaca-ui-copy             | c       | Copy formatted UI view ENTRIES to clipboard.                    |
 | elpaca-ui-mark-delete      | d       | Mark package for delete action.                                 |
 | elpaca-ui-mark-install     | i       | Mark package for install action.                                |
 | elpaca-log                 | l       | Display ‘elpaca-log-buffer’.                                    |

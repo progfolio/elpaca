@@ -168,6 +168,18 @@ It is a list of the form:
 (example :depth nil) ;; Full repository clone.
 #+end_src
 
+- :files :: The files linked from the package's repository to its build directory.
+
+  Each element of the list is either:
+  - The symbol =:defaults=, which expands to =elpaca-default-files-directive=.
+  - A string naming files or folders. Shell glob patterns may be used to match multiple files.
+  - A list starting with the =:exclude= keyword. The remaining elements are not linked.
+
+#+begin_src emacs-lisp :lexical t
+(example :files (:defaults "extensions/*")) ;; Link everything in the extensions folder.
+(example :files (:defaults (:exclude "*.c"))) ;; Exclude all files with the "c" file extension.
+#+end_src
+
 - :protocol :: The protocol to use when cloning repositories.
 
 The value must be a symbol, either =https= or =ssh=.

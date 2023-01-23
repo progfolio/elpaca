@@ -374,6 +374,26 @@ The package repository's history depth.
 @end lisp
 
 @table @asis
+@item :files
+The files linked from the package's repository to its build directory.
+
+Each element of the list is either:
+@itemize
+@item
+The symbol @samp{:defaults}, which expands to @samp{elpaca-default-files-directive}.
+@item
+A string naming files or folders. Shell glob patterns may be used to match multiple files.
+@item
+A list starting with the @samp{:exclude} keyword. The remaining elements are not linked.
+@end itemize
+@end table
+
+@lisp
+(example :files (:defaults "extensions/*")) ;; Link everything in the extensions folder.
+(example :files (:defaults (:exclude "*.c"))) ;; Exclude all files with the "c" file extension.
+@end lisp
+
+@table @asis
 @item :protocol
 The protocol to use when cloning repositories.
 @end table
@@ -752,6 +772,9 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @item elpaca-ui-browse-package
 @tab b
 @tab Browse current package’s URL via ‘browse-url’.
+@item elpaca-ui-copy
+@tab c
+@tab Copy formatted UI view ENTRIES to clipboard.
 @item elpaca-ui-mark-delete
 @tab d
 @tab Mark package for delete action.
@@ -876,5 +899,5 @@ For example, the following search tag will embolden the first column of the @sam
 (cl-pushnew (cons 'bold-names #'+elpaca-bold-names) elpaca-ui-search-tags)
 @end lisp
 
-Emacs 30.0.50 (Org mode 9.6)
+Emacs 30.0.50 (Org mode 9.6.1)
 @bye
