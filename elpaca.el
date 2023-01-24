@@ -680,6 +680,7 @@ Accepted KEYS are :pre and :post which are hooks run around queue processing."
        ,@body
        (elpaca-split-queue))))
 
+(defvar elpaca--post-queues-hook nil)
 (defun elpaca--finalize-queue (q)
   "Run Q's post isntallation functions:
 - load cached autoloads
@@ -707,7 +708,8 @@ Accepted KEYS are :pre and :post which are hooks run around queue processing."
           (elpaca-split-queue))
       (when-let ((post (elpaca-q<-post q))) (funcall post))
       (run-hooks 'elpaca-post-queue-hook)
-      (when next (elpaca--process-queue next)))))
+      (if next (elpaca--process-queue next)
+        (run-hooks 'elpaca--post-queues-hook)))))
 
 (defun elpaca--finalize (e)
   "Declare E finished or failed."
@@ -1538,7 +1540,7 @@ FILTER must be a unary function which accepts and returns a queue list."
                      (reverse elpaca--queues)))
            (incomplete (cl-find 'incomplete queues :key #'elpaca-q<-status)))
       (elpaca--process-queue incomplete)
-    (message "No incomplete queues to process")))
+    (run-hooks 'elpaca--post-queues-hook)))
 
 (defun elpaca--on-disk-p (item)
   "Return t if ITEM has an associated E and a build or repo dir on disk."

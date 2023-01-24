@@ -315,7 +315,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
 (defun elpaca-ui--print ()
   "Print table entries."
   (let ((elpaca-ui--print-cache (append elpaca-ui--marked-packages (elpaca--queued))))
-    (tabulated-list-print)
+    (tabulated-list-print 'remember-pos)
     (when elpaca-ui-want-tail (goto-char (point-max)))))
 
 (defun elpaca-ui--apply-faces (id cols)
@@ -521,11 +521,17 @@ The current package is its sole argument."
 
 (declare-function elpaca-log--latest "elpaca-log")
 (defvar elpaca-manager-buffer)
+(defvar elpaca-log-buffer)
 (defun elpaca-ui--post-execute ()
   "Refresh views."
   (require 'elpaca-log)
   (require 'elpaca-manager)
   (when-let ((buffer (get-buffer elpaca-manager-buffer)))
+    (with-current-buffer buffer
+      (when (functionp elpaca-ui-entries-function)
+        (funcall elpaca-ui-entries-function))
+      (elpaca-ui-search-refresh buffer)))
+  (when-let ((buffer (get-buffer elpaca-log-buffer)))
     (with-current-buffer buffer
       (when (functionp elpaca-ui-entries-function)
         (funcall elpaca-ui-entries-function))
@@ -547,10 +553,7 @@ The current package is its sole argument."
            finally do
            (mapc #'funcall (nreverse setups))
            (mapc #'apply actions))
-  (when-let ((q (cl-find-if (lambda (q) (and (eq (elpaca-q<-status q) 'incomplete)
-                                             (elpaca-q<-elpacas q)))
-                            elpaca--queues)))
-    (setf (elpaca-q<-post q) #'elpaca-ui--post-execute))
+  (setq elpaca--post-queues-hook '(elpaca-ui--post-execute))
   (elpaca-process-queues (lambda (qs) (cl-remove-if-not #'elpaca-q<-elpacas qs))))
 
 (defun elpaca-ui-send-input ()
