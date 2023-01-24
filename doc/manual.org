@@ -10,7 +10,7 @@
 #+texinfo_dir_desc: Elisp Package Manager
 #+subtitle: version 0.0.0
 #+texinfo: @noindent
-#+options: creator:t ':t
+#+options: creator: ':t html-postamble:nil
 
 #+include: "./common.org::introduction" :only-contents t
 

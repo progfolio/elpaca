@@ -899,5 +899,4 @@ For example, the following search tag will embolden the first column of the @sam
 (cl-pushnew (cons 'bold-names #'+elpaca-bold-names) elpaca-ui-search-tags)
 @end lisp
 
-Emacs 30.0.50 (Org mode 9.6.1)
 @bye
