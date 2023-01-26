@@ -405,8 +405,7 @@ If QUERY is nil, the contents of the minibuffer are used instead."
 
 (defun elpaca-ui--ensure-mode ()
   "Ensure current buffer is derived from `elpaca-ui-mode'."
-  (unless (derived-mode-p 'elpaca-ui-mode)
-    (user-error "Cannot search outside of `elpaca-ui-mode'")))
+  (or (derived-mode-p 'elpaca-ui-mode) (user-error "Buffer not in `elpaca-ui-mode'")))
 
 (defvar elpaca-ui-search-prompt "Search (empty to clear): ")
 (defun elpaca-ui-search (&optional query)
