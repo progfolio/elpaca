@@ -1821,7 +1821,7 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
                '("ViewInBrowser" . mu4e-action-view-in-browser) t)
   (add-to-list 'mu4e-bookmarks
                '( :name "straight.el"
-                  :query "list:straight.el.raxod502.github.com"
+                  :query "list:straight.el.radian-software.github.com"
                   :key ?s)
                'append)
   (add-to-list 'mu4e-bookmarks
