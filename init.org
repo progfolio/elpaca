@@ -279,12 +279,10 @@ NAME and ARGS are in `use-package'."
 #+end_src
 
 #+begin_src emacs-lisp :lexical t
-(setq init-file-debug nil)
-(if init-file-debug
+(if debug-on-error
     (setq use-package-verbose t
           use-package-expand-minimally nil
-          use-package-compute-statistics t
-          debug-on-error t)
+          use-package-compute-statistics t)
   (setq use-package-verbose nil
         use-package-expand-minimally t))
 #+end_src
