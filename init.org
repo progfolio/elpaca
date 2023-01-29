@@ -412,7 +412,7 @@ Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY.
   "p" '(:ignore t "elpaca")
   "pb" 'elpaca-browse
   "pr"  '((lambda () (interactive)
-            (let ((current-prefix-arg '(4)))
+            (let ((current-prefix-arg (not current-prefix-arg)))
               (call-interactively #'elpaca-rebuild)))
           :which-key "rebuild")
   "pm" 'elpaca-manager
