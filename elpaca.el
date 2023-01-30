@@ -1382,8 +1382,7 @@ Loads or caches autoloads."
   "Byte compile E's package."
   ;; Assumes all dependencies are 'built
   (elpaca--signal e "Byte compiling" 'byte-compilation)
-  (let* ((build-dir         (elpaca<-build-dir e))
-         (default-directory build-dir)
+  (let* ((default-directory (elpaca<-build-dir e))
          (emacs             (elpaca--emacs-path))
          (dependency-dirs
           (cl-loop for item in (elpaca-dependencies (elpaca<-id e)
@@ -1395,8 +1394,8 @@ Loads or caches autoloads."
                      (mapc (lambda (dir) (let ((default-directory dir))
                                            (add-to-list 'load-path dir)
                                            (normal-top-level-add-subdirs-to-load-path)))
-                           ',(append dependency-dirs (list build-dir)))
-                     (byte-recompile-directory ,build-dir 0 'force)))
+                           ',(cons default-directory dependency-dirs))
+                     (byte-recompile-directory ,default-directory 0 'force)))
          (print-level nil)
          (print-circle nil)
          (process
