@@ -102,8 +102,8 @@ exclamation point to it. e.g. #!installed."
 (defalias 'elpaca-ui--buttonize
   (with-no-warnings (cond
                      ;;API for Emacs 27 requires allocating temp buffers. Not worth it.
-                     ((version< emacs-version "28.1") #'elpaca-ui--button-noop)
-                     ((version< emacs-version "29") #'button-buttonize)
+                     ((< emacs-major-version 28) #'elpaca-ui--button-noop)
+                     ((< emacs-major-version 29) #'button-buttonize)
                      (t #'buttonize))))
 
 ;;;; Variables:
@@ -213,7 +213,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
 (defun elpaca-ui--parse-search (search)
   "Parse SEARCH." ;by abusing the elisp reader
   (or (gethash search elpaca-ui--search-cache)
-      (let ((adjustp (version< emacs-version "29"))
+      (let ((adjustp (< emacs-major-version 29))
             ops chunk finished tagp negatedp)
         (with-temp-buffer
           (insert search)

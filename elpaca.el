@@ -203,8 +203,8 @@ Each function is passed a request, which may be any of the follwoing symbols:
 
 (defvar elpaca-ignored-dependencies
   `(emacs cl-lib cl-generic nadvice org org-mode map seq json project auth-source-pass
-          ,@(unless (version< emacs-version "28.1") '(transient))
-          ,@(unless (version< emacs-version "29.1") '(use-package)))
+          ,@(unless (< emacs-major-version 28) '(transient))
+          ,@(unless (< emacs-major-version 29) '(use-package)))
   "Ignore these unless the user explicitly requests they be installed.")
 
 (defvar elpaca-overriding-prompt nil "Overriding prompt for interactive functions.")
@@ -1129,8 +1129,8 @@ If FORCE is non-nil, do not use cached dependencies."
                                for item = (car dependency)
                                unless (memq item elpaca-ignored-dependencies)
                                collect item)))
-      (if-let ((emacs (assoc 'emacs dependencies))
-               ((version< emacs-version (cadr emacs))))
+      (if-let ((emacs (assoc 'emacs dependencies)) ;@TODO: check in prev loop?
+               ((< emacs-major-version (string-to-number (cadr emacs)))))
           (elpaca--fail e (format "Requires %S; running %S" emacs emacs-version))
         (when (= (length externals) ; Our dependencies beat us to the punch
                  (cl-loop with e-id = (elpaca<-id e)

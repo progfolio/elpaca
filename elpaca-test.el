@@ -179,7 +179,7 @@ The following keys are recognized:
         :name "elpaca-test"
         :command (list ,(elpaca--emacs-path)
                        "--debug-init"
-                       ,@(if (version< emacs-version "29")
+                       ,@(if (< emacs-major-version 29)
                              `("-q" ; Approximate startup.el sequence
                                "--eval" "(setq debug-on-error t)"
                                "--eval" (format "(setq user-emacs-directory %S)" default-directory)
