@@ -203,6 +203,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
 
 (defvar elpaca-ignored-dependencies
   `(emacs cl-lib cl-generic nadvice org org-mode map seq json project auth-source-pass
+          ,@(unless (version< emacs-version "28.1") '(transient))
           ,@(unless (version< emacs-version "29.1") '(use-package)))
   "Ignore these unless the user explicitly requests they be installed.")
 
