@@ -78,8 +78,7 @@
                           :local-repo "org"
                           :repo "https://git.savannah.gnu.org/git/emacs/org-mode.git"
                           :pre-build '(progn (require 'elpaca-menu-org) (elpaca-menu-org--build))
-                          :build '(:not elpaca--generate-autoloads-async
-                                        elpaca--compile-info)
+                          :build '(:not elpaca--generate-autoloads-async)
                           :files '(:defaults ("etc/styles/" "etc/styles/*")))))
              (cons 'org-contrib
                    (list :source "Org"
