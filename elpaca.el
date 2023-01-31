@@ -922,6 +922,7 @@ If it matches, the E associated with process has its STATUS updated."
                                (list repo-file "-o" info))
                      when f collect f))
            (command `(,elpaca-makeinfo-executable ,@(apply #'append files)))
+           (default-directory (elpaca<-build-dir e))
            (process (make-process
                      :name (concat "elpaca-compile-info-" (elpaca<-package e))
                      :connection-type 'pipe
