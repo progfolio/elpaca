@@ -974,6 +974,7 @@ https://github.com/seagle0128/doom-modeline
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (elpaca-use-package doom-modeline
+  :defer 2
   :config
   (column-number-mode 1)
   (doom-modeline-mode)
