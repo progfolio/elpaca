@@ -144,7 +144,7 @@ Setting it too high causes prints fewer status updates."
 It is also spliced in at any point where the `:defaults' keyword
 is used in a `:files' directive.")
 
-(defvar elpaca-order-defaults (list :protocol 'https :remotes "origin" :inherit t :depth 1)
+(defvar elpaca-order-defaults (list :protocol 'https :inherit t :depth 1)
   "Default order modifications.")
 
 (defun elpaca-order-defaults (_order) "Matches any order." elpaca-order-defaults)
@@ -1193,7 +1193,7 @@ This is the branch that would be checked out upon cloning."
   "Check out E's ref."
   (let* ((recipe (elpaca<-recipe e))
          (default-directory (elpaca<-repo-dir e))
-         (remotes(plist-get recipe :remotes))
+         (remotes (plist-get recipe :remotes))
          (remote (let ((default (elpaca--remote remotes)))
                    (when (listp default) (setq recipe (elpaca-merge-plists recipe (cdr default))))
                    default))
@@ -1234,7 +1234,9 @@ This is the branch that would be checked out upon cloning."
                         (ref    (list "checkout" ref))
                         (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
                         (branch (list "switch" "-C" branch ; "--no-guess"?
-                                      (concat (elpaca--first remote) "/" branch)))))
+                                      (concat (or (elpaca--first remote)
+                                                  elpaca-default-remote-name)
+                                              "/" branch)))))
                    :filter   #'elpaca--process-filter
                    :sentinel (apply-partially #'elpaca--process-sentinel
                                               (concat target " checked out")
