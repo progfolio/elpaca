@@ -911,7 +911,8 @@ If it matches, the E associated with process has its STATUS updated."
 (defun elpaca--compile-info (e)
   "Compile E's .texi files."
   (elpaca--signal e "Compiling Info files" 'info)
-  (if-let ((elpaca-makeinfo-executable)
+  (if-let ((default-directory (elpaca<-build-dir e))
+           (elpaca-makeinfo-executable)
            (files
             (cl-loop for (repo-file . build-file) in
                      (or (elpaca<-files e)
@@ -922,7 +923,6 @@ If it matches, the E associated with process has its STATUS updated."
                                (list repo-file "-o" info))
                      when f collect f))
            (command `(,elpaca-makeinfo-executable ,@(apply #'append files)))
-           (default-directory (elpaca<-build-dir e))
            (process (make-process
                      :name (concat "elpaca-compile-info-" (elpaca<-package e))
                      :connection-type 'pipe
