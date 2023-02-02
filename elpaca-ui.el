@@ -429,10 +429,11 @@ If QUERY is nil, the contents of the minibuffer are used instead."
 If BUFFER is non-nil, the current buffer is used.
 If SILENT is non-nil, supress update message."
   (interactive (list (current-buffer)))
-  (elpaca-ui--update-search-filter (or buffer (current-buffer))
-                                   (or elpaca-ui-search-filter
-                                       elpaca-ui-default-query))
-  (unless silent (message "Search %S refreshed" elpaca-ui-search-filter)))
+  (with-current-buffer (or buffer (current-buffer))
+    (elpaca-ui--update-search-filter (or buffer (current-buffer))
+                                     (or elpaca-ui-search-filter
+                                         elpaca-ui-default-query))
+    (unless silent (message "Search %S refreshed" elpaca-ui-search-filter))))
 
 (defun elpaca-ui-current-package ()
   "Return current package of UI line."
