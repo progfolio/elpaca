@@ -3211,8 +3211,7 @@ https://depp.brause.cc/shackle/
   :custom
   (tab-bar-close-button-show nil "Dont' show the x button on tabs")
   (tab-bar-new-button-show   nil)
-  ;;(tab-bar-show   1 "only show tab bar when more than one tab")
-  :config (tab-bar-mode)
+  (tab-bar-show   1 "only show tab bar when more than one tab")
   :general
   (+general-global-tab
     "b" 'tab-bar-history-back
