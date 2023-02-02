@@ -51,16 +51,17 @@
 
 (defface elpaca-finished '((t (:weight bold :foreground "#00FF00")))
   "Indicates an order is finished.")
-
+(defface elpaca-busy '((t (:weight bold :foreground "#FF9E3D")))
+  "Indicates an order has failed.")
 (defface elpaca-blocked '((t (:weight bold :foreground "#FFF01F")))
   "Indicates an order is blocked.")
-
 (defface elpaca-failed '((t (:weight bold :foreground "#FF1818")))
   "Indicates an order has failed.")
 
 (defcustom elpaca-status-faces '((blocked  . elpaca-blocked)
                                  (finished . elpaca-finished)
-                                 (failed   . elpaca-failed))
+                                 (failed   . elpaca-failed)
+                                 (busy     . elpaca-busy))
   "Alist mapping order statuses to faces."
   :type 'alist)
 
@@ -853,7 +854,7 @@ FILES and NOCONS are used recursively."
   "Update E's status when PROCESS has stopped producing output."
   (when-let (((eq (process-status process) 'run))
              (e (process-get process :elpaca)))
-    (elpaca--signal e (process-get process :parsed) 'blocked)))
+    (elpaca--signal e (process-get process :parsed) 'busy)))
 
 (defun elpaca--process-filter (process output &optional pattern status)
   "Filter PROCESS OUTPUT.
