@@ -187,6 +187,7 @@ This hook is run via `run-hook-with-args-until-success'."
                               :recipe (list :package "elpaca-use-package"
                                             :repo "https://github.com/progfolio/elpaca.git"
                                             :files '("extensions/elpaca-use-package.el")
+                                            :main "extensions/elpaca-use-package.el"
                                             :build '(:not elpaca--compile-info))))))))
 
 (defcustom elpaca-menu-functions
