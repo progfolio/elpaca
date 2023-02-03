@@ -656,7 +656,7 @@ If REPLACE is non-nil, the most recent log entry is replaced."
 
 (defun elpaca--continue-build (e)
   "Run E's next build step."
-  (unless (memq (elpaca--status e) '(blocked failed))
+  (unless (memq (elpaca--status e) '(blocked failed finished))
     (let ((fn (or (pop (elpaca<-build-steps e)) #'elpaca--finalize)))
       (condition-case-unless-debug err
           (funcall fn e)
