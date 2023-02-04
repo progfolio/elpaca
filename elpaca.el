@@ -1128,7 +1128,7 @@ If FORCE is non-nil, do not use cached dependencies."
                                unless (memq item elpaca-ignored-dependencies)
                                collect item)))
       (if-let ((emacs (assoc 'emacs dependencies)) ;@TODO: check in prev loop?
-               ((< emacs-major-version (string-to-number (cadr emacs)))))
+               ((< emacs-major-version (truncate (string-to-number (cadr emacs))))))
           (elpaca--fail e (format "Requires %S; running %S" emacs emacs-version))
         (when (= (length externals) ; Our dependencies beat us to the punch
                  (cl-loop with e-id = (elpaca<-id e)
