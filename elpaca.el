@@ -1547,8 +1547,9 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
 
 (defun elpaca--process (queued)
   "Process QUEUED elpaca."
-  (let ((e (cdr queued)))
-    (unless (memq (elpaca--status e) '(failed blocked finished)) (elpaca--continue-build e))))
+  (when-let ((e (cdr queued))
+             ((eq (elpaca--status e) 'queued)))
+    (elpaca--continue-build e)))
 
 (defun elpaca--process-queue (q)
   "Process elpacas in Q."
@@ -1665,7 +1666,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
     (elpaca--unprocess e)
     (setf elpaca-cache-autoloads nil
           (elpaca<-queue-time e) (current-time)
-          (elpaca<-statuses e) '(queued)
+          (elpaca<-statuses e) (list 'queued)
           (elpaca<-files e) nil)
     (when interactive
       (require 'elpaca-log) ;@TODO: make conditional
@@ -1706,7 +1707,8 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
       (let ((e (cdr queued)))
         (elpaca--signal e "Fetching updates" 'fetching-updates)
         (setf (elpaca<-build-steps e) (list #'elpaca--fetch #'elpaca--log-updates)
-              (elpaca<-queue-time e)  (current-time))
+              (elpaca<-queue-time e)  (current-time)
+              (elpaca<-statuses e) (list 'queued))
         (when interactive
           (require 'elpaca-log)
           (elpaca-log--latest)
@@ -1772,7 +1774,8 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
                    elpaca--checkout-ref
                    elpaca--clone-dependencies
                    elpaca--activate-package))))
-          (elpaca<-queue-time e) (current-time))
+          (elpaca<-queue-time e) (current-time)
+          (elpaca<-statuses e)   (list 'queued))
     (elpaca--unprocess e)
     (when interactive
       (require 'elpaca-log) ;@TODO: make conditional
