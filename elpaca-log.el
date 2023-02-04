@@ -116,7 +116,7 @@
            collect
            (if-let (((equal (aref (cadr entry) 1) "update-log"))
                     (copy (copy-tree entry))
-                    (e (elpaca-get-queued (car entry)))
+                    (e (elpaca-get (car entry)))
                     (repo (elpaca<-repo-dir e))
                     (cols (cadr copy))
                     (info (aref cols 2)))

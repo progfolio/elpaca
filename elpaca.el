@@ -643,7 +643,7 @@ If REPLACE is non-nil, the most recent log entry is replaced."
         (setf (car (elpaca<-log e)) event)
       (push event (elpaca<-log e)))))
 
-(defun elpaca-get-queued (item &optional queue)
+(defun elpaca-get (item &optional queue)
   "Return E associated with ITEM from QUEUE."
   (elpaca-alist-get item (or queue (elpaca--queued))))
 
@@ -1894,7 +1894,7 @@ When BUILD is non-nil visit ITEM's build directory."
   (interactive (list (let ((item (elpaca-menu-item nil nil (append elpaca-menu-functions
                                                                    '(elpaca--custom-candidates)))))
                        (intern (plist-get item :package)))))
-  (if-let ((found (or (elpaca-get-queued item)
+  (if-let ((found (or (elpaca-get item)
                       (alist-get item (elpaca--menu-items t))
                       (alist-get item (elpaca--custom-candidates))))
            (url (or (plist-get found :url)
