@@ -643,9 +643,9 @@ If REPLACE is non-nil, the most recent log entry is replaced."
         (setf (car (elpaca<-log e)) event)
       (push event (elpaca<-log e)))))
 
-(defun elpaca-get (item &optional queue)
-  "Return E associated with ITEM from QUEUE."
-  (elpaca-alist-get item (or queue (elpaca--queued))))
+(defun elpaca-get (item)
+  "Return queued E associated with ITEM."
+  (elpaca-alist-get item (elpaca--queued)))
 
 (defun elpaca--run-build-commands (commands)
   "Run build COMMANDS."
@@ -739,7 +739,7 @@ Accepted KEYS are :pre and :post which are hooks run around queue processing."
 
 (defun elpaca--queue (item)
   "Queue (ITEM . e) in `elpaca--queued'. Return e."
-  (if (and (not after-init-time) (elpaca-alist-get item (elpaca--queued)))
+  (if (and (not after-init-time) (elpaca-get item))
       (warn "Duplicate item declaration: %S" item)
     (let* ((e (elpaca<-create item))
            (log (pop (elpaca<-log e)))
@@ -1368,7 +1368,7 @@ Loads or caches autoloads."
           (cl-loop for item in (elpaca-dependencies (elpaca<-id e)
                                                     elpaca-ignored-dependencies)
                    when item
-                   for build-dir = (elpaca<-build-dir (elpaca-alist-get item (elpaca--queued)))
+                   for build-dir = (elpaca<-build-dir (elpaca-get item))
                    when build-dir collect build-dir))
          (program `(let ((gc-cons-percentage 1.0)) ;; trade memory for gc speed
                      (mapc (lambda (dir) (let ((default-directory dir))
@@ -1394,7 +1394,7 @@ IGNORE may be a list of symbols which are not included in the resulting list.
 RECURSE is used to track recursive calls.
 When INTERACTIVE is non-nil, message the list of dependencies."
   (interactive (list (elpaca--read-queued "Dependencies of: ") nil t))
-  (if-let ((e (or (elpaca-alist-get item (elpaca--queued))
+  (if-let ((e (or (elpaca-get item)
                   (unless (member item elpaca-ignored-dependencies)
                     (elpaca<-create item))))
            (dependencies (elpaca--dependencies e)))
@@ -1412,7 +1412,7 @@ When INTERACTIVE is non-nil, message the list of dependencies."
 RECURSE is used to keep track of recursive calls.
 When INTERACTIVE is non-nil, message the list of dependents."
   (interactive (list (elpaca--read-queued "Dependents of: ") t))
-  (if-let ((e (elpaca-alist-get item (elpaca--queued)))
+  (if-let ((e (elpaca-get item))
            (dependents (elpaca<-dependents e)))
       (let* ((transitives
               (cl-loop for dependent in dependents
@@ -1485,9 +1485,7 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
                       (read (read-string "elpaca-try: " "()" 'elpaca--try-package-history)))
                   (let ((recipe (elpaca-menu-item
                                  nil nil nil
-                                 (lambda (candidate)
-                                   (not (elpaca-alist-get (car candidate)
-                                                          (elpaca--queued)))))))
+                                 (lambda (candidate) (not (elpaca-get (car candidate)))))))
                     (append (list (intern (plist-get recipe :package)))
                             recipe)))
                 t))
@@ -1538,7 +1536,7 @@ FILTER must be a unary function which accepts and returns a queue list."
 
 (defun elpaca--on-disk-p (item)
   "Return t if ITEM has an associated E and a build or repo dir on disk."
-  (when-let ((e (elpaca-alist-get item (elpaca--queued))))
+  (when-let ((e (elpaca-get item)))
     (or (file-exists-p (elpaca<-repo-dir e)) (file-exists-p (elpaca<-build-dir e)))))
 
 ;;@MAYBE: Should this delete user's declared package if it is a dependency?
@@ -1554,7 +1552,7 @@ do not confirm before deleting package and DEPS."
                      (equal current-prefix-arg '(16))
                      (and current-prefix-arg (listp current-prefix-arg))))
   (when (or force (yes-or-no-p (format "Delete package %S?" id)))
-    (if-let ((e (elpaca-alist-get id (elpaca--queued))))
+    (if-let ((e (elpaca-get id)))
         (let* ((repo-dir      (elpaca<-repo-dir  e))
                (repo-p        (and repo-dir (file-exists-p repo-dir)))
                (build-dir     (elpaca<-build-dir e))
@@ -1766,20 +1764,19 @@ When INTERACTIVE, immediately process queue."
 ;;; Lockfiles
 (defun elpaca-declared-p (item)
   "Return t if ITEM is declared in user's init file, nil otherwise."
-  (when-let ((e (elpaca-alist-get item (elpaca--queued))))
-    (or (elpaca<-init e)
-        (cl-loop for dependent in (elpaca-dependents item)
-                 when (elpaca-declared-p dependent) return t))))
+  (when-let ((e (elpaca-get item)))
+    (or (elpaca<-init e) (cl-loop for dependent in (elpaca-dependents item)
+                                  when (elpaca-declared-p dependent) return t))))
 
 (defun elpaca-installed-p (item)
   "Return t if ITEM's associated repo directory is on disk, nil otherwise."
-  (and-let* ((e (elpaca-alist-get item (elpaca--queued)))
+  (and-let* ((e (elpaca-get item))
              (repo-dir (elpaca<-repo-dir e))
              ((file-exists-p repo-dir)))))
 
 (defun elpaca-worktree-dirty-p (item)
   "Return t if ITEM's associated repository has a dirty worktree, nil otherwise."
-  (when-let ((e (elpaca-alist-get item (elpaca--queued)))
+  (when-let ((e (elpaca-get item))
              (recipe (elpaca<-recipe e))
              (repo-dir (elpaca<-repo-dir e))
              ((file-exists-p repo-dir))
