@@ -1340,25 +1340,20 @@ Kick off next build step, and/or change E's status."
   "Generate E's autoloads.
 Async wrapper for `elpaca-generate-autoloads'."
   (let* ((package           (elpaca<-package  e))
-         (build-dir         (elpaca<-build-dir e))
-         (default-directory build-dir)
+         (default-directory (elpaca<-build-dir e))
          (elpaca            (expand-file-name "repos/elpaca/" elpaca-directory))
-         (program           `(progn (setq gc-cons-percentage 1.0)
-                                    (elpaca-generate-autoloads ,package ,build-dir)))
-         (command
-          (list (elpaca--emacs-path) "-Q"
-                "-L" elpaca
-                "-L" build-dir ; Is this necessary?
-                "-l" (expand-file-name "elpaca.el" elpaca)
-                "--batch" "--eval" (let (print-level print-length print-circle)
-                                     (format "%S" program))))
-         (process
-          (make-process
-           :name     (concat "elpaca-autoloads-" package)
-           :connection-type 'pipe
-           :command  command
-           :filter   #'elpaca--process-filter
-           :sentinel (apply-partially #'elpaca--process-sentinel "Autoloads Generated" nil))))
+         (program           (let (print-level print-circle)
+                              (format "%S" `(progn (setq gc-cons-percentage 1.0)
+                                                   (elpaca-generate-autoloads
+                                                    ,package ,default-directory)))))
+         (process (make-process
+                   :name     (concat "elpaca-autoloads-" package)
+                   :connection-type 'pipe
+                   :command (list (elpaca--emacs-path) "-Q" "-L" elpaca
+                                  "-l" (expand-file-name "elpaca.el" elpaca)
+                                  "--batch" "--eval" program)
+                   :filter   #'elpaca--process-filter
+                   :sentinel (apply-partially #'elpaca--process-sentinel "Autoloads Generated" nil))))
     (process-put process :elpaca e)
     (elpaca--signal e (concat "Generating autoloads: " default-directory) 'autoloads)))
 
