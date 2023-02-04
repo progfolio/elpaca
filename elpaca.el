@@ -496,7 +496,7 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
   "Order for queued processing."
   id package item statuses
   repo-dir build-dir mono-repo
-  files build-steps recipe includes
+  files build-steps recipe siblings
   dependencies dependents -dependencies
   (queue-id (1- (length elpaca--queues)))
   (queue-time (current-time))
@@ -569,7 +569,7 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
                                ((eq (elpaca<-queue-id e) (elpaca-q<-id (car elpaca--queues))))
                                ((not (memq 'ref-checked-out (elpaca<-statuses e)))))
                       (setq status 'blocked info (concat "Waiting on monorepo " repo-dir))
-                      (cl-pushnew id (elpaca<-includes e))
+                      (cl-pushnew id (elpaca<-siblings e))
                       e))
          (build-steps (elpaca--build-steps recipe builtp clonedp mono-repo)))
     (unless (or builtp elpaca--ibs-set elpaca-hide-initial-build elpaca-after-init-time)
@@ -605,15 +605,15 @@ check (and possibly change) their statuses."
       (mapc (lambda (d) (elpaca--check-status (elpaca-alist-get d queued)))
             (elpaca<-dependents e)))
     (when (eq status 'failed) (elpaca-log "#unique !finished")))
-  (when-let ((includes (elpaca<-includes e))
+  (when-let ((siblings (elpaca<-siblings e))
              (statuses (elpaca<-statuses e))
              ((or (memq 'ref-checked-out statuses) (memq 'queueing-deps statuses)))
              (queued (elpaca--queued))
-             (included t))
-    (while (setq included (alist-get (pop (elpaca<-includes e)) queued))
-      (push 'ref-checked-out     (elpaca<-statuses included))
-      (push 'unblocked-mono-repo (elpaca<-statuses included))
-      (elpaca--continue-build included)))
+             (sibling t))
+    (while (setq sibling (alist-get (pop (elpaca<-siblings e)) queued))
+      (push 'ref-checked-out     (elpaca<-statuses sibling))
+      (push 'unblocked-mono-repo (elpaca<-statuses sibling))
+      (elpaca--continue-build sibling)))
   (when info (elpaca--log-event e info verbosity replace))
   (when-let ((verbosity (or verbosity 0))
              ((<= verbosity elpaca-verbosity)))
