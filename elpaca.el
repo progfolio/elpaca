@@ -1753,9 +1753,10 @@ When INTERACTIVE, immediately process queue."
   (cl-loop with repos
            for (item . e) in (reverse (elpaca--queued))
            for repo = (elpaca<-repo-dir e)
-           unless (member repo repos) ;skip mono-repos
-           do (push repo repos)
-           (elpaca-update item))
+           if (member repo repos) do (push 'queued (elpaca<-statuses e))
+           else do (push repo repos) (elpaca-update item))
+  (dolist (q elpaca--queues) (setf (elpaca-q<-status q) 'incomplete
+                                   (elpaca-q<-processed q) 0))
   (when interactive
     (require 'elpaca-log)
     (elpaca-log--latest)
