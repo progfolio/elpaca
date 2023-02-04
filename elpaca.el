@@ -1527,7 +1527,7 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
 (defun elpaca-process-queues (&optional filter)
   "Process the incomplete queues.
 FILTER must be a unary function which accepts and returns a queue list."
-  (setq debug-on-error elpaca--debug-init elpaca--debug-init nil)
+  (when (not after-init-time) (setq debug-on-error elpaca--debug-init elpaca--debug-init nil))
   (if-let ((queues (if filter (funcall filter (reverse elpaca--queues))
                      (reverse elpaca--queues)))
            (incomplete (cl-find 'incomplete queues :key #'elpaca-q<-status)))
