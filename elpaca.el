@@ -1115,19 +1115,19 @@ If FORCE is non-nil, do not use cached dependencies."
                     for d = (and (not (memq item elpaca-ignored-dependencies))
                                  (or (elpaca-alist-get item queued)
                                      (elpaca--queue item)))
-                    when d collect
-                    (prog1 d
-                      (unless (memq item (elpaca<-dependencies e))
-                        (push item (elpaca<-dependencies e)))
-                      (unless (memq e-id (elpaca<-dependents d))
-                        (push e-id (elpaca<-dependents d)))))))
+                    when (eq (elpaca--status d) 'queued)
+                    collect (prog1 d
+                              (unless (memq item (elpaca<-dependencies e))
+                                (push item (elpaca<-dependencies e)))
+                              (unless (memq e-id (elpaca<-dependents d))
+                                (push e-id (elpaca<-dependents d)))))))
       ;; We do this in two steps so that e is aware of all its
       ;; dependencies before any single dependency starts its build.
       ;; Otherwise a dependency may finish prior to other dependencies being
       ;; registered. This will cause the dependent e to become unblocked
       ;; multiple times and run its build steps simultaneously/out of order.
       (mapc #'elpaca--continue-build queued)
-    (elpaca--signal e "No external dependencies detected")
+    (elpaca--signal e "No dependencies to queue")
     (elpaca--continue-build e)))
 
 ;;@TODO: fix possible race similar to queue--dependencies.
