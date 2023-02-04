@@ -578,7 +578,6 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
      :id id :package (symbol-name id) :item item :statuses (list status)
      :repo-dir repo-dir :build-dir build-dir :mono-repo mono-repo
      :build-steps build-steps :recipe recipe
-     :includes (and mono-repo (list (cadr mono-repo)))
      :log (list (list status nil info)))))
 
 (defsubst elpaca--status (e) "Return E's status." (car (elpaca<-statuses e)))
