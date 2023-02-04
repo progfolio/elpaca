@@ -609,8 +609,10 @@ check (and possibly change) their statuses."
              ((or (memq 'ref-checked-out statuses) (memq 'queueing-deps statuses)))
              (queued (elpaca--queued))
              (included t))
-    (while (setq included (pop (elpaca<-includes e)))
-      (elpaca--continue-mono-repo-dependency (elpaca-alist-get included queued))))
+    (while (setq included (alist-get (pop (elpaca<-includes e)) queued))
+      (push 'ref-checked-out     (elpaca<-statuses included))
+      (push 'unblocked-mono-repo (elpaca<-statuses included))
+      (elpaca--continue-build included)))
   (when info (elpaca--log-event e info verbosity replace))
   (when-let ((verbosity (or verbosity 0))
              ((<= verbosity elpaca-verbosity)))
@@ -663,17 +665,6 @@ If REPLACE is non-nil, the most recent log entry is replaced."
       (condition-case-unless-debug err
           (funcall fn e)
         ((error) (elpaca--fail e (format "%s: %S" fn err)))))))
-
-(defun elpaca--continue-mono-repo-dependency (e)
-  "Continue processing E after its mono-repo is in the proper state."
-  (when-let ((statuses (elpaca<-statuses e))
-             ((not (or (memq 'unblocked-mono-repo statuses)
-                       (memq 'ref-checked-out statuses)
-                       (memq 'queueing-deps statuses)))))
-    (elpaca--remove-build-steps e '(elpaca--clone elpaca--configure-remotes elpaca--checkout-ref))
-    (elpaca--signal e nil 'ref-checked-out)
-    (elpaca--signal e nil 'unblocked-mono-repo)
-    (elpaca--continue-build e)))
 
 (defun elpaca--log-duration (e)
   "Return E's log duration."
