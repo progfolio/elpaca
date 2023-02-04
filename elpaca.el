@@ -1601,7 +1601,7 @@ If PROMPT is non-nil, it is used instead of the default."
   "Mark E as unprocessed in its queue."
   (when-let ((id (elpaca<-queue-id e))
              (q  (nth id (reverse elpaca--queues))))
-    (cl-decf (elpaca-q<-processed q))
+    (when (> (elpaca-q<-processed q) 0) (cl-decf (elpaca-q<-processed q)))
     (setf (elpaca-q<-status q) 'incomplete)))
 
 ;;;###autoload
