@@ -1141,28 +1141,16 @@ If FORCE is non-nil, do not use cached dependencies."
         (when (= (length externals) ; Our dependencies beat us to the punch
                  (cl-loop with e-id = (elpaca<-id e)
                           for dependency in externals
-                          for found = (elpaca-alist-get dependency (elpaca--queued))
-                          for d = (or found (elpaca--queue dependency))
+                          for queued = (elpaca-alist-get dependency (elpaca--queued))
+                          for d = (or queued (elpaca--queue dependency))
                           for d-id = (elpaca<-id d)
-                          for includes = (elpaca<-includes e)
-                          for included =
-                          (member d-id (append includes (cl-loop for i in includes
-                                                                 append (elpaca<-includes
-                                                                         (elpaca-get-queued i)))))
-                          for blocked = (eq (elpaca--status d) 'blocked)
                           do
                           (unless (memq d-id (elpaca<-dependencies e))
                             (push d-id (elpaca<-dependencies e)))
                           (unless (memq e-id (elpaca<-dependents d))
                             (push e-id (elpaca<-dependents d)))
-                          (unless found
-                            (if included
-                                ;; Unblock dependency published in same repo...
-                                (when blocked
-                                  (elpaca--signal d nil 'unblocked-mono-repo)
-                                  (elpaca--clone-dependencies d))
-                              (unless blocked (elpaca--continue-build d))))
-                          count (and found (eq (elpaca--status found) 'finished))))
+                          (unless queued (elpaca--continue-build d))
+                          count (and queued (eq (elpaca--status queued) 'finished))))
           (elpaca--continue-build e)))
     (elpaca--signal e "No external dependencies detected")
     (elpaca--continue-build e)))
