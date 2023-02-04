@@ -665,7 +665,8 @@ If REPLACE is non-nil, the most recent log entry is replaced."
   "Continue processing E after its mono-repo is in the proper state."
   (when-let ((statuses (elpaca<-statuses e))
              ((not (or (memq 'unblocked-mono-repo statuses)
-                       (memq 'ref-checked-out statuses)))))
+                       (memq 'ref-checked-out statuses)
+                       (memq 'queueing-deps statuses)))))
     (elpaca--remove-build-steps e '(elpaca--clone elpaca--configure-remotes elpaca--checkout-ref))
     (elpaca--signal e nil 'ref-checked-out)
     (elpaca--signal e nil 'unblocked-mono-repo)
