@@ -731,20 +731,13 @@ Accepted KEYS are :pre and :post which are hooks run around queue processing."
 
 (defun elpaca--finalize (e)
   "Declare E finished or failed."
-  (let ((status (elpaca--status e)))
-    (if (eq  status 'finished)
-        (cl-loop with queued = (elpaca--queued)
-                 for item in (elpaca<-dependents e)
-                 for dependent = (elpaca-alist-get item queued)
-                 unless (eq (elpaca--status dependent) 'finished)
-                 do (elpaca--check-status dependent))
-      (unless (eq (elpaca--status e) 'failed)
-        (elpaca--signal
-         e (concat  "✓ " (format-time-string "%s.%3N" (elpaca--log-duration e)) " secs")
-         'finished))
-      (when-let ((q (car (last elpaca--queues (1+ (elpaca<-queue-id e)))))
-                 ((= (cl-incf (elpaca-q<-processed q)) (length (elpaca-q<-elpacas q)))))
-        (elpaca--finalize-queue q)))))
+  (unless (eq (elpaca--status e) 'failed)
+    (elpaca--signal
+     e (concat  "✓ " (format-time-string "%s.%3N" (elpaca--log-duration e)) " secs")
+     'finished))
+  (when-let ((q (car (last elpaca--queues (1+ (elpaca<-queue-id e)))))
+             ((= (cl-incf (elpaca-q<-processed q)) (length (elpaca-q<-elpacas q)))))
+    (elpaca--finalize-queue q)))
 
 (defun elpaca--queue (item)
   "Queue (ITEM . e) in `elpaca--queued'. Return e."
