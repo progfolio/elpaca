@@ -524,7 +524,6 @@ If N is nil return a list of all queued elpacas."
                         e)))
            (reverse (elpaca--queued))))
 
-;;@TODO: dependenies in mono-repo should not do double work of adding to load-path, info building, etc
 (defun elpaca--build-steps (recipe &optional builtp clonedp mono-repo)
   "Return list of build functions for RECIPE.
 BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
