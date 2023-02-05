@@ -1768,11 +1768,12 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package mu4e
-  :elpaca (mu4e :host github :files ("mu4e/*.el" "build/mu4e/mu4e-meta.el" "build/mu4e/mu4e-config.el") :repo "djcb/mu"
+  :elpaca (mu4e :host github :files ("mu4e/*.el" "build/mu4e/mu4e-meta.el" "build/mu4e/mu4e-config.el" "build/mu4e/mu4e.info") :repo "djcb/mu"
                 :main "mu4e/mu4e.el"
                 :pre-build (("./autogen.sh") ("ninja" "-C" "build")
                             (make-symbolic-link (expand-file-name "./build/mu/mu")
-                                                (expand-file-name "~/bin/mu") 'ok-if-exists)))
+                                                (expand-file-name "~/bin/mu") 'ok-if-exists))
+                :build (:not elpaca--compile-info))
   :commands (mu4e mu4e-update-index)
   :custom
   (mu4e-update-interval 900 "Update every fifteen minutes")
