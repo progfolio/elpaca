@@ -18,7 +18,7 @@ To export:
 #+end_src
 
 * Elpaca: An Elisp Package Manager
-#+html: <p align="center"><img src="./images/elpaca.svg"/></p>
+#+html: <p align="center"><img src="../images/elpaca.svg"/></p>
 #+html: <p align="center">"Chews data, spits packages."</p>
 
 #+include: "./common.org::introduction" :only-contents t
