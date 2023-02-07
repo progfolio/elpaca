@@ -473,7 +473,7 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
                                (host fetcher)
                                (repo url) &allow-other-keys)
       recipe
-    (pcase (elpaca--repo-type repo)
+    (pcase (elpaca--repo-type (or repo (error "Unable to determine recipe URL")))
       ('remote repo)
       ('local  (expand-file-name repo))
       (_ (let ((p (pcase protocol
