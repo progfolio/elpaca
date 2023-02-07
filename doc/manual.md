@@ -555,6 +555,7 @@ The following commands are available in the `elpaca-ui-mode`:
 | elpaca-ui-search-marked    | M       | Search for &ldquo;#unique #marked&rdquo;                        |
 | elpaca-ui-search-orphaned  | O       | Search for &ldquo;#unique #orphan&rdquo;                        |
 | elpaca-ui-search-refresh   | R       | Rerun the current search for BUFFER.                            |
+| elpaca-ui-info             | RET     | Show info for current package.                                  |
 | elpaca-ui-search-tried     | T       | Search for &ldquo;#unique #installed !#declared&rdquo;          |
 | elpaca-ui-unmark           | U       | Unmark current package.                                         |
 | elpaca-ui-browse-package   | b       | Browse current package’s URL via ‘browse-url’.                  |

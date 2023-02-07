@@ -773,6 +773,9 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @item elpaca-ui-search-refresh
 @tab R
 @tab Rerun the current search for BUFFER@.
+@item elpaca-ui-info
+@tab RET
+@tab Show info for current package.
 @item elpaca-ui-search-tried
 @tab T
 @tab Search for ``#unique #installed !#declared''

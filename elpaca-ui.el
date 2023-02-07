@@ -110,6 +110,7 @@ exclamation point to it. e.g. #!installed."
   "List of marked packages. Each element is a cons of (PACKAGE . ACTION).")
 (defvar-local elpaca-ui--prev-entry-count nil "Number of previously recored entries.")
 (defvar elpaca-ui-mode-map (let ((m (make-sparse-keymap)))
+                             (define-key m (kbd "RET") 'elpaca-ui-info)
                              (define-key m (kbd "!") 'elpaca-ui-send-input)
                              (define-key m (kbd "I") (elpaca-defsearch 'installed "#unique #installed"))
                              (define-key m (kbd "M") (elpaca-defsearch 'marked   "#unique #marked"))
@@ -584,6 +585,12 @@ The current package is its sole argument."
               "</tbody>\n</table>\n</details>")
       (clipboard-kill-region (point-min) (point-max)))
     (message "Elpaca UI view copied to clipboard")))
+
+(declare-function elpaca-info "elpaca-info")
+(defun elpaca-ui-info ()
+  "Show info for current package."
+  (interactive)
+  (elpaca-info (elpaca-ui-current-package)))
 
 (provide 'elpaca-ui)
 ;;; elpaca-ui.el ends here
