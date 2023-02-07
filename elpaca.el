@@ -380,7 +380,7 @@ When called interactively with \\[universal-argument] update all menus."
 ORDER is any of the following values:
   - nil. The order is prompted for.
   - an item symbol which will be looked up via `elpaca-menu-functions'
-  - an order list of the form: //='(ITEM . PROPS).
+  - an order list of the form: \\='(ITEM . PROPS).
 When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
   (interactive (list (if-let ((elpaca-overriding-prompt "Recipe: ")
                               (recipe (elpaca-menu-item)))
