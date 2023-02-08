@@ -1046,24 +1046,21 @@ The keyword's value is expected to be one of the following:
                             (elpaca--directory-files-recursively file regexp))
                         (when (string-match-p regexp file) (expand-file-name file)))))))
 
-(defun elpaca--dependencies (e &optional force)
+(defun elpaca--dependencies (e &optional recache)
   "Return a list of E's declared dependencies.
-If FORCE is non-nil, do not use cached dependencies."
-  (or
-   (and (not force) (elpaca<--dependencies e))
-   (setf
-    (elpaca<--dependencies e)
-    (when-let
-        ((default-directory (elpaca<-repo-dir e))
+If RECACHE is non-nil, do not use cached dependencies."
+  (let ((cache (elpaca<--dependencies e)))
+    (if-let
+        (((or recache (not cache)))
+         (default-directory (elpaca<-repo-dir e))
          (recipe (elpaca<-recipe e))
-         ((or (file-exists-p default-directory)
-              (error "Package repository not on disk: %S" recipe)))
+         ((or (file-exists-p default-directory) (error "Repository not on disk")))
          (package (file-name-sans-extension (elpaca<-package e)))
          (name (concat package ".el"))
          (regexp (concat "^" name "$"))
          (main (or (plist-get recipe :main)
-                   (cl-some (lambda (f) (let ((e (expand-file-name f)))
-                                          (and (file-exists-p e) e)))
+                   (cl-some (lambda (name) (let ((file (expand-file-name name)))
+                                             (and (file-exists-p file) file)))
                             (list (concat package "-pkg.el")
                                   name
                                   (concat "./lisp/" name)
@@ -1072,26 +1069,27 @@ If FORCE is non-nil, do not use cached dependencies."
                    (car (elpaca--directory-files-recursively default-directory regexp))
                    ;; Best guess if there is no file matching the package name...
                    (car (directory-files default-directory nil "\\.el$" 'nosort))
-                   (error "Unable to find main elisp file for %S" package)))
-         (deps (with-temp-buffer
+                   (error "Unable to find main elisp file for %S" package))))
+        (let ((deps
+               (with-temp-buffer
                  (insert-file-contents-literally main)
-                 (if (string-suffix-p "-pkg.el" main)
-                     (eval (nth 4 (read (current-buffer))))
-                   (when-let ((case-fold-search t)
-                              ((re-search-forward
-                                "^;+[  ]+\\(Package-Requires\\)[   ]*:[  ]*" nil 'noerror))
-                              (deps (list (buffer-substring-no-properties (point) (line-end-position)))))
+                 (if (string-suffix-p "-pkg.el" main) (eval (nth 4 (read (current-buffer))))
+                   (when-let
+                       ((case-fold-search t)
+                        ((re-search-forward
+                          "^;+[  ]+\\(Package-Requires\\)[   ]*:[  ]*" nil 'noerror))
+                        (deps (list (buffer-substring-no-properties (point) (line-end-position)))))
                      (forward-line 1)
                      (while (looking-at "^;+\\(\t\\|[\t\s]\\{2,\\}\\)\\(.+\\)")
                        (push (match-string-no-properties 2) deps)
                        (forward-line 1))
                      (condition-case err
-                         (read (mapconcat #'identity (nreverse deps) " "))
+                         (mapcar (lambda (d) (if (cdr-safe d) d (list (elpaca--first d) "0")))
+                                 (read (string-join (nreverse deps) " ")))
                        ((error) (error "%S Package-Requires error: %S" main err))))))))
-      (cl-loop for dep in deps ; convert naked symbol or (symbol) to (symbol "0")
-               collect (if (or (symbolp dep) (null (cdr-safe dep)))
-                           (list (elpaca--first dep) "0")
-                         dep))))))
+          (setf (elpaca<--dependencies e) (or deps :nil))
+          deps)
+      (and (not (eq cache :nil)) cache))))
 
 ;;@DECOMPOSE: The body of this function is similar to `elpaca--clone-dependencies'.
 ;; Refactor into a macro to operate on dependencies?
