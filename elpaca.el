@@ -1394,32 +1394,27 @@ IGNORE may be a list of symbols which are not included in the resulting list.
 RECURSE is used to track recursive calls.
 When INTERACTIVE is non-nil, message the list of dependencies."
   (interactive (list (elpaca--read-queued "Dependencies of: ") nil t))
-  (if-let ((e (or (elpaca-get item)
-                  (unless (member item elpaca-ignored-dependencies)
-                    (elpaca<-create item))))
-           (dependencies (elpaca--dependencies e)))
-      (let* ((transitives (cl-loop for dependency in dependencies
-                                   for name = (car dependency)
-                                   unless (memq name ignore) collect
-                                   (cons name (elpaca-dependencies name ignore nil 'recurse))))
-             (deps (delete-dups (flatten-tree transitives))))
-        (if interactive (message "%s" deps) deps))
+  (if-let ((e (elpaca-get item))
+           (dependencies (elpaca--dependencies e))
+           (transitives (cl-loop for (d . _) in dependencies
+                                 unless (memq d ignore) collect
+                                 (cons d (elpaca-dependencies d (cons d ignore) nil t))))
+           (deps (delete-dups (flatten-tree transitives))))
+      (if interactive (message "%s" deps) deps)
     (when recurse item)))
 
+(defun elpaca--dependents (item)
+  "Return list of packages which depend on ITEM."
+  (cl-loop for (i . _) in (elpaca--queued) when (memq item (elpaca-dependencies i)) collect i))
 ;;;###autoload
-(defun elpaca-dependents (item &optional interactive recurse)
+(defun elpaca-dependents (item &optional message)
   "Return recursive list of packages which depend on ITEM.
-RECURSE is used to keep track of recursive calls.
-When INTERACTIVE is non-nil, message the list of dependents."
-  (interactive (list (elpaca--read-queued "Dependents of: ") t))
-  (if-let ((e (elpaca-get item))
-           (dependents (elpaca<-dependents e)))
-      (let* ((transitives
-              (cl-loop for dependent in dependents
-                       collect (cons dependent (elpaca-dependents dependent nil 'recurse))))
-             (deps (delete-dups (nreverse (flatten-tree transitives)))))
-        (if interactive (message "%s" deps) deps))
-    (when recurse item)))
+When MESSAGE is non-nil, message the list of dependents."
+  (interactive (list (elpaca--read-queued
+                      "Dependents of: "
+                      (cl-remove-if-not #'elpaca--dependents (elpaca--queued) :key #'car))
+                     t))
+  (if message (message "%S" (elpaca--dependents item)) (elpaca--dependents item)))
 
 ;;;; COMMANDS/MACROS
 ;;;###autoload
