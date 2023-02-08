@@ -1591,12 +1591,12 @@ do not confirm before deleting package and DEPS."
     (cl-find-if (lambda (e) (assoc name (elpaca--files e)))
                 (reverse (elpaca--queued)) :key #'cdr)))
 
-(defun elpaca--read-queued (&optional prompt)
-  "Return queued item.
+(defun elpaca--read-queued (&optional prompt queued)
+  "Return QUEUED item.
 If PROMPT is non-nil, it is used instead of the default."
   (intern (completing-read
            (or prompt "Queued item: ")
-           (sort (cl-delete-duplicates (mapcar #'car (elpaca--queued))) #'string<)
+           (sort (cl-delete-duplicates (mapcar #'car (or queued (elpaca--queued)))) #'string<)
            nil t)))
 
 (defun elpaca--unprocess (e)
