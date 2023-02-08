@@ -590,6 +590,15 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
              ((get-buffer-window log t))) ;; log buffer visible
     (with-current-buffer log (elpaca-ui--update-search-filter log))))
 
+(defun elpaca--log (e text &optional verbosity replace)
+  "Store TEXT in E's log.
+Each event is of the form: (STATUS TIME TEXT (or VERBOSITY 0))
+If REPLACE is non-nil, the most recent log entry is replaced."
+  (let ((event (list (elpaca--status e) (current-time) text (or verbosity 0))))
+    (if replace
+        (setf (car (elpaca<-log e)) event)
+      (push event (elpaca<-log e)))))
+
 (defvar elpaca--waiting nil "Non-nil when `elpaca-wait' is polling.")
 (defun elpaca--signal (e &optional info status replace verbosity)
   "Signal a change to E.
@@ -614,7 +623,7 @@ check (and possibly change) their statuses."
       (push 'ref-checked-out     (elpaca<-statuses sibling))
       (push 'unblocked-mono-repo (elpaca<-statuses sibling))
       (elpaca--continue-build sibling)))
-  (when info (elpaca--log-event e info verbosity replace))
+  (when info (elpaca--log e info verbosity replace))
   (when-let ((verbosity (or verbosity 0))
              ((<= verbosity elpaca-verbosity)))
     (when elpaca--info-timer (cancel-timer elpaca--info-timer))
@@ -633,15 +642,6 @@ check (and possibly change) their statuses."
             (assq-delete-all (elpaca--first item) (elpaca-q<-forms queue))))
     (elpaca--signal e reason 'failed)
     (elpaca--finalize e)))
-
-(defun elpaca--log-event (e text &optional verbosity replace)
-  "Store TEXT in E's log.
-Each event is of the form: (STATUS TIME TEXT (or VERBOSITY 0))
-If REPLACE is non-nil, the most recent log entry is replaced."
-  (let ((event (list (elpaca--status e) (current-time) text (or verbosity 0))))
-    (if replace
-        (setf (car (elpaca<-log e)) event)
-      (push event (elpaca<-log e)))))
 
 (defun elpaca-get (item)
   "Return queued E associated with ITEM."
