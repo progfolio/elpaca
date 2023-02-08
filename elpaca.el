@@ -665,7 +665,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
   (when args (apply #'elpaca--signal e args))
   (unless (memq (elpaca--status e) '(blocked failed finished))
     (let ((fn (or (pop (elpaca<-build-steps e)) #'elpaca--finalize)))
-      (condition-case-unless-debug err
+      (condition-case-unless-debug err ;;@TODO: signal/catch custom error types
           (funcall fn e)
         ((error) (elpaca--fail e (format "%s: %S" fn err)))))))
 
