@@ -45,7 +45,8 @@
 (defvar generated-autoload-file)
 (defvar Info-directory-list)
 (unless (executable-find "git") (error "Elpaca unable to find git executable"))
-(when (and load-file-name (featurep 'package)) (warn "Package.el loaded before Elpaca"))
+(when (and (not after-init-time) load-file-name (featurep 'package))
+  (warn "Package.el loaded before Elpaca"))
 
 (defgroup elpaca nil "An elisp package manager." :group 'applications :prefix "elpaca-")
 
