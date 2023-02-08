@@ -910,7 +910,7 @@ If it matches, the E associated with process has its STATUS updated."
       (setf (elpaca<-build-steps e)
             (cl-set-difference (elpaca<-build-steps e) '(elpaca--install-info elpaca--add-info-path))))
     (elpaca--continue-build
-     e (if finished "Info compiled" (format "Failed to compile Info: %S" (string-trim event))))))
+     e (if finished "Info compiled" (concat "Copmilation failure: " (string-trim event))))))
 
 (defun elpaca--compile-info (e)
   "Compile E's .texi files."
@@ -936,14 +936,14 @@ If it matches, the E associated with process has its STATUS updated."
       (process-put process :elpaca e)
     (elpaca--remove-build-steps e '(elpaca--install-info elpaca--add-info-path))
     (elpaca--continue-build
-     e (if elpaca-makeinfo-executable "No .info files found" "makeinfo executable not found"))))
+     e (concat (if elpaca-makeinfo-executable ".info files" "makeinfo") " not found"))))
 
 (defun elpaca--install-info-process-sentinel (process event)
   "Sentinel for info installation PROCESS EVENT."
   (let ((e (process-get process :elpaca)))
     (elpaca--continue-build e (if (equal event "finished\n")
                                   "Info installed"
-                                (format "Failed to install Info: %S" (string-trim event))))))
+                                (concat "Failed to install Info: " (string-trim event))))))
 
 (defun elpaca--install-info-async (file dir e)
   "Asynchronously Install E's .info FILE in Info DIR."
