@@ -32,7 +32,7 @@
 ;; As above, but copies over user's init.el
 ;; (elpaca-test :ref "feat/example" :init (:file "~/.emacs.d/init.el"))
 ;;
-;; As above, with forms replacing everything after bootstrap snippet in doc/init.el
+;; As above, with forms replacing everything after the installer in doc/init.el
 ;; (elpaca-test :ref "feat/example" :init (elpaca one) (elpaca two))
 
 ;; @TODO: Once elpaca-wait installed, re-implement to use yodel?

@@ -20,8 +20,8 @@ Elpaca requires:
 - Emacs >= 27.1
 - git (minimum version TBD)
 - Windows users must be able to create symlinks.
-*** Bootstrap Snippet
-To install Elpaca, add the following bootstrapping snippet to your init.el.
+*** Installer
+To install Elpaca, add the following elisp to your init.el.
 It must come before any calls to other Elpaca functions/macros.
 This will clone Elpaca into your =user-emacs-directory= under the =elpaca= subdirectory.
 It then builds and activates Elpaca.
@@ -39,28 +39,26 @@ It then builds and activates Elpaca.
            ((add-to-list 'load-path (if (file-exists-p build) build repo)))
            ((not (file-exists-p repo))))
   (condition-case-unless-debug err
-      (if-let ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+      (if-let ((buffer (pop-to-buffer-same-window "*elpaca-installer*"))
                ((zerop (call-process "git" nil buffer t "clone"
                                      (plist-get order :repo) repo)))
                (default-directory repo)
                ((zerop (call-process "git" nil buffer t "checkout"
-                                     (or (plist-get order :ref) "--")))))
-          (progn
-            (byte-recompile-directory repo 0 'force)
-            (require 'elpaca)
-            (and (fboundp 'elpaca-generate-autoloads)
-                 (elpaca-generate-autoloads "elpaca" repo))
-            (kill-buffer buffer))
+                                     (or (plist-get order :ref) "--"))))
+               (emacs (concat invocation-directory invocation-name))
+               ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+                                     "--eval" "(byte-recompile-directory \".\" 0 'force)"))))
+          (progn (require 'elpaca)
+                 (elpaca-generate-autoloads "elpaca" repo)
+                 (kill-buffer buffer))
         (error "%s" (with-current-buffer buffer (buffer-string))))
-    ((error)
-     (warn "%s" err)
-     (delete-directory repo 'recursive))))
+    ((error) (warn "%s" err) (delete-directory repo 'recursive))))
 (require 'elpaca-autoloads)
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
 #+end_src
 
-You'll also want to disable package.el in your early-init file[fn:-1-1]:
+You'll also want to disable package.el in your early-init file[fn:-0-1]:
 
 #+begin_src emacs-lisp
 (setq package-enable-at-startup nil)
@@ -68,7 +66,7 @@ You'll also want to disable package.el in your early-init file[fn:-1-1]:
 
 And remove anything related to package.el in your init file. e.g. calls to ~(package-activate-all)~.
 
-[fn:-1-1] [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html]]
+[fn:-0-1] [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html]]
 
 ** Quick Start
 | Operation                             | UI (keys apply in elpaca-ui-mode)  | completing-read interface commands           |
@@ -85,7 +83,7 @@ And remove anything related to package.el in your init file. e.g. calls to ~(pac
 | Browse Package Website                | ~b~                                | ~elpaca-browse~                              |
 
 Packages installed via the above commands are not loaded on subsequent Emacs sessions (after restarting).
-To install and load packages persistently (across Emacs restarts), use the =elpaca= macro in your init file after bootstrapping. ([[#bootstrap-snippet][bootstrap snippet]])
+To install and load packages persistently (across Emacs restarts), use the =elpaca= macro in your init file after the installer. ([[#installer][installer]])
 
 For example:
 
@@ -110,7 +108,7 @@ For example:
 *IMPORTANT*:
 
 Elpaca installs and activates packages asynchronously.
-Elpaca processes its package queues /after/ Emacs reads the init file.[fn:-1-2]
+Elpaca processes its package queues /after/ Emacs reads the init file.[fn:-0-2]
 Consider the following example:
 
 #+begin_src emacs-lisp
@@ -136,4 +134,4 @@ Add any configuration which relies on =after-init-hook=, =emacs-startup-hook=, e
 See the [[file:./doc/manual.md][manual]] for in-depth information on Elpaca usage, customization, and development.
 Users who wish to experiment with Elpaca may find the example [[file:./doc/init.el][init.el]] and [[file:./doc/early-init.el][early-init.el]] files useful.
 
-[fn:-1-2] This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.
+[fn:-0-2] This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.

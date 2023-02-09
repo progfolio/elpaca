@@ -1,6 +1,6 @@
 - [Installation](#installation)
   - [Requirements](#installation-requirements)
-  - [Bootstrap Snippet](#bootstrap-snippet)
+  - [Installer](#installer)
 - [Usage](#usage)
   - [Quick Start](#quick-start)
   - [Basic concepts](#basic-concepts)
@@ -38,11 +38,11 @@ Elpaca requires:
 -   Windows users must be able to create symlinks.
 
 
-<a id="bootstrap-snippet"></a>
+<a id="installer"></a>
 
-## Bootstrap Snippet
+## Installer
 
-To install Elpaca, add the following bootstrapping snippet to your init.el. It must come before any calls to other Elpaca functions/macros. This will clone Elpaca into your `user-emacs-directory` under the `elpaca` subdirectory. It then builds and activates Elpaca.
+To install Elpaca, add the following elisp to your init.el. It must come before any calls to other Elpaca functions/macros. This will clone Elpaca into your `user-emacs-directory` under the `elpaca` subdirectory. It then builds and activates Elpaca.
 
 ```emacs-lisp
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
@@ -57,22 +57,20 @@ To install Elpaca, add the following bootstrapping snippet to your init.el. It m
            ((add-to-list 'load-path (if (file-exists-p build) build repo)))
            ((not (file-exists-p repo))))
   (condition-case-unless-debug err
-      (if-let ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+      (if-let ((buffer (pop-to-buffer-same-window "*elpaca-installer*"))
                ((zerop (call-process "git" nil buffer t "clone"
                                      (plist-get order :repo) repo)))
                (default-directory repo)
                ((zerop (call-process "git" nil buffer t "checkout"
-                                     (or (plist-get order :ref) "--")))))
-          (progn
-            (byte-recompile-directory repo 0 'force)
-            (require 'elpaca)
-            (and (fboundp 'elpaca-generate-autoloads)
-                 (elpaca-generate-autoloads "elpaca" repo))
-            (kill-buffer buffer))
+                                     (or (plist-get order :ref) "--"))))
+               (emacs (concat invocation-directory invocation-name))
+               ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+                                     "--eval" "(byte-recompile-directory \".\" 0 'force)"))))
+          (progn (require 'elpaca)
+                 (elpaca-generate-autoloads "elpaca" repo)
+                 (kill-buffer buffer))
         (error "%s" (with-current-buffer buffer (buffer-string))))
-    ((error)
-     (warn "%s" err)
-     (delete-directory repo 'recursive))))
+    ((error) (warn "%s" err) (delete-directory repo 'recursive))))
 (require 'elpaca-autoloads)
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
@@ -109,7 +107,7 @@ And remove anything related to package.el in your init file. e.g. calls to `(pac
 | Visit Package Build Directory         | `C-u` `v`                          | `C-u` `elpaca-visit`                         |
 | Browse Package Website                | `b`                                | `elpaca-browse`                              |
 
-Packages installed via the above commands are not loaded on subsequent Emacs sessions (after restarting). To install and load packages persistently (across Emacs restarts), use the `elpaca` macro in your init file after bootstrapping. ([bootstrap snippet](#bootstrap-snippet))
+Packages installed via the above commands are not loaded on subsequent Emacs sessions (after restarting). To install and load packages persistently (across Emacs restarts), use the `elpaca` macro in your init file after the installer. ([installer](#installer))
 
 For example:
 
