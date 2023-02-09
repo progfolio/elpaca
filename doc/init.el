@@ -1,5 +1,6 @@
 ;; Example Elpaca configuration -*- lexical-binding: t; -*-
 
+(defvar elpaca-installer-version 0.1)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"

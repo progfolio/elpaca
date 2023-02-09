@@ -44,6 +44,8 @@
 (defvar autoload-timestamps)
 (defvar generated-autoload-file)
 (defvar Info-directory-list)
+(defvar elpaca-installer-version -1)
+(unless (or noninteractive (= elpaca-installer-version 0.1)) (warn "Elpaca installer outdated"))
 (unless (executable-find "git") (error "Elpaca unable to find git executable"))
 (when (and (not after-init-time) load-file-name (featurep 'package))
   (warn "Package.el loaded before Elpaca"))
