@@ -1103,7 +1103,7 @@ If RECACHE is non-nil, do not use cached dependencies."
                     for d = (and (not (memq item elpaca-ignored-dependencies))
                                  (or (elpaca-alist-get item queued)
                                      (elpaca--queue item)))
-                    when (eq (elpaca--status d) 'queued)
+                    when (and d (eq (elpaca--status d) 'queued))
                     collect (prog1 d
                               (unless (memq item (elpaca<-dependencies e))
                                 (push item (elpaca<-dependencies e)))
