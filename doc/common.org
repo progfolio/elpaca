@@ -108,6 +108,8 @@ You'll also want to disable package.el in your early-init file[fn:1]:
 #+begin_src emacs-lisp :lexical t :tangle "./early-init.el" :eval never-export :exports none
 ;; Local Variables:
 ;; no-byte-compile: t
+;; no-native-compile: t
+;; no-update-autoloads: t
 ;; End:
 #+end_src
 
@@ -157,6 +159,8 @@ For example:
 #+begin_src emacs-lisp :lexical t :tangle "./init.el" :eval never-export :exports none
 ;; Local Variables:
 ;; no-byte-compile: t
+;; no-native-compile: t
+;; no-update-autoloads: t
 ;; End:
 #+end_src
 
