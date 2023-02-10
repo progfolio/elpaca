@@ -962,7 +962,7 @@ If it matches, the E associated with process has its STATUS updated."
   (when-let ((dir (expand-file-name "dir" (elpaca<-build-dir e)))
              ((not (file-exists-p dir)))
              (specs (or (elpaca<-files e) (setf (elpaca<-files e) (elpaca--files e)))))
-    (elpaca--signal e "Installing Info files")
+    (elpaca--signal e "Installing Info files" 'info)
     (cl-loop for (target . link) in specs
              for file = (cond
                          ((string-match-p "\\.info$" link) link)
