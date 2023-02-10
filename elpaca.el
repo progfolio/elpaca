@@ -1407,7 +1407,8 @@ When INTERACTIVE is non-nil, message the list of dependencies."
 
 (defun elpaca--dependents (item)
   "Return list of packages which depend on ITEM."
-  (cl-loop for (i . _) in (elpaca--queued) when (memq item (elpaca-dependencies i)) collect i))
+  (delete-dups (cl-loop for (i . _) in (elpaca--queued)
+                        when (memq item (elpaca-dependencies i)) collect i)))
 ;;;###autoload
 (defun elpaca-dependents (item &optional message)
   "Return recursive list of packages which depend on ITEM.
