@@ -3561,8 +3561,8 @@ https://github.com/NicolasPetton/zerodark-theme
 ** greg
 #+begin_src emacs-lisp :lexical t
 (use-package greg
+  :defer t
   :elpaca (greg :host github :repo "progfolio/greg"
                 :depth nil :protocol ssh
-                :files (:defaults "assets")
-                :defer t))
+                :files (:defaults "assets")))
 #+end_src
