@@ -1885,8 +1885,9 @@ When BUILD is non-nil visit ITEM's build directory."
 ;;;###autoload
 (defun elpaca-browse (item)
   "Browse ITEM's :url."
-  (interactive (list (let ((item (elpaca-menu-item nil nil (append elpaca-menu-functions
-                                                                   '(elpaca--custom-candidates)))))
+  (interactive (list (let* ((elpaca-overriding-prompt "Browse package: ")
+                            (item (elpaca-menu-item nil nil (append elpaca-menu-functions
+                                                                    '(elpaca--custom-candidates)))))
                        (intern (plist-get item :package)))))
   (if-let ((found (or (elpaca-get item)
                       (alist-get item (elpaca--menu-items t))
