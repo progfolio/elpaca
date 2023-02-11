@@ -245,8 +245,8 @@ https://github.com/progfolio/elpaca
 Use Evil bindings in status and UI maps
 #+begin_src emacs-lisp :lexical t
 (with-eval-after-load 'evil
-  (with-eval-after-load 'elpaca-ui
-    (evil-make-intercept-map elpaca-ui-mode-map)))
+  (with-eval-after-load 'elpaca-ui (evil-make-intercept-map elpaca-ui-mode-map))
+  (with-eval-after-load 'elpaca-info (evil-make-intercept-map elpaca-info-mode-map)))
 #+end_src
 
 [[https://www.funtoo.org/Keychain][Keychain]] is a gpg/ssh agent that allows me to cache my credentials.
@@ -423,7 +423,8 @@ And a macro to ease the creation of nested menu bindings:
           :which-key "rebuild")
   "pm" 'elpaca-manager
   "pl" 'elpaca-log
-  "pi" '((lambda () (interactive) (info "Elpaca"))
+  "pi" 'elpaca-info
+  "pI" '((lambda () (interactive) (info "Elpaca"))
          :which-key "elpaca-info")
   "ps" 'elpaca-status
   "pt" 'elpaca-try
