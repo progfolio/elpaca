@@ -68,8 +68,6 @@
   "Alist mapping order statuses to faces."
   :type 'alist)
 
-(defvar elpaca--info-timer nil "Timer to debounce order info printing.")
-
 (defvar elpaca--pre-built-steps
   '(elpaca--queue-dependencies elpaca--add-info-path elpaca--activate-package)
   "List of steps for packages which are already built.")
@@ -110,8 +108,9 @@ Results in faster start-up time."
   "Path of the install-info executable."
   :type 'string)
 
-(defcustom elpaca-info-timer-interval 0.02
-  "Number of idle seconds to wait before printing order statuses.
+(defvar elpaca--log-timer nil "Timer to debounce order info printing.")
+(defcustom elpaca-log-interval 0.02
+  "Number of idle seconds to wait before updating log buffer.
 Setting this to too low may cause the status buffer to block more.
 Setting it too high causes prints fewer status updates."
   :type 'number)
@@ -629,11 +628,11 @@ check (and possibly change) their statuses."
   (when info (elpaca--log e info verbosity replace))
   (when-let ((verbosity (or verbosity 0))
              ((<= verbosity elpaca-verbosity)))
-    (when elpaca--info-timer (cancel-timer elpaca--info-timer))
+    (when elpaca--log-timer (cancel-timer elpaca--log-timer))
     (if elpaca--waiting ; Don't set timer. We're already polling.
         (elpaca--update-log-buffer)
-      (setq elpaca--info-timer
-            (and info (run-at-time elpaca-info-timer-interval nil #'elpaca--update-log-buffer)))
+      (setq elpaca--log-timer
+            (and info (run-at-time elpaca-log-interval nil #'elpaca--update-log-buffer)))
       nil)))
 
 (defun elpaca--fail (e &optional reason)
