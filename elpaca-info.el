@@ -34,8 +34,8 @@
     (define-key m (kbd "<backtab>") 'backward-button)
     (define-key m (kbd "i") 'elpaca-info)
     m))
-(define-derived-mode elpaca-info-mode special-mode "elpaca-info-edit"
-  "Major mode for editing speedo attempts.
+(define-derived-mode elpaca-info-mode special-mode "elpaca-info-mode"
+  "Major mode for viewing Elpaca package info.
 
 \\{elpaca-info-mode-map}")
 
