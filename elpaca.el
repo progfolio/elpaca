@@ -409,6 +409,9 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
       (setq recipe (elpaca-merge-plists recipe recipe-mods)))
     (if (not interactive)
         recipe
+      (setq recipe (elpaca-merge-plists
+                    (append (list :package (symbol-name (car-safe item))) (cdr-safe item))
+                    recipe))
       (kill-new (format "%S" recipe))
       (message "%S recipe copied to kill-ring:\n%S" (plist-get recipe :package) recipe))))
 
