@@ -385,7 +385,9 @@ ORDER is any of the following values:
   - an order list of the form: \\='(ITEM . PROPS).
 When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
   (interactive (list (if-let ((elpaca-overriding-prompt "Recipe: ")
-                              (recipe (elpaca-menu-item)))
+                              (recipe (elpaca-menu-item
+                                       nil nil
+                                       (cons #'elpaca--custom-candidates elpaca-menu-functions))))
                          (push (intern (plist-get recipe :package)) recipe)
                        (user-error "No recipe selected"))
                      t))
@@ -1869,7 +1871,6 @@ When BUILD is non-nil visit ITEM's build directory."
    (file-attributes (expand-file-name (concat (elpaca<-package e) ".el")
                                       (elpaca<-build-dir e)))))
 
-;;@MAYBE: refactor into menu function; add to elpaca-menu-functions after init.
 (defun elpaca--custom-candidates (&rest _)
   "Return declared candidate list with no recipe in `elpaca-menu-functions'."
   (cl-loop with seen
@@ -1886,8 +1887,8 @@ When BUILD is non-nil visit ITEM's build directory."
 (defun elpaca-browse (item)
   "Browse ITEM's :url."
   (interactive (list (let* ((elpaca-overriding-prompt "Browse package: ")
-                            (item (elpaca-menu-item nil nil (append elpaca-menu-functions
-                                                                    '(elpaca--custom-candidates)))))
+                            (menus (cons #'elpaca--custom-candidates elpaca-menu-functions))
+                            (item (elpaca-menu-item nil nil menus)))
                        (intern (plist-get item :package)))))
   (if-let ((found (or (elpaca-get item)
                       (alist-get item (elpaca--menu-items t))

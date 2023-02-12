@@ -153,8 +153,9 @@
 ;;;###autoload
 (defun elpaca-info (item)
   "Display package info for ITEM in a dedicated buffer."
-  (interactive (list (let ((elpaca-overriding-prompt "Package info: "))
-                       (intern (plist-get (elpaca-menu-item t) :package)))))
+  (interactive (list (let ((elpaca-overriding-prompt "Package info: ")
+                           (menus (cons #'elpaca--custom-candidates elpaca-menu-functions)))
+                       (intern (plist-get (elpaca-menu-item t nil menus) :package)))))
   (with-current-buffer (get-buffer-create "*elpaca-info*")
     (unless (derived-mode-p 'elpaca-info-mode)
       (elpaca-info-mode)
