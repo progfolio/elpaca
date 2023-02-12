@@ -33,8 +33,6 @@
     (define-key m (kbd "S-TAB") 'backward-button)
     (define-key m (kbd "<backtab>") 'backward-button)
     (define-key m (kbd "i") 'elpaca-info)
-    (define-key m (kbd "v") (lambda () (interactive)
-                              (elpaca-visit elpaca-info--item current-prefix-arg)))
     m))
 (define-derived-mode elpaca-info-mode special-mode "elpaca-info-edit"
   "Major mode for editing speedo attempts.
