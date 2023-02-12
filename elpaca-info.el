@@ -131,8 +131,12 @@
            (unless (equal (plist-get info :source) "Init file")
              (elpaca-info--section "%s\n%s" "menu item recipe:"
                                    (elpaca-info--format-recipe (plist-get info :recipe))))
-           (when e (elpaca-info--section "%s\n%s" "computed recipe:"
-                                         (elpaca-info--format-recipe (elpaca<-recipe e))))
+           (when-let ((i (and e (elpaca<-item e))))
+             (elpaca-info--section
+              "%s\n%s" "computed recipe:"
+              (elpaca-info--format-recipe
+               (elpaca-merge-plists (append `(:package ,(symbol-name (car-safe i))) (cdr-safe i))
+                                    (elpaca<-recipe e)))))
            (elpaca-info--section
             "%s %s" "dependencies:"
             (if-let ((ds (remq 'emacs (elpaca-dependencies item))))
