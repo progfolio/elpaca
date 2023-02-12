@@ -7,12 +7,6 @@
 (require 'tabulated-list)
 
 ;;; Code:
-;;;;Faces:
-(defface elpaca-ui-package
-  '((default :inherit default))
-  "Default face for packages."
-  :group 'elpaca-faces)
-
 (defface elpaca-ui-marked-package
   '((default (:inherit default :weight bold :foreground "pink")))
   "Face for marked packages."
