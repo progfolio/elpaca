@@ -23,6 +23,10 @@
 ;;; Code:
 (require 'elpaca)
 (require 'elpaca-ui)
+
+(defface elpaca-info-section '((t (:weight bold)))
+  "Marks a section of the elpaca-info-buffer.")
+
 (defvar-local elpaca--info nil)
 (defvar-local elpaca-info--item nil)
 (defvar-local elpaca-info--source-index nil)
@@ -101,7 +105,7 @@
 
 (defun elpaca-info--section (spec heading data)
   "Return section for HEADING with DATA formatted according to SPEC."
-  (format spec (propertize heading 'face 'elpaca-finished) data))
+  (format spec (propertize heading 'face 'elpaca-info-section) data))
 
 (defun elpaca-info--print (item)
   "Print info for ITEM."
