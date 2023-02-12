@@ -123,33 +123,33 @@
          (recipe (plist-get info :recipe))
          (on-disk-p (elpaca--on-disk-p item))
          (e (elpaca-get item))
+         (i  "\n  ")
          (sections
           (list
-           (elpaca-info--section "%s %s" "source:" (plist-get info :source))
+           (elpaca-info--section "%-7s %s" "source:" (plist-get info :source))
            (when-let ((url (plist-get info :url)))
-             (elpaca-info--section "%s %s" "url:" (elpaca-ui--buttonize url #'browse-url url)))
+             (elpaca-info--section "%-7s %s" "url:" (elpaca-ui--buttonize url #'browse-url url)))
            (unless (equal (plist-get info :source) "Init file")
-             (elpaca-info--section "%s\n%s" "menu item recipe:"
+             (elpaca-info--section "%s\n%s" "menu item:"
                                    (elpaca-info--format-recipe (plist-get info :recipe))))
            (when-let ((i (and e (elpaca<-item e))))
              (elpaca-info--section
-              "%s\n%s" "computed recipe:"
+              "%s\n%s" "recipe:"
               (elpaca-info--format-recipe
                (elpaca-merge-plists (append `(:package ,(symbol-name (car-safe i))) (cdr-safe i))
                                     (elpaca<-recipe e)))))
            (elpaca-info--section
             "%s %s" "dependencies:"
             (if-let ((ds (remq 'emacs (elpaca-dependencies item))))
-                (concat "\n  " (string-join (elpaca-info--buttons (cl-sort ds #'string<)) "\n  "))
+                (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
               (if on-disk-p "n/a" "?")))
            (elpaca-info--section
             "%s %s" "dependents:"
             (if-let ((ds (remq 'emacs (elpaca-dependents item))))
-                (concat "\n  " (string-join (elpaca-info--buttons (cl-sort ds #'string<)) "\n  "))
+                (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
               (if on-disk-p "n/a" "?")))
            (when-let ((e) (files (elpaca--files e)))
-             (elpaca-info--section "%s\n  %s" "files:" (string-join (elpaca-info--files files)
-                                                                    "\n  "))))))
+             (elpaca-info--section "%s\n  %s" "files:" (string-join (elpaca-info--files files) i))))))
     (insert (propertize (plist-get recipe :package) 'face '(:height 2.0)))
     (when (> (length elpaca--info) 1)
       (insert " [" (string-join (elpaca-info--source-buttons elpaca--info) "|") "]"))
