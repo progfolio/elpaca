@@ -8,7 +8,7 @@
 
 ;;; Code:
 (defface elpaca-ui-marked-package
-  '((default (:inherit default :weight bold :foreground "pink")))
+  '((t (:inherit default :weight bold :foreground "pink")))
   "Face for marked packages."
   :group 'elpaca-faces)
 
