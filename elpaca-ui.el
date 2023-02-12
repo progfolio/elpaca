@@ -17,7 +17,6 @@
   :group 'elpaca-ui
   :prefix "elpaca-ui-")
 
-;;;; Customizations:
 (defcustom elpaca-ui-default-query ".*" "Initial `elpaca-ui-mode' search query."
   :type 'string)
 (make-variable-buffer-local 'elpaca-ui-default-query)
