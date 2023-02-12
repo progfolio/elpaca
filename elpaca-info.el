@@ -146,10 +146,10 @@
            (when-let ((e) (files (elpaca--files e)))
              (elpaca-info--section "%s\n  %s" "files:" (string-join (elpaca-info--files files)
                                                                     "\n  "))))))
-    (insert (propertize (plist-get recipe :package) 'face '(:height 2.0))
-            " [" (string-join (elpaca-info--source-buttons elpaca--info) "|") "]\n\n"
-            (plist-get info :description) "\n\n"
-            (string-join (delq nil sections) "\n")))
+    (insert (propertize (plist-get recipe :package) 'face '(:height 2.0)))
+    (when (> (length elpaca--info) 1)
+      (insert " [" (string-join (elpaca-info--source-buttons elpaca--info) "|") "]"))
+    (insert "\n" (plist-get info :description) "\n\n" (string-join (delq nil sections) "\n")))
   (goto-char (point-min)))
 
 ;;;###autoload
