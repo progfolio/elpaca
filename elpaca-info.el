@@ -26,6 +26,8 @@
 
 (defface elpaca-info-section '((t (:weight bold)))
   "Marks a section of the elpaca-info-buffer.")
+(defface elpaca-info-package '((t (:height 2.0)))
+  "The name of the package in `elpaca-info-mode'.")
 
 (defvar-local elpaca--info nil)
 (defvar-local elpaca-info--item nil)
@@ -150,7 +152,7 @@
               (if on-disk-p "n/a" "?")))
            (when-let ((e) (files (elpaca--files e)))
              (elpaca-info--section "%s\n  %s" "files:" (string-join (elpaca-info--files files) i))))))
-    (insert (propertize (plist-get recipe :package) 'face '(:height 2.0)))
+    (insert (propertize (plist-get recipe :package) 'face 'elpaca-info-package))
     (when (> (length elpaca--info) 1)
       (insert " [" (string-join (elpaca-info--source-buttons elpaca--info) "|") "]"))
     (insert "\n" (plist-get info :description) "\n\n" (string-join (delq nil sections) "\n")))
