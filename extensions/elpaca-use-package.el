@@ -4,7 +4,7 @@
 
 ;; Author: Nicholas Vollmer
 ;; URL: https://github.com/progfolio/elpaca
-;; Package-Requires: ((emacs "27.1") (use-package "2.4.4"))
+;; Package-Requires: ((emacs "27.1") (elpaca "0") (use-package "2.4.4"))
 ;; Version: 0.0.0
 
 ;; This program is free software; you can redistribute it and/or modify
