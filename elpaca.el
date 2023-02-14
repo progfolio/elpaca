@@ -221,7 +221,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
 (defvar elpaca-ignored-dependencies
   `( emacs cl-lib cl-generic nadvice org org-mode map seq json project auth-source-pass
      elpaca ,@(unless (< emacs-major-version 28) '(transient))
-     ,@(unless (< emacs-major-version 29) '(use-package)))
+     ,@(unless (< emacs-major-version 29) '(use-package eglot)))
   "Ignore these unless the user explicitly requests they be installed.")
 
 (defvar elpaca-overriding-prompt nil "Overriding prompt for interactive functions.")
