@@ -218,11 +218,12 @@ Each function is passed a request, which may be any of the follwoing symbols:
   :type 'integer)
 (defcustom elpaca-default-remote-name "origin" "Default remote name." :type 'string)
 
-(defvar elpaca-ignored-dependencies
+(defcustom elpaca-ignored-dependencies
   `( emacs cl-lib cl-generic nadvice org org-mode map seq json project auth-source-pass
      elpaca ,@(unless (< emacs-major-version 28) '(transient))
      ,@(unless (< emacs-major-version 29) '(use-package eglot)))
-  "Ignore these unless the user explicitly requests they be installed.")
+  "List of items which are not installed unless the user explicitly requests them."
+  :type '(repeat symbol))
 
 (defvar elpaca-overriding-prompt nil "Overriding prompt for interactive functions.")
 
