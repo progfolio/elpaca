@@ -304,6 +304,10 @@ Simplified, faster version of `alist-get'."
   "Return `car' of OBJ if it is a list, else OBJ."
   (if (listp obj) (car obj) obj))
 
+(defsubst elpaca--q (e)
+  "Return E's Q."
+  (car (last elpaca--queues (1+ (elpaca<-queue-id e)))))
+
 ;;@TODO: clean up interface.
 ;;;###autoload
 (defun elpaca-menu-item (&optional interactive symbol menus filter no-descriptions)
@@ -643,10 +647,8 @@ check (and possibly change) their statuses."
 (defun elpaca--fail (e &optional reason)
   "Fail E for REASON."
   (unless (eq (elpaca--status e) 'failed)
-    (let ((item (elpaca<-item e))
-          (queue (car (last elpaca--queues (1+ (elpaca<-queue-id e))))))
-      (setf (elpaca-q<-forms queue)
-            (assq-delete-all (elpaca--first item) (elpaca-q<-forms queue))))
+    (let ((q (elpaca--q e)))
+      (setf (elpaca-q<-forms q) (assq-delete-all (elpaca<-id e) (elpaca-q<-forms q))))
     (elpaca--signal e reason 'failed)
     (elpaca--finalize e)))
 
@@ -740,7 +742,7 @@ Accepted KEYS are :pre and :post which are hooks run around queue processing."
     (elpaca--signal
      e (concat  "✓ " (format-time-string "%s.%3N" (elpaca--log-duration e)) " secs")
      'finished))
-  (when-let ((q (car (last elpaca--queues (1+ (elpaca<-queue-id e)))))
+  (when-let ((q (elpaca--q e))
              ((= (cl-incf (elpaca-q<-processed q)) (length (elpaca-q<-elpacas q)))))
     (elpaca--finalize-queue q)))
 
@@ -1354,7 +1356,7 @@ Loads or caches autoloads."
                        (condition-case err
                            (progn ,@(nreverse forms))
                          ((error) (warn "Error loading %S autoloads: %S" ,package err))))
-                    (elpaca-q<-autoloads (car (last elpaca--queues (1+ (elpaca<-queue-id e)))))))
+                    (elpaca-q<-autoloads (elpaca--q e))))
             (elpaca--signal e "Autoloads cached"))
         (condition-case err
             (progn
