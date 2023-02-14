@@ -144,12 +144,14 @@
             "%s %s" "dependencies:"
             (if-let ((ds (remq 'emacs (elpaca-dependencies item))))
                 (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
-              (if on-disk-p "n/a" "?")))
+              (if on-disk-p "nil"
+                (if (memq item (cl-set-difference elpaca-ignored-dependencies '(emacs elpaca)))
+                    "bulit-in" "?"))))
            (elpaca-info--section
             "%s %s" "dependents:"
             (if-let ((ds (remq 'emacs (elpaca-dependents item))))
                 (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
-              (if on-disk-p "n/a" "?")))
+              (if on-disk-p "nil" "?")))
            (when-let ((e) (files (elpaca--files e)))
              (elpaca-info--section "%s\n  %s" "files:" (string-join (elpaca-info--files files) i))))))
     (insert (propertize (plist-get recipe :package) 'face 'elpaca-info-package))
