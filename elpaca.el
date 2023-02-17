@@ -683,6 +683,20 @@ Optional ARGS are passed to `elpaca--signal', which see."
   "Return E's log duration."
   (time-subtract (nth 1 (car (elpaca<-log e))) (elpaca<-queue-time e)))
 
+(defun elpaca--queue (item)
+  "Queue (ITEM . e) in `elpaca--queued'. Return e."
+  (if (and (not after-init-time) (elpaca-get item))
+      (warn "Duplicate item declaration: %S" item)
+    (let* ((e (elpaca<-create item))
+           (log (pop (elpaca<-log e)))
+           (status (car log))
+           (info (nth 2 log)))
+      (push (cons (elpaca<-id e) e) (elpaca-q<-elpacas (car elpaca--queues)))
+      (if (eq status 'struct-failed)
+          (elpaca--fail e info)
+        (elpaca--signal e info status))
+      e)))
+
 ;;;###autoload
 (defun elpaca-split-queue (&rest args)
   "Split remaining elpacas into new queue with ARGS."
@@ -736,20 +750,6 @@ Optional ARGS are passed to `elpaca--signal', which see."
   (when-let ((q (elpaca--q e))
              ((= (cl-incf (elpaca-q<-processed q)) (length (elpaca-q<-elpacas q)))))
     (elpaca--finalize-queue q)))
-
-(defun elpaca--queue (item)
-  "Queue (ITEM . e) in `elpaca--queued'. Return e."
-  (if (and (not after-init-time) (elpaca-get item))
-      (warn "Duplicate item declaration: %S" item)
-    (let* ((e (elpaca<-create item))
-           (log (pop (elpaca<-log e)))
-           (status (car log))
-           (info (nth 2 log)))
-      (push (cons (elpaca<-id e) e) (elpaca-q<-elpacas (car elpaca--queues)))
-      (if (eq status 'struct-failed)
-          (elpaca--fail e info)
-        (elpaca--signal e info status))
-      e)))
 
 (defun elpaca--command-string (strings &optional prefix)
   "Return string of form PREFIX STRINGS."
