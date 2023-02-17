@@ -260,7 +260,7 @@ e.g. elisp forms may be printed via `prin1'."
   (processed 0)
   (status 'incomplete)
   (time (current-time))
-  pre post autoloads forms elpacas)
+  autoloads forms elpacas)
 
 (defvar elpaca--queues (list (elpaca-q<-create)) "List of elpaca queue objects.")
 
@@ -694,18 +694,9 @@ Optional ARGS are passed to `elpaca--signal', which see."
 
 ;;;###autoload
 (defmacro elpaca-queue (&rest body)
-  "Execute BODY in new queue with [KEY VAL...] args.
-Accepted KEYS are :pre and :post which are hooks run around queue processing."
+  "Execute BODY in new queue."
   (declare (debug t))
-  (let* ((pre (when-let ((found (memq :pre body)))
-                (butlast found (- (length found) 2))))
-         (post (when-let ((found (memq :post body)))
-                 (butlast found (- (length found) 2)))))
-    (while (keywordp (car body)) (pop body) (pop body))
-    `(progn
-       (apply #'elpaca-split-queue ',(append pre post))
-       ,@body
-       (elpaca-split-queue))))
+  `(progn (elpaca-split-queue) ,@body (elpaca-split-queue)))
 
 (defvar elpaca--post-queues-hook nil)
 (defun elpaca--finalize-queue (q)
@@ -722,7 +713,6 @@ Accepted KEYS are :pre and :post which are hooks run around queue processing."
            do (condition-case-unless-debug err
                   (eval `(progn ,@body) t)
                 ((error) (warn "Package Config Error %s: %S" item err))))
-  (when-let ((post (elpaca-q<-post q))) (funcall post))
   (run-hooks 'elpaca-post-queue-hook)
   (setf (elpaca-q<-status q) 'complete)
   (let ((next (nth (1+ (elpaca-q<-id q)) (reverse elpaca--queues))))
@@ -1529,7 +1519,6 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
 
 (defun elpaca--process-queue (q)
   "Process elpacas in Q."
-  (when-let ((pre (elpaca-q<-pre q))) (funcall pre))
   (if (and (not (elpaca-q<-elpacas q)) (elpaca-q<-forms q))
       (elpaca--finalize-queue q)
     (mapc #'elpaca--process (reverse (elpaca-q<-elpacas q)))))
