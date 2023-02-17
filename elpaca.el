@@ -1146,6 +1146,9 @@ If RECACHE is non-nil, do not use cached dependencies."
                           for d = (or queued (elpaca--queue dependency))
                           for d-id = (elpaca<-id d)
                           do
+                          (unless (>= (elpaca<-queue-id e) (elpaca<-queue-id d))
+                            (elpaca--fail d (format "dependent %S in past queue" e-id))
+                            (elpaca--fail e (format "dependency %S in future queue" d-id)))
                           (unless (memq d-id (elpaca<-dependencies e))
                             (push d-id (elpaca<-dependencies e)))
                           (unless (memq e-id (elpaca<-dependents d))
