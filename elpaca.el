@@ -115,7 +115,7 @@ Setting this to too low may cause the status buffer to block more.
 Setting it too high causes prints fewer status updates."
   :type 'number)
 
-(defcustom elpaca--process-busy-interval 60
+(defcustom elpaca-busy-interval 60
   "Seconds to wait between subprocess outputs before declaring process blocked."
   :type 'number)
 
@@ -888,8 +888,8 @@ If it matches, the E associated with process has its STATUS updated."
       (process-put process :messaged t))
     (when timer (cancel-timer timer))
     (unless (eq (elpaca--status e) 'failed)
-      (process-put process :timer (run-at-time elpaca--process-busy-interval nil
-                                               (lambda () (elpaca--process-busy process)))))
+      (process-put process :timer (run-at-time elpaca-busy-interval nil
+                                               #'elpaca--process-busy process)))
     (unless linep
       (process-put process :parsed (car (last lines)))
       (setq lines (butlast lines)))
