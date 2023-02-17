@@ -865,7 +865,7 @@ FILES and NOCONS are used recursively."
       (elpaca--signal e "No Info dir file found" 'info))
     (elpaca--continue-build e)))
 
-(defun elpaca--process-busy (process)
+(defun elpaca--process-busy (process) ;;@TODO restore previous status when unblocked
   "Update E's status when PROCESS has stopped producing output."
   (when-let (((eq (process-status process) 'run))
              (e (process-get process :elpaca)))
