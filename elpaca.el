@@ -85,6 +85,10 @@ Note a blocked process will prevent this hook from being run."
 Note blocked or failed orders will prevent this hook from being run."
   :type 'hook)
 
+(defcustom elpaca-queue-limit nil
+  "When non-nil, limit the number of orders which can be processed at once."
+  :type 'integer)
+
 (defcustom elpaca-cache-autoloads t
   "If non-nil, cache package autoloads and load all at once.
 Results in faster start-up time."
@@ -513,7 +517,7 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
   (queue-id (1- (length elpaca--queues)))
   (queue-time (current-time))
   (init (not after-init-time))
-  process log)
+  process log builtp)
 
 (defmacro elpaca--required-arg (try info)
   "TRY to set arg. If error, fail E with INFO."
@@ -589,7 +593,7 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
     (elpaca<--create
      :id id :package (symbol-name id) :item item :statuses (list status)
      :repo-dir repo-dir :build-dir build-dir :mono-repo mono-repo
-     :build-steps build-steps :recipe recipe
+     :build-steps build-steps :recipe recipe :builtp builtp
      :log (list (list status nil info)))))
 
 (defsubst elpaca--status (e) "Return E's status." (car (elpaca<-statuses e)))
@@ -690,10 +694,22 @@ Optional ARGS are passed to `elpaca--signal', which see."
     (let* ((e (elpaca<-create item))
            (log (pop (elpaca<-log e)))
            (status (car log))
-           (info (nth 2 log)))
-      (push (cons (elpaca<-id e) e) (elpaca-q<-elpacas (car elpaca--queues)))
+           (info (nth 2 log))
+           (q (car elpaca--queues))
+           (elpacas (elpaca-q<-elpacas q)))
+      (push (cons (elpaca<-id e) e) (elpaca-q<-elpacas q))
       (if (eq status 'struct-failed)
           (elpaca--fail e info)
+        (when (and elpaca-queue-limit
+                   (eq status 'queued)
+                   (>= (cl-count-if
+                        (lambda (qd) (let ((e (cdr qd)))
+                                       (and (not (elpaca<-builtp e))
+                                            (eq (elpaca--status e) 'queued))))
+                        elpacas)
+                       elpaca-queue-limit))
+          (push 'queue-rate-limited (elpaca<-statuses e))
+          (setq info "elpaca-queue-limit exceeded" status 'blocked))
         (elpaca--signal e info status))
       e)))
 
@@ -741,15 +757,24 @@ Optional ARGS are passed to `elpaca--signal', which see."
     (if next (elpaca--process-queue next)
       (run-hooks 'elpaca--post-queues-hook))))
 
+(defun elpaca--throttled-p (e)
+  "Return t if E is blocked due to `elpaca-queue-limit'."
+  (let ((statuses (elpaca<-statuses e)))
+    (and (eq (car statuses) 'blocked) (eq (cadr statuses) 'queue-rate-limited))))
+
 (defun elpaca--finalize (e)
   "Declare E finished or failed."
   (unless (eq (elpaca--status e) 'failed)
     (elpaca--signal
      e (concat  "✓ " (format-time-string "%s.%3N" (elpaca--log-duration e)) " secs")
      'finished))
-  (when-let ((q (elpaca--q e))
-             ((= (cl-incf (elpaca-q<-processed q)) (length (elpaca-q<-elpacas q)))))
-    (elpaca--finalize-queue q)))
+  (let* ((q (elpaca--q e))
+         (es (elpaca-q<-elpacas q))
+         (next (and elpaca-queue-limit (cdr (cl-find-if #'elpaca--throttled-p es :key #'cdr)))))
+    (when next
+      (elpaca--signal next nil 'queue-limit-removed)
+      (elpaca--continue-build next))
+    (when (= (cl-incf (elpaca-q<-processed q)) (length es)) (elpaca--finalize-queue q))))
 
 (defun elpaca--command-string (strings &optional prefix)
   "Return string of form PREFIX STRINGS."
