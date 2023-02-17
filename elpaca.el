@@ -55,7 +55,7 @@
 (defface elpaca-finished '((t (:weight bold :foreground "#00FF00")))
   "Indicates an order is finished.")
 (defface elpaca-busy '((t (:weight bold :foreground "#FF9E3D")))
-  "Indicates an order has failed.")
+  "Indicates order's subprocess has not produced output in `elpaca-busy-interval'.")
 (defface elpaca-blocked '((t (:weight bold :foreground "#FFF01F")))
   "Indicates an order is blocked.")
 (defface elpaca-failed '((t (:weight bold :foreground "#FF1818")))
