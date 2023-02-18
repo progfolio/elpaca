@@ -313,59 +313,29 @@ Simplified, faster version of `alist-get'."
   "Return E's Q."
   (car (last elpaca--queues (1+ (elpaca<-queue-id e)))))
 
-;;@TODO: clean up interface.
 ;;;###autoload
-(defun elpaca-menu-item (&optional interactive symbol menus filter no-descriptions)
-  "Return menu item matching SYMBOL in MENUS or `elpaca-menu-functions'.
-If SYMBOL is nil, prompt for it.
-If INTERACTIVE is equivalent to \\[universal-argument] prompt for MENUS.
-FILTER must be a function which accepts a candidate.
-If it returns nil, the candidate is not considered for selection.
-If NO-DESCRIPTIONS is non-nil, candidate descriptions are not included.
-This is faster (what you want with non-interactive calls)."
-  (interactive "P")
-  (let* ((menuarg menus)
-         (menus (if (equal interactive '(4))
-                    (mapcar #'intern-soft
-                            (cl-remove-duplicates
-                             (completing-read-multiple "Menus: " elpaca-menu-functions
-                                                       nil t)
-                             :test #'equal))
-                  (or menus elpaca-menu-functions (user-error "No menus found"))))
-         (candidates
-          (let ((c (if filter
-                       (cl-remove-if-not filter (elpaca--menu-items (not menuarg) menus))
-                     (elpaca--menu-items (not menuarg) menus))))
-            (if no-descriptions
-                c
-              (mapcar (lambda (candidate)
-                        (propertize
-                         (format "%-30s %s %s" (car candidate)
-                                 (or (plist-get (cdr candidate) :description) "")
-                                 (or (plist-get (cdr candidate) :source) ""))
-                         'candidate candidate))
-                      c))))
-         (symbol (or symbol
-                     (intern
-                      (let ((choice
-                             (completing-read (or elpaca-overriding-prompt "Package: ")
-                                              candidates nil t)))
-                        (if no-descriptions
-                            choice
-                          (car (split-string choice "\\(?:[[:space:]]+\\)")))))))
-         (candidate (elpaca-alist-get symbol
-                                      (if no-descriptions
-                                          candidates
-                                        (mapcar (lambda (c) (get-text-property 0 'candidate c))
-                                                candidates))))
-         (recipe (plist-get candidate :recipe)))
-    (if (called-interactively-p 'interactive)
-        (progn
-          (unless recipe (user-error "No menu recipe for %s" symbol))
-          (kill-new (format "%S" recipe))
-          (message "%S menu recipe for %s copied to kill ring:\n%S"
-                   (plist-get candidate :source) symbol recipe))
-      recipe)))
+(defun elpaca-menu-item (symbol &optional items interactive)
+  "Return menu item matching SYMBOL in ITEMS or `elpaca-menu-functions' cache.
+If INTERACTIVE is non-nil or SYMBOL is t, copy prompted item to `kill-ring'.
+Optional FILTER must be a function which accepts a candidate.
+If it returns nil, the candidate is removed from the candidate list."
+  (interactive (list t nil t))
+  (let* ((items (or items (elpaca--menu-items t)))
+         (symbol (if (or interactive (eq symbol t))
+                     (read (completing-read
+                            (or elpaca-overriding-prompt "Menu Item: ")
+                            (mapcar (lambda (c)
+                                      (let ((data (cdr c)))
+                                        (format "%-30s %s %s" (car c)
+                                                (or (plist-get data :description) "")
+                                                (or (plist-get data :source) ""))))
+                                    items)))
+                   symbol))
+         (item (assoc symbol items)))
+    (if (not interactive)
+        item
+      (message "menu-item copied to kill-ring:\n%S" item)
+      (kill-new (format "%S" item)))))
 
 ;;;###autoload
 (defun elpaca-update-menus (&rest menus)
@@ -394,35 +364,32 @@ ORDER is any of the following values:
   - an order list of the form: \\='(ITEM . PROPS).
 When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
   (interactive (list (if-let ((elpaca-overriding-prompt "Recipe: ")
-                              (recipe (elpaca-menu-item
-                                       nil nil
-                                       (cons #'elpaca--custom-candidates elpaca-menu-functions))))
-                         (push (intern (plist-get recipe :package)) recipe)
+                              (item (elpaca-menu-item t (append (elpaca--custom-candidates)
+                                                                (elpaca--menu-items t)))))
+                         (cons (car item) (plist-get (cdr item) :recipe))
                        (user-error "No recipe selected"))
                      t))
   (let* ((props (cdr-safe order))
-         (item (elpaca--first order))
+         (id (elpaca--first order))
          (nonheritablep (elpaca--inheritance-disabled-p props))
          (mods (unless nonheritablep (run-hook-with-args-until-success
                                       'elpaca-order-functions order)))
-         (menu-item (unless (or interactive ;; we already queried for this.
-                                (elpaca--inheritance-disabled-p
-                                 (elpaca-merge-plists
-                                  mods (plist-member props :inherit))))
-                      (elpaca-menu-item nil item nil nil 'no-descriptions)))
-         (recipe (elpaca-merge-plists menu-item mods props)))
-    (unless (plist-get recipe :package)
-      (setq recipe (plist-put recipe :package (symbol-name item))))
-    (when-let ((recipe-mods (run-hook-with-args-until-success
-                             'elpaca-recipe-functions recipe)))
-      (setq recipe (elpaca-merge-plists recipe recipe-mods)))
+         (item (unless (or interactive ;; we already queried for this.
+                           (elpaca--inheritance-disabled-p
+                            (elpaca-merge-plists
+                             mods (plist-member props :inherit))))
+                 (plist-get (cdr (elpaca-menu-item id)) :recipe)))
+         (r (elpaca-merge-plists item mods props)))
+    (unless (plist-get r :package) (setq r (plist-put r :package (symbol-name id))))
+    (when-let ((recipe-mods (run-hook-with-args-until-success 'elpaca-recipe-functions r)))
+      (setq r (elpaca-merge-plists r recipe-mods)))
     (if (not interactive)
-        recipe
-      (setq recipe (elpaca-merge-plists
-                    (append (list :package (symbol-name (car-safe item))) (cdr-safe item))
-                    recipe))
-      (kill-new (format "%S" recipe))
-      (message "%S recipe copied to kill-ring:\n%S" (plist-get recipe :package) recipe))))
+        r
+      (setq r (elpaca-merge-plists (append (list :package (symbol-name (car-safe id)))
+                                           (cdr-safe id))
+                                   r))
+      (kill-new (format "%S" r))
+      (message "%S recipe copied to kill-ring:\n%S" (plist-get r :package) r))))
 
 (defsubst elpaca--emacs-path ()
   "Return path to running Emacs."
@@ -1506,16 +1473,14 @@ Install the repo/build files on disk.
 Activate the corresponding package for the current session.
 ORDER's package is not made available during subsequent sessions.
 When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
-  (interactive (list
-                (if (equal current-prefix-arg '(4))
-                    (minibuffer-with-setup-hook #'backward-char
-                      (read (read-string "elpaca-try: " "()" 'elpaca--try-package-history)))
-                  (let ((recipe (elpaca-menu-item
-                                 nil nil nil
-                                 (lambda (candidate) (not (elpaca-get (car candidate)))))))
-                    (append (list (intern (plist-get recipe :package)))
-                            recipe)))
-                t))
+  (interactive
+   (list (if (equal current-prefix-arg '(4))
+             (minibuffer-with-setup-hook #'backward-char
+               (read (read-string "elpaca-try: " "()" 'elpaca--try-package-history)))
+           (let* ((items (cl-remove-if #'elpaca-get (elpaca--menu-items t) :key #'car))
+                  (item (elpaca-menu-item t items)))
+             (cons (car item) (plist-get (cdr item) :recipe))))
+         t))
   (if (not interactive)
       (elpaca--queue (elpaca--first order))
     (elpaca--maybe-log t)
@@ -1898,8 +1863,7 @@ When BUILD is non-nil visit ITEM's build directory."
   "Return declared candidate list with no recipe in `elpaca-menu-functions'."
   (cl-loop with seen
            for (item . e) in (elpaca--queued)
-           unless (or (member item seen)
-                      (elpaca-menu-item nil item nil nil 'no-descriptions))
+           unless (or (member item seen) (elpaca-menu-item item))
            collect (list item :source "Init file"
                          :date (ignore-errors (elpaca--fallback-date e))
                          :recipe (elpaca<-recipe e)
