@@ -68,6 +68,7 @@
   "Alist mapping order statuses to faces."
   :type 'alist)
 
+(defvar elpaca--inactive-states '(blocked finished failed))
 (defvar elpaca--pre-built-steps
   '(elpaca--queue-dependencies elpaca--add-info-path elpaca--activate-package)
   "List of steps for packages which are already built.")
@@ -593,7 +594,7 @@ check (and possibly change) their statuses."
   (when-let (((and status (not (eq status (elpaca--status e)))))
              (queued (elpaca--queued)))
     (push status (elpaca<-statuses e))
-    (when (memq status '(finished failed blocked))
+    (when (memq status elpaca--inactive-states)
       (mapc (lambda (d) (elpaca--check-status (elpaca-alist-get d queued)))
             (elpaca<-dependents e)))
     (when (eq status 'failed) (elpaca-log "#unique !finished")))
@@ -644,11 +645,19 @@ check (and possibly change) their statuses."
   "Run E's next build step.
 Optional ARGS are passed to `elpaca--signal', which see."
   (when args (apply #'elpaca--signal e args))
-  (unless (memq (elpaca--status e) '(blocked failed finished))
-    (let ((fn (or (pop (elpaca<-build-steps e)) #'elpaca--finalize)))
-      (condition-case-unless-debug err ;;@TODO: signal/catch custom error types
-          (funcall fn e)
-        ((error) (elpaca--fail e (format "%s: %S" fn err)))))))
+  (unless (memq (elpaca--status e) elpaca--inactive-states)
+    (if-let ((elpaca-queue-limit)
+             ((not (elpaca<-builtp e)))
+             ;; Don't double count current E
+             (active (1- (cl-loop for (_ . e) in (elpaca-q<-elpacas (elpaca--q e))
+                                  count (not (memq (elpaca--status e) elpaca--inactive-states)))))
+             ((>= active elpaca-queue-limit)))
+        (progn (push 'queue-throttled (elpaca<-statuses e))
+               (elpaca--signal e "elpaca-queue-limit exceeded" 'blocked))
+      (let ((fn (or (pop (elpaca<-build-steps e)) #'elpaca--finalize)))
+        (condition-case-unless-debug err ;;@TODO: signal/catch custom error types
+            (funcall fn e)
+          ((error) (elpaca--fail e (format "%s: %S" fn err))))))))
 
 (defun elpaca--log-duration (e)
   "Return E's log duration."
@@ -662,21 +671,10 @@ Optional ARGS are passed to `elpaca--signal', which see."
            (log (pop (elpaca<-log e)))
            (status (car log))
            (info (nth 2 log))
-           (q (car elpaca--queues))
-           (elpacas (elpaca-q<-elpacas q)))
+           (q (car elpaca--queues)))
       (push (cons (elpaca<-id e) e) (elpaca-q<-elpacas q))
       (if (eq status 'struct-failed)
           (elpaca--fail e info)
-        (when (and elpaca-queue-limit
-                   (eq status 'queued)
-                   (>= (cl-count-if
-                        (lambda (qd) (let ((e (cdr qd)))
-                                       (and (not (elpaca<-builtp e))
-                                            (eq (elpaca--status e) 'queued))))
-                        elpacas)
-                       elpaca-queue-limit))
-          (push 'queue-rate-limited (elpaca<-statuses e))
-          (setq info "elpaca-queue-limit exceeded" status 'blocked))
         (elpaca--signal e info status))
       e)))
 
@@ -727,7 +725,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
 (defun elpaca--throttled-p (e)
   "Return t if E is blocked due to `elpaca-queue-limit'."
   (let ((statuses (elpaca<-statuses e)))
-    (and (eq (car statuses) 'blocked) (eq (cadr statuses) 'queue-rate-limited))))
+    (and (eq (car statuses) 'blocked) (eq (cadr statuses) 'queue-throttled))))
 
 (defun elpaca--finalize (e)
   "Declare E finished or failed."
@@ -739,7 +737,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
          (es (elpaca-q<-elpacas q))
          (next (and elpaca-queue-limit (cdr (cl-find-if #'elpaca--throttled-p es :key #'cdr)))))
     (when next
-      (elpaca--signal next nil 'queue-limit-removed)
+      (elpaca--signal next nil 'unthrottled)
       (elpaca--continue-build next))
     (when (= (cl-incf (elpaca-q<-processed q)) (length es)) (elpaca--finalize-queue q))))
 
@@ -1135,7 +1133,10 @@ If RECACHE is non-nil, do not use cached dependencies."
                             (push d-id (elpaca<-dependencies e)))
                           (unless (memq e-id (elpaca<-dependents d))
                             (push e-id (elpaca<-dependents d)))
-                          (unless queued (elpaca--continue-build d))
+                          (unless (and queued (not (elpaca--throttled-p queued)))
+                            (elpaca--signal e nil 'blocked)
+                            (push 'requested-as-dependency (elpaca<-statuses d))
+                            (elpaca--continue-build d))
                           count (and queued (eq (elpaca--status queued) 'finished))))
           (elpaca--continue-build e)))
     (elpaca--continue-build e "No external dependencies detected")))
@@ -1589,8 +1590,7 @@ If PROMPT is non-nil, it is used instead of the default."
 
 (defun elpaca--unprocess (e)
   "Mark E as unprocessed in its queue."
-  (when-let ((id (elpaca<-queue-id e))
-             (q  (nth id (reverse elpaca--queues))))
+  (let ((q (elpaca--q e)))
     (when (> (elpaca-q<-processed q) 0) (cl-decf (elpaca-q<-processed q)))
     (setf (elpaca-q<-status q) 'incomplete)))
 
@@ -1622,7 +1622,8 @@ With a prefix argument, rebuild current file's package or prompt if none found."
     (setf elpaca-cache-autoloads nil
           (elpaca<-queue-time e) (current-time)
           (elpaca<-statuses e) (list 'queued)
-          (elpaca<-files e) nil)
+          (elpaca<-files e) nil
+          (elpaca<-builtp e) nil)
     (when interactive
       (elpaca--maybe-log t)
       (elpaca--process queued))))
@@ -1662,7 +1663,8 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
         (elpaca--signal e "Fetching updates" 'fetching-updates)
         (setf (elpaca<-build-steps e) (list #'elpaca--fetch #'elpaca--log-updates)
               (elpaca<-queue-time e)  (current-time)
-              (elpaca<-statuses e) (list 'queued))
+              (elpaca<-statuses e) (list 'queued)
+              (elpaca<-builtp e) nil)
         (when interactive
           (elpaca--maybe-log t)
           (elpaca--process queued)))
@@ -1726,7 +1728,8 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
                    elpaca--clone-dependencies
                    elpaca--activate-package))))
           (elpaca<-queue-time e) (current-time)
-          (elpaca<-statuses e)   (list 'queued))
+          (elpaca<-statuses e)   (list 'queued)
+          (elpaca<-builtp e)     nil)
     (elpaca--unprocess e)
     (when interactive
       (elpaca--maybe-log t)
