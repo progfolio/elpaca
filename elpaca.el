@@ -603,7 +603,7 @@ check (and possibly change) their statuses."
              ((or (memq 'ref-checked-out statuses) (memq 'queueing-deps statuses)))
              (queued (elpaca--queued))
              (sibling t))
-    (while (setq sibling (alist-get (pop (elpaca<-siblings e)) queued))
+    (while (setq sibling (elpaca-alist-get (pop (elpaca<-siblings e)) queued))
       (push 'ref-checked-out     (elpaca<-statuses sibling))
       (push 'unblocked-mono-repo (elpaca<-statuses sibling))
       (elpaca--continue-build sibling)))
