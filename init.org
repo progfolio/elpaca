@@ -3572,3 +3572,9 @@ https://github.com/NicolasPetton/zerodark-theme
                 :depth nil :protocol ssh
                 :files (:defaults "assets")))
 #+end_src
+** ox-context
+#+begin_src emacs-lisp :lexical t
+(use-package ox-context
+  :elpaca (ox-context :host github :repo "progfolio/ox-context" :depth nil :protocol ssh)
+  :defer t)
+#+end_src
