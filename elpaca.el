@@ -44,6 +44,7 @@
 (defvar autoload-timestamps)
 (defvar generated-autoload-file)
 (defvar Info-directory-list)
+(defconst elpaca--inactive-states '(blocked finished failed))
 (defvar elpaca-installer-version -1)
 (unless (or noninteractive (= elpaca-installer-version 0.1)) (warn "Elpaca installer outdated"))
 (unless (executable-find "git") (error "Elpaca unable to find git executable"))
@@ -68,7 +69,6 @@
   "Alist mapping order statuses to faces."
   :type 'alist)
 
-(defvar elpaca--inactive-states '(blocked finished failed))
 (defvar elpaca--pre-built-steps
   '(elpaca--queue-dependencies elpaca--add-info-path elpaca--activate-package)
   "List of steps for packages which are already built.")
