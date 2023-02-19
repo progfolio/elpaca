@@ -109,6 +109,11 @@ Turning off these visual elements before UI initialization should speed up init.
 (push '(vertical-scroll-bars) default-frame-alist)
 #+end_src
 
+Prevent instructions on how to close an emacsclient frame.
+#+begin_src emacs-lisp :lexical t
+(setq server-client-instructions nil)
+#+end_src
+
 Implicitly resizing the Emacs frame adds to init time.
 Fonts larger than the system default can cause frame resizing, which adds to startup time.
 #+begin_src emacs-lisp :lexical t
