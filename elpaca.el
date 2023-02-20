@@ -1418,14 +1418,11 @@ When MESSAGE is non-nil, message the list of dependents."
   "Install ORDER, then execute BODY.
 If ORDER is `nil`, defer BODY until orders have been processed."
   (declare (indent 1))
-  (when (equal 'quote (car-safe order)) (setq order (cadr order)))
-  `(progn
-     ,@(when body (list `(push ',(cons (elpaca--first order) body)
-                               (elpaca-q<-forms (car elpaca--queues)))))
-     ,@(unless (null order) (list `(elpaca--queue
-                                    ,(if (equal '\` (car-safe order))
-                                         order
-                                       (list 'quote order)))))))
+  (unless (or (null order) (memq (car-safe order) '(\` quote))) (setq order `(quote ,order)))
+  (let ((exps (delq nil (list (and body `(push ',(cons (elpaca--first (cadr order)) body)
+                                               (elpaca-q<-forms (car elpaca--queues))))
+                              (and order `(elpaca--queue ,order))))))
+    (if (cdr exps) `(progn ,@exps) (car exps))))
 
 (defcustom elpaca-wait-interval 0.01 "Seconds between `elpaca-wait' status checks."
   :type 'number)
