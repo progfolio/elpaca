@@ -7,15 +7,13 @@
 (require 'tabulated-list)
 
 ;;; Code:
-(defface elpaca-ui-marked-package
-  '((t (:inherit default :weight bold :foreground "pink")))
-  "Face for marked packages."
-  :group 'elpaca-faces)
-
 (defgroup elpaca-ui nil
   "Elpaca's UI options."
-  :group 'elpaca-ui
-  :prefix "elpaca-ui-")
+  :group 'elpaca)
+
+(defface elpaca-ui-marked-package
+  '((t (:inherit default :weight bold :foreground "pink")))
+  "Face for marked packages.")
 
 (defcustom elpaca-ui-default-query ".*" "Initial `elpaca-ui-mode' search query."
   :type 'string)
