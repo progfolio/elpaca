@@ -149,7 +149,7 @@
                     "bulit-in" "?"))))
            (elpaca-info--section
             "%s %s" "dependents:"
-            (if-let ((ds (remq 'emacs (elpaca-dependents item))))
+            (if-let ((ds (remq 'emacs (elpaca--dependents item 'noerror))))
                 (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
               (if on-disk-p "nil" "?")))
            (when-let ((e) (statuses (elpaca<-statuses e))) (elpaca-info--section "%s\n  %S" "statuses:" statuses))
