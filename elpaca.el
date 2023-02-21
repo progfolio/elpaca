@@ -317,7 +317,7 @@ Simplified, faster version of `alist-get'."
 ;;;###autoload
 (defun elpaca-menu-item (symbol &optional items interactive)
   "Return menu item matching SYMBOL in ITEMS or `elpaca-menu-functions' cache.
-If INTERACTIVE is non-nil or SYMBOL is t, copy prompted item to `kill-ring'.
+If INTERACTIVE is non-nil or SYMBOL is t, prompt for item.
 Optional FILTER must be a function which accepts a candidate.
 If it returns nil, the candidate is removed from the candidate list."
   (interactive (list t nil t))
@@ -333,10 +333,10 @@ If it returns nil, the candidate is removed from the candidate list."
                                     items)))
                    symbol))
          (item (assoc symbol items)))
-    (if (not interactive)
-        item
+    (when interactive
       (message "menu-item copied to kill-ring:\n%S" item)
-      (kill-new (format "%S" item)))))
+      (kill-new (format "%S" item)))
+    item))
 
 ;;;###autoload
 (defun elpaca-update-menus (&rest menus)
