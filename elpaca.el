@@ -384,13 +384,13 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
     (unless (plist-get r :package) (setq r (plist-put r :package (symbol-name id))))
     (when-let ((recipe-mods (run-hook-with-args-until-success 'elpaca-recipe-functions r)))
       (setq r (elpaca-merge-plists r recipe-mods)))
-    (if (not interactive)
-        r
+    (when interactive
       (setq r (elpaca-merge-plists (append (list :package (symbol-name (car-safe id)))
                                            (cdr-safe id))
                                    r))
       (kill-new (format "%S" r))
-      (message "%S recipe copied to kill-ring:\n%S" (plist-get r :package) r))))
+      (message "%S recipe copied to kill-ring:\n%S" (plist-get r :package) r))
+    r))
 
 (defsubst elpaca--emacs-path ()
   "Return path to running Emacs."
