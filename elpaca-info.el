@@ -111,55 +111,55 @@
 
 (defun elpaca-info--print (item)
   "Print info for ITEM."
-  (read-only-mode -1)
-  (erase-buffer)
-  (setq-local elpaca--info
-              (mapcar #'cdr (cl-remove-if-not (lambda (it) (eq it item))
-                                              (append (elpaca--custom-candidates)
-                                                      (elpaca--menu-items))
-                                              :key #'car))
-              elpaca-info--item item)
-  (when (> elpaca-info--source-index (1- (length elpaca--info)))
-    (setq elpaca-info--source-index 0))
-  (let* ((info (nth elpaca-info--source-index elpaca--info))
-         (recipe (plist-get info :recipe))
-         (on-disk-p (elpaca--on-disk-p item))
-         (e (elpaca-get item))
-         (i  "\n  ")
-         (sections
-          (list
-           (elpaca-info--section "%-7s %s" "source:" (plist-get info :source))
-           (when-let ((url (plist-get info :url)))
-             (elpaca-info--section "%-7s %s" "url:" (elpaca-ui--buttonize url #'browse-url url)))
-           (unless (equal (plist-get info :source) "Init file")
-             (elpaca-info--section "%s\n%s" "menu item:"
-                                   (elpaca-info--format-recipe (plist-get info :recipe))))
-           (when-let ((i (and e (elpaca<-item e))))
+  (with-silent-modifications
+    (erase-buffer)
+    (setq-local elpaca--info
+                (mapcar #'cdr (cl-remove-if-not (lambda (it) (eq it item))
+                                                (append (elpaca--custom-candidates)
+                                                        (elpaca--menu-items))
+                                                :key #'car))
+                elpaca-info--item item)
+    (when (> elpaca-info--source-index (1- (length elpaca--info)))
+      (setq elpaca-info--source-index 0))
+    (let* ((info (nth elpaca-info--source-index elpaca--info))
+           (recipe (plist-get info :recipe))
+           (on-disk-p (elpaca--on-disk-p item))
+           (e (elpaca-get item))
+           (i  "\n  ")
+           (sections
+            (list
+             (elpaca-info--section "%-7s %s" "source:" (plist-get info :source))
+             (when-let ((url (plist-get info :url)))
+               (elpaca-info--section "%-7s %s" "url:" (elpaca-ui--buttonize url #'browse-url url)))
+             (unless (equal (plist-get info :source) "Init file")
+               (elpaca-info--section "%s\n%s" "menu item:"
+                                     (elpaca-info--format-recipe (plist-get info :recipe))))
+             (when-let ((i (and e (elpaca<-item e))))
+               (elpaca-info--section
+                "%s\n%s" "recipe:"
+                (elpaca-info--format-recipe
+                 (elpaca-merge-plists (append `(:package ,(symbol-name (car-safe i))) (cdr-safe i))
+                                      (elpaca<-recipe e)))))
              (elpaca-info--section
-              "%s\n%s" "recipe:"
-              (elpaca-info--format-recipe
-               (elpaca-merge-plists (append `(:package ,(symbol-name (car-safe i))) (cdr-safe i))
-                                    (elpaca<-recipe e)))))
-           (elpaca-info--section
-            "%s %s" "dependencies:"
-            (if-let ((ds (remq 'emacs (elpaca-dependencies item))))
-                (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
-              (if on-disk-p "nil"
-                (if (memq item (cl-set-difference elpaca-ignored-dependencies '(emacs elpaca)))
-                    "bulit-in" "?"))))
-           (elpaca-info--section
-            "%s %s" "dependents:"
-            (if-let ((ds (remq 'emacs (elpaca--dependents item 'noerror))))
-                (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
-              (if on-disk-p "nil" "?")))
-           (when-let ((e) (statuses (elpaca<-statuses e))) (elpaca-info--section "%s\n  %S" "statuses:" statuses))
-           (when-let ((e) (files (elpaca--files e)))
-             (elpaca-info--section "%s\n  %s" "files:" (string-join (elpaca-info--files files) i))))))
-    (insert (propertize (plist-get recipe :package) 'face 'elpaca-info-package))
-    (when (> (length elpaca--info) 1)
-      (insert " [" (string-join (elpaca-info--source-buttons elpaca--info) "|") "]"))
-    (insert "\n" (plist-get info :description) "\n\n" (string-join (delq nil sections) "\n")))
-  (goto-char (point-min)))
+              "%s %s" "dependencies:"
+              (if-let ((ds (remq 'emacs (elpaca-dependencies item))))
+                  (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
+                (if on-disk-p "nil"
+                  (if (memq item (cl-set-difference elpaca-ignored-dependencies '(emacs elpaca)))
+                      "bulit-in" "?"))))
+             (elpaca-info--section
+              "%s %s" "dependents:"
+              (if-let ((ds (remq 'emacs (elpaca--dependents item 'noerror))))
+                  (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
+                (if on-disk-p "nil" "?")))
+             (when-let ((e) (statuses (elpaca<-statuses e))) (elpaca-info--section "%s\n  %S" "statuses:" statuses))
+             (when-let ((e) (files (elpaca--files e)))
+               (elpaca-info--section "%s\n  %s" "files:" (string-join (elpaca-info--files files) i))))))
+      (insert (propertize (plist-get recipe :package) 'face 'elpaca-info-package))
+      (when (> (length elpaca--info) 1)
+        (insert " [" (string-join (elpaca-info--source-buttons elpaca--info) "|") "]"))
+      (insert "\n" (plist-get info :description) "\n\n" (string-join (delq nil sections) "\n")))
+    (goto-char (point-min))))
 
 ;;;###autoload
 (defun elpaca-info (item)
