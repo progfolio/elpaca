@@ -792,6 +792,9 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @item elpaca-ui-mark-delete
 @tab d
 @tab Mark package for delete action.
+@item elpaca-ui-mark-fetch
+@tab f
+@tab Mark package for fetch action.
 @item elpaca-ui-mark-install
 @tab i
 @tab Mark package for install action.

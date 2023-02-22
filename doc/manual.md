@@ -562,6 +562,7 @@ The following commands are available in the `elpaca-ui-mode`:
 | elpaca-ui-browse-package   | b       | Browse current package’s URL via ‘browse-url’.                  |
 | elpaca-ui-copy             | c       | Copy formatted UI view ENTRIES to clipboard.                    |
 | elpaca-ui-mark-delete      | d       | Mark package for delete action.                                 |
+| elpaca-ui-mark-fetch       | f       | Mark package for fetch action.                                  |
 | elpaca-ui-mark-install     | i       | Mark package for install action.                                |
 | elpaca-log                 | l       | Display ‘elpaca-log-buffer’.                                    |
 | elpaca-manager             | m       | Display elpaca’s package management UI.                         |
