@@ -46,7 +46,7 @@
 (defvar Info-directory-list)
 (defconst elpaca--inactive-states '(blocked finished failed))
 (defvar elpaca-installer-version -1)
-(unless (or noninteractive (= elpaca-installer-version 0.2)) (warn "Elpaca installer outdated"))
+(unless (or noninteractive (= elpaca-installer-version 0.2)) (warn "Elpaca installer version mismatch"))
 (unless (executable-find "git") (error "Elpaca unable to find git executable"))
 (when (and (not after-init-time) load-file-name (featurep 'package))
   (warn "Package.el loaded before Elpaca"))
