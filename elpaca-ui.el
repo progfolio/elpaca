@@ -25,10 +25,10 @@
     (install :prefix "⚙️" :face (:inherit default :weight bold :foreground "#89cff0")
              :setup (lambda () (elpaca-split-queue) (elpaca--maybe-log t))
              :action elpaca-try)
-    (rebuild :prefix "♻️️" :face (:inherit default :weight bold :foreground "#f28500")
+    (rebuild :prefix "♻️️" :face (:inherit default :weight bold :foreground "#5b2a86")
              :setup (lambda () (elpaca--maybe-log t))
              :action elpaca-rebuild)
-    (update  :prefix "⬆️" ️️:face (:inherit default :weight bold :foreground "#f28500")
+    (update  :prefix "⬆️" :face (:inherit default :weight bold :foreground "#f28500")
              :setup (lambda () (elpaca--maybe-log t))
              :action elpaca-update))
   "List of actions which can be taken on packages."
