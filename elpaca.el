@@ -46,7 +46,7 @@
 (defvar Info-directory-list)
 (defconst elpaca--inactive-states '(blocked finished failed))
 (defvar elpaca-installer-version -1)
-(unless (or noninteractive (= elpaca-installer-version 0.1)) (warn "Elpaca installer outdated"))
+(unless (or noninteractive (= elpaca-installer-version 0.2)) (warn "Elpaca installer outdated"))
 (unless (executable-find "git") (error "Elpaca unable to find git executable"))
 (when (and (not after-init-time) load-file-name (featurep 'package))
   (warn "Package.el loaded before Elpaca"))
@@ -104,6 +104,9 @@ Results in faster start-up time."
 
 (defvar elpaca-builds-directory (expand-file-name "builds" elpaca-directory)
   "Location of the builds directory.")
+
+(defvar elpaca-repos-directory (expand-file-name "repos" elpaca-directory)
+  "Location of the repos directory.")
 
 (defcustom elpaca-makeinfo-executable (executable-find "makeinfo")
   "Path of the makeinfo executable."
@@ -443,7 +446,7 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
                   (string-join (list name hostname user) ".")
                 (and name (replace-regexp-in-string "\\.el$" "" name)))))
     (unless mono-repo (push (cons info (cons dir pkg)) elpaca--repo-dirs))
-    (file-name-as-directory (expand-file-name (concat "repos/" dir) elpaca-directory))))
+    (file-name-as-directory (expand-file-name dir elpaca-repos-directory))))
 
 (defun elpaca-build-dir (recipe)
   "Return RECIPE's build dir."
@@ -1300,7 +1303,7 @@ Kick off next build step, and/or change E's status."
 Async wrapper for `elpaca-generate-autoloads'."
   (let* ((package           (elpaca<-package  e))
          (default-directory (elpaca<-build-dir e))
-         (elpaca            (expand-file-name "repos/elpaca/" elpaca-directory))
+         (elpaca            (expand-file-name "elpaca/" elpaca-repos-directory))
          (program           (let (print-level print-circle)
                               (format "%S" `(progn (setq gc-cons-percentage 1.0)
                                                    (elpaca-generate-autoloads
@@ -1840,9 +1843,8 @@ When BUILD is non-nil visit ITEM's build directory."
                      current-prefix-arg))
   (when (eq item '##) (setq item nil)) ; Empty `elpaca--read-queued' response
   (if (not item)
-      (find-file (or (and build elpaca-builds-directory)
-                     (expand-file-name "./repos/" elpaca-directory)))
-    (if-let ((e (alist-get item (elpaca--queued)))
+      (find-file (if build elpaca-builds-directory elpaca-repos-directory))
+    (if-let ((e (elpaca-get item))
              (dir (if build (elpaca<-build-dir e) (elpaca<-repo-dir e))))
         (if (file-exists-p dir)
             (find-file dir)
@@ -1890,7 +1892,7 @@ When BUILD is non-nil visit ITEM's build directory."
   "Return elpaca version information string.
 If MESSAGE is non-nil, the information is messaged."
   (interactive '(t))
-  (let* ((default-directory (expand-file-name "repos/elpaca/" elpaca-directory))
+  (let* ((default-directory (expand-file-name elpaca-repos-directory))
          (git  (string-trim (elpaca-process-output "git" "--version")))
          (repo (string-trim (elpaca-process-output "git" "log" "--pretty=%h %D" "-1")))
          (info (format "Elpaca %s\ninstaller:      %S\nemacs-version:  %s\ngit --version:  %s"
