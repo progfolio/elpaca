@@ -475,7 +475,7 @@ TEST is a unary function evaluated prior to toggling the mark.
 The current package is its sole argument."
   (let ((package (elpaca-ui-current-package)))
     (when test (funcall test package))
-    (if (elpaca-ui-package-marked-p package)
+    (if (eq (car (alist-get package elpaca-ui--marked-packages)) action)
         (elpaca-ui-unmark)
       (elpaca-ui-mark package action))))
 
