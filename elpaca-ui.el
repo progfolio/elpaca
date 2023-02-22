@@ -454,8 +454,7 @@ If region is active unmark all packages in region."
 
 (defun elpaca-ui--mark (package action)
   "Internally mark PACKAGE for ACTION."
-  (cl-pushnew (cons package (assoc action elpaca-ui-actions))
-              elpaca-ui--marked-packages :key #'car)
+  (setf (alist-get package elpaca-ui--marked-packages) (assoc action elpaca-ui-actions))
   (elpaca-ui--apply-face))
 
 (defun elpaca-ui-mark (package action)
