@@ -1502,17 +1502,15 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
     (elpaca--process-queue (nth 1 elpaca--queues)))
   nil)
 
-(defun elpaca--process (queued)
-  "Process QUEUED elpaca."
-  (when-let ((e (cdr queued))
-             ((eq (elpaca--status e) 'queued)))
-    (elpaca--continue-build e)))
+(defun elpaca--process (e)
+  "Process E."
+  (when (eq (elpaca--status e) 'queued) (elpaca--continue-build e)))
 
 (defun elpaca--process-queue (q)
   "Process elpacas in Q."
   (if (and (not (elpaca-q<-elpacas q)) (elpaca-q<-forms q))
       (elpaca--finalize-queue q)
-    (mapc #'elpaca--process (reverse (elpaca-q<-elpacas q)))))
+    (mapc #'elpaca--process (reverse (mapcar #'cdr (elpaca-q<-elpacas q))))))
 
 ;;;###autoload
 (defun elpaca-process-queues (&optional filter)
@@ -1604,9 +1602,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
                                     ((car queued))))
                          (elpaca--read-queued "Rebuild package: "))
                      t))
-  (let* ((queued (assoc item (elpaca--queued)))
-         (e (cdr queued)))
-    (unless e (user-error "Package %S is not queued" item))
+  (let ((e (or (elpaca-get item) (user-error "Package %S is not queued" item))))
     (when (eq (elpaca--status e) 'finished)
       ;;@MAYBE: remove Info/load-path entries?
       (setf (elpaca<-build-steps e)
@@ -1626,7 +1622,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
           (elpaca<-builtp e) nil)
     (when interactive
       (elpaca--maybe-log t)
-      (elpaca--process queued))))
+      (elpaca--process e))))
 
 (defun elpaca--log-updates (e)
   "Log E's fetched commits."
@@ -1658,17 +1654,16 @@ With a prefix argument, rebuild current file's package or prompt if none found."
 This does not merge changes or rebuild the packages.
 If INTERACTIVE is non-nil immediately process, otherwise queue."
   (interactive (list (elpaca--read-queued "Fetch Package Updates: ") t))
-  (if-let ((queued (assoc item (elpaca--queued))))
-      (let ((e (cdr queued)))
-        (elpaca--signal e "Fetching updates" 'fetching-updates)
-        (setf (elpaca<-build-steps e) (list #'elpaca--fetch #'elpaca--log-updates)
-              (elpaca<-queue-time e)  (current-time)
-              (elpaca<-statuses e) (list 'queued)
-              (elpaca<-builtp e) nil)
-        (when interactive
-          (elpaca--maybe-log t)
-          (elpaca--process queued)))
-    (user-error "Package %S is not queued" item)))
+  (let ((e (or (elpaca-get item) (user-error "Package %S is not queued" item))))
+    (elpaca--signal e "Fetching updates" 'fetching-updates)
+    (elpaca--unprocess e)
+    (setf (elpaca<-build-steps e) (list #'elpaca--fetch #'elpaca--log-updates)
+          (elpaca<-queue-time e)  (current-time)
+          (elpaca<-statuses e) (list 'queued)
+          (elpaca<-builtp e) nil)
+    (when interactive
+      (elpaca--maybe-log t)
+      (elpaca--process e))))
 
 ;;;###autoload
 (defun elpaca-fetch-all (&optional interactive)
@@ -1708,11 +1703,9 @@ INTERACTIVE is passed to `elpaca-fetch'."
   "Update ITEM's associated package.
 If INTERACTIVE is non-nil, the queued order is processed immediately."
   (interactive (list (elpaca--read-queued "Update package: ") t))
-  (let* ((queued (assoc item (elpaca--queued)))
-         (e (cdr queued))
+  (let* ((e (or (elpaca-get item) (user-error "Package %S is not queued" item)))
          (recipe (elpaca<-recipe e))
          (pin (plist-get recipe :pin)))
-    (unless queued (user-error "Package %S is not queued" item))
     (elpaca--signal e "Fetching updates" 'fetching-updates)
     (setf (elpaca<-build-steps e)
           (if pin
@@ -1733,7 +1726,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
     (elpaca--unprocess e)
     (when interactive
       (elpaca--maybe-log t)
-      (elpaca--process queued))))
+      (elpaca--process e))))
 
 ;;;###autoload
 (defun elpaca-update-all (&optional interactive)
