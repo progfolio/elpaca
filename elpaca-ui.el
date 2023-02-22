@@ -437,7 +437,7 @@ If SILENT is non-nil, supress update message."
 
 (defun elpaca-ui-package-marked-p (package)
   "Return t if PACKAGE is marked."
-  (and (member package (mapcar #'car elpaca-ui--marked-packages)) t))
+  (and (memq package (mapcar #'car elpaca-ui--marked-packages)) t))
 
 (defun elpaca-ui--unmark (package)
   "Unmark PACKAGE."
