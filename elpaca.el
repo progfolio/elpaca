@@ -1668,6 +1668,9 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
       (elpaca--maybe-log t "#update-log")
       (elpaca--process e))))
 
+;;@FIX: don't pass interactive param.
+;;call elpaca-fetch non-interactively to queue all orders
+;;then handle interactive arg.
 ;;;###autoload
 (defun elpaca-fetch-all (&optional interactive)
   "Fetch remote commits for queued elpacas.
