@@ -1464,9 +1464,9 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
         (message spec (* 100 (/ (elpaca-q<-processed q) (float (length (elpaca-q<-elpacas q))))))
         (setq elpaca--waiting nil)))))
 
-(defun elpaca--maybe-log (condition)
-  "Log when CONDITION is non-nil."
-  (when condition (require 'elpaca-log) (elpaca-log--latest)))
+(defun elpaca--maybe-log (condition &rest queries)
+  "Log latest QUERIES when CONDITION is non-nil."
+  (when condition (require 'elpaca-log) (apply #'elpaca-log--latest queries)))
 
 (defvar elpaca--try-package-history nil "History for `elpaca-try'.")
 (declare-function elpaca-log--latest "elpaca-log")
@@ -1487,7 +1487,7 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
          t))
   (if (not interactive)
       (elpaca--queue (elpaca--first order))
-    (elpaca--maybe-log t)
+    (elpaca--maybe-log t "#linked-errors")
     (elpaca-queue
      (eval `(elpaca ,order
               ,(when-let (((equal current-prefix-arg '(4)))
@@ -1624,7 +1624,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
           (elpaca<-files e) nil
           (elpaca<-builtp e) nil)
     (when interactive
-      (elpaca--maybe-log t)
+      (elpaca--maybe-log t "#linked-errors")
       (elpaca--process e))))
 
 (defun elpaca--log-updates (e)
@@ -1665,7 +1665,7 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
           (elpaca<-statuses e) (list 'queued)
           (elpaca<-builtp e) nil)
     (when interactive
-      (elpaca--maybe-log t)
+      (elpaca--maybe-log t "#update-log")
       (elpaca--process e))))
 
 ;;;###autoload
@@ -1728,7 +1728,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
           (elpaca<-builtp e)     nil)
     (elpaca--unprocess e)
     (when interactive
-      (elpaca--maybe-log t)
+      (elpaca--maybe-log t "#linked-errors #update-log")
       (elpaca--process e))))
 
 ;;;###autoload
@@ -1744,7 +1744,7 @@ When INTERACTIVE, immediately process queue."
   (dolist (q elpaca--queues) (setf (elpaca-q<-status q) 'incomplete
                                    (elpaca-q<-processed q) 0))
   (when interactive
-    (elpaca--maybe-log t)
+    (elpaca--maybe-log t "#linked-errors #update-log")
     (elpaca-process-queues)))
 
 ;;; Lockfiles

@@ -184,12 +184,12 @@
     when entry collect entry)))
 
 ;;;###autoload
-(defun elpaca-log--latest ()
-  "Log latest activity."
+(defun elpaca-log--latest (&rest queries)
+  "Log latest activity with queries."
   (elpaca-log)
   (with-current-buffer elpaca-log-buffer
     (setq elpaca-ui--prev-entry-count (length (funcall elpaca-ui-entries-function)))
-    (elpaca-log "#latest #linked-errors")))
+    (elpaca-log (concat "#latest " (string-join queries " ")))))
 
 (defun elpaca-log--sort-chronologically (a b)
   "Sort entries A and B chronologically."
