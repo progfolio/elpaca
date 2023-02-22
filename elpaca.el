@@ -1895,7 +1895,7 @@ When BUILD is non-nil visit ITEM's build directory."
   "Return elpaca version information string.
 If MESSAGE is non-nil, the information is messaged."
   (interactive '(t))
-  (let* ((default-directory (expand-file-name elpaca-repos-directory))
+  (let* ((default-directory (expand-file-name "elpaca" elpaca-repos-directory))
          (git  (string-trim (elpaca-process-output "git" "--version")))
          (repo (string-trim (elpaca-process-output "git" "log" "--pretty=%h %D" "-1")))
          (info (format "Elpaca %s\ninstaller:      %S\nemacs-version:  %s\ngit --version:  %s"
