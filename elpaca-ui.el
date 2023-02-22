@@ -28,6 +28,9 @@
     (rebuild :prefix "♻️️" :face (:inherit default :weight bold :foreground "#5b2a86")
              :setup (lambda () (elpaca--maybe-log t))
              :action elpaca-rebuild)
+    (fetch   :prefix "‍🐕‍🦺" :face (:inherit default :weight bold :foreground "#efc88b")
+             :setup (lambda () (elpaca--maybe-log t))
+             :action elpaca-fetch)
     (update  :prefix "⬆️" :face (:inherit default :weight bold :foreground "#f28500")
              :setup (lambda () (elpaca--maybe-log t))
              :action elpaca-update))
@@ -113,6 +116,7 @@ exclamation point to it. e.g. #!installed."
     (define-key m (kbd "b") 'elpaca-ui-browse-package)
     (define-key m (kbd "c") 'elpaca-ui-copy)
     (define-key m (kbd "d") 'elpaca-ui-mark-delete)
+    (define-key m (kbd "f") 'elpaca-ui-mark-fetch)
     (define-key m (kbd "i") 'elpaca-ui-mark-install)
     (define-key m (kbd "l") 'elpaca-log)
     (define-key m (kbd "m") 'elpaca-manager)
@@ -499,6 +503,9 @@ The current package is its sole argument."
 
 (elpaca-ui-defmark install
   (lambda (p) (when (elpaca-installed-p p) (user-error "Package %S already installed" p))))
+
+(elpaca-ui-defmark fetch
+  (lambda (p) (unless (elpaca-installed-p p) (user-error "Package %S is not installed" p))))
 
 (elpaca-ui-defmark update
   (lambda (p) (unless (elpaca-installed-p p) (user-error "Package %S is not installed" p))))
