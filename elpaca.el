@@ -1595,6 +1595,23 @@ If PROMPT is non-nil, it is used instead of the default."
     (when (> (elpaca-q<-processed q) 0) (cl-decf (elpaca-q<-processed q)))
     (setf (elpaca-q<-status q) 'incomplete)))
 
+(defun elpaca--map (fn &optional query process) ;@FIX: better name, docstring
+  "Map FN over queued items.
+Items with same repo are only called once.
+If PROCESS is non-nil immediately process queues, logging QUERY."
+  (cl-loop with repos
+           for (item . e) in (reverse (elpaca--queued))
+           for repo = (elpaca<-repo-dir e)
+           do (if (member repo repos)
+                  (push 'queued (elpaca<-statuses e))
+                (push repo repos)
+                (funcall fn item)))
+  (dolist (q elpaca--queues) (setf (elpaca-q<-status q) 'incomplete
+                                   (elpaca-q<-processed q) 0))
+  (when process
+    (elpaca--maybe-log t query)
+    (elpaca-process-queues)))
+
 ;;;###autoload
 (defun elpaca-rebuild (item &optional interactive)
   "Rebuild ITEM's associated package.
@@ -1668,16 +1685,11 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
       (elpaca--maybe-log t "#update-log")
       (elpaca--process e))))
 
-;;@FIX: don't pass interactive param.
-;;call elpaca-fetch non-interactively to queue all orders
-;;then handle interactive arg.
 ;;;###autoload
 (defun elpaca-fetch-all (&optional interactive)
-  "Fetch remote commits for queued elpacas.
-INTERACTIVE is passed to `elpaca-fetch'."
+  "Fetch queued elpaca remotes. If INTERACTIVE is non-nil, process queues."
   (interactive (list t))
-  (cl-loop for (item . _) in (cl-remove-duplicates (elpaca--queued) :key #'car)
-           do (elpaca-fetch item interactive)))
+  (elpaca--map #'elpaca-fetch "#update-log" interactive))
 
 (defun elpaca--merge-process-sentinel (process event)
   "Handle PROCESS EVENT."
@@ -1736,19 +1748,9 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
 
 ;;;###autoload
 (defun elpaca-update-all (&optional interactive)
-  "Update all queued packages.
-When INTERACTIVE, immediately process queue."
+  "Update all queued packages. If INTERACTIVE is non-nil, process queues."
   (interactive (list t))
-  (cl-loop with repos
-           for (item . e) in (reverse (elpaca--queued))
-           for repo = (elpaca<-repo-dir e)
-           if (member repo repos) do (push 'queued (elpaca<-statuses e))
-           else do (push repo repos) (elpaca-update item))
-  (dolist (q elpaca--queues) (setf (elpaca-q<-status q) 'incomplete
-                                   (elpaca-q<-processed q) 0))
-  (when interactive
-    (elpaca--maybe-log t "#linked-errors #update-log")
-    (elpaca-process-queues)))
+  (elpaca--map #'elpaca-update "#linked-errors #update-log" interactive))
 
 ;;; Lockfiles
 (defun elpaca-declared-p (item)
