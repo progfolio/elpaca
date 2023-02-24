@@ -90,6 +90,15 @@
   (tooltip-mouse :inherit region)
   (tooltip-selection :extend t :weight bold :background "#0B0B11"))
 
+(mine-add-faces diff
+  (header :background ,dark-purple)
+  (file-header :background ,light-purple)
+  (added :background ,dark-purple :foreground ,green)
+  (refine-added :background ,light-purple :foreground ,green)
+  (refine-removed :background ,light-purple :foreground ,red)
+  (indicator-added :background ,dark-purple :foreground ,green)
+  (removed :background ,dark-purple :foreground ,red))
+
 (mine-add-faces doom-modeline
   (bar :inherit default)
   (buffer-file :background unspecified :foreground ,red :weight bold)
@@ -181,6 +190,10 @@
 
 (mine-add-faces info
   (string :foreground ,green))
+
+(mine-add-faces magit
+  (section-highlight :background ,light-purple)
+  (hash :foreground ,gray))
 
 (mine-add-faces message
   (header-name :inherit org-block)
