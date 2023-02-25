@@ -1666,7 +1666,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
                    :command  '("git" "fetch" "--all" "-v") ;;@TODO: make --all optional
                    :filter   #'elpaca--process-filter
                    :sentinel (apply-partially #'elpaca--process-sentinel "Remotes fetched" nil))))
-    (process-put process :elpaca e)))
+    (ignore (process-put process :elpaca e))))
 
 ;;;###autoload
 (defun elpaca-fetch (item &optional interactive)
