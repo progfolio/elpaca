@@ -1549,7 +1549,7 @@ do not confirm before deleting package and DEPS."
                (repo-p        (and repo-dir (file-exists-p repo-dir)))
                (build-dir     (elpaca<-build-dir e))
                (ignored       (if (listp ignored) ignored (list ignored)))
-               (dependents    (cl-set-difference (elpaca-dependents id) ignored))
+               (dependents    (cl-set-difference (ignore-errors (elpaca-dependents id)) ignored))
                (dependencies  (and deps repo-p
                                    (ignore-errors (elpaca-dependencies
                                                    id elpaca-ignored-dependencies))))
