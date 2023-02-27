@@ -25,7 +25,7 @@ To export:
 
 * Video Tour
 
-#+html: <p align="center"><a href="https://www.youtube.com"><img src="./images/elpaca-manager-install.gif"/></a></p>
+#+html: <p align="center"><a href="https://www.youtube.com/watch?v=5Ud-TE3iIQY"><img src="./images/elpaca-manager-install.gif"/></a></p>
 
 #+include: "./common.org::installation"
 
