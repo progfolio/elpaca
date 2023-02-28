@@ -40,18 +40,18 @@
 (defcustom elpaca-ui-search-tags
   '((dirty     . (lambda (items) (cl-remove-if-not #'elpaca-worktree-dirty-p items :key #'car)))
     (declared  . (lambda (items) (cl-remove-if-not #'elpaca-declared-p items :key #'car)))
-    (orphan    . (lambda (items) (mapcar
-                                  (lambda (dir)
-                                    (let ((name (file-name-base dir)))
-                                      (list (intern name)
-                                            (vector (propertize name 'orphan-dir dir)
-                                                    "orphan package" "n/a" "n/a" "n/a"))))
-                                  (cl-set-difference
-                                   (cl-remove-if-not
-                                    #'file-directory-p
-                                    (nthcdr 2 (directory-files elpaca-builds-directory t)))
-                                   (mapcar (lambda (q) (elpaca<-build-dir (cdr q))) (elpaca--queued))
-                                   :test #'equal))))
+    (orphan    . (lambda (_)
+                   (mapcar (lambda (dir)
+                             (let ((name (file-name-nondirectory (directory-file-name dir))))
+                               (list (intern name) (vector (propertize name 'orphan-dir dir)
+                                                           "orphan package" "n/a" "n/a" "n/a"))))
+                           (cl-set-difference
+                            (cl-remove-if-not
+                             #'file-directory-p
+                             (nthcdr 2 (mapcar #'file-name-as-directory
+                                               (directory-files elpaca-repos-directory t))))
+                            (mapcar (lambda (q) (elpaca<-repo-dir (cdr q))) (elpaca--queued))
+                            :test #'equal))))
     (unique    . (lambda (items) (cl-remove-duplicates items :key #'car :from-end t)))
     (random    . (lambda (items &optional limit)
                    (if (< (length items) (or limit 10))
