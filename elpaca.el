@@ -694,11 +694,12 @@ Optional ARGS are passed to `elpaca--signal', which see."
     (condition-case-unless-debug err
         (eval `(progn ,@autoloads) t)
       ((error) (warn "Autoload Error: %S" err))))
-  (cl-loop with forms = (reverse (elpaca-q<-forms q))
-           for (item . body) in forms
-           do (condition-case-unless-debug err
-                  (eval `(progn ,@body) t)
-                ((error) (warn "Package Config Error %s: %S" item err))))
+  (when-let ((forms (reverse (elpaca-q<-forms q))))
+    (with-temp-buffer (setq-local lexical-binding t)
+                      (cl-loop for (item . body) in forms
+                               do (condition-case-unless-debug err
+                                      (eval `(progn ,@body) t)
+                                    ((error) (warn "Config Error %s: %S" item err))))))
   (run-hooks 'elpaca-post-queue-hook)
   (setf (elpaca-q<-status q) 'complete)
   (let ((next (nth (1+ (elpaca-q<-id q)) (reverse elpaca--queues))))
