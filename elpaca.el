@@ -167,19 +167,7 @@ The function may return nil or a plist to be merged with the order.
 This hook is run via `run-hook-with-args-until-success'."
   :type 'hook)
 
-(defun elpaca-recipe-defaults (recipe)
-  "Default RECIPE modifications. Matches any RECIPE."
-  (let ((plist))
-    (unless (plist-get recipe :files)
-      (push (list :defaults) plist)
-      (push :files plist))
-    (when-let ((url (plist-get recipe :url))
-               ((string-match-p "depp.brause.cc" url)))
-      (push nil plist)
-      (push :depth plist))
-    plist))
-
-(defcustom elpaca-recipe-functions '(elpaca-recipe-defaults)
+(defcustom elpaca-recipe-functions nil
   "Abnormal hook run to alter recipes.
 Each element must be a unary function which accepts an recipe plist.
 The function may return nil or a plist to be merged with the recipe.
@@ -789,7 +777,8 @@ FILES and NOCONS are used recursively."
          (default-directory repo-dir)
          (build-dir         (elpaca<-build-dir e))
          (recipe            (elpaca<-recipe e))
-         (files             (or files (plist-get recipe :files)))
+         (files             (or files (if-let ((member (plist-member recipe :files)))
+                                          (cadr member) elpaca-default-files-directive)))
          (exclusions        nil)
          (targets           nil)
          (with-subdirs      nil))
@@ -1227,12 +1216,17 @@ Kick off next build step, and/or change E's status."
               (t (elpaca--continue-build e "unblocked by dependency" 'unblocked))))))
 
 (defun elpaca--clone-process-sentinel (process _event)
-  "Sentinel for clone PROCESS."
+  "Sentinel for clone PROCESS." ;;@HACK: relies on locale dependent output
   (let ((e   (process-get process :elpaca))
-        (raw (process-get process :raw-output)))
-    (if (and (string-match-p "fatal" raw) (not (string-match-p "already exists" raw)))
-        (elpaca--fail e (nth 2 (car (elpaca<-log e))))
-      (elpaca--continue-build e))))
+        (raw (process-get process :raw-output))
+        (success (= (process-exit-status process) 0)))
+    (unless (or success (string-match-p "already exists" raw))
+      (if (not (string-match-p "does not support shallow capabilities" raw))
+          (elpaca--fail e (nth 2 (car (elpaca<-log e))))
+        (setf (elpaca<-recipe e) (plist-put (elpaca<-recipe e) :depth nil))
+        (elpaca--signal e "Recloning with recipe :depth nil")
+        (push #'elpaca--clone (elpaca<-build-steps e))))
+    (elpaca--continue-build e)))
 
 (defun elpaca--remote (remotes)
   "Return default remote from :REMOTES."
