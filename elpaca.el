@@ -348,11 +348,11 @@ When called interactively with \\[universal-argument] update all menus."
     (not (cadr member))))
 
 ;;;###autoload
-(defun elpaca-recipe (order &optional interactive)
+(defun elpaca-recipe (order &optional items interactive)
   "Return recipe computed from ORDER.
 ORDER is any of the following values:
   - nil. The order is prompted for.
-  - an item symbol which will be looked up via `elpaca-menu-functions'
+  - an item symbol, looked up in ITEMS or `elpaca-menu-functions' cache.
   - an order list of the form: \\='(ITEM . PROPS).
 When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
   (interactive (list (if-let ((elpaca-overriding-prompt "Recipe: ")
@@ -360,7 +360,7 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
                                                                 (elpaca--menu-items t)))))
                          (cons (car item) (plist-get (cdr item) :recipe))
                        (user-error "No recipe selected"))
-                     t))
+                     nil t))
   (let* ((props (cdr-safe order))
          (id (elpaca--first order))
          (nonheritablep (elpaca--inheritance-disabled-p props))
@@ -370,7 +370,7 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
                            (elpaca--inheritance-disabled-p
                             (elpaca-merge-plists
                              mods (plist-member props :inherit))))
-                 (plist-get (cdr (elpaca-menu-item id)) :recipe)))
+                 (plist-get (cdr (elpaca-menu-item (or id t) items)) :recipe)))
          (r (elpaca-merge-plists item mods props)))
     (unless (plist-get r :package) (setq r (plist-put r :package (symbol-name id))))
     (when-let ((recipe-mods (run-hook-with-args-until-success 'elpaca-recipe-functions r)))
