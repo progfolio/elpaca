@@ -941,7 +941,8 @@ If it matches, the E associated with process has its STATUS updated."
 
 (defun elpaca--install-info (e)
   "Install E's .info files."
-  (when-let ((dir (expand-file-name "dir" (elpaca<-build-dir e)))
+  (when-let ((elpaca-install-info-executable)
+             (dir (expand-file-name "dir" (elpaca<-build-dir e)))
              ((not (file-exists-p dir)))
              (specs (or (elpaca<-files e) (setf (elpaca<-files e) (elpaca--files e)))))
     (elpaca--signal e "Installing Info files" 'info)
@@ -954,7 +955,8 @@ If it matches, the E associated with process has its STATUS updated."
              do (setf (elpaca<-build-steps e)
                       (push (apply-partially #'elpaca--install-info-async file dir)
                             (elpaca<-build-steps e)))))
-  (elpaca--continue-build e))
+  (elpaca--continue-build e (unless elpaca-install-info-executable
+                              "No elpaca-install-info-executable")))
 
 (defun elpaca--dispatch-build-commands-process-sentinel (process event)
   "PROCESS EVENT."
