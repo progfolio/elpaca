@@ -204,7 +204,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
 (defcustom elpaca-hide-initial-build nil
   "When non-nil, hide `elpaca-log' during init time builds." :type 'boolean)
 (defvar elpaca--ibc initial-buffer-choice "User's `initial-buffer-choice'.")
-(defun elpaca--set-ibc (_ new &rest _)
+(defun elpaca--set-ibc (_ new &rest _args)
   "Update `elpaca--ibc' when `initial-buffer-choice' set to NEW."
   (unless (eq new #'elpaca--ibs) (setq elpaca--ibc new)))
 (add-variable-watcher 'initial-buffer-choice #'elpaca--set-ibc)
