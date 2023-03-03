@@ -654,15 +654,16 @@ Optional ARGS are passed to `elpaca--signal', which see."
   "Return E's log duration."
   (time-subtract (nth 1 (car (elpaca<-log e))) (elpaca<-queue-time e)))
 
-(defun elpaca--queue (item)
-  "Queue (ITEM . e) in `elpaca--queued'. Return e."
+(defun elpaca--queue (item &optional queue)
+  "ADD (ITEM . E) to QUEUE or current queue. Return E."
   (if (and (not after-init-time) (elpaca-get item))
       (warn "Duplicate item declaration: %S" item)
     (let* ((e (elpaca<-create item))
            (log (pop (elpaca<-log e)))
            (status (car log))
            (info (nth 2 log))
-           (q (car elpaca--queues)))
+           (q (or queue (car elpaca--queues))))
+      (when queue (setf (elpaca<-queue-id e) (elpaca-q<-id q)))
       (push (cons (elpaca<-id e) e) (elpaca-q<-elpacas q))
       (if (eq status 'struct-failed)
           (elpaca--fail e info)
@@ -1116,12 +1117,13 @@ If RECACHE is non-nil, do not use cached dependencies."
           (elpaca--fail e (format "Requires %S; running %S" emacs emacs-version))
         (when (= (length externals) ; Our dependencies beat us to the punch
                  (cl-loop with e-id = (elpaca<-id e)
+                          with q = (elpaca--q e)
                           for dependency in externals
                           for queued = (elpaca-alist-get dependency (elpaca--queued))
-                          for d = (or queued (elpaca--queue dependency))
+                          for d = (or queued (elpaca--queue dependency q))
                           for d-id = (elpaca<-id d)
                           do
-                          (unless (>= (elpaca<-queue-id e) (elpaca<-queue-id d))
+                          (when (and queued (> (elpaca<-queue-id d) (elpaca<-queue-id e)))
                             (elpaca--fail d (format "dependent %S in past queue" e-id))
                             (elpaca--fail e (format "dependency %S in future queue" d-id)))
                           (unless (memq d-id (elpaca<-dependencies e))
