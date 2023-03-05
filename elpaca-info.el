@@ -134,7 +134,7 @@
              (unless (equal (plist-get info :source) "Init file")
                (elpaca-info--section "%s\n%s" "menu item:"
                                      (elpaca-info--format-recipe (plist-get info :recipe))))
-             (when-let ((i (and e (elpaca<-item e))))
+             (when-let ((i (and e (elpaca<-order e))))
                (elpaca-info--section
                 "%s\n%s" "recipe:"
                 (elpaca-info--format-recipe

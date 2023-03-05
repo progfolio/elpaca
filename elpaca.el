@@ -469,7 +469,7 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
 
 (cl-defstruct (elpaca< (:constructor elpaca<--create) (:type list) (:named))
   "Order for queued processing."
-  id package item statuses
+  id package order statuses
   repo-dir build-dir mono-repo
   files build-steps recipe siblings
   dependencies dependents -dependencies
@@ -528,12 +528,12 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
       (setq-local elpaca-ui-want-tail nil)
       (current-buffer))))
 
-(defun elpaca<-create (item)
-  "Create a new elpaca struct from ITEM."
+(defun elpaca<-create (order)
+  "Create a new elpaca struct from ORDER."
   (let* ((status 'queued)
          (info "Package queued")
-         (id (elpaca--first item))
-         (recipe (elpaca--required-arg (elpaca-recipe item) "No recipe: %S"))
+         (id (elpaca--first order))
+         (recipe (elpaca--required-arg (elpaca-recipe order) "No recipe: %S"))
          (repo-dir (and recipe (elpaca--required-arg (elpaca-repo-dir recipe)
                                  "Unable to determine repo dir: %S")))
          (build-dir (and recipe (elpaca-build-dir recipe)))
@@ -550,7 +550,7 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
     (unless (or builtp elpaca--ibs-set elpaca-hide-initial-build elpaca-after-init-time)
       (setq initial-buffer-choice #'elpaca--ibs elpaca--ibs-set t))
     (elpaca<--create
-     :id id :package (symbol-name id) :item item :statuses (list status)
+     :id id :package (symbol-name id) :order order :statuses (list status)
      :repo-dir repo-dir :build-dir build-dir :mono-repo mono-repo
      :build-steps build-steps :recipe recipe :builtp builtp
      :log (list (list status nil info)))))
@@ -654,21 +654,22 @@ Optional ARGS are passed to `elpaca--signal', which see."
   "Return E's log duration."
   (time-subtract (nth 1 (car (elpaca<-log e))) (elpaca<-queue-time e)))
 
-(defun elpaca--queue (item &optional queue)
-  "ADD (ITEM . E) to QUEUE or current queue. Return E."
-  (if (and (not after-init-time) (elpaca-get item))
-      (warn "Duplicate item declaration: %S" item)
-    (let* ((e (elpaca<-create item))
-           (log (pop (elpaca<-log e)))
-           (status (car log))
-           (info (nth 2 log))
-           (q (or queue (car elpaca--queues))))
-      (when queue (setf (elpaca<-queue-id e) (elpaca-q<-id q)))
-      (push (cons (elpaca<-id e) e) (elpaca-q<-elpacas q))
-      (if (eq status 'struct-failed)
-          (elpaca--fail e info)
-        (elpaca--signal e info status))
-      e)))
+(defun elpaca--queue (order &optional queue)
+  "ADD ORDER to QUEUE or current queue. Return E."
+  (let ((item (elpaca--first order)))
+    (if (and (not after-init-time) (elpaca-get item))
+        (warn "Duplicate item declaration: %S" item)
+      (let* ((e (elpaca<-create order))
+             (log (pop (elpaca<-log e)))
+             (status (car log))
+             (info (nth 2 log))
+             (q (or queue (car elpaca--queues))))
+        (when queue (setf (elpaca<-queue-id e) (elpaca-q<-id q)))
+        (push (cons (elpaca<-id e) e) (elpaca-q<-elpacas q))
+        (if (eq status 'struct-failed)
+            (elpaca--fail e info)
+          (elpaca--signal e info status))
+        e))))
 
 ;;;###autoload
 (defun elpaca-split-queue (&rest args)
