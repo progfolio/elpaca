@@ -1783,6 +1783,7 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
                 :build (:not elpaca--compile-info))
   :commands (mu4e mu4e-update-index)
   :custom
+  (mu4e-search-threads nil)
   (mu4e-update-interval 900 "Update every fifteen minutes")
   (mail-user-agent 'mu4e-user-agent)
   (mu4e-org-support t)
