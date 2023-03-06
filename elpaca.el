@@ -303,7 +303,7 @@ Simplified, faster version of `alist-get'."
 
 (defsubst elpaca--q (e)
   "Return E's Q."
-  (car (last elpaca--queues (1+ (elpaca<-queue-id e)))))
+  (and e (car (last elpaca--queues (1+ (elpaca<-queue-id e))))))
 
 ;;;###autoload
 (defun elpaca-menu-item (symbol &optional items interactive)
