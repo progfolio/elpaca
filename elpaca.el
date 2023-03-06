@@ -1328,7 +1328,7 @@ Loads or caches autoloads."
          (default-directory build-dir)
          (package           (elpaca<-package e))
          (autoloads         (expand-file-name (concat package "-autoloads.el"))))
-    (cl-pushnew build-dir load-path)
+    (cl-pushnew build-dir load-path :test #'equal)
     ;;@TODO: condition on a slot we set on the e to indicate cached recipe?
     (elpaca--signal e "Package build dir added to load-path")
     (when (file-exists-p autoloads)
