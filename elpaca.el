@@ -143,7 +143,7 @@ Setting it too high causes prints fewer status updates."
   "List of steps which are run when installing/building a package."
   :type 'list)
 
-(defvar elpaca--debug-init debug-on-error "Preserves --debug-init option.")
+(defvar elpaca--debug-init init-file-debug "Preserves --debug-init option.")
 
 (defvar elpaca-default-files-directive
   '("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
@@ -1519,7 +1519,7 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
 (defun elpaca-process-queues (&optional filter)
   "Process the incomplete queues.
 FILTER must be a unary function which accepts and returns a queue list."
-  (when (not after-init-time) (setq debug-on-error elpaca--debug-init elpaca--debug-init nil))
+  (when (and after-init-time elpaca--debug-init) (setq debug-on-error t elpaca--debug-init nil))
   (if-let ((queues (if filter (funcall filter (reverse elpaca--queues))
                      (reverse elpaca--queues)))
            (incomplete (cl-find 'incomplete queues :key #'elpaca-q<-status)))
