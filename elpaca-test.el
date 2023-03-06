@@ -39,7 +39,7 @@
 
 ;;; Code:
 (require 'elpaca)
-(defvar elpaca-test--keywords '(:before :dir :early-init :init :keep :name :ref))
+(defvar elpaca-test--keywords '(:args :before :dir :early-init :init :keep :name :ref))
 (eval-and-compile
   (defun elpaca-test--args (body)
     "Return arg plist from BODY."
@@ -178,7 +178,9 @@ The following keys are recognized:
        (make-process
         :name "elpaca-test"
         :command (list ,(elpaca--emacs-path)
-                       "--debug-init"
+                       ,@(if-let ((args (plist-get args :args)))
+                             (unless (equal args '(nil)) args)
+                           '("--debug-init"))
                        ,@(if (< emacs-major-version 29)
                              `("-q" ; Approximate startup.el sequence
                                "--eval" "(setq debug-on-error t)"
