@@ -836,7 +836,7 @@ FILES and NOCONS are used recursively."
           (elpaca--signal e "Adding Info path" 'info)
           (with-eval-after-load 'info
             (info-initialize)
-            (cl-pushnew build-dir Info-directory-list)))
+            (cl-pushnew build-dir Info-directory-list :test #'equal)))
       (elpaca--signal e "No Info dir file found" 'info))
     (elpaca--continue-build e)))
 
