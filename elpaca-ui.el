@@ -155,12 +155,17 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
   "Major mode to manage packages."
   (setq tabulated-list-printer #'elpaca-ui--apply-faces)
   (add-hook 'minibuffer-setup-hook 'elpaca-ui--minibuffer-setup)
+  (elpaca-ui-live-update-mode 1)
   (hl-line-mode))
+
+(define-minor-mode elpaca-ui-live-update-mode "Filters results as query is typed."
+  :lighter " elui")
 
 (defun elpaca-ui--minibuffer-setup ()
   "Set up the minibuffer for live filtering."
   (when-let ((buffer (with-minibuffer-selected-window
-                       (and (derived-mode-p 'elpaca-ui-mode)
+                       (and elpaca-ui-live-update-mode
+                            (derived-mode-p 'elpaca-ui-mode)
                             (eq this-command 'elpaca-ui-search)
                             (current-buffer)))))
     (add-hook 'post-command-hook (lambda () (elpaca-ui--debounce-search buffer)) nil :local)))
