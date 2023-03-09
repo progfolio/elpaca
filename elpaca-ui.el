@@ -232,7 +232,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                      (t
                       (when chunk
                         (push (elpaca-ui--parse-tokens (string-join (nreverse chunk) " ")) ops))
-                      (setq chunk nil)
+                      (setq chunk nil tagp nil)
                       (push `((elisp ,op)) ops)))))
               (end-of-file (setq finished t))
               (invalid-read-syntax (when adjustp (forward-char))
