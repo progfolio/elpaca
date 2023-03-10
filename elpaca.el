@@ -901,26 +901,27 @@ If it matches, the E associated with process has its STATUS updated."
   (elpaca--signal e "Compiling Info files" 'info)
   (if-let ((default-directory (elpaca<-build-dir e))
            (elpaca-makeinfo-executable)
+           (no-info t)
            (files
             (cl-loop for (repo-file . build-file) in
                      (or (elpaca<-files e)
                          (setf (elpaca<-files e) (elpaca--files e)))
-                     for f = (when-let (((string-match-p "\\.texi\\(nfo\\)?$" repo-file))
-                                        (info (concat (file-name-sans-extension build-file) ".info"))
-                                        ((not (file-exists-p info))))
-                               (list repo-file "-o" info))
+                     when (and no-info (string-match-p "\\.info$" repo-file))
+                     do (setq no-info nil)
+                     for f = (when (string-match-p "\\.texi\\(nfo\\)?$" repo-file)
+                               (list repo-file "-o"
+                                     (concat (file-name-sans-extension build-file) ".info")))
                      when f collect f))
-           (command `(,elpaca-makeinfo-executable ,@(apply #'append files)))
            (process (make-process
                      :name (concat "elpaca-compile-info-" (elpaca<-package e))
                      :connection-type 'pipe
-                     :command command
+                     :command `(,elpaca-makeinfo-executable ,@(apply #'append files))
                      :filter   #'elpaca--process-filter
                      :sentinel #'elpaca--compile-info-process-sentinel)))
       (process-put process :elpaca e)
-    (elpaca--remove-build-steps e '(elpaca--install-info elpaca--add-info-path))
+    (when no-info (elpaca--remove-build-steps e '(elpaca--install-info elpaca--add-info-path)))
     (elpaca--continue-build
-     e (concat (if elpaca-makeinfo-executable ".info files" "makeinfo") " not found"))))
+     e (concat (if elpaca-makeinfo-executable "Info source files" "makeinfo") " not found"))))
 
 (defun elpaca--install-info-process-sentinel (process event)
   "Sentinel for info installation PROCESS EVENT."
