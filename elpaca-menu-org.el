@@ -80,7 +80,7 @@
                           :repo "https://git.savannah.gnu.org/git/emacs/org-mode.git"
                           :pre-build '(progn (require 'elpaca-menu-org) (elpaca-menu-org--build))
                           :build '(:not elpaca--generate-autoloads-async)
-                          :files '(:defaults ("etc/styles/" "etc/styles/*")))))
+                          :files '(:defaults ("etc/styles/" "etc/styles/*" "doc/*.texi")))))
              (cons 'org-contrib
                    (list :source "Org"
                          :description "Contributed Org packages in search of new maintainers"
