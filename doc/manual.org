@@ -494,8 +494,14 @@ The following commands are available in the =elpaca-ui-mode=:
 
 #+begin_src emacs-lisp :lexical t :exports results :results table
 (with-temp-buffer
-  (require 'elpaca-ui)
-  (describe-map-tree elpaca-ui-mode-map)
+  (require 'elpaca-process)
+  (let ((program `(with-temp-buffer
+                    (require 'elpaca-ui)
+                    (describe-map-tree elpaca-ui-mode-map)
+                    (princ (buffer-substring-no-properties (point-min) (point-max)))))
+        print-level print-circle print-length)
+    (insert
+     (elpaca-process-output "emacs" "-Q" "-L" ".." "--batch" "--eval" (pp-to-string program))))
   (goto-char (point-min))
   (let (rows)
     (while (re-search-forward "elpaca" nil 'noerror)
