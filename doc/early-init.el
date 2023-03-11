@@ -1,4 +1,4 @@
-;; Example Elpaca ealry-init.el -*- lexical-binding: t; -*-
+;; Example Elpaca early-init.el -*- lexical-binding: t; -*-
 
 (setq package-enable-at-startup nil)
 
