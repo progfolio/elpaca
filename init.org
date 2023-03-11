@@ -249,13 +249,6 @@ https://github.com/progfolio/elpaca
 (setq elpaca-queue-limit 30)
 #+end_src
 
-Use Evil bindings in status and UI maps
-#+begin_src emacs-lisp :lexical t
-(with-eval-after-load 'evil
-  (with-eval-after-load 'elpaca-ui (evil-make-intercept-map elpaca-ui-mode-map))
-  (with-eval-after-load 'elpaca-info (evil-make-intercept-map elpaca-info-mode-map)))
-#+end_src
-
 [[https://www.funtoo.org/Keychain][Keychain]] is a gpg/ssh agent that allows me to cache my credentials.
 This package gets the correct environment variables so elpaca can use the ssh protocol.
 
@@ -704,6 +697,7 @@ https://github.com/emacs-evil/evil-collection
   :after (evil)
   :config (evil-collection-init)
   :custom
+  (evil-collection-elpaca-want-g-filters nil)
   (evil-collection-setup-minibuffer t "Add evil bindings to minibuffer")
   (evil-collection-company-use-tng t))
 #+end_src
