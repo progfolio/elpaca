@@ -816,9 +816,9 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @item elpaca-ui-mark-update
 @tab u
 @tab Mark package for update action.
-@item elpaca-visit
+@item elpaca-ui-visit
 @tab v
-@tab Open ITEM’s local repository directory.
+@tab Visit current package’s repo or BUILD directory.
 @item elpaca-ui-execute-marks
 @tab x
 @tab Execute each action in ‘elpaca-ui-marked-packages’.

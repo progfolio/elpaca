@@ -570,7 +570,7 @@ The following commands are available in the `elpaca-ui-mode`:
 | elpaca-ui-search           | s       | Filter current buffer by QUERY. If QUERY is nil, prompt for it. |
 | elpaca-status              | t       | Log most recent events for packages.                            |
 | elpaca-ui-mark-update      | u       | Mark package for update action.                                 |
-| elpaca-visit               | v       | Open ITEM’s local repository directory.                         |
+| elpaca-ui-visit            | v       | Visit current package’s repo or BUILD directory.                |
 | elpaca-ui-execute-marks    | x       | Execute each action in ‘elpaca-ui-marked-packages’.             |
 
 -   **Function: elpaca-manager `&optional recache`:** Display packages registered with Elpaca. Packages can searched for, installed, updated, rebuilt, and deleted from this interface. When `RECACHE` is non-nil, via lisp or interactively via the `universal-argument`, recompute Elpaca&rsquo;s menu item cache before display.
