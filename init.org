@@ -249,20 +249,23 @@ https://github.com/progfolio/elpaca
 (setq elpaca-queue-limit 30)
 #+end_src
 
+** packaging
+*** keychain
 [[https://www.funtoo.org/Keychain][Keychain]] is a gpg/ssh agent that allows me to cache my credentials.
 This package gets the correct environment variables so elpaca can use the ssh protocol.
-
 #+begin_src emacs-lisp :lexical t
 ;; We need this loaded for SSH protocol
 (elpaca-queue
  (elpaca keychain-environment
    (keychain-refresh-environment)))
+#+end_src
+*** melpulls
+An Elpaca menu for MELPA submissions.
+#+begin_src emacs-lisp :lexical t
 (elpaca-queue
  (elpaca (melpulls :host github :repo "progfolio/melpulls" :protocol ssh)
    (add-to-list 'elpaca-menu-functions 'melpulls)))
 #+end_src
-
-** packaging
 *** use-package
 #+begin_src emacs-lisp :lexical t
 (defmacro use-feature (name &rest args)
