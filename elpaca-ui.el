@@ -124,7 +124,7 @@ exclamation point to it. e.g. #!installed."
     (define-key m (kbd "s") 'elpaca-ui-search)
     (define-key m (kbd "t") 'elpaca-status)
     (define-key m (kbd "u") 'elpaca-ui-mark-update)
-    (define-key m (kbd "v") 'elpaca-visit)
+    (define-key m (kbd "v") 'elpaca-ui-visit)
     (define-key m (kbd "x") 'elpaca-ui-execute-marks)
     m)
   "Keymap for `elpaca-ui-mode'.")
@@ -443,6 +443,11 @@ If SILENT is non-nil, supress update message."
   "Browse current package's URL via `browse-url'."
   (interactive)
   (elpaca-browse (elpaca-ui-current-package)))
+
+(defun elpaca-ui-visit (&optional build)
+  "Visit current package's repo or BUILD directory."
+  (interactive (list current-prefix-arg))
+  (elpaca-visit (elpaca-ui-current-package) build))
 
 (defun elpaca-ui-package-marked-p (package)
   "Return t if PACKAGE is marked."

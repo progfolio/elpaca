@@ -1843,9 +1843,8 @@ TYPE is either `:repo' or `:build' for ITEM's repo or build directory."
 (defun elpaca-visit (&optional item build)
   "Open ITEM's local repository directory.
 When BUILD is non-nil visit ITEM's build directory."
-  (interactive (list (or (ignore-errors (elpaca-ui-current-package))
-                         (elpaca--read-queued
-                          (format "Visit %s dir: " (if current-prefix-arg "build" "repo"))))
+  (interactive (list (elpaca--read-queued
+                      (format "Visit %s dir: " (if current-prefix-arg "build" "repo")))
                      current-prefix-arg))
   (when (eq item '##) (setq item nil)) ; Empty `elpaca--read-queued' response
   (if (not item)
