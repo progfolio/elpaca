@@ -1828,14 +1828,14 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
                   do (push item seen))))))
 
 ;;;###autoload
-(defmacro elpaca-with-dir (type item &rest body)
+(defmacro elpaca-with-dir (item type &rest body)
   "Set `default-directory' for duration of BODY.
-TYPE is either `:repo' or `:build' for ITEM's repo or build directory."
+TYPE is either `repo' or `build' for ITEM's repo or build directory."
   (declare (indent 2) (debug t))
   `(let* ((e (or (alist-get ,item (elpaca--queued))
                  (user-error "Not a queued item: %S" item)))
           (default-directory
-           (,(intern (format "elpaca<-%s-dir" (substring (symbol-name type) 1))) e)))
+           (,(intern (format "elpaca<-%s-dir" (symbol-name type))) e)))
      ,@body))
 
 (declare-function elpaca-ui-current-package "elpaca-ui")
