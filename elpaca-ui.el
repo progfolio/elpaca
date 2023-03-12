@@ -79,13 +79,13 @@ exclamation point to it. e.g. #!installed."
   "Length of time in seconds to wait before updating the search UI."
   :type (or 'string 'int 'float))
 
-(defun elpaca-defsearch (name query)
+(defmacro elpaca-defsearch (name query)
   "Return seach command with NAME for QUERY."
-  (eval `(defun ,(intern (format "elpaca-ui-search-%s" name)) ()
-           ,(format "Search for %S" query)
-           (interactive)
-           (elpaca-ui-search ,query))
-        t))
+  (declare (indent 1) (debug t))
+  `(defun ,(intern (format "elpaca-ui-search-%s" name)) ()
+     ,(format "Search for %S" query)
+     (interactive)
+     (elpaca-ui-search ,query)))
 
 (defun elpaca-ui--button-noop (&rest args)
   "Return first arg in ARGS."
@@ -108,11 +108,11 @@ exclamation point to it. e.g. #!installed."
     (define-key m (kbd "RET") 'elpaca-ui-info)
     (define-key m (kbd "!") 'elpaca-ui-send-input)
     (define-key m (kbd "+") 'elpaca-ui-show-hidden-rows)
-    (define-key m (kbd "I") (elpaca-defsearch 'installed "#unique #installed"))
-    (define-key m (kbd "M") (elpaca-defsearch 'marked   "#unique #marked"))
-    (define-key m (kbd "O") (elpaca-defsearch 'orphaned "#unique #orphan"))
+    (define-key m (kbd "I") (elpaca-defsearch installed "#unique #installed"))
+    (define-key m (kbd "M") (elpaca-defsearch marked   "#unique #marked"))
+    (define-key m (kbd "O") (elpaca-defsearch orphaned "#unique #orphan"))
     (define-key m (kbd "R") 'elpaca-ui-search-refresh)
-    (define-key m (kbd "T") (elpaca-defsearch 'tried "#unique #installed !#declared"))
+    (define-key m (kbd "T") (elpaca-defsearch tried "#unique #installed !#declared"))
     (define-key m (kbd "U") 'elpaca-ui-unmark)
     (define-key m (kbd "b") 'elpaca-ui-browse-package)
     (define-key m (kbd "c") 'elpaca-ui-copy)
