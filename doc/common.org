@@ -195,6 +195,12 @@ Wrapping the "Second" message in an =elpaca= declaration will fix the above exam
 #+end_src
 
 Add any configuration which relies on =after-init-hook=, =emacs-startup-hook=, etc to =elpaca-after-init-hook= so it runs after Elpaca has activated all queued packages.
+This includes loading of saved customizations. e.g.
+
+#+begin_src emacs-lisp :lexical t
+(setq custom-file (expand-file-name "customs.el" user-emacs-directory))
+(add-hook 'elpaca-after-init-hook (lambda () (load custom-file 'noerror)))
+#+end_src
 
 * Footnotes
 

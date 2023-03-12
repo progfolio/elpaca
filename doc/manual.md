@@ -156,7 +156,12 @@ Elpaca installs and activates packages asynchronously. Elpaca processes its pack
 (elpaca-process-queues) ; Process queue: First, Second, Third messaged.
 ```
 
-Add any configuration which relies on `after-init-hook`, `emacs-startup-hook`, etc to `elpaca-after-init-hook` so it runs after Elpaca has activated all queued packages.
+Add any configuration which relies on `after-init-hook`, `emacs-startup-hook`, etc to `elpaca-after-init-hook` so it runs after Elpaca has activated all queued packages. This includes loading of saved customizations. e.g.
+
+```emacs-lisp
+(setq custom-file (expand-file-name "customs.el" user-emacs-directory))
+(add-hook 'elpaca-after-init-hook (lambda () (load custom-file 'noerror)))
+```
 
 
 <a id="basic-concepts"></a>

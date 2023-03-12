@@ -249,6 +249,12 @@ Wrapping the ``Second'' message in an @samp{elpaca} declaration will fix the abo
 @end lisp
 
 Add any configuration which relies on @samp{after-init-hook}, @samp{emacs-startup-hook}, etc to @samp{elpaca-after-init-hook} so it runs after Elpaca has activated all queued packages.
+This includes loading of saved customizations. e.g.
+
+@lisp
+(setq custom-file (expand-file-name "customs.el" user-emacs-directory))
+(add-hook 'elpaca-after-init-hook (lambda () (load custom-file 'noerror)))
+@end lisp
 
 @node Basic concepts
 @section Basic concepts
