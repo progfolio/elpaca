@@ -768,6 +768,9 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @item elpaca-ui-send-input
 @tab !
 @tab Send input string to current process.
+@item elpaca-ui-show-hidden-rows
+@tab +
+@tab Append rows up to ‘elpaca-ui-row-limit’.
 @item elpaca-ui-search-installed
 @tab I
 @tab Search for ``#unique #installed''
