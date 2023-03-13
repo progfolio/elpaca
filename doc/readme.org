@@ -23,6 +23,14 @@ To export:
 
 #+include: "./common.org::introduction" :only-contents t
 
+Elpaca:
+
+- Installs packages asynchronously, in parallel for fast, non-blocking installations.
+- Includes a flexible UI for finding and operating on packages.
+- Downloads packages from their sources for convenient elisp development.
+- Supports thousands of elisp packages out of the box (MELPA, NonGNU/GNU ELPA, Org/org-contrib).
+- Makes it easy for users to create their own ELPAs.
+
 * Video Tour
 
 #+html: <p align="center"><a href="https://www.youtube.com/watch?v=5Ud-TE3iIQY"><img src="./images/elpaca-manager-install.gif"/></a></p>
