@@ -496,6 +496,7 @@ The following commands are available in the =elpaca-ui-mode=:
 (with-temp-buffer
   (require 'elpaca-process)
   (let ((program `(with-temp-buffer
+                    (setq load-prefer-newer t)
                     (require 'elpaca-ui)
                     (describe-map-tree elpaca-ui-mode-map)
                     (princ (buffer-substring-no-properties (point-min) (point-max)))))
