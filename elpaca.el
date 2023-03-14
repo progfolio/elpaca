@@ -1482,9 +1482,10 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
    (list (if (equal current-prefix-arg '(4))
              (minibuffer-with-setup-hook #'backward-char
                (read (read-string "elpaca-try: " "()" 'elpaca--try-package-history)))
-           (let* ((items (cl-remove-if #'elpaca-get (elpaca--menu-items t) :key #'car))
-                  (item (elpaca-menu-item t items)))
-             (cons (car item) (plist-get (cdr item) :recipe))))
+           (if-let ((items (cl-remove-if #'elpaca-get (elpaca--menu-items t) :key #'car))
+                    (item (elpaca-menu-item t items)))
+               (cons (car item) (plist-get (cdr item) :recipe))
+             (user-error "No menu item")))
          t))
   (if (not interactive)
       (elpaca--queue (elpaca--first order))
