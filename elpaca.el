@@ -575,6 +575,16 @@ If REPLACE is non-nil, the most recent log entry is replaced."
       (push event (elpaca<-log e)))))
 
 (defvar elpaca--waiting nil "Non-nil when `elpaca-wait' is polling.")
+(defvar elpaca--status-counts nil "Status counts for UI progress bar.")
+(defun elpaca--count-statuses ()
+  "Update `elpaca--status-counts'."
+  (cl-loop with statuses for q in elpaca--queues
+           do (cl-loop for (_ . e) in (elpaca-q<-elpacas q)
+                       for status = (elpaca--status e)
+                       for state = (if (memq status elpaca--inactive-states) status 'other)
+                       do (cl-incf (alist-get state statuses 0)))
+           finally return statuses))
+
 (defun elpaca--signal (e &optional info status replace verbosity)
   "Signal a change to E.
 If INFO is non-nil, log and possibly print it in `elpaca-log-buffer'.
@@ -582,31 +592,33 @@ If REPLACE is non-nil, E's log is updated instead of appended.
 If VERBOSITY is non-nil, log event is given that verbosity number.
 If STATUS is non-nil and is not E's current STATUS, signal E's depedentents to
 check (and possibly change) their statuses."
-  (when-let (((and status (not (eq status (elpaca--status e)))))
-             (queued (elpaca--queued)))
-    (push status (elpaca<-statuses e))
-    (when (memq status elpaca--inactive-states)
+  (let* ((new-status-p (and status (not (eq status (elpaca--status e)))))
+         (siblings (elpaca<-siblings e))
+         (queued (and (or new-status-p siblings) (elpaca--queued))))
+    (when-let ((new-status-p)
+               ((push status (elpaca<-statuses e)))
+               ((memq status elpaca--inactive-states)))
+      (setq elpaca--status-counts (elpaca--count-statuses))
       (mapc (lambda (d) (elpaca--check-status (elpaca-alist-get d queued)))
-            (elpaca<-dependents e)))
-    (when (eq status 'failed) (elpaca-log "#unique !finished")))
-  (when-let ((siblings (elpaca<-siblings e))
-             (statuses (elpaca<-statuses e))
-             ((or (memq 'ref-checked-out statuses) (memq 'queueing-deps statuses)))
-             (queued (elpaca--queued))
-             (sibling t))
-    (while (setq sibling (elpaca-alist-get (pop (elpaca<-siblings e)) queued))
-      (push 'ref-checked-out     (elpaca<-statuses sibling))
-      (push 'unblocked-mono-repo (elpaca<-statuses sibling))
-      (elpaca--continue-build sibling)))
-  (when info (elpaca--log e info verbosity replace))
-  (when-let ((verbosity (or verbosity 0))
-             ((<= verbosity elpaca-verbosity)))
-    (when elpaca--log-timer (cancel-timer elpaca--log-timer))
-    (if elpaca--waiting ; Don't set timer. We're already polling.
-        (elpaca--update-log-buffer)
-      (setq elpaca--log-timer
-            (and info (run-at-time elpaca-log-interval nil #'elpaca--update-log-buffer)))
-      nil)))
+            (elpaca<-dependents e))
+      (when (and (not elpaca-after-init-time) (eq status 'failed))
+        (elpaca-log "#unique !finished")))
+    (when-let ((siblings (elpaca<-siblings e))
+               (statuses (elpaca<-statuses e))
+               ((or (memq 'ref-checked-out statuses) (memq 'queueing-deps statuses)))
+               (sibling t))
+      (while (setq sibling (elpaca-alist-get (pop (elpaca<-siblings e)) queued))
+        (push 'ref-checked-out     (elpaca<-statuses sibling))
+        (push 'unblocked-mono-repo (elpaca<-statuses sibling))
+        (elpaca--continue-build sibling)))
+    (when info (elpaca--log e info verbosity replace))
+    (when (<= (or verbosity 0) elpaca-verbosity)
+      (when elpaca--log-timer (cancel-timer elpaca--log-timer))
+      (if elpaca--waiting ; Don't set timer. We're already polling.
+          (elpaca--update-log-buffer)
+        (setq elpaca--log-timer
+              (and info (run-at-time elpaca-log-interval nil #'elpaca--update-log-buffer)))
+        nil))))
 
 (defun elpaca--fail (e &optional reason)
   "Fail E for REASON."
@@ -1451,24 +1463,13 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
     (unless (or elpaca-after-init-time (not elpaca--ibs-set))
       (elpaca-log "#unique !finished")
       (sit-for elpaca-wait-interval))
-    (let* ((processed (elpaca-q<-processed q))
-           (id (elpaca-q<-id q))
-           (previous -1)
-           (clear-message-function #'elpaca--dont-clear-message)
-           (spec (apply #'substitute-command-keys
-                        (append (list (concat "waiting on queue " (number-to-string id)
-                                              "...%2.f%%. \\[keyboard-quit] to quit"))
-                                (unless (version< emacs-version "28.1") (list 'no-face))))))
-      (elpaca-process-queues)
-      (unwind-protect ;@TODO: Check for elpaca-after-init hook?
-          (while (not (eq (elpaca-q<-status q) 'complete))
-            (unless (= previous (setq processed (elpaca-q<-processed q) previous processed))
-              (message spec (* 100 (/ processed (float (length (elpaca-q<-elpacas q)))))))
-            (discard-input)
-            (sit-for elpaca-wait-interval))
-        (elpaca-split-queue)
-        (message spec (* 100 (/ (elpaca-q<-processed q) (float (length (elpaca-q<-elpacas q))))))
-        (setq elpaca--waiting nil)))))
+    (elpaca-process-queues)
+    (unwind-protect
+        (while (not (eq (elpaca-q<-status q) 'complete))
+          (discard-input)
+          (sit-for elpaca-wait-interval))
+      (elpaca-split-queue)
+      (setq elpaca--waiting nil))))
 
 (defun elpaca--maybe-log (condition &rest queries)
   "Log latest QUERIES when CONDITION is non-nil."
@@ -1533,7 +1534,8 @@ FILTER must be a unary function which accepts and returns a queue list."
   (if-let ((queues (if filter (funcall filter (reverse elpaca--queues))
                      (reverse elpaca--queues)))
            (incomplete (cl-find 'incomplete queues :key #'elpaca-q<-status)))
-      (elpaca--process-queue incomplete)
+      (progn (setq elpaca--status-counts (elpaca--count-statuses))
+             (elpaca--process-queue incomplete))
     (run-hooks 'elpaca--post-queues-hook)))
 
 (defun elpaca--on-disk-p (item)

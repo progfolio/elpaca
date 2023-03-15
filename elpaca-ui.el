@@ -141,8 +141,24 @@ It recieves one argument, the parsed search query list.")
 (defvar-local elpaca-ui--history nil "History for `elpaca-ui' minibuffer.")
 (defvar elpaca-ui--string-cache nil "Cache for propertized strings.")
 (defvar url-http-end-of-headers)
+(defvar elpaca-ui--progress-bar-e (propertize "E:" 'face '(:weight bold)))
 
 ;;;; Functions:
+(defun elpaca-ui--progress-bar ()
+  "Return string indicating state of queues."
+  (concat
+   " " (cl-loop for s in '(finished blocked failed other) concat
+                (concat (propertize (number-to-string (elpaca-alist-get s elpaca--status-counts 0))
+                                    'face (elpaca-alist-get s elpaca-status-faces 'default)
+                                    'help-echo (symbol-name s))
+                        " "))
+   "| " (format "%6.2f%%%%"
+                (floor (* 100 (/ (+ (elpaca-alist-get 'finished elpaca--status-counts 0)
+                                    (elpaca-alist-get 'failed elpaca--status-counts 0))
+                                 (float (max (cl-reduce #'+ elpaca--status-counts :key #'cdr) 1))))))
+   " |"))
+
+(defvar elpaca-ui--header-line-matching (propertize "matching:" 'face '(:weight bold)))
 (defun elpaca-ui--header-line (&optional prefix)
   "Set `header-line-format' to reflect query.
 If PREFIX is non-nil it is displayed before the rest of the header-line."
@@ -151,9 +167,10 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
          (hidden (when (> hlen 0)
                    (elpaca-ui--buttonize (concat "(+" (number-to-string hlen) ")")
                                          #'elpaca-ui-show-hidden-rows))))
-    (setq header-line-format (string-join (list prefix (number-to-string tlen)
-                                                hidden "matching:" elpaca-ui-search-filter)
-                                          " "))))
+    (setq header-line-format
+          (string-join (list (elpaca-ui--progress-bar) prefix (number-to-string tlen)
+                             hidden elpaca-ui--header-line-matching elpaca-ui-search-filter)
+                       " "))))
 
 (define-derived-mode elpaca-ui-mode tabulated-list-mode "elpaca-ui"
   "Major mode to manage packages."
