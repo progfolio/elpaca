@@ -37,8 +37,7 @@
     (latest    . (lambda (items) (butlast (reverse (sort (copy-tree items) #'elpaca-log--sort-chronologically))
                                           elpaca-ui--prev-entry-count)))
     (linked-errors . elpaca-log--byte-comp-warnings)
-    (update-log . elpaca-log--commit-info))
-
+    (update-log . elpaca-log--updates))
   "Alist of search tags (see `elpaca-ui-search-tags') exclusive to the log buffer."
   :type 'alist :group 'elpaca)
 
@@ -82,41 +81,54 @@
          entry))
      entries)))
 
-(defun elpaca-log--commit-info (entries)
-  "Apply faces to commit info in ENTRIES."
-  (cl-loop with desc = t
-           for entry in entries
-           collect
-           (if-let (((equal (aref (cadr entry) 1) "update-log"))
-                    (copy (copy-tree entry))
-                    (e (elpaca-get (car entry)))
-                    (repo (elpaca<-repo-dir e))
-                    (cols (cadr copy))
-                    (info (aref cols 2)))
-               (progn
-                 (setf (aref (cadr copy) 2)
-                       (cond
-                        ((string-match "\\(?:^commit \\([^z-a]*\\)$\\)" info)
-                         (setq desc t)
-                         (concat (propertize "commit" 'face '(:weight bold))
-                                 " "
-                                 ;;@TODO: equivalent for vc.el
-                                 (if (fboundp 'magit-show-commit)
-                                     (elpaca-ui--buttonize (match-string 1 info)
-                                                           (lambda (rev)
-                                                             (let ((default-directory repo))
-                                                               (magit-show-commit rev)))
-                                                           (car (split-string (match-string 1 info) " ")))
-                                   (match-string 1 info))))
-                        ((string-match "\\(?:^\\([^[:space:]][[:alpha:]]+:\\)\\([^z-a]*?$\\)\\)" info)
-                         (when (string-match-p "Date" info) (setq desc nil))
-                         (concat (propertize (match-string 1 info) 'face '(:weight bold))
-                                 (match-string 2 info)))
-                        ((eq desc t) (propertize info 'face 'elpaca-finished))
+(declare-function magit-show-commit "magit")
+(defun elpaca-log--show-ref (data)
+  "Show ref DATA."
+  (if-let ((e (elpaca-get (car data)))
+           (default-directory (elpaca<-repo-dir e)))
+      (magit-show-commit (cdr data))
+    (user-error "Unable to show ref at point")))
 
-                        (t info)))
-                 copy)
-             entry)))
+(defun elpaca-log--updates (entries)
+  "Return compact update log from ENTRIES."
+  (cl-loop
+   with (current compact)
+   with buttonp = (fboundp 'magit-show-commit)
+   for entry in (reverse entries)
+   for cols = (cadr entry)
+   for status = (aref cols 1)
+   for info = (aref cols 2)
+   do (if (and (equal status "update-log")
+               (not (string-match-p "\\(?:^\\(?:\\(?:Author\\|Merge\\):\\)\\)" info)))
+          (cond
+           ((string-prefix-p "commit " info)
+            (setf (alist-get 'commit current)
+                  (if-let ((abbreviated  (substring info 7 13))
+                           (buttonp))
+                      (elpaca-ui--buttonize abbreviated #'elpaca-log--show-ref
+                                            (cons (car entry) abbreviated))
+                    (propertize abbreviated 'face 'elpaca-busy))))
+           ((string-prefix-p "Date: " info)
+            (let ((ws (split-string (string-trim info) " ")))
+              (setf (alist-get 'date current)
+                    (format "(%s %s %s)" (nth 4 ws) (nth 5 ws) (nth 7 ws)))))
+           (current ;; on first message line
+            (let* ((copy (copy-tree entry))
+                   (info (thread-last
+                           (string-trim info)
+                           (replace-regexp-in-string "^\* " "")
+                           (replace-regexp-in-string "\\([([]?#[[:digit:]]+[])]?\\)"
+                                                     (lambda (s) (propertize s 'face 'elpaca-busy)))
+                           (replace-regexp-in-string
+                            "^.*: " (lambda (s) (propertize s 'face 'elpaca-finished))))))
+              (setf (aref (cadr copy) 2)
+                    (concat (alist-get 'commit current) " " info " "
+                            (propertize (alist-get 'date current) 'face '((:foreground "grey"))))
+                    current nil)
+              (push copy compact))))
+        (when (string-match-p "\\(?:f\\(?:\\(?:ail\\|inish\\)ed\\)\\)" status)
+          (push entry compact)))
+   finally return compact))
 
 (defun elpaca-log--verbosity (_ &optional limit)
   "Filter log entries according to `elpaca-verbosity' LIMIT."
