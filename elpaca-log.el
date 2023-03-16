@@ -34,7 +34,6 @@
 
 (defcustom elpaca-log-search-tags
   '((verbosity . elpaca-log--verbosity)
-    (rebuild   . elpaca-log--build-entries)
     (latest    . (lambda (items) (butlast (reverse (sort (copy-tree items) #'elpaca-log--sort-chronologically))
                                           elpaca-ui--prev-entry-count)))
     (linked-errors . elpaca-log--byte-comp-warnings)
@@ -44,30 +43,6 @@
   :type 'alist
   :group 'elpaca)
 
-(defun elpaca-log--build-entries (entries)
-  "Return a list of ENTRIES filtered to last builds."
-  (cl-loop with ids = (delete-dups (mapcar #'car entries))
-           with queue-time = (elpaca-q<-time (car (last elpaca--queues)))
-           with queued = (elpaca--queued)
-           for id in ids
-           for package = (symbol-name id)
-           for e = (alist-get id queued)
-           for log = (elpaca<-log e)
-           for events =
-           (cl-loop
-            for (status time info) in log
-            until (eq status 'rebuilding)
-            for pkg = (let ((found (alist-get id elpaca-ui--string-cache)))
-                        (if-let ((cached (alist-get status found)))
-                            cached
-                          (setf (alist-get status (alist-get id elpaca-ui--string-cache))
-                                (propertize package 'face (elpaca-alist-get status elpaca-status-faces 'default)))))
-            collect
-            (list id (vector pkg (symbol-name status) info
-                             (format-time-string
-                              "%02s.%6N" (time-subtract time queue-time)))))
-           unless (eq (length events) (length log))
-           append events))
 
 (defun elpaca-log--visit-byte-comp-warning (file line col)
   "Visit warning location in FILE at LINE and COL."
