@@ -1696,10 +1696,10 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
 (defun elpaca--merge-process-sentinel (process event)
   "Handle PROCESS EVENT."
   (when-let (((equal event "finished\n"))
-             (e (process-get process :elpaca)))
-    (if (string-match-p "Already up to date" (nth 2 (car (elpaca<-log e))))
-        (elpaca--finalize e)
-      (elpaca--continue-build e "Updates merged" 'merged))))
+             (e (process-get process :elpaca))
+             (done (string-match-p "Already up to date" (nth 2 (car (elpaca<-log e))))))
+    (elpaca--continue-build e (if done "Already up to date" "Updates merged")
+                            (if done 'update-log 'merged))))
 
 (defun elpaca--merge (e)
   "Merge E's fetched commits."
