@@ -286,16 +286,16 @@
   (replacement :background ,gray :foreground ,yellow :extend t))
 
 (mine-add-faces vterm
-  (color-black    :background ,gray)
-  (color-blue     :foreground ,blue)
-  (color-cyan     :foreground ,blue)
-  (color-dark-purple    :foreground ,purple)
-  (color-default  :inherit default :weight bold)
-  (color-green    :foreground ,green)
-  (color-magenta  :foreground ,blue)
-  (color-red      :foreground ,red)
-  (color-white    :foreground ,gray)
-  (color-yellow   :foreground ,yellow))
+  (color-black       :background ,gray)
+  (color-blue        :foreground "#2000a7")
+  (color-cyan        :foreground ,blue)
+  (color-dark-purple :foreground ,purple)
+  (color-default     :inherit default)
+  (color-green       :foreground ,green)
+  (color-magenta     :foreground ,blue)
+  (color-red         :foreground ,red)
+  (color-white       :foreground ,gray)
+  (color-yellow      :foreground ,yellow))
 
 (mine-add-faces widget
   (field :background ,dark-purple :foreground ,green)
