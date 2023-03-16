@@ -1709,7 +1709,7 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
                    :connection-type 'pipe
                    :command  '("git" "merge" "--ff-only")
                    :filter (lambda (process output)
-                             (elpaca--process-filter process output "fatal" 'failed))
+                             (elpaca--process-filter process output "Aborting" 'failed))
                    :sentinel #'elpaca--merge-process-sentinel)))
     (elpaca--signal e "Merging updates" 'merging)
     (process-put process :elpaca e)))
