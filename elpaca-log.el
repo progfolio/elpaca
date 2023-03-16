@@ -185,7 +185,7 @@
 
 ;;;###autoload
 (defun elpaca-log--latest (&rest queries)
-  "Log latest activity with queries."
+  "Log latest activity with QUERIES."
   (elpaca-log)
   (with-current-buffer elpaca-log-buffer
     (setq elpaca-ui--prev-entry-count (length (funcall elpaca-ui-entries-function)))
