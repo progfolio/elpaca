@@ -40,9 +40,7 @@
     (update-log . elpaca-log--commit-info))
 
   "Alist of search tags (see `elpaca-ui-search-tags') exclusive to the log buffer."
-  :type 'alist
-  :group 'elpaca)
-
+  :type 'alist :group 'elpaca)
 
 (defun elpaca-log--visit-byte-comp-warning (file line col)
   "Visit warning location in FILE at LINE and COL."
