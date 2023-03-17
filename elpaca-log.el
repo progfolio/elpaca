@@ -130,8 +130,7 @@
                             (propertize (alist-get 'date current) 'face 'elpaca-log-info))
                     current nil)
               (push copy compact))))
-        (when (string-match-p "\\(?:f\\(?:\\(?:ail\\|inish\\)ed\\)\\)" status)
-          (push entry compact)))
+        (when (string-match-p "failed" status) (push entry compact)))
    finally return compact))
 
 (defun elpaca-log--verbosity (_ &optional limit)
