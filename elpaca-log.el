@@ -26,6 +26,9 @@
 (require 'elpaca-ui)
 (defvar elpaca-log-buffer "*elpaca-log*")
 (defvar elpaca-log--history nil "`elpaca-log' minibuffer history.")
+(defface elpaca-log-highlight '((t (:inherit warning))) "Highlights log info.")
+(defface elpaca-log-error '((t (:inherit error))) "Highlights log errors.")
+(defface elpaca-log-info '((t (:inherit shadow))) "Face for log info.")
 
 (defcustom elpaca-log-default-search-query ".*"
   "Default query for `elpaca-log-buffer'."
@@ -62,7 +65,7 @@
                 (e (elpaca-alist-get (intern name) queued)))
            (progn
              (when (string-match-p "\\(?:Error\\|Warning\\):" info)
-               (setf (aref (cadr copy) 2) (propertize info 'face 'elpaca-failed)))
+               (setf (aref (cadr copy) 2) (propertize info 'face 'elpaca-log-error)))
              (when (string-match "\\(?:\\([^z-a]*?\\):\\([[:digit:]]+?\\):\\([[:digit:]]*?\\)\\):" info)
                (let ((file (match-string 1 (aref (cadr copy) 2)))
                      (line  (match-string 2 (aref (cadr copy) 2)))
@@ -107,7 +110,7 @@
                            (buttonp))
                       (elpaca-ui--buttonize abbreviated #'elpaca-log--show-ref
                                             (cons (car entry) abbreviated))
-                    (propertize abbreviated 'face 'elpaca-busy))))
+                    (propertize abbreviated 'face 'elpaca-log-highlight))))
            ((string-prefix-p "Date: " info)
             (let ((ws (split-string (string-trim info) " ")))
               (setf (alist-get 'date current)
@@ -117,13 +120,14 @@
                    (info (thread-last
                            (string-trim info)
                            (replace-regexp-in-string "^\* " "")
-                           (replace-regexp-in-string "\\([([]?#[[:digit:]]+[])]?\\)"
-                                                     (lambda (s) (propertize s 'face 'elpaca-busy)))
                            (replace-regexp-in-string
-                            "^.*: " (lambda (s) (propertize s 'face 'elpaca-finished))))))
+                            "\\(?:[([]\\{1\\}[^z-a]*?#[^z-a]+?[])]\\{1\\}\\)"
+                            (lambda (s) (propertize s 'face 'elpaca-log-highlight)))
+                           (replace-regexp-in-string
+                            "^.*: " (lambda (s) (propertize s 'face 'elpaca-log-highlight))))))
               (setf (aref (cadr copy) 2)
                     (concat (alist-get 'commit current) " " info " "
-                            (propertize (alist-get 'date current) 'face '((:foreground "grey"))))
+                            (propertize (alist-get 'date current) 'face 'elpaca-log-info))
                     current nil)
               (push copy compact))))
         (when (string-match-p "\\(?:f\\(?:\\(?:ail\\|inish\\)ed\\)\\)" status)
