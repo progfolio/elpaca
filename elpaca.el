@@ -713,7 +713,8 @@ Optional ARGS are passed to `elpaca--signal', which see."
       (remove-variable-watcher 'initial-buffer-choice #'elpaca--set-ibc)
       (setq elpaca-after-init-time (current-time))
       (run-hooks 'elpaca-after-init-hook))
-    (if next (elpaca--process-queue next)
+    (if (and next (or (elpaca-q<-elpacas next) (elpaca-q<-forms next)))
+        (elpaca--process-queue next)
       (run-hooks 'elpaca--post-queues-hook))))
 
 (defun elpaca--throttled-p (e)
