@@ -1206,7 +1206,7 @@ This is the branch that would be checked out upon cloning."
 (defun elpaca--check-status (e)
   "Called when one of an E's dependencies change status.
 Kick off next build step, and/or change E's status."
-  (unless (eq (elpaca--status e) 'finished)
+  (unless (memq (elpaca--status e) '(finished fetching-remotes))
     (cl-loop with failed
              with blocked
              with queued = (elpaca--queued)
