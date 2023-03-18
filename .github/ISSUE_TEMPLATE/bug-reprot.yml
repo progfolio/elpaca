@@ -1,12 +1,12 @@
-name: Bug Report
-description: File a bug report
+name: Bug Report/Support Requests
+description: File a bug report or support request
 title: "[Bug]: "
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out a bug report.
+        Thanks for taking the time to fill out a report.
         Please keep reports focused to a single issue and provide all the requested details.
   - type: textarea
     id: elpaca-version
@@ -26,6 +26,6 @@ body:
   - type: textarea
     id: description
     attributes:
-      label: Bug Description
+      label: Description
       description: Describe the problem. What did you expected to happen? What actually happened? Please include steps (preferably via the `elpaca-test` macro) to reproduce the bug if possible. 
 
