@@ -12,8 +12,8 @@ body:
     id: elpaca-version
     attributes:
       label: Elpaca Version
-      description: Output of the elpaca-version command
-      placeholder: M-x elpaca-version
+      description: Output of the elpaca-version command (not elpaca-installer-version)
+      placeholder: Please include the output of the elpaca-version command (M-x elpaca-version)
     validations:
       required: true
   - type: textarea
@@ -27,5 +27,4 @@ body:
     id: description
     attributes:
       label: Description
-      description: Describe the problem. What did you expected to happen? What actually happened? Please include steps (preferably via the `elpaca-test` macro) to reproduce the bug if possible. 
-
+      description: Describe the problem. What did you expected to happen? What actually happened? Please include steps (preferably via the `elpaca-test` macro) to reproduce the bug if possible.
