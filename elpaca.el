@@ -668,7 +668,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
         (push (cons (elpaca<-id e) e) (elpaca-q<-elpacas q))
         (if (eq status 'struct-failed)
             (elpaca--fail e info)
-          (elpaca--signal e info status))
+          (elpaca--signal e info status nil 1))
         e))))
 
 ;;;###autoload
