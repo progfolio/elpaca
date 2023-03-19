@@ -644,7 +644,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
                                   count (not (memq (elpaca--status e) elpaca--inactive-states)))))
              ((>= active elpaca-queue-limit)))
         (progn (push 'queue-throttled (elpaca<-statuses e))
-               (elpaca--signal e "elpaca-queue-limit exceeded" 'blocked))
+               (elpaca--signal e "elpaca-queue-limit exceeded" 'blocked nil 1))
       (let ((fn (or (pop (elpaca<-build-steps e)) #'elpaca--finalize)))
         (condition-case-unless-debug err ;;@TODO: signal/catch custom error types
             (funcall fn e)
