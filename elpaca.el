@@ -1742,7 +1742,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
           (elpaca<-builtp e)     nil)
     (elpaca--unprocess e)
     (when interactive
-      (elpaca--maybe-log t "#linked-errors #update-log")
+      (elpaca--maybe-log t "#linked-errors")
       (elpaca--process e))))
 
 ;;;###autoload
