@@ -1207,7 +1207,8 @@ This is the branch that would be checked out upon cloning."
 (defun elpaca--check-status (e)
   "Called when one of an E's dependencies change status.
 Kick off next build step, and/or change E's status."
-  (unless (memq (elpaca--status e) '(finished fetching-remotes))
+  (when-let ((e-status (elpaca--status e))
+             ((not (eq e-status 'finished))))
     (cl-loop with failed
              with blocked
              with queued = (elpaca--queued)
@@ -1221,7 +1222,7 @@ Kick off next build step, and/or change E's status."
               (failed (elpaca--fail e (format "Failed dependencies: %S" failed)))
               (blocked (elpaca--signal
                         e (concat "Blocked by dependencies: " (prin1-to-string blocked)) 'blocked))
-              (t (elpaca--continue-build e "unblocked by dependency" 'unblocked))))))
+              ((eq e-status 'blocked) (elpaca--continue-build e "unblocked by dependency" 'unblocked))))))
 
 (defun elpaca--clone-process-sentinel (process _event)
   "Sentinel for clone PROCESS." ;;@HACK: relies on locale dependent output
