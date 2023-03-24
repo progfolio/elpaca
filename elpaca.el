@@ -1627,16 +1627,15 @@ With a prefix argument, rebuild current file's package or prompt if none found."
                                  elpaca--checkout-ref
                                  elpaca--clone-dependencies
                                  elpaca--activate-package))))
-    (elpaca--signal e "Rebuilding" 'rebuilding)
     (elpaca--unprocess e)
+    (elpaca--signal e "Rebuilding" 'queued)
     (setf elpaca-cache-autoloads nil
           (elpaca<-queue-time e) (current-time)
-          (elpaca<-statuses e) (list 'queued)
           (elpaca<-files e) nil
           (elpaca<-builtp e) nil)
     (when interactive
       (elpaca--maybe-log t "#linked-errors")
-      (elpaca--process e))))
+      (elpaca-process-queues))))
 
 (defun elpaca--log-updates (e)
   "Log E's fetched commits."
