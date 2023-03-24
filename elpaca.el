@@ -1602,6 +1602,7 @@ If PROMPT is non-nil, it is used instead of the default."
 (defun elpaca--unprocess (e)
   "Mark E as unprocessed in its queue."
   (let ((q (elpaca--q e)))
+    (setf (elpaca<-statuses e) nil)
     (when (> (elpaca-q<-processed q) 0) (cl-decf (elpaca-q<-processed q)))
     (setf (elpaca-q<-status q) 'incomplete)))
 
