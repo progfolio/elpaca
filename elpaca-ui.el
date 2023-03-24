@@ -329,11 +329,11 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
     (save-excursion
       (goto-char (point-max))
       (with-silent-modifications
-        (insert (elpaca-ui--buttonize s #'elpaca-ui-show-hidden-rows))))))
+        (insert (elpaca-ui--buttonize s (lambda (&rest _) (elpaca-ui-show-hidden-rows))))))))
 
-(defun elpaca-ui-show-hidden-rows (&rest _)
-  "Append rows up to `elpaca-ui-row-limit'."
-  (interactive)
+(defun elpaca-ui-show-hidden-rows (&optional n)
+  "Append rows up to N times `elpaca-ui-row-limit'."
+  (interactive "p")
   (if-let ((tlen (length tabulated-list-entries))
            (elen (length elpaca-ui-entries))
            ((< tlen elen)))
@@ -343,7 +343,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
         (delete-region (line-beginning-position) (line-end-position))
         (when-let ((sorter (tabulated-list--get-sorter)))
           (setq tabulated-list-entries (sort tabulated-list-entries sorter)))
-        (dotimes (i (min elpaca-ui-row-limit (- elen tlen)))
+        (dotimes (i (min (* elpaca-ui-row-limit (or n 1)) (- elen tlen)))
           (when-let ((entry (nth (+ i tlen) elpaca-ui-entries)))
             (setcdr (last tabulated-list-entries) (cons entry nil))
             (elpaca-ui--apply-faces (car entry) (cadr entry))))
