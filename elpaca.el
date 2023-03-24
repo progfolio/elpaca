@@ -1083,27 +1083,29 @@ If RECACHE is non-nil, do not use cached dependencies."
 ;; Refactor into a macro to operate on dependencies?
 (defun elpaca--queue-dependencies (e)
   "Queue E's dependencies."
-  (elpaca--signal e "Queueing Dependencies" 'queueing-deps)
-  (if-let ((queued (cl-loop
-                    with queued = (elpaca--queued)
-                    with e-id = (elpaca<-id e)
-                    for (item . _) in (elpaca--dependencies e)
-                    for d = (and (not (memq item elpaca-ignored-dependencies))
-                                 (or (elpaca-alist-get item queued)
-                                     (elpaca--queue item)))
-                    when (and d (eq (elpaca--status d) 'queued))
-                    collect (prog1 d
-                              (unless (memq item (elpaca<-dependencies e))
-                                (push item (elpaca<-dependencies e)))
-                              (unless (memq e-id (elpaca<-dependents d))
-                                (push e-id (elpaca<-dependents d)))))))
+  (elpaca--signal e "Queueing Dependencies" 'queueing-deps nil 1)
+  (let ((queued (cl-loop
+                 with queued = (elpaca--queued)
+                 with e-id = (elpaca<-id e)
+                 for (item . _) in (elpaca--dependencies e)
+                 for d = (and (not (memq item elpaca-ignored-dependencies))
+                              (or (elpaca-alist-get item queued)
+                                  (elpaca--queue item)))
+                 when (and d (eq (elpaca--status d) 'queued))
+                 collect (prog1 d
+                           (unless (memq item (elpaca<-dependencies e))
+                             (push item (elpaca<-dependencies e)))
+                           (unless (memq e-id (elpaca<-dependents d))
+                             (push e-id (elpaca<-dependents d)))))))
+    (if (not queued)
+        (elpaca--continue-build e "No dependencies to queue" nil nil 1)
       ;; We do this in two steps so that e is aware of all its
       ;; dependencies before any single dependency starts its build.
       ;; Otherwise a dependency may finish prior to other dependencies being
       ;; registered. This will cause the dependent e to become unblocked
       ;; multiple times and run its build steps simultaneously/out of order.
-      (mapc #'elpaca--continue-build queued)
-    (elpaca--continue-build e "No dependencies to queue")))
+      (elpaca--signal e nil 'blocked)
+      (mapc #'elpaca--continue-build queued))))
 
 ;;@TODO: fix possible race similar to queue--dependencies.
 ;;@MAYBE: Package major version checks.
