@@ -1703,8 +1703,8 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
   (when-let (((equal event "finished\n"))
              (e (process-get process :elpaca))
              (done (string-match-p "Already up to date" (nth 2 (car (elpaca<-log e))))))
-    (elpaca--continue-build e (if done "Already up to date" "Updates merged")
-                            (if done 'update-log 'merged))))
+    (when done (setf (elpaca<-build-steps e) nil))
+    (elpaca--continue-build e)))
 
 (defun elpaca--merge (e)
   "Merge E's fetched commits."
