@@ -1120,6 +1120,7 @@ If RECACHE is non-nil, do not use cached dependencies."
       (if-let ((emacs (assoc 'emacs dependencies)) ;@TODO: check in prev loop?
                ((< emacs-major-version (truncate (string-to-number (cadr emacs))))))
           (elpaca--fail e (format "Requires %S; running %S" emacs emacs-version))
+        (elpaca--signal e nil 'blocked)
         (when (= (length externals) ; Our dependencies beat us to the punch
                  (cl-loop with e-id = (elpaca<-id e)
                           with q = (elpaca--q e)
@@ -1140,8 +1141,8 @@ If RECACHE is non-nil, do not use cached dependencies."
                             (push 'requested-as-dependency (elpaca<-statuses d))
                             (elpaca--continue-build d))
                           count (and queued (eq (elpaca--status queued) 'finished))))
-          (elpaca--continue-build e)))
-    (elpaca--continue-build e "No external dependencies detected")))
+          (elpaca--continue-build e nil 'unblocked)))
+    (elpaca--continue-build e "No external dependencies detected" 'no-deps)))
 
 (defun elpaca--remote-default-branch (remote)
   "Return REMOTE's \"default\" branch.
