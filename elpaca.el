@@ -1698,9 +1698,9 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
 (defun elpaca--merge-process-sentinel (process event)
   "Handle PROCESS EVENT."
   (when-let (((equal event "finished\n"))
-             (e (process-get process :elpaca))
-             (done (string-match-p "Already up to date" (nth 2 (car (elpaca<-log e))))))
-    (when done (setf (elpaca<-build-steps e) nil))
+             (e (process-get process :elpaca)))
+    (when (string-match-p "Already up to date" (nth 2 (car (elpaca<-log e))))
+      (setf (elpaca<-build-steps e) nil))
     (elpaca--continue-build e)))
 
 (defun elpaca--merge (e)
