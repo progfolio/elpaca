@@ -1518,9 +1518,12 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
 
 (defun elpaca--process-queue (q)
   "Process elpacas in Q."
-  (if (and (not (elpaca-q<-elpacas q)) (elpaca-q<-forms q))
-      (elpaca--finalize-queue q)
-    (mapc #'elpaca--process (reverse (mapcar #'cdr (elpaca-q<-elpacas q))))))
+  (cond
+   ((eq (elpaca-q<-status q) 'complete)
+    (when-let ((next (nth (1+ (elpaca-q<-id q)) (reverse elpaca--queues))))
+      (elpaca--process-queue next)))
+   ((and (not (elpaca-q<-elpacas q)) (elpaca-q<-forms q)) (elpaca--finalize-queue q))
+   (t (mapc #'elpaca--process (reverse (mapcar #'cdr (elpaca-q<-elpacas q)))))))
 
 ;;;###autoload
 (defun elpaca-process-queues (&optional filter)
