@@ -189,8 +189,11 @@
   "Display `elpaca-log-buffer'.
 If FILTER is non-nil, it is used as the initial search query."
   (interactive (list (when-let ((pkg (ignore-errors (elpaca-ui-current-package)))
-                                ((alist-get pkg (elpaca--queued))))
-                       (format "^%s$|" (symbol-name pkg)))))
+                                (query (format "^%s$|" (symbol-name pkg)))
+                                (quoted (regexp-quote query)))
+                       (if (string-match-p quoted elpaca-ui-search-filter)
+                           (replace-regexp-in-string quoted "" elpaca-ui-search-filter)
+                         (concat (string-trim elpaca-ui-search-filter) " " query)))))
   (with-current-buffer (get-buffer-create elpaca-log-buffer)
     (unless (derived-mode-p 'elpaca-ui-mode)
       (elpaca-ui-mode)
