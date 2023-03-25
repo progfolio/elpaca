@@ -92,12 +92,10 @@ Note blocked or failed orders will prevent this hook from being run."
 
 (defcustom elpaca-cache-autoloads t
   "If non-nil, cache package autoloads and load all at once.
-Results in faster start-up time."
-  :type 'boolean)
+Results in faster start-up time." :type 'boolean)
 
 (defcustom elpaca-directory (expand-file-name "elpaca" user-emacs-directory)
-  "Location of the elpaca package store."
-  :type 'directory)
+  "Location of the elpaca package store." :type 'directory)
 
 (defvar elpaca-cache-directory (expand-file-name "cache" elpaca-directory)
   "Location of the cache directory.")
@@ -109,12 +107,10 @@ Results in faster start-up time."
   "Location of the repos directory.")
 
 (defcustom elpaca-makeinfo-executable (executable-find "makeinfo")
-  "Path of the makeinfo executable."
-  :type 'string)
+  "Path of the makeinfo executable." :type 'string)
 
 (defcustom elpaca-install-info-executable (executable-find "install-info")
-  "Path of the install-info executable."
-  :type 'string)
+  "Path of the install-info executable." :type 'string)
 
 (defvar elpaca--log-timer nil "Timer to debounce order info printing.")
 (defcustom elpaca-log-interval 0.02
