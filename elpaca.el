@@ -1604,7 +1604,9 @@ If PROMPT is non-nil, it is used instead of the default."
 (defun elpaca--unprocess (e)
   "Mark E as unprocessed in its queue."
   (let ((q (elpaca--q e)))
-    (setf (elpaca<-statuses e) nil)
+    (setf (elpaca<-statuses e) nil
+          (elpaca<-builtp e) nil
+          (elpaca<-queue-time e) (current-time))
     (when (> (elpaca-q<-processed q) 0) (cl-decf (elpaca-q<-processed q)))
     (setf (elpaca-q<-status q) 'incomplete)))
 
@@ -1631,10 +1633,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
                                  elpaca--activate-package))))
     (elpaca--unprocess e)
     (elpaca--signal e "Rebuilding" 'queued)
-    (setf elpaca-cache-autoloads nil
-          (elpaca<-queue-time e) (current-time)
-          (elpaca<-files e) nil
-          (elpaca<-builtp e) nil)
+    (setf elpaca-cache-autoloads nil (elpaca<-files e) nil)
     (when interactive
       (elpaca--maybe-log t "#linked-errors")
       (elpaca-process-queues))))
@@ -1670,12 +1669,9 @@ This does not merge changes or rebuild the packages.
 If INTERACTIVE is non-nil immediately process, otherwise queue."
   (interactive (list (elpaca--read-queued "Fetch Package Updates: ") t))
   (let ((e (or (elpaca-get item) (user-error "Package %S is not queued" item))))
-    (elpaca--signal e "Fetching updates" 'fetching-updates)
     (elpaca--unprocess e)
-    (setf (elpaca<-build-steps e) (list #'elpaca--fetch #'elpaca--log-updates)
-          (elpaca<-queue-time e)  (current-time)
-          (elpaca<-statuses e) (list 'queued)
-          (elpaca<-builtp e) nil)
+    (elpaca--signal e "Fetching updates" 'queued)
+    (setf (elpaca<-build-steps e) (list #'elpaca--fetch #'elpaca--log-updates))
     (when interactive
       (elpaca--maybe-log t "#update-log")
       (elpaca--process e))))
@@ -1728,7 +1724,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
   (let* ((e (or (elpaca-get item) (user-error "Package %S is not queued" item)))
          (recipe (elpaca<-recipe e))
          (pin (plist-get recipe :pin)))
-    (elpaca--signal e "Fetching updates" 'fetching-updates)
+    (elpaca--unprocess e)
     (setf (elpaca<-build-steps e)
           (if pin
               (list #'elpaca--announce-pin)
@@ -1742,10 +1738,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
                    elpaca--checkout-ref
                    elpaca--clone-dependencies
                    elpaca--activate-package))))
-          (elpaca<-queue-time e) (current-time)
-          (elpaca<-statuses e)   (list 'queued)
-          (elpaca<-builtp e)     nil)
-    (elpaca--unprocess e)
+          (elpaca<-statuses e) (list 'queued))
     (when interactive
       (elpaca--maybe-log t "#linked-errors")
       (elpaca--process e))))
