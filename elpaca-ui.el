@@ -142,21 +142,49 @@ It recieves one argument, the parsed search query list.")
 (defvar elpaca-ui--string-cache nil "Cache for propertized strings.")
 (defvar url-http-end-of-headers)
 (defvar elpaca-ui--progress-bar-e (propertize "E:" 'face '(:weight bold)))
+(defvar elpaca-ui--pbh-cache nil "Progress bar help echo cache.")
+(defvar elpaca-ui--pbh-timer nil "Progress bar help echo timer.")
 
 ;;;; Functions:
+(defun elpaca-ui--pbh (_ string pos)
+  "Return packages with status at STRING POS."
+  (let ((status (get-text-property pos 'status string)))
+    (or
+     (alist-get status elpaca-ui--pbh-cache)
+     (setf elpaca-ui--pbh-timer
+           (progn (when elpaca-ui--pbh-timer (cancel-timer elpaca-ui--pbh-timer))
+                  (run-at-time 0.5 nil (lambda () (setq elpaca-ui--pbh-cache nil))))
+           (alist-get status elpaca-ui--pbh-cache)
+           (concat
+            (symbol-name status) " orders\n"
+            (cl-loop
+             with es = (mapcar #'cdr (elpaca--queued))
+             with orders =
+             (cl-sort (if (eq status 'other)
+                          (cl-remove-if (lambda (e) (memq (elpaca--status e)
+                                                          elpaca--inactive-states))
+                                        es)
+                        (cl-remove-if-not (lambda (e) (eq (elpaca--status e) status)) es))
+                      #'string< :key #'cadr)
+             with len = (length orders)
+             with limit = (1- len)
+             for i below len concat (concat (elpaca<-package (nth i orders))
+                                            (unless (eq i limit) ",")
+                                            (if (and  (= 0 (mod (1+ i) 5))) "\n" " "))))))))
+
 (defun elpaca-ui--progress-bar ()
   "Return string indicating state of queues."
-  (concat
-   " " (cl-loop for s in '(finished blocked failed other) concat
-                (concat (propertize (number-to-string (elpaca-alist-get s elpaca--status-counts 0))
-                                    'face (elpaca-alist-get s elpaca-status-faces 'default)
-                                    'help-echo (symbol-name s))
-                        " "))
-   "| " (format "%6.2f%%%%"
-                (floor (* 100 (/ (+ (elpaca-alist-get 'finished elpaca--status-counts 0)
-                                    (elpaca-alist-get 'failed elpaca--status-counts 0))
-                                 (float (max (cl-reduce #'+ elpaca--status-counts :key #'cdr) 1))))))
-   " |"))
+  (cl-loop
+   with counts = nil with total = 0 with finalized = 0
+   for s in '(finished blocked failed other)
+   for plen = (elpaca-alist-get s elpaca--status-counts 0)
+   for count = (propertize (number-to-string plen)
+                           'face (elpaca-alist-get s elpaca-status-faces '(:weight bold))
+                           'status s 'help-echo-inhibit-substitution t 'help-echo #'elpaca-ui--pbh)
+   do (setq counts (concat counts " " count) total (+ total plen))
+   (when (memq s '(finished failed)) (cl-incf finalized plen))
+   finally return
+   (concat counts "|" (format "%6.2f%%%%" (* 100 (/ (float finalized) (max total 1)))) "|")))
 
 (defvar elpaca-ui--header-line-matching (propertize "matching:" 'face '(:weight bold)))
 (defun elpaca-ui--header-line (&optional prefix)
