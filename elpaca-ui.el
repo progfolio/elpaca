@@ -32,7 +32,7 @@
              :setup (lambda () (elpaca--maybe-log t "#update-log"))
              :action elpaca-fetch)
     (update  :prefix "⬆️" :face (:inherit default :weight bold :foreground "#f28500")
-             :setup (lambda () (elpaca--maybe-log t "#linked-errors #update-log"))
+             :setup (lambda () (elpaca--maybe-log t "#linked-errors"))
              :action elpaca-update))
   "List of actions which can be taken on packages."
   :type 'list)
