@@ -1064,7 +1064,7 @@ If RECACHE is non-nil, do not use cached dependencies."
                    (car (directory-files default-directory nil regexp))
                    (car (elpaca--directory-files-recursively default-directory regexp))
                    ;; Best guess if there is no file matching the package name...
-                   (car (directory-files default-directory nil "\\.el$" 'nosort))
+                   (car (directory-files default-directory nil "\\.el\\'" 'nosort))
                    (error "Unable to find main elisp file for %S" package))))
         (let ((deps
                (with-temp-buffer
@@ -1073,7 +1073,7 @@ If RECACHE is non-nil, do not use cached dependencies."
                    (when-let
                        ((case-fold-search t)
                         ((re-search-forward
-                          "^;+[  ]+\\(Package-Requires\\)[   ]*:[  ]*" nil 'noerror))
+                          "^;+[ ]+\\(Package-Requires\\)[ ]*:[ ]*" nil 'noerror))
                         (deps (list (buffer-substring-no-properties (point) (line-end-position)))))
                      (forward-line 1)
                      (while (looking-at "^;+\\(\t\\|[\t\s]\\{2,\\}\\)\\(.+\\)")

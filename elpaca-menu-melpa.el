@@ -108,7 +108,7 @@
       (prog1
           (setq elpaca-menu-melpa--index-cache
                 (cl-loop with metadata = (elpaca-menu-melpa--metadata)
-                         for file in (directory-files "./recipes/" 'full "\\(?:^[^.]\\)")
+                         for file in (directory-files "./recipes/" 'full "\\(?:\\`[^.]\\)")
                          for candidate = (elpaca-menu-melpa--convert file metadata)
                          when candidate collect candidate))
         (elpaca--write-file (expand-file-name "melpa.eld" elpaca-cache-directory)

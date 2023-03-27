@@ -89,7 +89,7 @@ If RECACHE is non-nil, recompute the cache."
           (setq elpaca-menu-gnu-elpa-mirror--index-cache
                 (cl-loop
                  with metadata = (elpaca-menu-gnu-elpa-mirror--metadata)
-                 with files = (directory-files default-directory nil "\\(?:^[^.]\\)")
+                 with files = (directory-files default-directory nil "\\(?:\\`[^.]\\)")
                  for file in files
                  when (file-exists-p (expand-file-name file))
                  for item = (intern file)

@@ -119,7 +119,7 @@
             (let* ((copy (copy-tree entry))
                    (info (thread-last
                            (string-trim info)
-                           (replace-regexp-in-string "^\* " "")
+                           (replace-regexp-in-string "^\\* +" "")
                            (replace-regexp-in-string
                             "\\(?:[([]\\{1\\}[^z-a]*?#[^z-a]+?[])]\\{1\\}\\)"
                             (lambda (s) (propertize s 'face 'elpaca-log-highlight)))
