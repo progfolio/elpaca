@@ -1551,7 +1551,7 @@ do not confirm before deleting package and DEPS."
   (interactive (list (elpaca--read-queued "Delete Package: ")
                      (equal current-prefix-arg '(16))
                      (and current-prefix-arg (listp current-prefix-arg))))
-  (when (or force (yes-or-no-p (format "Delete package %S?" id)))
+  (when (or force (yes-or-no-p (format "Delete package %S? " id)))
     (if-let ((e (elpaca-get id)))
         (let* ((repo-dir      (elpaca<-repo-dir  e))
                (repo-p        (and repo-dir (file-exists-p repo-dir)))
