@@ -799,7 +799,7 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @tab Send input string to current process.
 @item elpaca-ui-show-hidden-rows
 @tab +
-@tab Append rows up to ‘elpaca-ui-row-limit’.
+@tab Append rows up to N times ‘elpaca-ui-row-limit’.
 @item elpaca-ui-search-installed
 @tab I
 @tab Search for ``#unique #installed''

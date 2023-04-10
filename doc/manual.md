@@ -581,7 +581,7 @@ The following commands are available in the `elpaca-ui-mode`:
 | Command                    | Binding | Description                                                     |
 |-------------------------- |------- |--------------------------------------------------------------- |
 | elpaca-ui-send-input       | !       | Send input string to current process.                           |
-| elpaca-ui-show-hidden-rows | +       | Append rows up to ‘elpaca-ui-row-limit’.                        |
+| elpaca-ui-show-hidden-rows | +       | Append rows up to N times ‘elpaca-ui-row-limit’.                |
 | elpaca-ui-search-installed | I       | Search for &ldquo;#unique #installed&rdquo;                     |
 | elpaca-ui-search-marked    | M       | Search for &ldquo;#unique #marked&rdquo;                        |
 | elpaca-ui-search-orphaned  | O       | Search for &ldquo;#unique #orphan&rdquo;                        |
