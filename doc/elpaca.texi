@@ -777,7 +777,7 @@ A wrapper for the use-package@footnote{@uref{https://github.com/jwiegley/use-pac
 @lisp
 (elpaca use-package (require 'use-package)) ; install use-package
 (elpaca-use-package (example :host github :repo "user/example")
-  :config (message "Example configured"))
+                    :config (message "Example configured"))
 @end lisp
 @end table
 

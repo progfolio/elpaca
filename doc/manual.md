@@ -566,7 +566,7 @@ If *ORDER* is nil, *BODY* is still executed after processing the current queue.
     ```emacs-lisp
     (elpaca use-package (require 'use-package)) ; install use-package
     (elpaca-use-package (example :host github :repo "user/example")
-      :config (message "Example configured"))
+                        :config (message "Example configured"))
     ```
 
 
