@@ -360,6 +360,26 @@ the elpaca-example-menu provides the rest of the &ldquo;burger&rdquo; recipe.
 (:package "burger" :inherit t)
 ```
 
+-   **:pre-build:** Commands and/or elisp evaluated prior to `:build` steps.
+
+Each command is either an elisp form or a list of strings executed in a shell context of the form:
+
+```emacs-lisp
+("executable" "argument"...)
+```
+
+For example:
+
+```emacs-lisp
+(elpaca (example :pre-build (("configure") ("make" "install"))))
+```
+
+-   **:post-build:** The same as `:pre-build`, but run just before activating a package.
+
+```emacs-lisp
+(elpaca (example :post-build (message "activate next")))
+```
+
 1.  Inheritance precedence
 
     The following list shows the order of precedence for inheritance. Each item takes precedence over the items which follow it.

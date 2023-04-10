@@ -513,6 +513,31 @@ the elpaca-example-menu provides the rest of the ``burger'' recipe.
 (:package "burger" :inherit t)
 @end lisp
 
+@table @asis
+@item :pre-build
+Commands and/or elisp evaluated prior to @samp{:build} steps.
+@end table
+Each command is either an elisp form or a list of strings executed in a shell context of the form:
+
+@lisp
+("executable" "argument"...)
+@end lisp
+
+For example:
+
+@lisp
+(elpaca (example :pre-build (("configure") ("make" "install"))))
+@end lisp
+
+@table @asis
+@item :post-build
+The same as @samp{:pre-build}, but run just before activating a package.
+@end table
+
+@lisp
+(elpaca (example :post-build (message "activate next")))
+@end lisp
+
 @enumerate
 @item
 @anchor{Inheritance precedence}Inheritance precedence

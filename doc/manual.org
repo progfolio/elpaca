@@ -268,6 +268,25 @@ the elpaca-example-menu provides the rest of the "burger" recipe.
 (:package "burger" :beef t :buns 2 :cheese t :cook well-done :from elpaca-example-menu :inherit t :lettuce t :tomato t)
 #+end_src
 
+- :pre-build :: Commands and/or elisp evaluated prior to =:build= steps.
+Each command is either an elisp form or a list of strings executed in a shell context of the form:
+
+#+begin_src emacs-lisp :lexical t :eval never
+("executable" "argument"...)
+#+end_src
+
+For example:
+
+#+begin_src emacs-lisp :lexical t :eval never
+(elpaca (example :pre-build (("configure") ("make" "install"))))
+#+end_src
+
+- :post-build :: The same as =:pre-build=, but run just before activating a package.
+
+#+begin_src emacs-lisp :lexical t :eval never
+(elpaca (example :post-build (message "activate next")))
+#+end_src
+
 **** Inheritance precedence
 :PROPERTIES:
 :CUSTOM_ID: inheritance-precedence
