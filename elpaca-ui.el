@@ -194,7 +194,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
          (hlen (- (length elpaca-ui-entries) tlen))
          (hidden (when (> hlen 0)
                    (elpaca-ui--buttonize (concat "(+" (number-to-string hlen) ")")
-                                         #'elpaca-ui-show-hidden-rows))))
+                                         (lambda (_) (elpaca-ui-show-hidden-rows))))))
     (setq header-line-format
           (string-join (list (elpaca-ui--progress-bar) prefix (number-to-string tlen)
                              hidden elpaca-ui--header-line-matching elpaca-ui-search-filter)
