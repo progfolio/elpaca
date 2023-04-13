@@ -420,7 +420,7 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
          (mono-repo (alist-get info elpaca--repo-dirs))
          (name (cond
                 (local-repo
-                 (if (and mono-repo (not (equal (cdr mono-repo) pkg)))
+                 (if (and mono-repo (equal (car mono-repo) local-repo))
                      (error "Duplicate :local-repo %S" local-repo)
                    local-repo))
                 (mono-repo (car mono-repo))
