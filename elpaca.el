@@ -1634,6 +1634,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
       (elpaca--maybe-log t "#linked-errors")
       (elpaca-process-queues))))
 
+;;@TODO: leverage git log pretty formatting instead of parsing.
 (defun elpaca--log-updates (e)
   "Log E's fetched commits."
   (elpaca--signal e nil 'update-log)
