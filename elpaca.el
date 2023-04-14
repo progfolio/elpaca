@@ -182,7 +182,8 @@ This hook is run via `run-hook-with-args-until-success'."
                                             :build '(:not elpaca--compile-info))))))))
 
 (defcustom elpaca-menu-functions
-  '(elpaca-menu-extensions elpaca-menu-org elpaca-menu-melpa elpaca-menu-gnu-elpa-mirror elpaca-menu-non-gnu-elpa)
+  '( elpaca-menu-extensions elpaca-menu-org elpaca-menu-melpa elpaca-menu-non-gnu-devel-elpa
+     elpaca-menu-gnu-devel-elpa elpaca-menu-non-gnu-elpa elpaca-menu-gnu-elpa )
   "Abnormal hook to lookup packages in menus.
 Each function is passed a request, which may be any of the following symbols:
   - `index`
@@ -209,9 +210,10 @@ Each function is passed a request, which may be any of the following symbols:
 
 (defcustom elpaca-ignored-dependencies
   `( emacs cl-lib cl-generic nadvice org org-mode map seq json project auth-source-pass
-     ruby-mode
+     let-alist flymake jsonrpc eldoc erc external-completion ntlm python so-long soap-client
+     svg ruby-mode verilog-mode xref
      ,@(unless (< emacs-major-version 28) '(transient))
-     ,@(unless (< emacs-major-version 29) '(use-package eglot)))
+     ,@(unless (< emacs-major-version 29) '(use-package bind-key eglot)))
   "List of items which are not installed unless the user explicitly requests them."
   :type '(repeat symbol))
 
