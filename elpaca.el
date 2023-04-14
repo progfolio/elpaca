@@ -667,7 +667,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
   "ADD ORDER to QUEUE or current queue. Return E."
   (let ((item (elpaca--first order)))
     (if (and (not after-init-time) (elpaca-get item))
-        (warn "Duplicate item declaration: %S" item)
+        (warn "Duplicate item queued: %S" item)
       (let* ((e (elpaca<-create order))
              (log (pop (elpaca<-log e)))
              (status (car log))
