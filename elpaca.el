@@ -212,6 +212,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
 
 (defcustom elpaca-ignored-dependencies
   `( emacs cl-lib cl-generic nadvice org org-mode map seq json project auth-source-pass
+     ruby-mode
      elpaca ,@(unless (< emacs-major-version 28) '(transient))
      ,@(unless (< emacs-major-version 29) '(use-package eglot)))
   "List of items which are not installed unless the user explicitly requests them."
