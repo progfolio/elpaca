@@ -34,10 +34,13 @@
   :type 'boolean :group 'elpaca)
 
 ;; Respects `:if', `:when', `:unless'
-(defun use-package-normalize/:elpaca (name _keyword args)
+(defun use-package-normalize/:elpaca (name keyword args)
   "Return `use-package' declaration with NAME's KEYWORD ARGS."
-  (let ((arg (car args)))
-    (if (and (listp arg) (keywordp (car arg))) (list (cons name arg)) args)))
+  (use-package-only-one (symbol-name keyword) args
+    (lambda (_label arg)
+      (if (keywordp (car-safe arg))
+          (cons name arg)
+        arg))))
 
 (defun use-package-handler/:elpaca (name _keyword args rest state)
   "Expand `use-package' declaration with NAME's body.
@@ -52,7 +55,7 @@ see `use-package' docs for STATE."
                         else collect el))
          (body (use-package-process-keywords name rest state))
          (arg (car args)))
-    `((elpaca ,@(if (eq t arg) (list name) args) ,@body))))
+    `((elpaca ,(if (eq t arg) name args) ,@body))))
 
 (defun elpaca-use-package--maybe (fn &rest args)
   "Temporarily disable `elpaca-use-package-mode' for FN with ARGS if :elpaca nil."
