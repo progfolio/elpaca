@@ -1055,35 +1055,36 @@ If RECACHE is non-nil, do not use cached dependencies."
          (package (file-name-sans-extension (elpaca<-package e)))
          (name (concat package ".el"))
          (regexp (concat "^" name "$"))
-         (main (or (plist-get recipe :main)
-                   (cl-some (lambda (name) (let ((file (expand-file-name name)))
-                                             (and (file-exists-p file) file)))
-                            (list (concat package "-pkg.el")
-                                  name
-                                  (concat "./lisp/" name)
-                                  (concat "./elisp/" name)))
-                   (car (directory-files default-directory nil regexp))
-                   (car (elpaca--directory-files-recursively default-directory regexp))
-                   ;; Best guess if there is no file matching the package name...
-                   (car (directory-files default-directory nil "\\.el\\'" 'nosort))
-                   (error "Unable to find main elisp file for %S" package))))
+         (main (if-let ((declared (plist-member recipe :main))) (not (cadr declared))
+                 (or (cl-some (lambda (name) (let ((file (expand-file-name name)))
+                                               (and (file-exists-p file) file)))
+                              (list (concat package "-pkg.el")
+                                    name
+                                    (concat "./lisp/" name)
+                                    (concat "./elisp/" name)))
+                     (car (directory-files default-directory nil regexp))
+                     (car (elpaca--directory-files-recursively default-directory regexp))
+                     ;; Best guess if there is no file matching the package name...
+                     (car (directory-files default-directory nil "\\.el\\'" 'nosort))
+                     (error "Unable to find main elisp file for %S" package)))))
         (let ((deps
-               (with-temp-buffer
-                 (insert-file-contents-literally main)
-                 (if (string-suffix-p "-pkg.el" main) (eval (nth 4 (read (current-buffer))))
-                   (when-let
-                       ((case-fold-search t)
-                        ((re-search-forward
-                          "^;+[ ]+\\(Package-Requires\\)[ ]*:[ ]*" nil 'noerror))
-                        (deps (list (buffer-substring-no-properties (point) (line-end-position)))))
-                     (forward-line 1)
-                     (while (looking-at "^;+\\(\t\\|[\t\s]\\{2,\\}\\)\\(.+\\)")
-                       (push (match-string-no-properties 2) deps)
-                       (forward-line 1))
-                     (condition-case err
-                         (mapcar (lambda (d) (if (cdr-safe d) d (list (elpaca--first d) "0")))
-                                 (read (string-join (nreverse deps) " ")))
-                       ((error) (error "%S Package-Requires error: %S" main err))))))))
+               (unless (eq main t)
+                 (with-temp-buffer
+                   (insert-file-contents-literally main)
+                   (if (string-suffix-p "-pkg.el" main) (eval (nth 4 (read (current-buffer))))
+                     (when-let
+                         ((case-fold-search t)
+                          ((re-search-forward
+                            "^;+[ ]+\\(Package-Requires\\)[ ]*:[ ]*" nil 'noerror))
+                          (deps (list (buffer-substring-no-properties (point) (line-end-position)))))
+                       (forward-line 1)
+                       (while (looking-at "^;+\\(\t\\|[\t\s]\\{2,\\}\\)\\(.+\\)")
+                         (push (match-string-no-properties 2) deps)
+                         (forward-line 1))
+                       (condition-case err
+                           (mapcar (lambda (d) (if (cdr-safe d) d (list (elpaca--first d) "0")))
+                                   (read (string-join (nreverse deps) " ")))
+                         ((error) (error "%S Package-Requires error: %S" main err)))))))))
           (setf (elpaca<--dependencies e) (or deps :nil))
           deps)
       (and (not (eq cache :nil)) cache))))

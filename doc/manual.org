@@ -227,9 +227,14 @@ The following does the same above, additionally adding a third remote at a diffe
 
 - :main :: The name of the main elisp file.
   When provided this can speed up the process of cloning and loading a package's dependencies.
+  When declared =nil=, skip dependency check.
 
 #+begin_src emacs-lisp :lexical t :eval never-export
 (example :main "example.el")
+#+end_src
+
+#+begin_src emacs-lisp :lexical t
+(example :main nil)
 #+end_src
 
 - :build :: A list of build steps, nil or t.

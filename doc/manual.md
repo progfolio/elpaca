@@ -324,10 +324,14 @@ Will add a remote named fork which points to a repository hosted on the same for
                    ("other" :host gitlab :repo "other/zenburn-emacs")))
 ```
 
--   **:main:** The name of the main elisp file. When provided this can speed up the process of cloning and loading a package&rsquo;s dependencies.
+-   **:main:** The name of the main elisp file. When provided this can speed up the process of cloning and loading a package&rsquo;s dependencies. When declared `nil`, skip dependency check.
 
 ```emacs-lisp
 (example :main "example.el")
+```
+
+```emacs-lisp
+(example :main nil)
 ```
 
 -   **:build:** A list of build steps, nil or t. To remove steps from `elpaca-default-build-steps` by starting the list with the `:not` keyword.

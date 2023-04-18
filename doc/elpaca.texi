@@ -469,10 +469,15 @@ The following does the same above, additionally adding a third remote at a diffe
 @item :main
 The name of the main elisp file.
 When provided this can speed up the process of cloning and loading a package's dependencies.
+When declared @samp{nil}, skip dependency check.
 @end table
 
 @lisp
 (example :main "example.el")
+@end lisp
+
+@lisp
+(example :main nil)
 @end lisp
 
 @table @asis
