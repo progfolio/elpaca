@@ -35,7 +35,7 @@ Elpaca requires:
 
 -   Emacs >= 27.1
 -   git (minimum version TBD)
--   Windows users must be able to create symlinks.
+-   Windows users must be able to create symlinks<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>.
 
 
 <a id="installer"></a>
@@ -82,7 +82,7 @@ To install Elpaca, add the following elisp to your init.el. It must come before 
 (elpaca `(,@elpaca-order))
 ```
 
-You&rsquo;ll also want to disable package.el in your early-init file<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>:
+You&rsquo;ll also want to disable package.el in your early-init file<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup>:
 
 ```emacs-lisp
 (setq package-enable-at-startup nil)
@@ -142,7 +142,7 @@ For example:
 
 **IMPORTANT**:
 
-Elpaca installs and activates packages asynchronously. Elpaca processes its package queues *after* Emacs reads the init file.<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup> Consider the following example:
+Elpaca installs and activates packages asynchronously. Elpaca processes its package queues *after* Emacs reads the init file.<sup><a id="fnr.3" class="footref" href="#fn.3" role="doc-backlink">3</a></sup> Consider the following example:
 
 ```emacs-lisp
 (elpaca nil (message "First")) ; Queue First
@@ -252,7 +252,7 @@ A recipe provides Elpaca with the metadata necessary to build and install a pack
 (example :host github :repo "user/example" :tag "v1.0")
 ```
 
--   **:ref:** The git ref<sup><a id="fnr.3" class="footref" href="#fn.3" role="doc-backlink">3</a></sup> to check out when installing the package.
+-   **:ref:** The git ref<sup><a id="fnr.4" class="footref" href="#fn.4" role="doc-backlink">4</a></sup> to check out when installing the package.
 
 ```emacs-lisp
 (example :host github :repo "user/example" :ref "a76ca0a") ;; Check out a specific commit.
@@ -293,7 +293,7 @@ The value must be a symbol, either `https` or `ssh`.
 (example :protocol ssh) ; Use the ssh protocol.
 ```
 
--   **:remotes:** Configures the repository remotes<sup><a id="fnr.4" class="footref" href="#fn.4" role="doc-backlink">4</a></sup>.
+-   **:remotes:** Configures the repository remotes<sup><a id="fnr.5" class="footref" href="#fn.5" role="doc-backlink">5</a></sup>.
 
 The value must be a single remote spec or a list of remote specs. The first remote given will have its ref checked out when cloning the repository. A spec may be a string to rename the default remote. The following will rename the cloned remote (usually &ldquo;origin&rdquo; by git convention) to &ldquo;upstream&rdquo;:
 
@@ -561,7 +561,7 @@ If *ORDER* is nil, *BODY* is still executed after processing the current queue.
 
 -   **elpaca-use-package:** `(order &rest body)`
     
-    A wrapper for the use-package<sup><a id="fnr.5" class="footref" href="#fn.5" role="doc-backlink">5</a></sup> macro. *ORDER* is the same as above. *BODY* must conform to use-package&rsquo;s *ARGS*.
+    A wrapper for the use-package<sup><a id="fnr.6" class="footref" href="#fn.6" role="doc-backlink">6</a></sup> macro. *ORDER* is the same as above. *BODY* must conform to use-package&rsquo;s *ARGS*.
     
     ```emacs-lisp
     (elpaca use-package (require 'use-package)) ; install use-package
@@ -653,12 +653,14 @@ The pound (a.k.a. hash) character, `#`, followed by the name of a search tag fil
 
 ## Footnotes
 
-<sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html>
+<sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.
 
-<sup><a id="fn.2" class="footnum" href="#fnr.2">2</a></sup> This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.
+<sup><a id="fn.2" class="footnum" href="#fnr.2">2</a></sup> [windows symlink guide](https://www.howtogeek.com/16226/complete-guide-to-symbolic-links-symlinks-on-windows-or-linux/)
 
-<sup><a id="fn.3" class="footnum" href="#fnr.3">3</a></sup> [git ref](https://git-scm.com/book/en/v2/Git-Internals-Git-References)
+<sup><a id="fn.3" class="footnum" href="#fnr.3">3</a></sup> <https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html>
 
-<sup><a id="fn.4" class="footnum" href="#fnr.4">4</a></sup> [remotes](https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes)
+<sup><a id="fn.4" class="footnum" href="#fnr.4">4</a></sup> [git ref](https://git-scm.com/book/en/v2/Git-Internals-Git-References)
 
-<sup><a id="fn.5" class="footnum" href="#fnr.5">5</a></sup> <https://github.com/jwiegley/use-package>
+<sup><a id="fn.5" class="footnum" href="#fnr.5">5</a></sup> [remotes](https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes)
+
+<sup><a id="fn.6" class="footnum" href="#fnr.6">6</a></sup> <https://github.com/jwiegley/use-package>

@@ -27,7 +27,8 @@ Elpaca:
 Elpaca requires:
 - Emacs >= 27.1
 - git (minimum version TBD)
-- Windows users must be able to create symlinks.
+- Windows users must be able to create symlinks[fn:1].
+
 *** Installer
 To install Elpaca, add the following elisp to your init.el.
 It must come before any calls to other Elpaca functions/macros.
@@ -72,7 +73,7 @@ It then builds and activates Elpaca.
 (elpaca `(,@elpaca-order))
 #+end_src
 
-You'll also want to disable package.el in your early-init file[fn:-0-1]:
+You'll also want to disable package.el in your early-init file[fn:2]:
 
 #+begin_src emacs-lisp
 (setq package-enable-at-startup nil)
@@ -80,7 +81,6 @@ You'll also want to disable package.el in your early-init file[fn:-0-1]:
 
 And remove anything related to package.el in your init file. e.g. calls to ~(package-activate-all)~.
 
-[fn:-0-1] [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html]]
 
 ** Quick Start
 | Operation                             | UI (keys apply in elpaca-ui-mode)  | completing-read interface commands           |
@@ -127,7 +127,7 @@ For example:
 *IMPORTANT*:
 
 Elpaca installs and activates packages asynchronously.
-Elpaca processes its package queues /after/ Emacs reads the init file.[fn:-0-2]
+Elpaca processes its package queues /after/ Emacs reads the init file.[fn:3]
 Consider the following example:
 
 #+begin_src emacs-lisp
@@ -159,4 +159,11 @@ This includes loading of saved customizations. e.g.
 See the [[file:./doc/manual.md][manual]] for in-depth information on Elpaca usage, customization, and development.
 Users who wish to experiment with Elpaca may find the example [[file:./doc/init.el][init.el]] and [[file:./doc/early-init.el][early-init.el]] files useful.
 
-[fn:-0-2] This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.
+** Footnotes
+ [fn:1] [[https://www.howtogeek.com/16226/complete-guide-to-symbolic-links-symlinks-on-windows-or-linux/][windows symlink guide]]
+
+
+ [fn:2] [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html][early-init file]]
+
+
+ [fn:3] This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.

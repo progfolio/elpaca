@@ -96,7 +96,7 @@ Emacs >= 27.1
 @item
 git (minimum version TBD)
 @item
-Windows users must be able to create symlinks.
+Windows users must be able to create symlinks@footnote{This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.}.
 @end itemize
 
 @node Installer
@@ -145,7 +145,7 @@ It then builds and activates Elpaca.
 (elpaca `(,@@elpaca-order))
 @end lisp
 
-You'll also want to disable package.el in your early-init file@footnote{@uref{https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html}}:
+You'll also want to disable package.el in your early-init file@footnote{@uref{https://www.howtogeek.com/16226/complete-guide-to-symbolic-links-symlinks-on-windows-or-linux/, windows symlink guide}}:
 
 @lisp
 (setq package-enable-at-startup nil)
@@ -231,7 +231,7 @@ For example:
 @strong{IMPORTANT}:
 
 Elpaca installs and activates packages asynchronously.
-Elpaca processes its package queues @emph{after} Emacs reads the init file.@footnote{This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.}
+Elpaca processes its package queues @emph{after} Emacs reads the init file.@footnote{@uref{https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html}}
 Consider the following example:
 
 @lisp

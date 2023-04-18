@@ -47,7 +47,7 @@ It is a replacement for the built-in Emacs package manager, package.el.
 Elpaca requires:
 - Emacs >= 27.1
 - git (minimum version TBD)
-- Windows users must be able to create symlinks.
+- Windows users must be able to create symlinks[fn:1].
 ** Installer
 :PROPERTIES:
 :CUSTOM_ID: installer
@@ -100,7 +100,7 @@ It then builds and activates Elpaca.
 (elpaca `(,@elpaca-order))
 #+end_src
 
-You'll also want to disable package.el in your early-init file[fn:1]:
+You'll also want to disable package.el in your early-init file[fn:2]:
 
 #+begin_src emacs-lisp :lexical t :tangle "./early-init.el" :eval never-export :exports none
 ;; Example Elpaca early-init.el -*- lexical-binding: t; -*-
@@ -177,7 +177,7 @@ For example:
 *IMPORTANT*:
 
 Elpaca installs and activates packages asynchronously.
-Elpaca processes its package queues /after/ Emacs reads the init file.[fn:2]
+Elpaca processes its package queues /after/ Emacs reads the init file.[fn:3]
 Consider the following example:
 
 #+begin_src emacs-lisp :lexical t :eval never-export
@@ -208,6 +208,8 @@ This includes loading of saved customizations. e.g.
 
 * Footnotes
 
-[fn:1] [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html]]
+[fn:1] This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.
 
-[fn:2] This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.
+[fn:2] [[https://www.howtogeek.com/16226/complete-guide-to-symbolic-links-symlinks-on-windows-or-linux/][windows symlink guide]]
+
+[fn:3] [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html]]
