@@ -142,7 +142,7 @@
                                       (elpaca<-recipe e)))))
              (elpaca-info--section
               "%s %s" "dependencies:"
-              (if-let ((ds (remq 'emacs (elpaca-dependencies item))))
+              (if-let ((ds (remq 'emacs (ignore-errors (elpaca-dependencies item)))))
                   (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
                 (if on-disk-p "nil"
                   (if (memq item (cl-set-difference elpaca-ignored-dependencies '(emacs elpaca)))
@@ -155,9 +155,12 @@
              (when e (elpaca-info--section
                       "%s %s" "commit: "
                       (let ((default-directory (elpaca<-repo-dir e)))
-                        (string-trim (elpaca-process-output "git" "rev-parse"  "--short" "HEAD")))))
-             (when-let ((e) (statuses (elpaca<-statuses e))) (elpaca-info--section "%s\n  %S" "statuses:" statuses))
-             (when-let ((e) (files (elpaca--files e)))
+                        (string-trim (or (ignore-errors (elpaca-process-output
+                                                         "git" "rev-parse"  "--short" "HEAD"))
+                                         "")))))
+             (when-let ((e) (statuses (elpaca<-statuses e)))
+               (elpaca-info--section "%s\n  %S" "statuses:" statuses))
+             (when-let ((e) (files (ignore-errors (elpaca--files e))))
                (elpaca-info--section "%s\n  %s" "files:" (string-join (elpaca-info--files files) i))))))
       (when e (setq default-directory (elpaca<-repo-dir e)))
       (insert (propertize (plist-get recipe :package) 'face 'elpaca-info-package))
