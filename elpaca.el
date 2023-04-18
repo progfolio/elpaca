@@ -67,7 +67,8 @@
                                  (failed   . elpaca-failed)
                                  (busy     . elpaca-busy))
   "Alist mapping order statuses to faces."
-  :type 'alist)
+  :type '(alist :key-type (:options (blocked finished failed busy))
+                :value-type face))
 
 (defvar elpaca--pre-built-steps
   '(elpaca--queue-dependencies elpaca--add-info-path elpaca--activate-package)
@@ -107,10 +108,10 @@ Results in faster start-up time." :type 'boolean)
   "Location of the repos directory.")
 
 (defcustom elpaca-makeinfo-executable (executable-find "makeinfo")
-  "Path of the makeinfo executable." :type 'string)
+  "Path of the makeinfo executable." :type '(file :must-match t))
 
 (defcustom elpaca-install-info-executable (executable-find "install-info")
-  "Path of the install-info executable." :type 'string)
+  "Path of the install-info executable." :type '(file :must-match))
 
 (defvar elpaca--log-timer nil "Timer to debounce order info printing.")
 (defcustom elpaca-log-interval 0.02
@@ -137,7 +138,7 @@ Setting it too high causes prints fewer status updates."
                                 elpaca--run-post-build-commands
                                 elpaca--activate-package)
   "List of steps which are run when installing/building a package."
-  :type 'list)
+  :type '(repeat function))
 
 (defvar elpaca--debug-init init-file-debug "Preserves --debug-init option.")
 
