@@ -111,7 +111,7 @@ Results in faster start-up time." :type 'boolean)
   "Path of the makeinfo executable." :type '(file :must-match t))
 
 (defcustom elpaca-install-info-executable (executable-find "install-info")
-  "Path of the install-info executable." :type '(file :must-match))
+  "Path of the install-info executable." :type '(file :must-match t))
 
 (defvar elpaca--log-timer nil "Timer to debounce order info printing.")
 (defcustom elpaca-log-interval 0.02
