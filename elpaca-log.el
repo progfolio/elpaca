@@ -26,9 +26,15 @@
 (require 'elpaca-ui)
 (defvar elpaca-log-buffer "*elpaca-log*")
 (defvar elpaca-log--history nil "`elpaca-log' minibuffer history.")
-(defface elpaca-log-highlight '((t (:inherit warning))) "Highlights log info.")
-(defface elpaca-log-error '((t (:inherit error))) "Highlights log errors.")
-(defface elpaca-log-info '((t (:inherit shadow))) "Face for log info.")
+(defface elpaca-log-highlight '((t (:inherit warning)))
+  "Highlights log info."
+  :group 'elpaca)
+(defface elpaca-log-error '((t (:inherit error)))
+  "Highlights log errors."
+  :group 'elpaca)
+(defface elpaca-log-info '((t (:inherit shadow)))
+  "Face for log info."
+  :group 'elpaca)
 
 (defcustom elpaca-log-default-search-query ".*"
   "Default query for `elpaca-log-buffer'."
