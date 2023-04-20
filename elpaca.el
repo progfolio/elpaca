@@ -67,8 +67,7 @@
                                  (failed   . elpaca-failed)
                                  (busy     . elpaca-busy))
   "Alist mapping order statuses to faces."
-  :type '(alist :key-type symbol (:options (blocked finished failed busy))
-                :value-type face))
+  :type '(alist :key-type symbol :options '(blocked finished failed busy) :value-type face))
 
 (defvar elpaca--pre-built-steps
   '(elpaca--queue-dependencies elpaca--add-info-path elpaca--activate-package)
@@ -867,7 +866,8 @@ If it matches, the E associated with process has its STATUS updated."
          (timer   (process-get process :timer))
          (chunk   (concat parsed output))
          (lines   (split-string chunk "\n"))
-         (returnp (string-match-p "" chunk))
+         (returnp (string-match-p "
+" chunk))
          (linep   (string-empty-p (car (last lines)))))
     (unless (process-get process :messaged)
       (elpaca--signal e (elpaca--command-string (process-command process)) nil nil 1)
@@ -881,7 +881,8 @@ If it matches, the E associated with process has its STATUS updated."
       (setq lines (butlast lines)))
     (dolist (line lines)
       (unless (string-empty-p line)
-        (elpaca--signal e (car (last (split-string line "" t)))
+        (elpaca--signal e (car (last (split-string line "
+" t)))
                         (and pattern (string-match-p pattern line) status) returnp)))
     (when (and pattern (string-match-p pattern output))
       (if (eq status 'failed)
