@@ -31,8 +31,7 @@
 
 (defcustom elpaca-manager-default-search-query "#unique !#installed"
   "Default search query for `elpaca-manager'."
-  :type 'string
-  :group 'elpaca)
+  :type 'string :group 'elpaca-ui)
 
 (defun elpaca-manager--entries (&optional recache)
   "Return list of all entries available in `elpaca-menu-functions' and init.

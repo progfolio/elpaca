@@ -26,14 +26,12 @@
 (require 'elpaca-ui)
 (defvar elpaca-log-buffer "*elpaca-log*")
 (defvar elpaca-log--history nil "`elpaca-log' minibuffer history.")
-(defface elpaca-log-highlight '((t (:inherit warning))) "Highlights log info.")
-(defface elpaca-log-error '((t (:inherit error))) "Highlights log errors.")
-(defface elpaca-log-info '((t (:inherit shadow))) "Face for log info.")
+(defface elpaca-log-highlight '((t (:inherit warning))) "Highlight log info." :group 'elpaca-ui)
+(defface elpaca-log-error '((t (:inherit error))) "Highlight log errors." :group 'elpaca-ui)
+(defface elpaca-log-info '((t (:inherit shadow))) "Face for log info." :group 'elpaca-ui)
 
-(defcustom elpaca-log-default-search-query ".*"
-  "Default query for `elpaca-log-buffer'."
-  :type 'string
-  :group 'elpaca)
+(defcustom elpaca-log-default-search-query ".*" "Default query for `elpaca-log-buffer'."
+  :type 'string :group 'elpaca-ui)
 
 (defcustom elpaca-log-search-tags
   '((verbosity . elpaca-log--verbosity)
@@ -42,7 +40,7 @@
     (linked-errors . elpaca-log--byte-comp-warnings)
     (update-log . elpaca-log--updates))
   "Alist of search tags (see `elpaca-ui-search-tags') exclusive to the log buffer."
-  :type 'alist :group 'elpaca)
+  :type '(alist :key-type symbol :value-type function) :group 'elpaca-ui)
 
 (defun elpaca-log--visit-byte-comp-warning (file line col)
   "Visit warning location in FILE at LINE and COL."

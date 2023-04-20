@@ -7,12 +7,9 @@
 (require 'tabulated-list)
 
 ;;; Code:
-(defgroup elpaca-ui nil
-  "Elpaca's UI options."
-  :group 'elpaca)
+(defgroup elpaca-ui nil "Elpaca's UI options." :group 'elpaca)
 
-(defface elpaca-ui-marked-package
-  '((t (:inherit default :weight bold :foreground "pink")))
+(defface elpaca-ui-marked-package '((t (:inherit default :weight bold :foreground "pink")))
   "Face for marked packages.")
 (defcustom elpaca-ui-row-limit 1000 "Max rows to print at once." :type 'integer)
 (defcustom elpaca-ui-default-query ".*" "Initial `elpaca-ui-mode' search query."
@@ -73,7 +70,7 @@ list of menu items.
 
 Each tag can be inverted in the minibuffer by prepending an
 exclamation point to it. e.g. #!installed."
-  :type 'alist)
+  :type '(alist :key-type symbol :value-type function))
 
 (defcustom elpaca-ui-search-debounce-interval 0.25
   "Length of time in seconds to wait before updating the search UI."

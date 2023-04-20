@@ -25,9 +25,9 @@
 (require 'elpaca-ui)
 
 (defface elpaca-info-section '((t (:weight bold)))
-  "Marks a section of the elpaca-info-buffer." :group 'elpaca)
+  "Marks a section of the elpaca-info-buffer." :group 'elpaca-ui)
 (defface elpaca-info-package '((t (:height 2.0)))
-  "The name of the package in `elpaca-info-mode'." :group 'elpaca)
+  "The name of the package in `elpaca-info-mode'." :group 'elpaca-ui)
 
 (defvar-local elpaca--info nil)
 (defvar-local elpaca-info--item nil)

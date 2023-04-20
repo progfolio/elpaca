@@ -67,7 +67,7 @@
                                  (failed   . elpaca-failed)
                                  (busy     . elpaca-busy))
   "Alist mapping order statuses to faces."
-  :type '(alist :key-type symbol :options '(blocked finished failed busy) :value-type face))
+  :type '(alist :key-type symbol :options (blocked finished failed busy) :value-type face))
 
 (defvar elpaca--pre-built-steps
   '(elpaca--queue-dependencies elpaca--add-info-path elpaca--activate-package)
