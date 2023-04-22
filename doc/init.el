@@ -46,6 +46,13 @@
 ;; Block until current queue processed.
 (elpaca-wait)
 
+;;When installing a package which will modifies a form you plan on using
+;;at the top-level (e.g. a package which adds a use-package key word),
+;;use `elpaca-wait' to block until that package has been installed/configured.
+;;For example:
+;;(use-package general :demand t)
+;;(elpaca-wait)
+
 ;; Expands to: (elpaca evil (use-package evil :demand t))
 (use-package evil :demand t)
 
