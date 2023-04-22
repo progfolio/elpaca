@@ -6,10 +6,10 @@ This document contains documentation included in the README file as well as the 
 In order to export after saving changes, evaluate the following source blocks:
 
 #+begin_src emacs-lisp :lexical t :results silent
-(require 'ox-org)
+(require 'ox-gfm)
 (defun +elpaca-export-readme ()
   (with-current-buffer (find-file-noselect "./readme.org")
-    (org-export-to-file 'org "../README.org")))
+    (org-export-to-file 'gfm "../README.md")))
 (add-hook 'after-save-hook #'+elpaca-export-readme nil t)
 
 (require 'ox-texinfo)
@@ -18,7 +18,6 @@ In order to export after saving changes, evaluate the following source blocks:
     (org-export-to-file 'texinfo "./elpaca.texi")))
 (add-hook 'after-save-hook #'+elpaca-export-manual nil t)
 
-(require 'ox-gfm)
 (defun +elpaca-export-md ()
   (with-current-buffer (find-file-noselect "./manual.org")
     (org-export-to-file 'gfm "./manual.md")))
@@ -208,8 +207,8 @@ This includes loading of saved customizations. e.g.
 
 * Footnotes
 
-[fn:1] This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.
+[fn:1] [[https://www.howtogeek.com/16226/complete-guide-to-symbolic-links-symlinks-on-windows-or-linux/][windows symlink guide]]
 
-[fn:2] [[https://www.howtogeek.com/16226/complete-guide-to-symbolic-links-symlinks-on-windows-or-linux/][windows symlink guide]]
+[fn:2] [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html][ealry-init file]]
 
-[fn:3] [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html]]
+[fn:3] This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.

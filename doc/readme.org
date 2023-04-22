@@ -1,6 +1,6 @@
 #+title: Elpaca: An Elisp Package Manager
 #+author: Nicholas Vollmer
-#+options: exports:both timestamp:nil title:nil
+#+options: exports:both timestamp:nil title:nil toc:nil
 #+property: header-args :noweb yes
 
 * Preamble                                                         :noexport:
@@ -10,14 +10,17 @@ The reason for keeping this separate is so we can include data common to both th
 To export:
 
 #+begin_src emacs-lisp :lexical t :results silent
-(require 'ox-org)
+(require 'ox-gfm)
 (defun +elpaca-export-readme ()
   (with-current-buffer (find-file-noselect "./readme.org")
-    (org-export-to-file 'org "../README.org")))
+    (org-export-to-file 'gfm "../README.md")))
 (add-hook 'after-save-hook #'+elpaca-export-readme nil t)
 #+end_src
 
 * Elpaca: An Elisp Package Manager
+:PROPERTIES:
+:CUSTOM_ID: title
+:END:
 #+html: <p align="center"><img src="./images/elpaca.svg"/></p>
 #+html: <p align="center">"Chews data, spits packages."</p>
 
@@ -32,6 +35,9 @@ Elpaca:
 - Makes it easy for users to create their own ELPAs.
 
 * Video Tour
+:PROPERTIES:
+:CUSTOM_ID: video-tour
+:END:
 
 #+html: <p align="center"><a href="https://www.youtube.com/watch?v=5Ud-TE3iIQY"><img src="./images/elpaca-manager-install.gif"/></a></p>
 
