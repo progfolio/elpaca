@@ -66,13 +66,13 @@
 ;;;###autoload
 (defmacro elpaca-test (&rest body)
   "Test Elpaca in a clean environment.
-BODY is plist which allows multiple values for certain keys.
+BODY is a plist which allows multiple values for certain keys.
 The following keys are recognized:
   :name description of the test
 
   :ref git ref to check out or `local' to use local copy in current repo state
 
-  :dir `user-emacs-directory' name expanded in `temporary-file-irectory'.
+  :dir `user-emacs-directory' name expanded in `temporary-file-directory'.
     Only relative paths are accepted.
 
   :init `user', (:file \"path/to/init.el\") or forms...
