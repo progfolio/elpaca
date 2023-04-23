@@ -167,6 +167,6 @@ See the [manual](./doc/manual.md) for in-depth information on Elpaca usage, cust
 
 <sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> [windows symlink guide](https://www.howtogeek.com/16226/complete-guide-to-symbolic-links-symlinks-on-windows-or-linux/)
 
-<sup><a id="fn.2" class="footnum" href="#fnr.2">2</a></sup> [ealry-init file](https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html)
+<sup><a id="fn.2" class="footnum" href="#fnr.2">2</a></sup> [early-init file](https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html)
 
 <sup><a id="fn.3" class="footnum" href="#fnr.3">3</a></sup> This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.
