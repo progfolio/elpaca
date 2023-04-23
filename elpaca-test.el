@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;; `elpaca-test' is a declarative macro aimed at making it easy to create and share bug reproduction enviornments.
+;; `elpaca-test' is a declarative macro aimed at making it easy to create and share bug reproduction environments.
 ;; Example usages:
 ;;
 ;; Installs Elpaca in a temporary environment. Launches an Emacs instance with doc/init.el
@@ -66,13 +66,13 @@
 ;;;###autoload
 (defmacro elpaca-test (&rest body)
   "Test Elpaca in a clean environment.
-BODY is plist which allows multiple values for certain keys.
+BODY is a plist which allows multiple values for certain keys.
 The following keys are recognized:
   :name description of the test
 
   :ref git ref to check out or `local' to use local copy in current repo state
 
-  :dir `user-emacs-directory' name expanded in `temporary-file-irectory'.
+  :dir `user-emacs-directory' name expanded in `temporary-file-directory'.
     Only relative paths are accepted.
 
   :init `user', (:file \"path/to/init.el\") or forms...
