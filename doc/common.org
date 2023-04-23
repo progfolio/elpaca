@@ -216,6 +216,6 @@ This includes loading of saved customizations. e.g.
 
 [fn:1] [[https://www.howtogeek.com/16226/complete-guide-to-symbolic-links-symlinks-on-windows-or-linux/][windows symlink guide]]
 
-[fn:2] [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html][ealry-init file]]
+[fn:2] [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html][early-init file]]
 
 [fn:3] This is so Elpaca can build a proper dependency tree. It ensures packages the user explicitly requests are not preempted by dependencies of other packages.
