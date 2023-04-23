@@ -1437,7 +1437,7 @@ When MESSAGE is non-nil, message the list of dependents."
 ;;;; COMMANDS/MACROS
 ;;;###autoload
 (defmacro elpaca (order &rest body)
-  "Install ORDER, then execute BODY.
+  "Queue ORDER for installation/activation, defer execution of BODY.
 If ORDER is `nil`, defer BODY until orders have been processed."
   (declare (indent 1))
   (unless (or (null order) (memq (car-safe order) '(\` quote))) (setq order `(quote ,order)))
@@ -1452,7 +1452,7 @@ If ORDER is `nil`, defer BODY until orders have been processed."
 (defun elpaca--dont-clear-message () "Block message clearing." 'dont-clear-message)
 ;;;###autoload
 (defun elpaca-wait ()
-  "Block until current queues processed.
+  "Block until currently queued orders are processed.
 When quit with \\[keyboard-quit], running sub-processes are not stopped."
   (when-let ((q (cl-find-if (lambda (q) (and (eq (elpaca-q<-status q) 'incomplete)
                                              (or (elpaca-q<-elpacas q) (elpaca-q<-forms q))))
