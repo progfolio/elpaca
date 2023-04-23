@@ -66,7 +66,7 @@
 ;;;###autoload
 (defmacro elpaca-test (&rest body)
   "Test Elpaca in a clean environment.
-BODY is psuedo plist which allows multiple values for certain keys.
+BODY is plist which allows multiple values for certain keys.
 The following keys are recognized:
   :name description of the test
 
