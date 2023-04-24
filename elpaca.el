@@ -596,7 +596,7 @@ check (and possibly change) their statuses."
                ((push status (elpaca<-statuses e)))
                ((memq status elpaca--inactive-states)))
       (setq elpaca--status-counts (elpaca--count-statuses))
-      (mapc (lambda (d) (elpaca--check-status (elpaca-alist-get d queued)))
+      (mapc (lambda (d) (elpaca--check-status e (elpaca-alist-get d queued)))
             (elpaca<-dependents e))
       (when (and (not elpaca-after-init-time) (eq status 'failed))
         (elpaca-log "#unique !finished")))
@@ -1218,25 +1218,26 @@ This is the branch that would be checked out upon cloning."
                                               'ref-checked-out))))
         (process-put process :elpaca e)))))
 
-(defun elpaca--check-status (e)
-  "Called when one of an E's dependencies change status.
-Kick off next build step, and/or change E's status."
+(defun elpaca--check-status (dependency e)
+  "Possibly change E's status depending on DEPENDENCY statuses."
   (when-let ((e-status (elpaca--status e))
              ((not (eq e-status 'finished))))
     (cl-loop with failed
              with blocked
              with queued = (elpaca--queued)
-             for dependency in (elpaca<-dependencies e)
-             for found = (elpaca-alist-get dependency queued)
+             for d in (elpaca<-dependencies e)
+             for found = (elpaca-alist-get d queued)
              for status = (elpaca--status found)
              unless (eq status 'finished)
-             do (push dependency (if (eq status 'failed) failed blocked))
+             do (push d (if (eq status 'failed) failed blocked))
              finally
              (cond
               (failed (elpaca--fail e (format "Failed dependencies: %S" failed)))
               (blocked (elpaca--signal
                         e (concat "Blocked by dependencies: " (prin1-to-string blocked)) 'blocked))
-              ((eq e-status 'blocked) (elpaca--continue-build e "unblocked by dependency" 'unblocked))))))
+              ((eq e-status 'blocked)
+               (elpaca--continue-build
+                e (concat "unblocked by dependency " (elpaca<-package dependency)) 'unblocked))))))
 
 (defun elpaca--clone-process-sentinel (process _event)
   "Sentinel for clone PROCESS." ;;@HACK: relies on locale dependent output
