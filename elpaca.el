@@ -1119,11 +1119,10 @@ If RECACHE is non-nil, do not use cached dependencies."
       (elpaca--signal e nil 'blocked)
       (mapc #'elpaca--continue-build queued))))
 
-;;@TODO: fix possible race similar to queue--dependencies.
 ;;@MAYBE: Package major version checks.
 (defun elpaca--clone-dependencies (e)
   "Clone E's dependencies."
-  (elpaca--signal e "Cloning Dependencies" 'cloning-deps)
+  (elpaca--signal e "Cloning Dependencies" 'blocked)
   (if-let ((dependencies (elpaca--dependencies e))
            (externals (cl-loop for dependency in dependencies
                                for item = (car dependency)
@@ -1132,28 +1131,29 @@ If RECACHE is non-nil, do not use cached dependencies."
       (if-let ((emacs (assoc 'emacs dependencies)) ;@TODO: check in prev loop?
                ((< emacs-major-version (truncate (string-to-number (cadr emacs))))))
           (elpaca--fail e (format "Requires %S; running %S" emacs emacs-version))
-        (elpaca--signal e nil 'blocked)
-        (when (= (length externals) ; Our dependencies beat us to the punch
-                 (cl-loop with e-id = (elpaca<-id e)
-                          with q = (elpaca--q e)
-                          for dependency in externals
-                          for queued = (elpaca-alist-get dependency (elpaca--queued))
-                          for d = (or queued (elpaca--queue dependency q))
-                          for d-id = (elpaca<-id d)
-                          do
-                          (when (and queued (> (elpaca<-queue-id d) (elpaca<-queue-id e)))
-                            (elpaca--fail d (format "dependent %S in past queue" e-id))
-                            (elpaca--fail e (format "dependency %S in future queue" d-id)))
-                          (unless (memq d-id (elpaca<-dependencies e))
-                            (push d-id (elpaca<-dependencies e)))
-                          (unless (memq e-id (elpaca<-dependents d))
-                            (push e-id (elpaca<-dependents d)))
-                          (unless (and queued (not (elpaca--throttled-p queued)))
-                            (elpaca--signal e nil 'blocked)
-                            (push 'requested-as-dependency (elpaca<-statuses d))
-                            (elpaca--continue-build d))
-                          count (and queued (eq (elpaca--status queued) 'finished))))
-          (elpaca--continue-build e nil 'unblocked)))
+        (cl-loop with finished = 0
+                 with pending = nil
+                 with e-id = (elpaca<-id e)
+                 with q = (elpaca--q e)
+                 for dependency in externals
+                 for queued = (elpaca-alist-get dependency (elpaca--queued))
+                 for d = (or queued (elpaca--queue dependency q))
+                 for d-id = (elpaca<-id d) do
+                 (when (and queued (> (elpaca<-queue-id d) (elpaca<-queue-id e)))
+                   (elpaca--fail d (format "dependent %S in past queue" e-id))
+                   (elpaca--fail e (format "dependency %S in future queue" d-id)))
+                 (unless (memq d-id (elpaca<-dependencies e))
+                   (push d-id (elpaca<-dependencies e)))
+                 (unless (memq e-id (elpaca<-dependents d))
+                   (push e-id (elpaca<-dependents d)))
+                 (unless (and queued (not (elpaca--throttled-p queued)))
+                   (elpaca--signal e nil 'blocked)
+                   (push 'requested-as-dependency (elpaca<-statuses d))
+                   (push d pending))
+                 (when (and queued (eq (elpaca--status queued) 'finished)) (cl-incf finished))
+                 finally (if (= (length externals) finished)
+                             (elpaca--continue-build e nil 'unblocked)
+                           (mapc #'elpaca--continue-build pending))))
     (elpaca--continue-build e "No external dependencies detected" 'no-deps)))
 
 (defun elpaca--remote-default-branch (remote)
