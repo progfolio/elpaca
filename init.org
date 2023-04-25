@@ -1511,20 +1511,6 @@ https://github.com/emacsorphanage/helm-swoop
   :custom
   (help-window-select t "Always select the help window"))
 #+end_src
-** highlight-indent-guides
-#+begin_quote
-This minor mode highlights indentation levels via font-lock.
-
-https://github.com/DarthFennec/highlight-indent-guides
-#+end_quote
-#+begin_src emacs-lisp :lexical t
-(use-package highlight-indent-guides
-  :commands
-  (highlight-indent-guides-mode)
-  :hook (prog-mode . highlight-indent-guides-mode)
-  :custom
-  (highlight-indent-guides-method 'column))
-#+end_src
 ** history
 #+begin_src emacs-lisp :lexical t
 (use-feature savehist
