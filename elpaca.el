@@ -1659,28 +1659,32 @@ If PROMPT is non-nil, it is used instead of the default."
     (setf (elpaca-q<-status q) 'incomplete)))
 
 ;;;###autoload
-(defun elpaca-rebuild (item &optional interactive)
+(defun elpaca-rebuild (item &optional scratch interactive)
   "Rebuild ITEM's associated package.
-When INTERACTIVE is non-nil, prompt for ITEM, immediately process.
-With a prefix argument, rebuild current file's package or prompt if none found."
-  (interactive (list (or (and-let* ((current-prefix-arg)
-                                    (queued (elpaca--file-package))
-                                    ((car queued))))
-                         (elpaca--read-queued "Rebuild package: "))
-                     t))
+When SCRATCH is non-nil, or called with a prefix-argument, rebuild from scratch.
+This entails deleting the repository and then recloning.
+When INTERACTIVE is non-nil, immediately process queue."
+  (interactive (list (elpaca--read-queued (concat "Rebuild package"
+                                                  (when current-prefix-arg " from scratch") ": "))
+                     current-prefix-arg t))
   (let ((e (or (elpaca-get item) (user-error "Package %S is not queued" item))))
-    (when (eq (elpaca--status e) 'finished)
-      ;;@MAYBE: remove Info/load-path entries?
-      (setf (elpaca<-build-steps e)
-            (cl-set-difference (elpaca--build-steps (elpaca<-recipe e))
-                               '(elpaca--clone
-                                 elpaca--configure-remotes
-                                 elpaca--fetch
-                                 elpaca--checkout-ref
-                                 elpaca--clone-dependencies
-                                 elpaca--activate-package))))
+    (if scratch
+        (setf (elpaca<-build-steps e) (elpaca--build-steps (elpaca<-recipe e)))
+      (when (eq (elpaca--status e) 'finished)
+        ;;@MAYBE: remove Info/load-path entries?
+        (setf (elpaca<-build-steps e)
+              (cl-set-difference (elpaca--build-steps (elpaca<-recipe e))
+                                 '(elpaca--clone
+                                   elpaca--configure-remotes
+                                   elpaca--fetch
+                                   elpaca--checkout-ref
+                                   elpaca--clone-dependencies
+                                   elpaca--activate-package)))))
+    ;;@MAYBE: check for dirty work tree and confirm with user?
+    (when (and scratch (file-exists-p (elpaca<-repo-dir e))
+               (delete-directory (elpaca<-repo-dir e) 'recursive)))
     (elpaca--unprocess e)
-    (elpaca--signal e "Rebuilding" 'queued)
+    (elpaca--signal e (concat "Rebuilding" (when scratch " from scratch")) 'queued)
     (setf elpaca-cache-autoloads nil (elpaca<-files e) nil)
     (when interactive
       (elpaca--maybe-log)
