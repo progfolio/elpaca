@@ -11,9 +11,7 @@
 (auto-tangle-mode)
 (add-hook 'auto-tangle-before-tangle-hook #'check-parens)
 (add-hook 'auto-tangle-after-tangle-hook
-          (lambda () (load-file "~/.emacs.d/init.el")
-            (when-let ((forms (elpaca-q<-forms (car elpaca--queues))))
-              (eval `(progn ,@(apply #'append (mapcar #'cdr (reverse forms)))) t))))
+          (lambda () (load-file "~/.emacs.d/init.el") (elpaca-process-queues)))
 (eldoc-mode)
 (setq ispell-buffer-session-localwords '( "ELPA"
                                           "EPUB"
