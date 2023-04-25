@@ -3146,16 +3146,6 @@ https://depp.brause.cc/shackle/
   (shr-color-visible-luminance-min 85 "For clearer email/eww rendering of bg/fg colors")
   (shr-use-colors nil "Don't use colors (for HTML email legibility)"))
 #+end_src
-** skip-buffers
-#+begin_src emacs-lisp :lexical t
-(use-package skip-buffers
-  :elpaca (skip-buffers :host github :repo "progfolio/skip-buffers" :protocol ssh)
-  :defer 10
-  :config
-  (add-to-list 'skip-buffers-blacklist "*Help*")
-  (add-to-list 'skip-buffers-blacklist "*Calendar*")
-  (global-skip-buffers-mode))
-#+end_src
 ** smtpmail
 #+begin_src emacs-lisp :lexical t
 (use-feature smtpmail
@@ -3432,7 +3422,11 @@ https://github.com/justbur/emacs-which-key
 ** window
 #+begin_src emacs-lisp :lexical t
 (use-feature window
-  :custom (switch-to-buffer-obey-display-actions t))
+  :custom
+  (switch-to-buffer-obey-display-actions t)
+  (switch-to-prev-buffer-skip-regexp
+   '("\\*Help\\*" "\\*Calendar\\*" "\\*helm.*"
+     "\\*Messages\\*" "\\*scratch\\*" "\\magit-.*")))
 #+end_src
 ** wordel
 #+begin_src emacs-lisp :lexical t
