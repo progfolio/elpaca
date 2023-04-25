@@ -2405,51 +2405,6 @@ delete the =*.el(c)= files and restart
   :config (add-to-list 'org-babel-load-languages '(shell . t))
   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
 #+end_src
-** org-better-repeat
-#+begin_src emacs-lisp :lexical t
-(use-package org-better-repeat-mode
-  :elpaca (org-better-repeat-mode :host github :repo "progfolio/org-better-repeat-mode" :protocol ssh)
-  :after (org)
-  :config
-  (defun +org-delete-after-prop-drawer ()
-    (interactive)
-    "If entry has a property drawer, delete everything after it."
-    (save-excursion
-      (unless (org-at-heading-p)
-        (org-previous-visible-heading 1))
-      (let* ((end (progn (save-excursion
-                           (org-next-visible-heading 1) (1- (point)))))
-             (beginning (or (save-excursion
-                              (re-search-forward org-property-drawer-re end t))
-                            end)))
-        (delete-region beginning end))))
-
-  (defun +org-remove-style-property ()
-    (interactive)
-    "Removes 'STYLE' property of org entry.
-  I use this so that archived copies of repeating tasks will show in org-agenda-archive-mode."
-    (save-excursion
-      (save-restriction
-        (org-narrow-to-subtree)
-        (org-delete-property "STYLE"))))
-
-  (defun +org-archive-habit ()
-    (interactive)
-    (+org-fix-close-times)
-    (+org-delete-after-prop-drawer)
-    (+org-remove-style-property))
-
-  (defun +calc-run-time ()
-    (let* ((data (mapcar #'string-to-number
-                         (org-entry-get-multivalued-property (point) "OBR-data")))
-           (rate-of-growth (car data))
-           (last-seconds (cadr data))
-           (new-seconds (* last-seconds rate-of-growth)))
-      (org-edit-headline (format-seconds "Run for %02m.%02s" new-seconds))
-      (org-entry-put-multivalued-property (point) "OBR-data" (number-to-string rate-of-growth)
-                                          (number-to-string new-seconds))))
-  :hook org-mode)
-#+end_src
 ** org-bullets
 Purely cosmetic. I may ditch this at some point.
 #+begin_src emacs-lisp :lexical t
