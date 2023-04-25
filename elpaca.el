@@ -250,7 +250,7 @@ e.g. elisp forms may be printed via `prin1'."
   "Queue to hold elpacas."
   (type (when (or (not after-init-time)
                   (let ((init (expand-file-name "init.el" user-emacs-directory)))
-                    (member init (list load-true-file-name (buffer-file-name)))))
+                    (member init (list load-file-name (buffer-file-name)))))
           'init))
   (id  (if (boundp 'elpaca--queues) (length elpaca--queues) 0))
   (processed 0)
