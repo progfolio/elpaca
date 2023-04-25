@@ -153,8 +153,8 @@ For example:
 ;; Block until current queue processed.
 (elpaca-wait)
 
-;;When installing a package which will modifies a form you plan on using
-;;at the top-level (e.g. a package which adds a use-package key word),
+;;When installing a package which modifies a form used at the top-level
+;;(e.g. a package which adds a use-package key word),
 ;;use `elpaca-wait' to block until that package has been installed/configured.
 ;;For example:
 ;;(use-package general :demand t)
