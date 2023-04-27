@@ -1455,7 +1455,7 @@ If ORDER is `nil`, defer BODY until orders have been processed."
        ,@(when body (if item
                         `((setf (alist-get ',item (elpaca-q<-forms q)) ',body))
                       ;;@FIX: nil semantics not good for multiple deferred...
-                      `((push (cons ',item . ',body)) (elpaca-q<-forms q))))
+                      `((push (cons ',item ',body) (elpaca-q<-forms q)))))
        ,@(when order `((elpaca--queue ,order q)))
        (when (and after-init-time (eq this-command 'eval-last-sexp))
          (elpaca--maybe-log t)
