@@ -98,8 +98,8 @@ If RECACHE is non-nil, recompute the cache."
                                      :description (or (alist-get item metadata) "Unreleased package.")
                                      :date (elpaca-menu-gnu-elpa-mirror--date file)
                                      :url (format "https://elpa.gnu.org/packages/%s.html" item)
-                                     :recipe (list :package file
-                                                   :host 'github
+                                     :recipe (list :package file :host 'github
+                                                   :files '("*" (:exclude ".git"))
                                                    :repo (concat "emacs-straight/" file))))))
         (elpaca--write-file  elpaca-menu-gnu-elpa-mirror-cache-path
           (prin1 elpaca-menu-gnu-elpa-mirror--index-cache)))))
