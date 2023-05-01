@@ -493,18 +493,6 @@ If /ORDER/ is nil, /BODY/ is still executed after processing the current queue.
 (elpaca third (message "Third configured"))
 #+end_src
 
-- elpaca-use-package :: =(order &rest body)=
-
-  A wrapper for the use-package[fn:3] macro.
-  /ORDER/ is the same as above.
-  /BODY/ must conform to use-package's /ARGS/.
-
-  #+begin_src emacs-lisp :lexical t
-(elpaca use-package (require 'use-package)) ; install use-package
-(elpaca-use-package (example :host github :repo "user/example")
-                    :config (message "Example configured"))
-  #+end_src
-
 * UI
 :PROPERTIES:
 :DESCRIPTION: Elpaca's package management UI.
@@ -651,4 +639,3 @@ e.g. =#(random 20)= will display 20 random entries.
 
 [fn:1] [[https://git-scm.com/book/en/v2/Git-Internals-Git-References][git ref]]
 [fn:2] [[https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes][remotes]]
-[fn:3] [[https://github.com/jwiegley/use-package]]

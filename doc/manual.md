@@ -570,16 +570,6 @@ If *ORDER* is nil, *BODY* is still executed after processing the current queue.
 (elpaca third (message "Third configured"))
 ```
 
--   **elpaca-use-package:** `(order &rest body)`
-    
-    A wrapper for the use-package<sup><a id="fnr.6" class="footref" href="#fn.6" role="doc-backlink">6</a></sup> macro. *ORDER* is the same as above. *BODY* must conform to use-package&rsquo;s *ARGS*.
-    
-    ```emacs-lisp
-    (elpaca use-package (require 'use-package)) ; install use-package
-    (elpaca-use-package (example :host github :repo "user/example")
-                        :config (message "Example configured"))
-    ```
-
 
 <a id="ui"></a>
 
@@ -673,5 +663,3 @@ The pound (a.k.a. hash) character, `#`, followed by the name of a search tag fil
 <sup><a id="fn.4" class="footnum" href="#fnr.4">4</a></sup> [git ref](https://git-scm.com/book/en/v2/Git-Internals-Git-References)
 
 <sup><a id="fn.5" class="footnum" href="#fnr.5">5</a></sup> [remotes](https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes)
-
-<sup><a id="fn.6" class="footnum" href="#fnr.6">6</a></sup> <https://github.com/jwiegley/use-package>

@@ -778,21 +778,6 @@ If @emph{ORDER} is nil, @emph{BODY} is still executed after processing the curre
 (elpaca third (message "Third configured"))
 @end lisp
 
-@table @asis
-@item elpaca-use-package
-@samp{(order &rest body)}
-
-A wrapper for the use-package@footnote{@uref{https://github.com/jwiegley/use-package}} macro.
-@emph{ORDER} is the same as above.
-@emph{BODY} must conform to use-package's @emph{ARGS}.
-
-@lisp
-(elpaca use-package (require 'use-package)) ; install use-package
-(elpaca-use-package (example :host github :repo "user/example")
-                    :config (message "Example configured"))
-@end lisp
-@end table
-
 @node UI
 @chapter UI
 
