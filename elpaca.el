@@ -53,11 +53,13 @@
 
 (defgroup elpaca nil "An elisp package manager." :group 'applications :prefix "elpaca-")
 
-(defface elpaca-finished '((t (:weight bold :foreground "#00FF00")))
+(defface elpaca-finished '((((class color) (background light)) :weight bold :foreground "#00BB00")
+                           (((class color) (background dark)) :weight bold :foreground "#00FF00"))
   "Indicates an order is finished.")
 (defface elpaca-busy '((t (:weight bold :foreground "#FF9E3D")))
   "Indicates order's subprocess has not produced output in `elpaca-busy-interval'.")
-(defface elpaca-blocked '((t (:weight bold :foreground "#FFF01F")))
+(defface elpaca-blocked '((((class color) (background light)) (:weight bold :foreground "#BDA800"))
+                          (((class color) (background dark)) (:weight bold :foreground "#FFF01F")))
   "Indicates an order is blocked.")
 (defface elpaca-failed '((t (:weight bold :foreground "#FF1818")))
   "Indicates an order has failed.")

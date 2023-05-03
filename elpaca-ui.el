@@ -9,28 +9,43 @@
 ;;; Code:
 (defgroup elpaca-ui nil "Elpaca's UI options." :group 'elpaca)
 
-(defface elpaca-ui-marked-package '((t (:inherit default :weight bold :foreground "pink")))
-  "Face for marked packages.")
+(defface elpaca-ui-marked-delete
+  '((((class color) (background light)) :weight bold :foreground "red")
+    (((class color) (background dark))  :weight bold :foreground "red"))
+  "Face for packages marked for deletion.")
+(defface elpaca-ui-marked-install
+  '((((class color) (background light)) :weight bold :foreground "blue")
+    (((class color) (background dark))  :weight bold :foreground "#89CFF0"))
+  "Face for packages marked for installation.")
+(defface elpaca-ui-marked-rebuild
+  '((((class color) (background light)) :weight bold :foreground "purple")
+    (((class color) (background dark))  :weight bold :foreground "purple"))
+  "Face for packages marked for rebuild.")
+(defface elpaca-ui-marked-fetch
+  '((((class color) (background light)) :weight bold :foreground "brown")
+    (((class color) (background dark))  :weight bold :foreground "#EFC88B"))
+  "Face for packages marked for fetch.")
+(defface elpaca-ui-marked-update
+  '((((class color) (background light)) :weight bold :foreground "#F28500")
+    (((class color) (background dark))  :weight bold :foreground "orange"))
+  "Face for packages marked for update.")
+
 (defcustom elpaca-ui-row-limit 1000 "Max rows to print at once." :type 'integer)
 (defcustom elpaca-ui-default-query ".*" "Initial `elpaca-ui-mode' search query."
   :type 'string)
 (make-variable-buffer-local 'elpaca-ui-default-query)
 
 (defcustom elpaca-ui-actions
-  '((delete  :prefix "💀" :face (:inherit default :weight bold :foreground "#FF0022")
-             :action (lambda (i) (elpaca-delete i 'force 'deps)))
-    (install :prefix "⚙️" :face (:inherit default :weight bold :foreground "#89cff0")
-             :setup (lambda () (elpaca-split-queue) (elpaca--maybe-log t "#linked-errors"))
-             :action elpaca-try)
-    (rebuild :prefix "♻️️" :face (:inherit default :weight bold :foreground "#5b2a86")
-             :setup (lambda () (elpaca--maybe-log t "#linked-errors"))
-             :action elpaca-rebuild)
-    (fetch   :prefix "‍🐕‍🦺" :face (:inherit default :weight bold :foreground "#efc88b")
-             :setup (lambda () (elpaca--maybe-log t "#update-log"))
-             :action elpaca-fetch)
-    (update  :prefix "⬆️" :face (:inherit default :weight bold :foreground "#f28500")
-             :setup (lambda () (elpaca--maybe-log t "#linked-errors"))
-             :action elpaca-update))
+  '((delete  :prefix "💀" :action (lambda (i) (elpaca-delete i 'force 'deps))
+             :face elpaca-ui-marked-delete)
+    (install :prefix "⚙️" :action elpaca-try :face elpaca-ui-marked-install
+             :setup (lambda () (elpaca-split-queue) (elpaca--maybe-log t "#linked-errors")))
+    (rebuild :prefix "♻️️" :action elpaca-rebuild :face elpaca-ui-marked-rebuild
+             :setup (lambda () (elpaca--maybe-log t "#linked-errors")))
+    (fetch   :prefix "‍🐕‍🦺" :action elpaca-fetch :face elpaca-ui-marked-fetch
+             :setup (lambda () (elpaca--maybe-log t "#update-log")))
+    (update  :prefix "⬆️" :action elpaca-update :face elpaca-ui-marked-update
+             :setup (lambda () (elpaca--maybe-log t "#linked-errors"))))
   "List of actions which can be taken on packages."
   :type 'list)
 
@@ -410,7 +425,7 @@ ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
                            (propertize name 'face (elpaca-alist-get (elpaca--status target) elpaca-status-faces 'default))
                          name)
                      (let* ((props  (cdr target))
-                            (face   (or (plist-get props :face) 'elpaca-ui-marked-package))
+                            (face   (or (plist-get props :face) 'default))
                             (prefix (or (plist-get props :prefix) "*")))
                        (propertize name 'display (propertize (concat prefix " " name) 'face face))))))
       (progn
@@ -441,7 +456,7 @@ ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
       (with-silent-modifications
         (cl-loop with marked = (cl-find item elpaca-ui--marked-packages :key #'car)
                  with props  = (nthcdr 2 marked)
-                 with face   = (or (plist-get props :face) 'elpaca-ui-marked-package)
+                 with face   = (or (plist-get props :face) 'default)
                  with prefix = (or (plist-get props :prefix) "*")
                  with mark   = (propertize (concat prefix " " name) 'face face)
                  with len    = (length name)
