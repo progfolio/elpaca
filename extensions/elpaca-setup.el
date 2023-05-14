@@ -25,6 +25,8 @@
 
 (require 'setup)
 
+(defvar elpaca-setup-feature-changer-constructs '(:with-feature))
+
 (defun elpaca-setup--shorthand (sexp)
   "Retrieve feature from SEXP of :elpaca macro."
   (let ((order (cadr sexp)))
@@ -48,6 +50,18 @@
 	(and shorthand (funcall shorthand name)))
     name))
 
+(defun elpaca-setup--expand-feature-changer-constructs (body)
+  (let (expanded-body)
+    (dolist (e body)
+      (push (if-let (((memq (car-safe e) elpaca-setup-feature-changer-constructs))
+		     (order (elpaca-setup--find-order (cddr e))))
+		`(elpaca ,order
+			 (elpaca-setup--setup-initial-definition ,(cadr e)
+								 ,@(elpaca-setup--expand-feature-changer-constructs (cddr e))))
+	      e)
+	    expanded-body))
+    (nreverse expanded-body)))
+
 (defmacro elpaca-setup--default-dependent-order-condition (use-elpaca-by-default name)
   (if use-elpaca-by-default
       `(or (and (consp ,name)
@@ -62,6 +76,7 @@
 (defmacro elpaca-setup-integrate (use-elpaca-by-default)
   `(progn
      (fset 'elpaca-setup--setup-initial-definition (symbol-function #'setup))
+     (put 'elpaca-setup--setup-initial-definition 'lisp-indent-function 1)
      
      (setup-define :elpaca
        (lambda (&rest _) t)
@@ -77,8 +92,8 @@
 				       (elpaca-setup--setup-initial-definition ,(if (consp order)
 							       (car order)
 							     order)
-							  ,@body)))
-	 `(elpaca-setup--setup-initial-definition ,name ,@body)))
+							  ,@(elpaca-setup--expand-feature-changer-constructs body))))
+	 `(elpaca-setup--setup-initial-definition ,name ,@(elpaca-setup--expand-feature-changer-constructs body))))
 
      (put #'setup 'function-documentation (advice--make-docstring 'elpaca-setup--setup-initial-definition))))
 
