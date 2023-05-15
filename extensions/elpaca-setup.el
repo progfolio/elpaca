@@ -25,14 +25,6 @@
 
 (require 'setup)
 
-(defvar elpaca-setup-feature-changer-constructs '((:with-feature . (:get-feat cadr :get-body cddr)))
-  "Alist of keywords that change feature context of `setup'.
-Each element of alist must be in the form of (KEYWORD . PLIST)
-where PLIST must provide properties for `:get-feat' and
-`:get-body' both with a value of a function which when called
-with a sexp whose car is KEYWORD, returns the feature and body of
-the sexp respectively.")
-
 (defun elpaca-setup--shorthand (sexp)
   "Retrieve feature from SEXP of :elpaca macro."
   (let ((order (cadr sexp)))
@@ -56,26 +48,6 @@ the sexp respectively.")
       (let ((shorthand (get (car name) 'setup-shorthand)))
 	(and shorthand (funcall shorthand name)))
     name))
-
-(defun elpaca-setup--expand-feature-changer-constructs (body)
-  "Expand recursive :elpaca calls where encapsulating feature is possibly different.
-It is only meaningful to use `:elpaca' once for each different
-features. This is also because there is one function body for
-each different feature. This doesn't mean that you can't nest
-`elpaca' for continuing feature. You can still make use of
-`elpaca' function.
-
-Note that you can also nest `setup' constructs."
-  (let (expanded-body)
-    (dolist (e body)
-      (push (if-let ((getters (alist-get (car-safe e) elpaca-setup-feature-changer-constructs))
-		     (order (elpaca-setup--find-order (funcall (plist-get getters :get-body) e))))
-		`(elpaca ,order
-			 (elpaca-setup--setup-initial-definition ,(funcall (plist-get getters :get-feat) e)
-								 ,@(elpaca-setup--expand-feature-changer-constructs (cddr e))))
-	      e)
-	    expanded-body))
-    (nreverse expanded-body)))
 
 (defmacro elpaca-setup--default-dependent-order-condition (use-elpaca-by-default name)
   "Returns the predicate for extracting order from NAME.
@@ -102,9 +74,9 @@ If `:elpaca' exists in both NAME and BODY of `setup', then the
 one in BODY will be selected which helps you to override `elpaca'
 ORDER if USE-ELPACA-BY-DEFAULT is t.
 
-If there are multiple `:elpaca' exists at same depth of BODY of
-`setup', first one will be chosen. See
-`elpaca-setup--expand-feature-changer-constructs' for details.
+If there are multiple `:elpaca' exists in BODY of `setup', first
+one will be chosen. If required so, use `elpaca' directly, or
+open a new `setup' inside.
 
 Note that definition of `setup' will be replaced but previous
 definition will be in use under different name. So you should
@@ -124,13 +96,13 @@ This will help when chaining `:elpaca' with other `setup' constructs, such as `:
        (declare (indent 1))
        (if-let ((order (or (elpaca-setup--find-order body)
 			   (elpaca-setup--default-dependent-order-condition ,use-elpaca-by-default name))))
-	   `(elpaca-setup--setup-initial-definition ,name
-						    (elpaca ,order
-							    (elpaca-setup--setup-initial-definition ,(if (consp order)
+	   `(elpaca-setup--setup-initial-definition ,name ; setup may be shortcircuited
+						    (elpaca ,order ; place order
+							    (elpaca-setup--setup-initial-definition ,(if (consp order) ; now use setup again for expanding body, but don't re-evaluate name again
 													 (car order)
 												       order)
-												    ,@(elpaca-setup--expand-feature-changer-constructs body))))
-	 `(elpaca-setup--setup-initial-definition ,name ,@(elpaca-setup--expand-feature-changer-constructs body))))
+												    ,@body)))
+	 `(elpaca-setup--setup-initial-definition ,name ,@body))) ; no :elpaca, normal setup
 
      (put #'setup 'function-documentation (advice--make-docstring 'elpaca-setup--setup-initial-definition))))
 
