@@ -111,7 +111,7 @@ definition will be in use under different name. So you should
 call `elpaca-setup-integrate' after user customizations to
 definition of `setup', such as advises."
   `(progn
-     (fset 'elpaca-setup--setup-initial-definition (or setup-definition (symbol-function #'setup)))
+     (fset 'elpaca-setup--setup-initial-definition (symbol-function #'setup))
      (put 'elpaca-setup--setup-initial-definition 'lisp-indent-function 1)
      
      (setup-define :elpaca
