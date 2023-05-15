@@ -25,7 +25,7 @@
 
 (require 'setup)
 
-(defvar elpaca-setup-feature-changer-constructs '((:with-feature . (:get-feat #'cadr :get-body #'cddr)))
+(defvar elpaca-setup-feature-changer-constructs '((:with-feature . (:get-feat cadr :get-body cddr)))
   "Alist of keywords that change feature context of `setup'.
 Each element of alist must be in the form of (KEYWORD . PLIST)
 where PLIST must provide properties for `:get-feat' and
