@@ -98,9 +98,7 @@ This will help when chaining `:elpaca' with other `setup' constructs, such as `:
 			   (elpaca-setup--default-dependent-order-condition ,use-elpaca-by-default name))))
 	   `(elpaca-setup--setup-initial-definition ,name ; setup may be shortcircuited
 						    (elpaca ,order ; place order
-							    (elpaca-setup--setup-initial-definition ,(if (consp order) ; now use setup again for expanding body, but don't re-evaluate name again
-													 (car order)
-												       order)
+							    (elpaca-setup--setup-initial-definition ,(elpaca-setup--extract-feat name) ; now use setup again for expanding body, but don't re-evaluate name again
 												    ,@body)))
 	 `(elpaca-setup--setup-initial-definition ,name ,@body))) ; no :elpaca, normal setup
 
