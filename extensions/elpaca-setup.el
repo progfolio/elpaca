@@ -29,15 +29,15 @@
   "Retrieve feature from SEXP of :elpaca macro."
   (cadr sexp))
 
-(defun elpaca-setup--find-order (lst)
+(defun elpaca-setup--find-orders (lst)
   "Find :elpaca setup macro in LST and return ELPACA ORDER."
-  (let (order)
-    (while (and lst (not order))
+  (let (orders)
+    (while lst
       (if (and (consp (car lst))
 	       (eq (caar lst) :elpaca))
-	  (setq order (cdar lst)))
+	  (push (cdar lst) orders))
       (setq lst (cdr lst)))
-    order))
+    orders))
 
 (defun elpaca-setup--extract-feat (name)
   "Returns the feature from `NAME' of `setup' function."
@@ -47,18 +47,18 @@
     name))
 
 (defmacro elpaca-setup--default-dependent-order-condition (use-elpaca-by-default name)
-  "Returns the predicate for extracting order from NAME.
+  "Returns the predicate for extracting list of orders from NAME.
 If USE-PACKAGE-BY-DEFAULT is t, then target feature in NAME of
 `setup' will be used as ORDER to `elpaca' by appropriate
 shorthand of NAME."
   (if use-elpaca-by-default
       `(or (and (consp ,name)
-		(or (and (eq :elpaca (car ,name)) (cdr ,name))
-		    (elpaca-setup--find-order ,name)))
-	   (elpaca-setup--extract-feat ,name))
+		(or (and (eq :elpaca (car ,name)) (list (cdr ,name)))
+		    (elpaca-setup--find-orders ,name)))
+	   (list (elpaca-setup--extract-feat ,name)))
     `(and (consp ,name)
-	  (or (and (eq :elpaca (car ,name)) (cdr ,name))
-	      (elpaca-setup--find-order ,name)))))
+	  (or (and (eq :elpaca (car ,name)) (list (cdr ,name)))
+	      (elpaca-setup--find-orders ,name)))))
 
 ;;;###autoload
 (defmacro elpaca-setup-integrate (use-elpaca-by-default)
@@ -91,12 +91,15 @@ This will help when chaining `:elpaca' with other `setup' constructs, such as `:
 
      (defmacro setup (name &rest body)
        (declare (indent 1))
-       (if-let ((order (or (elpaca-setup--find-order body)
-			   (elpaca-setup--default-dependent-order-condition ,use-elpaca-by-default name))))
-	   `(elpaca-setup--setup-initial-definition ,name ; setup may be shortcircuited
-						    (elpaca ,order ; place order
-							    (elpaca-setup--setup-initial-definition ,(elpaca-setup--extract-feat name) ; now use setup again for expanding body, but don't re-evaluate name again
-												    ,@body)))
+       (if-let* ((orders (or (elpaca-setup--find-orders body)
+			     (elpaca-setup--default-dependent-order-condition ,use-elpaca-by-default name)))
+		 (body `(elpaca ,(car orders) ; place an order
+				(elpaca-setup--setup-initial-definition ,(elpaca-setup--extract-feat name) ; now use setup again for expanding body, but don't re-evaluate name again
+									,@body))))
+	   (progn (dolist (order (cdr orders))
+		    (setq body `(elpaca ,order ,body)))
+		  `(elpaca-setup--setup-initial-definition ,name ; setup may be shortcircuited
+							   ,body))
 	 `(elpaca-setup--setup-initial-definition ,name ,@body))) ; no :elpaca, normal setup
 
      (put #'setup 'function-documentation (advice--make-docstring 'elpaca-setup--setup-initial-definition))))
