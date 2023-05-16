@@ -27,10 +27,7 @@
 
 (defun elpaca-setup--shorthand (sexp)
   "Retrieve feature from SEXP of :elpaca macro."
-  (let ((order (cadr sexp)))
-    (if (consp order)
-        (car order)
-      order)))
+  (cadr sexp))
 
 (defun elpaca-setup--find-order (lst)
   "Find :elpaca setup macro in LST and return ELPACA ORDER."
