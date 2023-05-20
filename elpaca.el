@@ -710,7 +710,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
 - possibly run `elpaca-after-init-hook'."
   (when-let ((autoloads (elpaca-q<-autoloads q)))
     (condition-case-unless-debug err
-        (eval `(progn ,@autoloads) t)
+        (eval `(progn ,@(reverse autoloads)) t)
       ((error) (warn "Autoload Error: %S" err))))
   (setf (elpaca-q<-status q) 'complete) ; Avoid loop when forms call elpaca-process-queue.
   (when-let ((forms (reverse (elpaca-q<-forms q))))
