@@ -51,15 +51,14 @@
   "Add `elpaca' support to `setup'.
 If USE-PACKAGE-BY-DEFAULT is t, then target feature in NAME of
 `setup' will be used as ORDER to `elpaca' by appropriate
-shorthand of NAME.
+shorthand of NAME unless there is no `:elpaca' call.
 
-If `:elpaca' exists in both NAME and BODY of `setup', then the
-one in BODY will be selected which helps you to override `elpaca'
-ORDER if USE-ELPACA-BY-DEFAULT is t.
+If there are multiple `:elpaca' calls, then their `elpaca' ORDER
+will be placed by the same order, top to bottom, as they seen.
 
-If there are multiple `:elpaca' exists in BODY of `setup', first
-one will be chosen. If required so, use `elpaca' directly, or
-open a new `setup' inside.
+Only the first depth of `setup' BODY will be looked for `:elpaca'
+calls. Use `elpaca' directly or open a new `setup' block for
+other depths.
 
 Note that definition of `setup' will be replaced but previous
 definition will be in use under different name. So you should
