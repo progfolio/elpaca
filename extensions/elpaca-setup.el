@@ -25,6 +25,8 @@
 
 (require 'setup)
 
+;;; Code:
+
 (defun elpaca-setup--shorthand (sexp)
   "Retrieve feature from SEXP of :elpaca macro."
   (cadr sexp))
@@ -40,7 +42,7 @@
     orders))
 
 (defun elpaca-setup--extract-feat (name)
-  "Returns the feature from `NAME' of `setup' function."
+  "Return the feature from `NAME' of `setup' function."
   (if (consp name)
       (let ((shorthand (get (car name) 'setup-shorthand)))
 	(and shorthand (funcall shorthand name)))
@@ -49,7 +51,7 @@
 ;;;###autoload
 (defmacro elpaca-setup-integrate (use-elpaca-by-default)
   "Add `elpaca' support to `setup'.
-If USE-PACKAGE-BY-DEFAULT is t, then target feature in NAME of
+If USE-ELPACA-BY-DEFAULT is t, then target feature in NAME of
 `setup' will be used as ORDER to `elpaca' by appropriate
 shorthand of NAME unless there is no `:elpaca' call.
 
@@ -57,11 +59,11 @@ If there are multiple `:elpaca' calls, then their `elpaca' ORDER
 will be placed by the same order, top to bottom, as they seen.
 
 Only the first depth of `setup' BODY will be looked for `:elpaca'
-calls. Use `elpaca' directly or open a new `setup' block for
+calls.  Use `elpaca' directly or open a new `setup' block for
 other depths.
 
 Note that definition of `setup' will be replaced but previous
-definition will be in use under different name. So you should
+definition will be in use under different name.  So you should
 call `elpaca-setup-integrate' after user customizations to
 definition of `setup', such as advises."
   `(progn
@@ -80,8 +82,8 @@ This will help when chaining `:elpaca' with other `setup' constructs, such as `:
 				     (and (consp name)
 					  (or (and (eq :elpaca (car name)) (list (cdr name)))
 					      (elpaca-setup--find-orders name))))
-			     (and ,use-elpaca-by-default (list (elpaca-setup--extract-feat name))))) 
-		 (body `(elpaca ,(car orders) 
+			     (and ,use-elpaca-by-default (list (elpaca-setup--extract-feat name)))))
+		 (body `(elpaca ,(car orders)
 				(elpaca-setup--initial-setup-definition ,(elpaca-setup--extract-feat name) ; now use setup again for expanding body, but don't re-evaluate name again
 									,@body))))
 	   (progn
@@ -101,3 +103,7 @@ Note that `setup' definition will be restored to the one when
   (fset 'setup #'elpaca-setup--initial-setup-definition)
   (setq setup-macros (assoc-delete-all :elpaca setup-macros)))
 
+
+(provide 'elpaca-setup)
+
+;;; elpaca-setup.el ends here
