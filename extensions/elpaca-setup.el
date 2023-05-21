@@ -66,8 +66,8 @@ definition will be in use under different name. So you should
 call `elpaca-setup-integrate' after user customizations to
 definition of `setup', such as advises."
   `(progn
-     (fset 'elpaca-setup--setup-initial-definition (symbol-function #'setup))
-     (put 'elpaca-setup--setup-initial-definition 'lisp-indent-function 1)
+     (fset 'elpaca-setup--initial-setup-definition (symbol-function #'setup))
+     (put 'elpaca-setup--initial-setup-definition 'lisp-indent-function 1)
      
      (setup-define :elpaca
        (lambda (&rest _) t)
@@ -83,22 +83,22 @@ This will help when chaining `:elpaca' with other `setup' constructs, such as `:
 					      (elpaca-setup--find-orders name))))
 			     (and ,use-elpaca-by-default (list (elpaca-setup--extract-feat name))))) 
 		 (body `(elpaca ,(car orders) 
-				(elpaca-setup--setup-initial-definition ,(elpaca-setup--extract-feat name) ; now use setup again for expanding body, but don't re-evaluate name again
+				(elpaca-setup--initial-setup-definition ,(elpaca-setup--extract-feat name) ; now use setup again for expanding body, but don't re-evaluate name again
 									,@body))))
 	   (progn
 	     (dolist (order (cdr orders))
 	       (setq body `(elpaca ,order ,body)))
-	     `(elpaca-setup--setup-initial-definition ,name ; setup may be shortcircuited
+	     `(elpaca-setup--initial-setup-definition ,name ; setup short-circuit may occur
 						      ,body))
-	 `(elpaca-setup--setup-initial-definition ,name ,@body))) ; no :elpaca, normal setup
+	 `(elpaca-setup--initial-setup-definition ,name ,@body))) ; no :elpaca, normal setup
 
-     (put #'setup 'function-documentation (advice--make-docstring 'elpaca-setup--setup-initial-definition))))
+     (put #'setup 'function-documentation (advice--make-docstring 'elpaca-setup--initial-setup-definition))))
 
 ;;;###autoload
 (defun elpaca-setup-teardown ()
   "Remove `elpaca' support from `setup'.
 Note that `setup' definition will be restored to the one when
 `elpaca-setup-integrate' is called."
-  (fset 'setup #'elpaca-setup--setup-initial-definition)
+  (fset 'setup #'elpaca-setup--initial-setup-definition)
   (setq setup-macros (assoc-delete-all :elpaca setup-macros)))
 
