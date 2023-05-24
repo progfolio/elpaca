@@ -913,6 +913,18 @@ If it matches, the E associated with process has its STATUS updated."
     (elpaca--continue-build
      e (if finished "Info compiled" (concat "Copmilation failure: " (string-trim event))))))
 
+(defun elpaca--make-process (e &rest spec)
+  "Attach process to E from `make-process' SPEC plist."
+  (declare (indent 1))
+  (let ((process (make-process
+                  :name (concat "elpaca-" (plist-get spec :name) "-" (elpaca<-package e))
+                  :connection-type (or (plist-get spec :connection-type) 'pipe)
+                  :command (plist-get spec :command)
+                  :filter (or (plist-get spec :filter) #'elpaca--process-filter)
+                  :sentinel (plist-get spec :sentinel))))
+    (process-put process :elpaca e)
+    (setf (elpaca<-process e) process)))
+
 (defun elpaca--compile-info (e)
   "Compile E's .texi files."
   (elpaca--signal e "Compiling Info files" 'info)
@@ -928,14 +940,11 @@ If it matches, the E associated with process has its STATUS updated."
                      for f = (when (string-match-p "\\.texi\\(nfo\\)?$" repo-file)
                                (list repo-file "-o"
                                      (concat (file-name-sans-extension build-file) ".info")))
-                     when f collect f))
-           (process (make-process
-                     :name (concat "elpaca-compile-info-" (elpaca<-package e))
-                     :connection-type 'pipe
-                     :command `(,elpaca-makeinfo-executable ,@(apply #'append files))
-                     :filter   #'elpaca--process-filter
-                     :sentinel #'elpaca--compile-info-process-sentinel)))
-      (process-put process :elpaca e)
+                     when f collect f)))
+      (elpaca--make-process e
+        :name "compile-info"
+        :command `(,elpaca-makeinfo-executable ,@(apply #'append files))
+        :sentinel #'elpaca--compile-info-process-sentinel)
     (when no-info (elpaca--remove-build-steps e '(elpaca--install-info elpaca--add-info-path)))
     (elpaca--continue-build
      e (concat (if elpaca-makeinfo-executable "Info source files" "makeinfo") " not found"))))
@@ -950,14 +959,11 @@ If it matches, the E associated with process has its STATUS updated."
 (defun elpaca--install-info-async (file dir e)
   "Asynchronously Install E's .info FILE in Info DIR."
   (elpaca--signal e file)
-  (let* ((default-directory (elpaca<-build-dir e))
-         (process (make-process
-                   :name (concat "elpaca-install-info-" (elpaca<-package e))
-                   :connection-type 'pipe
-                   :command (list elpaca-install-info-executable file dir)
-                   :filter #'elpaca--process-filter
-                   :sentinel #'elpaca--install-info-process-sentinel)))
-    (process-put process :elpaca e)))
+  (let* ((default-directory (elpaca<-build-dir e)))
+    (elpaca--make-process e
+      :name "install-info"
+      :command (list elpaca-install-info-executable file dir)
+      :sentinel #'elpaca--install-info-process-sentinel)))
 
 (defun elpaca--install-info (e)
   "Install E's .info files."
@@ -1013,18 +1019,16 @@ The keyword's value is expected to be one of the following:
                                      (require 'elpaca)
                                      (normal-top-level-add-subdirs-to-load-path)
                                      (elpaca--run-build-commands ',commands)))
-               (process (make-process
-                         :name (concat "elpaca-" name "-" (plist-get recipe :package))
-                         :command (list
-                                   emacs "-Q"
-                                   "-L" "./"
-                                   "-L" (expand-file-name "elpaca/" elpaca-builds-directory)
-                                   "--batch"
-                                   "--eval" (let (print-level print-length print-circle)
-                                              (format "%S" program)))
-                         :filter   #'elpaca--process-filter
-                         :sentinel #'elpaca--dispatch-build-commands-process-sentinel)))
-          (process-put process :elpaca e)
+               (process (elpaca--make-process e
+                          :name name :connection-type 'pty
+                          :command (list
+                                    emacs "-Q"
+                                    "-L" "./"
+                                    "-L" (expand-file-name "elpaca/" elpaca-builds-directory)
+                                    "--batch"
+                                    "--eval" (let (print-level print-length print-circle)
+                                               (format "%S" program)))
+                          :sentinel #'elpaca--dispatch-build-commands-process-sentinel)))
           (process-put process :build-type name)))
     (elpaca--continue-build e)))
 
@@ -1205,25 +1209,21 @@ This is the branch that would be checked out upon cloning."
        ((and tag branch)
         (elpaca--fail e (format "Ambiguous ref: :tag %S, :branch %S" tag branch))))
       (elpaca--signal e (concat "Checking out " target) 'checking-out-ref)
-      (when-let (((not (eq (elpaca--status e) 'failed)))
-                 (process
-                  (make-process
-                   :name (format "elpaca-checkout-ref-%s" (elpaca<-package e))
-                   :connection-type 'pipe
-                   :command
-                   `("git" "-c" "advice.detachedHead=false" ;ref, tag may detach HEAD
-                     ,@(cond
-                        (ref    (list "checkout" ref))
-                        (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
-                        (branch (list "switch" "-C" branch ; "--no-guess"?
-                                      (concat (or (elpaca--first remote)
-                                                  elpaca-default-remote-name)
-                                              "/" branch)))))
-                   :filter   #'elpaca--process-filter
-                   :sentinel (apply-partially #'elpaca--process-sentinel
-                                              (concat target " checked out")
-                                              'ref-checked-out))))
-        (process-put process :elpaca e)))))
+      (unless (eq (elpaca--status e) 'failed)
+        (elpaca--make-process e
+          :name "checkout-ref"
+          :command
+          `("git" "-c" "advice.detachedHead=false" ;ref, tag may detach HEAD
+            ,@(cond
+               (ref    (list "checkout" ref))
+               (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
+               (branch (list "switch" "-C" branch ; "--no-guess"?
+                             (concat (or (elpaca--first remote)
+                                         elpaca-default-remote-name)
+                                     "/" branch)))))
+          :sentinel (apply-partially #'elpaca--process-sentinel
+                                     (concat target " checked out")
+                                     'ref-checked-out))))))
 
 (defun elpaca--check-status (dependency e)
   "Possibly change E's status depending on DEPENDENCY statuses."
@@ -1266,7 +1266,6 @@ This is the branch that would be checked out upon cloning."
 (defun elpaca--clone (e)
   "Clone E's repo to `elpaca-directory'."
   (let* ((recipe  (elpaca<-recipe   e))
-         (package (plist-get recipe :package))
          (depth   (plist-get recipe :depth))
          (repodir (elpaca<-repo-dir e))
          (URI     (elpaca--repo-uri recipe))
@@ -1283,17 +1282,13 @@ This is the branch that would be checked out upon cloning."
                 '("--no-checkout"))
             ,URI ,repodir)))
     (elpaca--signal e "Cloning" 'cloning)
-    (let ((process
-           (make-process
-            :name     (concat "elpaca-clone-" package)
-            :command  command
-            :filter   (lambda (process output)
-                        (elpaca--process-filter
-                         process output
-                         "\\(?:^\\(?:Password\\|Username\\|passphrase\\)\\)" 'blocked))
-            :sentinel #'elpaca--clone-process-sentinel)))
-      (process-put process :elpaca e)
-      (setf (elpaca<-process e) process))))
+    (elpaca--make-process e
+      :name "clone" :command command :connection-type 'pty
+      :filter (lambda (process output)
+                (elpaca--process-filter
+                 process output
+                 "\\(?:^\\(?:Password\\|Username\\|passphrase\\)\\)" 'blocked))
+      :sentinel #'elpaca--clone-process-sentinel)))
 
 (defun elpaca-generate-autoloads (package dir)
   "Generate autoloads in DIR for PACKAGE."
@@ -1324,24 +1319,20 @@ This is the branch that would be checked out upon cloning."
     name))
 
 (defun elpaca--generate-autoloads-async (e)
-  "Generate E's autoloads.
-Async wrapper for `elpaca-generate-autoloads'."
+  "Generate E's autoloads asynchronously."
   (let* ((package           (elpaca<-package  e))
          (default-directory (elpaca<-build-dir e))
          (elpaca            (expand-file-name "elpaca/" elpaca-repos-directory))
          (program           (let (print-level print-circle)
                               (format "%S" `(progn (setq gc-cons-percentage 1.0)
                                                    (elpaca-generate-autoloads
-                                                    ,package ,default-directory)))))
-         (process (make-process
-                   :name     (concat "elpaca-autoloads-" package)
-                   :connection-type 'pipe
-                   :command (list (elpaca--emacs-path) "-Q" "-L" elpaca
-                                  "-l" (expand-file-name "elpaca.el" elpaca)
-                                  "--batch" "--eval" program)
-                   :filter   #'elpaca--process-filter
-                   :sentinel (apply-partially #'elpaca--process-sentinel "Autoloads Generated" nil))))
-    (process-put process :elpaca e)
+                                                    ,package ,default-directory))))))
+    (elpaca--make-process e
+      :name "autoloads"
+      :command (list (elpaca--emacs-path) "-Q" "-L" elpaca
+                     "-l" (expand-file-name "elpaca.el" elpaca)
+                     "--batch" "--eval" program)
+      :sentinel (apply-partially #'elpaca--process-sentinel "Autoloads Generated" nil))
     (elpaca--signal e (concat "Generating autoloads: " default-directory) 'autoloads)))
 
 (defun elpaca--activate-package (e)
@@ -1400,15 +1391,11 @@ Loads or caches autoloads."
                            ',(cons default-directory dependency-dirs))
                      (byte-recompile-directory ,default-directory 0 'force)))
          (print-level nil)
-         (print-circle nil)
-         (process
-          (make-process
-           :name     (concat "elpaca-byte-compile-" (elpaca<-package e))
-           :connection-type 'pipe
-           :command  `(,emacs "-Q" "--batch" "--eval" ,(format "%S" program))
-           :filter   #'elpaca--process-filter
-           :sentinel (apply-partially #'elpaca--process-sentinel "Byte compilation complete" nil))))
-    (process-put process :elpaca e)))
+         (print-circle nil))
+    (elpaca--make-process e
+      :name "byte-compile"
+      :command  `(,emacs "-Q" "--batch" "--eval" ,(format "%S" program))
+      :sentinel (apply-partially #'elpaca--process-sentinel "Byte compilation complete" nil))))
 
 ;;;###autoload
 (defun elpaca-dependencies (item &optional ignore interactive recurse)
@@ -1668,26 +1655,20 @@ With a prefix argument, rebuild current file's package or prompt if none found."
 (defun elpaca--log-updates (e)
   "Log E's fetched commits."
   (elpaca--signal e nil 'update-log)
-  (let* ((default-directory (elpaca<-repo-dir e))
-         (process (make-process
-                   :name (concat "elpaca-log-updates-" (elpaca<-package e))
-                   :connection-type 'pipe
-                   ;; Pager will break this process. Complains about terminal functionality.
-                   :command (list "git" "--no-pager" "log" "..@{u}")
-                   :filter   #'elpaca--process-filter
-                   :sentinel (apply-partially #'elpaca--process-sentinel nil nil))))
-    (process-put process :elpaca e)))
+  (let* ((default-directory (elpaca<-repo-dir e)))
+    (elpaca--make-process e
+      :name "log-updates"
+      :command (list "git" "--no-pager" "log" "..@{u}") ;Pager breaks pipe process.
+      :sentinel (apply-partially #'elpaca--process-sentinel nil nil))))
 
 (defun elpaca--fetch (e)
   "Fetch E's remotes' commits."
   (elpaca--signal e nil 'fetching-remotes)
-  (let* ((default-directory (elpaca<-repo-dir e))
-         (process (make-process
-                   :name (concat "elpaca-fetch-" (elpaca<-package e))
-                   :command  '("git" "fetch" "--all" "-v") ;;@TODO: make --all optional
-                   :filter   #'elpaca--process-filter
-                   :sentinel (apply-partially #'elpaca--process-sentinel "Remotes fetched" nil))))
-    (ignore (process-put process :elpaca e))))
+  (let* ((default-directory (elpaca<-repo-dir e)))
+    (elpaca--make-process e
+      :name "fetch"
+      :command  '("git" "fetch" "--all" "-v") ;;@TODO: make --all optional
+      :sentinel (apply-partially #'elpaca--process-sentinel "Remotes fetched" nil))))
 
 ;;;###autoload
 (defun elpaca-fetch (item &optional interactive)
@@ -1728,16 +1709,14 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
 
 (defun elpaca--merge (e)
   "Merge E's fetched commits."
-  (let* ((default-directory (elpaca<-repo-dir e))
-         (process (make-process
-                   :name (concat "elpaca-merge-" (elpaca<-package e))
-                   :connection-type 'pipe
-                   :command  '("git" "merge" "--ff-only")
-                   :filter (lambda (process output)
-                             (elpaca--process-filter process output "Aborting" 'failed))
-                   :sentinel #'elpaca--merge-process-sentinel)))
-    (elpaca--signal e "Merging updates" 'merging)
-    (process-put process :elpaca e)))
+  (let* ((default-directory (elpaca<-repo-dir e)))
+    (elpaca--make-process e
+      :name "merge"
+      :command  '("git" "merge" "--ff-only")
+      :filter (lambda (process output)
+                (elpaca--process-filter process output "Aborting" 'failed))
+      :sentinel #'elpaca--merge-process-sentinel)
+    (elpaca--signal e "Merging updates" 'merging)))
 
 (defun elpaca--announce-pin (e)
   "Dummy build step to announce a E's package is pinned."
