@@ -1446,7 +1446,7 @@ If ORDER is `nil`, defer BODY until orders have been processed."
                       ;;@FIX: nil semantics not good for multiple deferred...
                       `((push (cons ',item ',body) (elpaca-q<-forms q)))))
        ,@(when order `((elpaca--queue ,order q)))
-       (when (and after-init-time (eq this-command 'eval-last-sexp))
+       (when (and after-init-time (member this-command '(eval-last-sexp eval-defun)))
          (elpaca--maybe-log t)
          (let ((e (elpaca-get ',item)))
            (elpaca--unprocess e)
