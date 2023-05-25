@@ -1448,7 +1448,10 @@ If ORDER is `nil`, defer BODY until orders have been processed."
        ,@(when order `((elpaca--queue ,order q)))
        (when (and after-init-time (eq this-command 'eval-last-sexp))
          (elpaca--maybe-log t)
-         (elpaca-process-queues))
+         (let ((e (elpaca-get ',item)))
+           (elpaca--unprocess e)
+           (push 'queued (elpaca<-statuses e))
+           (elpaca-process-queues)))
        nil)))
 
 (defcustom elpaca-wait-interval 0.01 "Seconds between `elpaca-wait' status checks."
