@@ -1430,6 +1430,11 @@ When MESSAGE is non-nil, message the list of dependents."
                      t))
   (if message (message "%S" (elpaca--dependents item)) (elpaca--dependents item)))
 
+(defcustom elpaca-interactive-interval 0.15
+  "Time to wait before processing queues when multiple `elpaca' forms evaluated."
+  :type 'number)
+(defvar elpaca--interactive-timer nil
+  "Debounces interactive evaluation of mulitple `elpaca' forms.")
 ;;;; COMMANDS/MACROS
 ;;;###autoload
 (defmacro elpaca (order &rest body)
@@ -1446,12 +1451,15 @@ If ORDER is `nil`, defer BODY until orders have been processed."
                       ;;@FIX: nil semantics not good for multiple deferred...
                       `((push (cons ',item ',body) (elpaca-q<-forms q)))))
        ,@(when order `((elpaca--queue ,order q)))
-       (when (and after-init-time (member this-command '(eval-last-sexp eval-defun)))
+       (when after-init-time
          (elpaca--maybe-log t)
          (let ((e (elpaca-get ',item)))
            (elpaca--unprocess e)
            (push 'queued (elpaca<-statuses e))
-           (elpaca-process-queues)))
+           (when (member this-command '(eval-last-sexp eval-defun)) (elpaca-process-queues))
+           (when (member this-command '(eval-region eval-buffer))
+             (when elpaca--interactive-timer (cancel-timer elpaca--interactive-timer))
+             (run-at-time elpaca-interactive-interval nil #'elpaca-process-queues))))
        nil)))
 
 (defcustom elpaca-wait-interval 0.01 "Seconds between `elpaca-wait' status checks."
