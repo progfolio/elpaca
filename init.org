@@ -1774,7 +1774,6 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
                 :build (:not elpaca--compile-info))
   :commands (mu4e mu4e-update-index)
   :custom
-  (mu4e-search-threads nil)
   (mu4e-update-interval 900 "Update every fifteen minutes")
   (mail-user-agent 'mu4e-user-agent)
   (mu4e-org-support t)
@@ -1856,6 +1855,9 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
     (olivetti-mode)
     (variable-pitch-mode))
   (add-hook 'mu4e-view-mode-hook #'+mu4e-view-settings)
+
+  ;;Fold all threads by default.
+  (add-hook 'mu4e-thread-mode-hook #'mu4e-thread-fold-all)
 
   :general
   (+general-global-application "m" 'mu4e :which-key "mail")
