@@ -1257,6 +1257,14 @@ I'd rather have everything in one folder to keep my file system tidy.
      (org-clean-refile-inherit-tags))
    "Store safe local variables here instead of in emacs-custom.el"))
 #+end_src
+** find-func
+#+begin_src emacs-lisp :lexical t
+(use-feature find-func
+  :defer t
+  :config (setq find-function-C-source-directory
+                (expand-file-name "~/repos/emacs/src/")))
+#+end_src
+
 ** fill-column-indicator
 #+begin_src emacs-lisp :lexical t
 (use-feature display-fill-column-indicator
