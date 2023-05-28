@@ -1396,6 +1396,7 @@ https://github.com/emacs-helm/helm
 (use-package helm
   :defer 1
   :custom
+  (helm-candidate-number-limit 300)
   (helm-echo-input-in-header-line t)
   (helm-split-window-inside-p t "split window inside current window")
   (helm-move-to-line-cycle-in-source t "cycle to beggining or end afte reaching top/bottom of list")
