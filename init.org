@@ -2229,6 +2229,11 @@ When saving, I want changes to my org-files reflected in any open org agenda
 buffers.
 #+begin_src emacs-lisp :lexical t
 :config
+;; speed up org-agenda-todo
+(define-advice org-agenda-todo (:around (fn &rest args) no-org-indent-refresh)
+  (cl-letf (((symbol-function 'org-indent-refresh-maybe) #'ignore))
+    (funcall fn args)))
+
 ;;for org-agenda-icon-alist
 (evil-set-initial-state 'org-agenda-mode 'normal)
 (defun +org-agenda-redo-all ()
