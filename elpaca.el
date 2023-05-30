@@ -1067,6 +1067,8 @@ If RECACHE is non-nil, do not use cached dependencies."
                  (or (cl-some (lambda (name) (let ((file (expand-file-name name)))
                                                (and (file-exists-p file) file)))
                               (list (concat package "-pkg.el")
+                                    (concat (concat "./lisp/" package) "-pkg.el")
+                                    (concat (concat "./elisp/" package) "-pkg.el")
                                     name
                                     (concat "./lisp/" name)
                                     (concat "./elisp/" name)))
