@@ -115,8 +115,8 @@
     (erase-buffer)
     (setq-local elpaca--info
                 (mapcar #'cdr (cl-remove-if-not (lambda (it) (eq it item))
-                                                (append (elpaca--custom-candidates)
-                                                        (elpaca--menu-items))
+                                                (append (elpaca--custom-candidates t)
+                                                        (elpaca--menu-items t))
                                                 :key #'car))
                 elpaca-info--item item)
     (when (> elpaca-info--source-index (1- (length elpaca--info)))
@@ -173,7 +173,7 @@
 (defun elpaca-info (item)
   "Display package info for ITEM in a dedicated buffer."
   (interactive (list (let* ((elpaca-overriding-prompt "Package info: ")
-                            (items (append (elpaca--custom-candidates) (elpaca--menu-items t))))
+                            (items (append (elpaca--custom-candidates t) (elpaca--menu-items t))))
                        (car (elpaca-menu-item t items)))))
   (with-current-buffer (get-buffer-create "*elpaca-info*")
     (unless (derived-mode-p 'elpaca-info-mode)

@@ -358,7 +358,7 @@ ORDER is any of the following values:
   - an order list of the form: \\='(ITEM . PROPS).
 When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
   (interactive (list (if-let ((elpaca-overriding-prompt "Recipe: ")
-                              (item (elpaca-menu-item t (append (elpaca--custom-candidates)
+                              (item (elpaca-menu-item t (append (elpaca--custom-candidates t)
                                                                 (elpaca--menu-items t)))))
                          (cons (car item) (plist-get (cdr item) :recipe))
                        (user-error "No recipe selected"))
@@ -1910,15 +1910,19 @@ When BUILD is non-nil visit ITEM's build directory."
    (file-attributes (expand-file-name (concat (elpaca<-package e) ".el")
                                       (elpaca<-build-dir e)))))
 
-(defun elpaca--custom-candidates (&rest _)
-  "Return declared candidate list with no recipe in `elpaca-menu-functions'."
+(defun elpaca--custom-candidates (&optional notry)
+  "Return declared candidate list with no recipe in `elpaca-menu-functions'.
+If NOTRY is non-nil do not include `elpaca-try' recipes."
   (cl-loop with seen
            for (item . e) in (elpaca--queued)
-           unless (or (member item seen) (elpaca-menu-item item))
-           collect (list item :source "Init file"
-                         :date (ignore-errors (elpaca--fallback-date e))
-                         :recipe (elpaca<-recipe e)
-                         :description "Not available in menu functions")
+           for menu-item = (elpaca-menu-item item)
+           for tried = (equal (plist-get (cdr menu-item) :source) "elpaca-try")
+           unless (or (member item seen) (and menu-item (or (not tried) notry)))
+           collect (if tried menu-item
+                     (list item :source "Init file"
+                           :date (ignore-errors (elpaca--fallback-date e))
+                           :recipe (elpaca<-recipe e)
+                           :description "Not available in menu functions"))
            do (push item seen)))
 
 ;;;###autoload
