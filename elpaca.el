@@ -391,6 +391,7 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
 
 (defsubst elpaca--repo-name (string)
   "Return repo name portion of STRING."
+  (setq string (directory-file-name string)) ;; remove external :repo trailing slash
   (file-name-base (substring string (- (string-match-p "/" (reverse string))))))
 
 (defsubst elpaca--repo-user (string)
