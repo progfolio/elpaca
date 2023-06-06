@@ -1458,7 +1458,7 @@ If ORDER is `nil`, defer BODY until orders have been processed."
            (elpaca--unprocess e)
            (push 'queued (elpaca<-statuses e))
            (when (member this-command '(eval-last-sexp eval-defun)) (elpaca-process-queues))
-           (when (member this-command '(eval-region eval-buffer))
+           (when (member this-command '(eval-region eval-buffer org-ctrl-c-ctrl-c))
              (when elpaca--interactive-timer (cancel-timer elpaca--interactive-timer))
              (run-at-time elpaca-interactive-interval nil #'elpaca-process-queues))))
        nil)))
