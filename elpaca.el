@@ -714,12 +714,13 @@ Optional ARGS are passed to `elpaca--signal', which see."
         (eval `(progn ,@(reverse autoloads)) t)
       ((error) (warn "Autoload Error: %S" err))))
   (setf (elpaca-q<-status q) 'complete) ; Avoid loop when forms call elpaca-process-queue.
-  (when-let ((forms (reverse (elpaca-q<-forms q))))
+  (when-let ((forms (nreverse (elpaca-q<-forms q))))
     (with-temp-buffer (setq-local lexical-binding t)
                       (cl-loop for (item . body) in forms
                                do (condition-case-unless-debug err
                                       (eval `(progn ,@body) t)
-                                    ((error) (warn "Config Error %s: %S" item err))))))
+                                    ((error) (warn "Config Error %s: %S" item err)))))
+    (setf (elpaca-q<-forms q) nil))
   (run-hooks 'elpaca-post-queue-hook)
   (let ((next (nth (1+ (elpaca-q<-id q)) (reverse elpaca--queues))))
     (unless (or elpaca-after-init-time ; Already run.
