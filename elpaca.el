@@ -414,7 +414,9 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
          (host (or (plist-get recipe :host) (plist-get recipe :fetcher)))
          (hostname (and host (prin1-to-string host 'noescape)))
          (user nil)
-         (info (intern (concat url repo hostname)))
+         (key (concat url repo hostname))
+         (info (intern (or (and (> (length key) 0) key)
+                           (error "Cannot determine URL from recipe: %S" recipe))))
          (mono-repo (alist-get info elpaca--repo-dirs))
          (name (cond
                 (local-repo
