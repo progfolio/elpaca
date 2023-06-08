@@ -1445,6 +1445,7 @@ When MESSAGE is non-nil, message the list of dependents."
   "Queue ORDER for installation/activation, defer execution of BODY.
 If ORDER is `nil`, defer BODY until orders have been processed."
   (declare (indent 1) (debug t))
+  (message "elpaca ORDER: %S" order)
   (let ((o (gensym "order-")) (item (gensym "item-")) (q (gensym "q-")))
     `(let* ((,o ,@(if (memq (car-safe order) '(quote \`)) `(,order) `(',order)))
             (,item (elpaca--first ,o))
