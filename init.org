@@ -1159,9 +1159,11 @@ Ement.el is a new Matrix client for Emacs. It aims to be simple, fast, featurefu
   (add-hook 'ement-room-compose-hook #'flyspell-mode)
   :general
   (+general-global-application
-    "M" '(:ignore t :which-key "Matrix")
-    "MM" '((lambda () (interactive) (ement-connect :user-id "@nv-elisp:matrix.org"))
-           :which-key "ement-connect")))
+    "e" '(:ignore t :which-key "Matrix")
+    "ee" '(lambda () (interactive) (call-interactively (if (bound-and-true-p ement-sessions) #'ement-room-list #'ement-connect)))
+    "el" 'ement-room-list
+    "en" 'ement-notify-switch-to-notifications-buffer
+    "em" 'ement-notify-switch-to-mentions-buffer))
 #+end_src
 ** emp
 #+begin_quote
@@ -1208,16 +1210,6 @@ MPV integration
   :elpaca (epoch :host github :repo "progfolio/epoch")
   :after (org)
   :commands (epoch-todo epoch-agenda-todo))
-#+end_src
-** erc
-Built in IRC client
-#+begin_src emacs-lisp :lexical t
-(use-feature erc
-  :general
-  (+general-global-application
-    "E" 'erc)
-  :hook
-  (erc-mode . erc-spelling-mode))
 #+end_src
 ** files
 By default Emacs saves backups in the current buffer's working directory.
