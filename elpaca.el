@@ -215,7 +215,7 @@ Each function is passed a request, which may be any of the follwoing symbols:
 (defcustom elpaca-ignored-dependencies
   `( emacs cl-lib cl-generic nadvice org org-mode map seq json project auth-source-pass
      ruby-mode
-     elpaca ,@(unless (< emacs-major-version 28) '(transient))
+     ,@(unless (< emacs-major-version 28) '(transient))
      ,@(unless (< emacs-major-version 29) '(use-package eglot)))
   "List of items which are not installed unless the user explicitly requests them."
   :type '(repeat symbol))
@@ -554,6 +554,8 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
          (build-steps (elpaca--build-steps recipe builtp clonedp mono-repo)))
     (unless (or builtp elpaca--ibs-set elpaca-hide-initial-build elpaca-after-init-time)
       (setq initial-buffer-choice #'elpaca--ibs elpaca--ibs-set t))
+    (when (memq id elpaca-ignored-dependencies)
+      (setq elpaca-ignored-dependencies (delq id elpaca-ignored-dependencies)))
     (elpaca<--create
      :id id :package (symbol-name id) :order order :statuses (list status)
      :repo-dir repo-dir :build-dir build-dir :mono-repo mono-repo
@@ -1383,10 +1385,9 @@ Loads or caches autoloads."
   (let* ((default-directory (elpaca<-build-dir e))
          (emacs             (elpaca--emacs-path))
          (dependency-dirs
-          (cl-loop for item in (elpaca-dependencies (elpaca<-id e)
-                                                    elpaca-ignored-dependencies)
-                   when item
-                   for build-dir = (elpaca<-build-dir (elpaca-get item))
+          (cl-loop for dep in (elpaca-dependencies (elpaca<-id e) '(emacs))
+                   for item = (elpaca-get dep)
+                   for build-dir = (and item (elpaca<-build-dir item))
                    when build-dir collect build-dir))
          (program `(let ((gc-cons-percentage 1.0)) ;; trade memory for gc speed
                      (mapc (lambda (dir) (let ((default-directory dir))
