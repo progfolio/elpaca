@@ -1155,9 +1155,15 @@ Ement.el is a new Matrix client for Emacs. It aims to be simple, fast, featurefu
 #+begin_src emacs-lisp :lexical t
 (use-package ement
   :elpaca (ement :host github :repo "alphapapa/ement.el" :branch nil)
-  :custom (ement-room-avatars t)
+  :custom
+  (ement-room-avatars t)
+  (ement-room-images t)
+  (ement-save-sessions t)
+  (ement-sessions-file "~/.cache/ement.eld.gpg")
+
   :config
   (add-hook 'ement-room-compose-hook #'flyspell-mode)
+  (add-hook 'epa-key-list-mode-hook #'exit-recursive-edit)
   :general
   (+general-global-application
     "e" '(:ignore t :which-key "Matrix")
