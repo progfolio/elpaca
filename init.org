@@ -2229,10 +2229,6 @@ When saving, I want changes to my org-files reflected in any open org agenda
 buffers.
 #+begin_src emacs-lisp :lexical t
 :config
-;; speed up org-agenda-todo
-(define-advice org-agenda-todo (:around (fn &rest args) no-org-indent-refresh)
-  (cl-letf (((symbol-function 'org-indent-refresh-maybe) #'ignore))
-    (funcall fn args)))
 
 ;;for org-agenda-icon-alist
 (evil-set-initial-state 'org-agenda-mode 'normal)
@@ -2865,7 +2861,12 @@ to override the default placement.
 (use-feature org-indent
   :diminish ""
   :after (org)
-  :hook (org-mode . org-indent-mode))
+  :hook (org-mode . org-indent-mode)
+  :config
+  (define-advice org-indent-refresh-maybe (:around (fn &rest args) "when-buffer-visible")
+    "Only refresh indentation when buffer's window is visible.
+Speeds up `org-agenda' remote operations."
+    (when (get-buffer-window (current-buffer) t) (apply fn args))))
 #+end_src
 *** refile
 This function allows me to refile within the currently open org files
