@@ -711,7 +711,8 @@ https://github.com/emacs-evil/evil-collection
   :custom
   (evil-collection-elpaca-want-g-filters nil)
   (evil-collection-setup-minibuffer t "Add evil bindings to minibuffer")
-  (evil-collection-company-use-tng t))
+  (evil-collection-company-use-tng t)
+  (evil-collection-ement-want-auto-retro t))
 #+end_src
 ** accord
 #+begin_src emacs-lisp :lexical t
