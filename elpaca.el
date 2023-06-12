@@ -1604,7 +1604,9 @@ do not confirm before deleting package and DEPS."
               (message "Cannot delete %S unless dependents %S are deleted first"
                        id dependents)
             (when repo-p (delete-directory repo-dir 'recursive))
-            (when (file-exists-p build-dir) (delete-directory build-dir 'recursive))
+            (when (file-exists-p build-dir)
+              (setq load-path (delete build-dir load-path))
+              (delete-directory build-dir 'recursive))
             (dolist (queue elpaca--queues)
               (setf (elpaca-q<-elpacas queue)
                     (cl-remove id (elpaca-q<-elpacas queue) :key #'car)))
