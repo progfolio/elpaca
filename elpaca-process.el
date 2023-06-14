@@ -44,20 +44,18 @@
   "Run PROGRAM syncrhonously with ARGS.
 Return a list of form: (EXITCODE STDOUT STDERR).
 If the process is unable to start, return an elisp error object."
-  (let* ((program (if (string-match-p "/" program) (expand-file-name program) program)))
+  (let ((program (if (string-match-p "/" program) (expand-file-name program) program)))
     (condition-case err
         (with-temp-buffer
           (list (apply #'call-process program nil (list t elpaca-process--stderr)
                        nil args)
                 (when-let ((s (buffer-substring-no-properties (point-min) (point-max)))
-                           ((not (= 0 (length s)))))
+                           ((not (= (length s) 0))))
                   s)
-                (with-current-buffer (find-file-noselect elpaca-process--stderr
-                                                         'nowarn 'raw)
-                  (when-let ((s (buffer-substring-no-properties (point-min) (point-max)))
-                             ((kill-buffer))
-                             ((not (= 0 (length s)))))
-                    s))))
+                (when-let (((insert-file-contents elpaca-process--stderr nil nil nil t))
+                           (s (buffer-substring-no-properties (point-min) (point-max)))
+                           ((not (= (length s) 0))))
+                  s)))
       (error err))))
 
 (declare-function elpaca--emacs-path "elpaca")
