@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;; A elpaca menu for Org packages
+;; An Elpaca menu for Org packages
 
 ;;; Code:
 (require 'elpaca)

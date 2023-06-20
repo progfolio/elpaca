@@ -84,7 +84,7 @@ FILTER must be a unary function which takes a list of menu items and returns a
 list of menu items.
 
 Each tag can be inverted in the minibuffer by prepending an
-exclamation point to it. e.g. #!installed."
+exclamation point to it. e.g. !#installed."
   :type '(alist :key-type symbol :value-type function))
 
 (defcustom elpaca-ui-search-debounce-interval 0.25
@@ -92,7 +92,7 @@ exclamation point to it. e.g. #!installed."
   :type (or 'string 'int 'float))
 
 (defmacro elpaca-defsearch (name query)
-  "Return seach command with NAME for QUERY."
+  "Return search command with NAME for QUERY."
   (declare (indent 1) (debug t))
   `(defun ,(intern (format "elpaca-ui-search-%s" name)) ()
      ,(format "Search for %S" query)
@@ -114,7 +114,7 @@ exclamation point to it. e.g. #!installed."
 (defvar-local elpaca-ui--search-timer nil "Timer to debounce search input.")
 (defvar-local elpaca-ui--marked-packages nil
   "List of marked packages. Each element is a cons of (PACKAGE . ACTION).")
-(defvar-local elpaca-ui--prev-entry-count nil "Number of previously recored entries.")
+(defvar-local elpaca-ui--prev-entry-count nil "Number of previously recorded entries.")
 (defvar elpaca-ui-mode-map
   (let ((m (make-sparse-keymap)))
     (define-key m (kbd "RET") 'elpaca-ui-info)
@@ -146,7 +146,7 @@ exclamation point to it. e.g. #!installed."
 (defvar-local elpaca-ui-header-line-prefix nil "Header line prefix.")
 (defvar-local elpaca-ui-header-line-function #'elpaca-ui--header-line
   "Function responsible for setting the UI buffer's `header-line-format'.
-It recieves one argument, the parsed search query list.")
+It receives one argument, the parsed search query list.")
 (defvar-local elpaca-ui-entries-function nil
   "Function responsible for returning the UI buffer's `tabulated-list-entries'.")
 (defvar-local elpaca-ui-entries nil "List of table entries.")
@@ -316,7 +316,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
             parsed)))))
 
 (defun elpaca-ui--search-fn (parsed)
-  "Return query function from PARSED." ;;@TODO: Clean this up. Reptition.
+  "Return query function from PARSED." ;;@TODO: Clean this up. Repetition.
   (when parsed
     (let ((body nil)
           (i 0))
@@ -530,7 +530,7 @@ If QUERY is nil, the contents of the minibuffer are used instead."
 (defun elpaca-ui-search-refresh (&optional buffer silent)
   "Rerun the current search for BUFFER.
 If BUFFER is non-nil, the current buffer is used.
-If SILENT is non-nil, supress update message."
+If SILENT is non-nil, suppress update message."
   (interactive (list (current-buffer)))
   (with-current-buffer (or buffer (current-buffer))
     (elpaca-ui--update-search-filter (or buffer (current-buffer))

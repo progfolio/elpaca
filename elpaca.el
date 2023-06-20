@@ -189,7 +189,7 @@ This hook is run via `run-hook-with-args-until-success'."
 (defcustom elpaca-menu-functions
   '(elpaca-menu-extensions elpaca-menu-org elpaca-menu-melpa elpaca-menu-gnu-elpa-mirror elpaca-menu-non-gnu-elpa)
   "Abnormal hook to lookup packages in menus.
-Each function is passed a request, which may be any of the follwoing symbols:
+Each function is passed a request, which may be any of the following symbols:
   - `index`
      Must return a alist of the menu's package candidates.
      Each candidate is a cell of form:
@@ -597,7 +597,7 @@ If REPLACE is non-nil, the most recent log entry is replaced."
 If INFO is non-nil, log and possibly print it in `elpaca-log-buffer'.
 If REPLACE is non-nil, E's log is updated instead of appended.
 If VERBOSITY is non-nil, log event is given that verbosity number.
-If STATUS is non-nil and is not E's current STATUS, signal E's depedentents to
+If STATUS is non-nil and is not E's current STATUS, signal E's dependents to
 check (and possibly change) their statuses."
   (let* ((new-status-p (and status (not (eq status (elpaca--status e)))))
          (siblings (elpaca<-siblings e))
@@ -709,7 +709,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
 
 (defvar elpaca--post-queues-hook nil)
 (defun elpaca--finalize-queue (q)
-  "Run Q's post isntallation functions:
+  "Run Q's post installation functions:
 - load cached autoloads
 - evaluate deferred package configuration forms
 - possibly run `elpaca-after-init-hook'."
@@ -917,7 +917,7 @@ If it matches, the E associated with process has its STATUS updated."
       (setf (elpaca<-build-steps e)
             (cl-set-difference (elpaca<-build-steps e) '(elpaca--install-info elpaca--add-info-path))))
     (elpaca--continue-build
-     e (if finished "Info compiled" (concat "Copmilation failure: " (string-trim event))))))
+     e (if finished "Info compiled" (concat "Compilation failure: " (string-trim event))))))
 
 (defun elpaca--make-process (e &rest spec)
   "Attach process to E from `make-process' SPEC plist."
@@ -1006,7 +1006,7 @@ strings to be executed in a shell context of the form:
 
   (\"executable\" \"arg\"...)
 
-Commands are exectued in the E's repository directory.
+Commands are executed in the E's repository directory.
 The keyword's value is expected to be one of the following:
 
   - A single command
@@ -1179,7 +1179,7 @@ This is the branch that would be checked out upon cloning."
     (if success
         (if (string-match "\\(?:[^z-a]*HEAD branch:[[:space:]]+\\([^z-a]*?\\)$\\)" stdout)
             (match-string 1 stdout)
-          (error "Unable to determie remote default branch"))
+          (error "Unable to determine remote default branch"))
       (error (format "Remote default branch error: %S" stderr)))))
 
 (defun elpaca--checkout-ref (e)
@@ -1261,7 +1261,7 @@ This is the branch that would be checked out upon cloning."
       (if (not (string-match-p "does not support shallow capabilities" raw))
           (elpaca--fail e (nth 2 (car (elpaca<-log e))))
         (setf (elpaca<-recipe e) (plist-put (elpaca<-recipe e) :depth nil))
-        (elpaca--signal e "Recloning with recipe :depth nil")
+        (elpaca--signal e "Re-cloning with recipe :depth nil")
         (push #'elpaca--clone (elpaca<-build-steps e))))
     (elpaca--continue-build e)))
 
@@ -1439,7 +1439,7 @@ When MESSAGE is non-nil, message the list of dependents."
   "Time to wait before processing queues when multiple `elpaca' forms evaluated."
   :type 'number)
 (defvar elpaca--interactive-timer nil
-  "Debounces interactive evaluation of mulitple `elpaca' forms.")
+  "Debounces interactive evaluation of multiple `elpaca' forms.")
 ;;;; COMMANDS/MACROS
 ;;;###autoload
 (defmacro elpaca (order &rest body)
@@ -1579,7 +1579,7 @@ FILTER must be a unary function which accepts and returns a queue list."
   "Remove a package with ID from item cache and disk.
 If DEPS is non-nil (interactively with \\[universal-argument]) delete dependencies.
 IGNORED dependencies are not deleted.
-If FORCE is non-nil (interacitvley with \\[universal-argument] \\[universal-argument])
+If FORCE is non-nil (interactively with \\[universal-argument] \\[universal-argument])
 do not confirm before deleting package and DEPS."
   (interactive (list (elpaca--read-queued "Delete Package: ")
                      (equal current-prefix-arg '(16))
@@ -1843,7 +1843,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
                    (string-trim
                     (elpaca-process-output "git" "rev-parse" "--is-shallow-repository"))
                    "true")
-                  (user-error "%s is not a shallwow repository" repo-dir)))
+                  (user-error "%s is not a shallow repository" repo-dir)))
              (remotes (plist-get (elpaca<-recipe e) :remotes)))
     (cl-loop for remote in (if (stringp remotes) (list remotes) remotes)
              for name = (elpaca--first remote)
@@ -1952,7 +1952,7 @@ If NOTRY is non-nil do not include `elpaca-try' recipes."
 
 ;;;###autoload
 (defun elpaca-version (&optional message)
-  "Return elpaca version information string.
+  "Return Elpaca version information string.
 If MESSAGE is non-nil, the information is messaged."
   (interactive '(t))
   (let* ((default-directory (expand-file-name "elpaca/" elpaca-repos-directory))

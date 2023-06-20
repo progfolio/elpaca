@@ -1,4 +1,4 @@
-;;; elpaca-menu-melpa.el --- MELPA menu support for elpaca  -*- lexical-binding: t; -*-
+;;; elpaca-menu-melpa.el --- Elpaca MELPA menu support -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2022-2023 Nicholas Vollmer
 
@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;;  MELPA support for elpaca.
+;;  MELPA support for Elpaca.
 
 ;;; Code:
 (require 'cl-lib)
@@ -69,7 +69,7 @@
 
 (defun elpaca-menu-melpa--update ()
   "Update recipes in MELPA menu."
-  (message "Checking Melpa for updates...")
+  (message "Checking MELPA for updates...")
   (elpaca-with-process (elpaca-process-call "git" "pull")
     (message (if success "MELPA menu updated" "Unable to pull MELPA recipes"))))
 
@@ -103,7 +103,7 @@
                                                     "-"))))
                                   :url (alist-get 'url (alist-get 'props data))))))
             (cons (intern-soft (file-name-nondirectory file)) candidate)))
-      ((error) (message "elpaca-menu-melpa couldn't process %S" file) nil))))
+      ((error) (message "elpaca-menu-melpa could not process %S" file) nil))))
 
 (defun elpaca-menu-melpa--index ()
   "Return candidate list of available MELPA recipes."

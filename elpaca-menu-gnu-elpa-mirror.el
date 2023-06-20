@@ -1,9 +1,9 @@
-;;; elpaca-menu-gnu-elpa-mirror.el --- GNU ELPA menu support for elpaca  -*- lexical-binding: t; -*-
+;;; elpaca-menu-gnu-elpa-mirror.el --- GNU ELPA Elpaca menu support -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2022-2023 Nicholas Vollmer
 
 ;; Author: Nicholas Vollmer
-;; Keywords:
+;; Keywords: convenience
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;;  GNU ELPA support for elpaca.
+;;  Elpaca GNU ELPA support.
 
 ;;; Code:
 (eval-when-compile (require 'subr-x))

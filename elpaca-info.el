@@ -146,7 +146,7 @@
                   (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
                 (if on-disk-p "nil"
                   (if (memq item (cl-set-difference elpaca-ignored-dependencies '(emacs elpaca)))
-                      "bulit-in" "?"))))
+                      "built-in" "?"))))
              (elpaca-info--section
               "%s %s" "dependents:"
               (if-let ((ds (remq 'emacs (elpaca--dependents item 'noerror))))

@@ -31,7 +31,7 @@
 
 (defconst elpaca-process--stderr
   (expand-file-name (format "elpaca-stderr-%s" (emacs-pid)) temporary-file-directory)
-  "File for storing proccesses' stderr.")
+  "File for storing processes' stderr.")
 
 (defun elpaca--delete-stderr-file ()
   "Remove `elpaca-process--stderr' file."
@@ -41,7 +41,7 @@
 (add-hook 'kill-emacs-hook #'elpaca--delete-stderr-file)
 
 (defun elpaca-process-call (program &rest args)
-  "Run PROGRAM syncrhonously with ARGS.
+  "Run PROGRAM synchronously with ARGS.
 Return a list of form: (EXITCODE STDOUT STDERR).
 If the process is unable to start, return an elisp error object."
   (when (string-match-p "/" program) (setq program (expand-file-name program)))
@@ -62,7 +62,7 @@ If the process is unable to start, return an elisp error object."
 (defun elpaca-process-poll--filter (process output &optional pattern error)
   "Filter PROCESS OUTPUT.
 PATTERN is a string which is checked against the entire process output.
-If it matches, singal ERROR if non-nil."
+If it matches, signal ERROR if non-nil."
   (process-put process :raw-output (concat (process-get process :raw-output) output))
   (unless (process-get process :messaged)
     (message "$%s" (string-join (process-command process) " "))
@@ -80,7 +80,7 @@ If it matches, singal ERROR if non-nil."
       (error "Subprocess filter error: %S" error))))
 
 (defun elpaca-process-poll (program &rest args)
-  "Run PROGRAM with ARGS aysnchronously, polling for messages.
+  "Run PROGRAM with ARGS asynchronously, polling for messages.
 This allows for output to be passed back to the parent Emacs process."
   (let* ((program (if (string-match-p "/" program) (expand-file-name program) program))
          (subprocess
@@ -110,7 +110,7 @@ This allows for output to be passed back to the parent Emacs process."
   "Provide anaphoric RESULT bindings for duration of BODY.
 RESULT must be an expression which evaluates to a list of form:
   (EXITCODE STDOUT STDERR)
-Anaphroic bindings provided:
+Anaphoric bindings provided:
   result: the raw process result list
   exit: the exit code of the process
   invoked: t if process executed without an elisp error
