@@ -120,19 +120,26 @@ Setting it too high causes prints fewer status updates."
   "Seconds to wait between subprocess outputs before declaring process blocked."
   :type 'number)
 
-(defcustom elpaca-build-steps '(elpaca--clone
-                                elpaca--configure-remotes
-                                elpaca--checkout-ref
-                                elpaca--run-pre-build-commands
-                                elpaca--clone-dependencies
-                                elpaca--link-build-files
-                                elpaca--generate-autoloads-async
-                                elpaca--byte-compile
-                                elpaca--compile-info
-                                elpaca--install-info
-                                elpaca--add-info-path
-                                elpaca--run-post-build-commands
-                                elpaca--activate-package)
+(defcustom elpaca-aot-native-compilation nil
+  "When non-nil, add ahead of time native compilation to `elpaca-build-steps'."
+  :type 'boolean)
+
+(defcustom elpaca-build-steps
+  `(elpaca--clone
+    elpaca--configure-remotes
+    elpaca--checkout-ref
+    elpaca--run-pre-build-commands
+    elpaca--clone-dependencies
+    elpaca--link-build-files
+    elpaca--generate-autoloads-async
+    elpaca--byte-compile
+    ,@(and elpaca-aot-native-compilation (fboundp 'native-comp-available-p)
+           (native-comp-available-p) '(elpaca--native-compile))
+    elpaca--compile-info
+    elpaca--install-info
+    elpaca--add-info-path
+    elpaca--run-post-build-commands
+    elpaca--activate-package)
   "List of steps which are run when installing/building a package."
   :type '(repeat function))
 
@@ -1399,6 +1406,24 @@ Loads or caches autoloads."
                       e (format "Failed to load %S: %S" autoloads err) 'failed-to-activate))))
       (and (stringp key) (elpaca--signal e (concat "nonexistent :autoloads file \"" key "\"")))))
   (elpaca--continue-build e))
+
+(defun elpaca--native-compile (e)
+  "Native compile E's package."
+  ;; Assumes all dependencies are 'built
+  (let ((default-directory (elpaca<-build-dir e)))
+    (elpaca--signal e (concat "Native compiling " default-directory) 'native-compilation)
+    (elpaca--make-process e
+      :name "native-compile"
+      :command `(,(elpaca--emacs-path) "-Q" "-L" "."
+                 ,@(cl-loop for dep in (elpaca-dependencies (elpaca<-id e) '(emacs))
+                            for item = (elpaca-get dep)
+                            for build-dir = (and item (elpaca<-build-dir item))
+                            when build-dir append (list "-L" build-dir))
+                 ;; Inherit eln load-path in child process. Otherwise, default assumed.
+                 "--eval" ,(format "%S" `(setq native-comp-eln-load-path ',native-comp-eln-load-path))
+                 "--batch" "-f" "batch-native-compile"
+                 ,@(directory-files-recursively default-directory "\\.el$"))
+      :sentinel (apply-partially #'elpaca--process-sentinel "Native compilation complete" nil))))
 
 (defun elpaca--byte-compile (e)
   "Byte compile E's package."
