@@ -83,6 +83,8 @@ The following keys are recognized:
     Content of the early-init.el file.
     `user' is shorthand for `user-emacs-diretory'/early-init.el.
 
+  :args command line args
+
   :keep t or a list containing any of the following symbols:
     `builds'
     `cache'
