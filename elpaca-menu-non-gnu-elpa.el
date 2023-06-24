@@ -41,13 +41,11 @@
 
 (defun elpaca-menu-non-gnu-elpa--recipes ()
   "Return list of recipes from `elpaca-menu-non-gnu-elpa-url'."
-  (message "Downloading NonGNU ELPA recipes")
+  (message "Downloading NonGNU ELPA recipes...")
   (with-current-buffer (url-retrieve-synchronously elpaca-menu-non-gnu-elpa-url)
     (goto-char url-http-end-of-headers)
     (condition-case err
-        (prog1
-            (read (current-buffer))
-          (message "NonGNU ELPA recipes downloaded"))
+        (prog1 (read (current-buffer)) (message "NonGNU ELPA recipes downloaded"))
       ((error) (error "Unable to read NonGNU ELPA package file: %S" err)))))
 
 (declare-function dom-by-tag "dom")
@@ -67,46 +65,32 @@
                     (cons item (string-join s " "))))
                 rows)))))
 
-(defun elpaca-menu-non-gnu-elpa--index ()
-  "Return candidate list of available NonGNU ELPA recipes."
-  (cl-loop with metadata = (elpaca-menu-non-gnu-elpa--metadata)
-           for (id . props) in (elpaca-menu-non-gnu-elpa--recipes)
-           for url = (plist-get props :url)
-           collect (list id
-                         :source "NonGNU ELPA"
-                         :url url
-                         :description (or (alist-get id metadata) "n/a")
-                         :recipe `( :package ,(symbol-name id) :repo ,url :url ,url
-                                    ,@(when-let ((ignored (plist-get props :ignored-files)))
-                                        (unless (listp ignored) (setq ignored (list ignored)))
-                                        `(:files (:defaults (:exclude ,@ignored))))))))
-
-(defun elpaca-menu-non-gnu-elpa--write-cache ()
-  "Write NonGNU ELPA menu item cache."
-  (unless (file-exists-p elpaca-cache-directory)
-    (make-directory elpaca-cache-directory))
-  (elpaca--write-file elpaca-menu-non-gnu-elpa-cache-path
-    (prin1 (elpaca-menu-non-gnu-elpa--index))))
+(defun elpaca-menu-non-gnu-elpa--index (&optional recache)
+  "Return candidate list of available NonGNU ELPA recipes.
+If RECACHE is non-nil, recompute the cache."
+  (or (and (not recache) elpaca-menu-non-gnu-elpa--index-cache)
+      (prog1
+          (setq elpaca-menu-non-gnu-elpa--index-cache
+                (cl-loop with metadata = (elpaca-menu-non-gnu-elpa--metadata)
+                         for (id . props) in (elpaca-menu-non-gnu-elpa--recipes)
+                         for url = (plist-get props :url)
+                         collect (list id
+                                       :source "NonGNU ELPA"
+                                       :url url
+                                       :description (or (alist-get id metadata) "n/a")
+                                       :recipe `( :package ,(symbol-name id) :repo ,url :url ,url
+                                                  ,@(when-let ((ignored (plist-get props :ignored-files)))
+                                                      (unless (listp ignored) (setq ignored (list ignored)))
+                                                      `(:files (:defaults (:exclude ,@ignored))))))))
+        (unless (file-exists-p elpaca-cache-directory) (make-directory elpaca-cache-directory))
+        (elpaca--write-file elpaca-menu-non-gnu-elpa-cache-path elpaca-menu-non-gnu-elpa--index-cache))))
 
 ;;;###autoload
-(defun elpaca-menu-non-gnu-elpa (request &optional recurse)
+(defun elpaca-menu-non-gnu-elpa (request)
   "Delegate REQUEST.
 If REQUEST is `index`, return a recipe candidate alist.
-If REQUEST is `update`, update the NonGNU ELPA recipe cache.
-If RECURSE is non-nil, message that update succeeded."
-  (cond
-   ((eq request 'index)
-    (or elpaca-menu-non-gnu-elpa--index-cache
-        (progn
-          (elpaca-menu-non-gnu-elpa--write-cache)
-          (prog1
-              (setq elpaca-menu-non-gnu-elpa--index-cache
-                    (elpaca-menu-non-gnu-elpa--index))
-            (when recurse (message "NonGNU ELPA menu updated."))))))
-   ((eq request 'update)
-    (delete-file elpaca-menu-non-gnu-elpa-cache-path)
-    (setq elpaca-menu-non-gnu-elpa--index-cache nil)
-    (elpaca-menu-non-gnu-elpa 'index))))
+If REQUEST is `update`, update the NonGNU ELPA recipe cache."
+  (elpaca-menu-non-gnu-elpa--index (eq request 'update)))
 
 (provide 'elpaca-menu-non-gnu-elpa)
 ;;; elpaca-menu-non-gnu-elpa.el ends here
