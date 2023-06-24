@@ -39,7 +39,7 @@
 
 ;;; Code:
 (require 'elpaca)
-(defvar elpaca-test--keywords '(:args :before :dir :early-init :init :keep :name :ref))
+(defvar elpaca-test--keywords '(:args :before :dir :early-init :init :keep :name :ref :interactive))
 (eval-and-compile
   (defun elpaca-test--args (body)
     "Return arg plist from BODY."
@@ -83,6 +83,9 @@ The following keys are recognized:
     Content of the early-init.el file.
     `user' is shorthand for `user-emacs-diretory'/early-init.el.
 
+  :interactive t or nil
+    When non-nil, start an interactive Emacs session.
+
   :args command line args
 
   :keep t or a list containing any of the following symbols:
@@ -93,6 +96,7 @@ The following keys are recognized:
    If a symbol list, those specific `elpaca-directory' folders are not removed."
   (declare (indent 0))
   (let* ((args (elpaca-test--args body))
+         (interactivep (car (plist-get args :interactive)))
          (keep (car (plist-get args :keep)))
          (keep-all-p (eq keep t))
          (keep-builds-p (or keep-all-p (member 'builds keep)))
@@ -120,8 +124,10 @@ The following keys are recognized:
     (when-let (((listp keep))
                (err (cl-remove-if (lambda (el) (memq el '(builds cache repos))) keep)))
       (user-error "Unknown :keep value %S" err))
-    `(let ((default-directory ,(if dir `(expand-file-name ,dir temporary-file-directory)
-                                 '(make-temp-file "elpaca." 'directory))))
+    `(let* ((default-directory ,(if dir `(expand-file-name ,dir temporary-file-directory)
+                                  '(make-temp-file "elpaca." 'directory)))
+            (procname (format "elpaca-test-%s" default-directory))
+            (interactivep ,interactivep))
        (unless (file-exists-p default-directory) (make-directory default-directory 'parents))
        (elpaca-test--delete-files ',`(,@(unless keep-builds-p (list test-builds))
                                       ,@(unless keep-repos-p  (list test-repos))
@@ -179,14 +185,16 @@ The following keys are recognized:
          (write-file (expand-file-name "./init.el")))
        ,@(plist-get args :before)
        (make-process
-        :name "elpaca-test"
+        :name procname
+        :buffer (unless interactivep (generate-new-buffer (format "*%s*" procname)))
         :command (list ,(elpaca--emacs-path)
                        ,@(if-let ((args (plist-get args :args)))
                              (unless (equal args '(nil)) args)
                            '("--debug-init"))
-                       ,@(if (< emacs-major-version 29)
-                             `("-q" ; Approximate startup.el sequence
-                               "--eval" "(setq debug-on-error t)"
+                       ,@(if (not interactivep) '("--batch"))
+                       ,@(if (or (not interactivep) (< emacs-major-version 29))
+                             `("-Q" ; Approximate startup.el sequence
+                               "--eval" "(setq debug-on-error t after-init-time nil)"
                                "--eval" (format "(setq user-emacs-directory %S)" default-directory)
                                ,@(when early '("-l" "./early-init.el"))
                                "--eval" "(run-hooks 'before-init-hook)"
@@ -194,7 +202,13 @@ The following keys are recognized:
                                "--eval" "(setq after-init-time (current-time))"
                                "--eval" "(run-hooks 'after-init-hook)"
                                "--eval" "(run-hooks 'emacs-startup-hook)")
-                           '((format "--init-directory=%s" default-directory)))))
+                           '((format "--init-directory=%s" default-directory))))
+        :sentinel (lambda (process event)
+                    (when-let (((member (process-status process) '(exit signal failed)))
+                               (buffer (process-buffer process))
+                               ((buffer-live-p buffer)))
+                      (run-with-idle-timer 1 nil (lambda () (pop-to-buffer buffer)
+                                                   (goto-char (point-min)))))))
        (message "testing Elpaca @ %s in %s"
                 ,@(or (and ref (not localp) (list ref))
                       `((let ((default-directory (expand-file-name "repos/elpaca/" elpaca-directory)))
