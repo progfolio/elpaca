@@ -51,7 +51,7 @@
         (elpaca-process-call "git" "clone" "--depth=1"
                              elpaca-menu-gnu-elpa-mirror-address
                              elpaca-menu-gnu-elpa-mirror-path)
-      (message "%s" (if success "GNU ELPA recipes downloaded." stderr)))))
+      (message "%s" (if success "Downloading GNU ELPA recipes...100%" stderr)))))
 
 (defun elpaca-menu-gnu-elpa-mirror--update ()
   "Update recipes in GNU ELPA menu."
@@ -66,7 +66,7 @@
   (when (libxml-available-p)
     (require 'url)
     (require 'dom)
-    (with-current-buffer (url-retrieve-synchronously "https://elpa.gnu.org/packages/")
+    (with-current-buffer (url-retrieve-synchronously "https://elpa.gnu.org/packages/" 'silent)
       (when-let ((html (libxml-parse-html-region (point-min) (point-max)))
                  (rows (dom-by-tag html 'tr)))
         (pop rows) ;discard table headers

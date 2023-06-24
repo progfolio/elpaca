@@ -65,7 +65,7 @@
              (elpaca-process-call "git" "branch" "--set-upstream-to" "origin/master" "master")))
            (err (car (cl-remove-if #'zerop (delq nil processes) :key #'car))))
       (when err (error "Unable to clone MELPA: %S" err))
-      (message "MELPA recipes downloaded."))))
+      (message "Downloading MELPA recipes...100%%"))))
 
 (defun elpaca-menu-melpa--update ()
   "Update recipes in MELPA menu."
@@ -115,8 +115,7 @@
                          for candidate = (elpaca-menu-melpa--convert file metadata)
                          when candidate collect candidate))
         (elpaca--write-file (expand-file-name "melpa.eld" elpaca-cache-directory)
-          (prin1 elpaca-menu-melpa--index-cache))
-        (message "MELPA menu index cached"))))
+          (prin1 elpaca-menu-melpa--index-cache)))))
 
 ;;;###autoload
 (defun elpaca-menu-melpa (request)

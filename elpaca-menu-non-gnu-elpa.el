@@ -42,10 +42,10 @@
 (defun elpaca-menu-non-gnu-elpa--recipes ()
   "Return list of recipes from `elpaca-menu-non-gnu-elpa-url'."
   (message "Downloading NonGNU ELPA recipes...")
-  (with-current-buffer (url-retrieve-synchronously elpaca-menu-non-gnu-elpa-url)
+  (with-current-buffer (url-retrieve-synchronously elpaca-menu-non-gnu-elpa-url 'silent)
     (goto-char url-http-end-of-headers)
     (condition-case err
-        (prog1 (read (current-buffer)) (message "NonGNU ELPA recipes downloaded"))
+        (prog1 (read (current-buffer)) (message "Downloading NonGNU ELPA recipes...100%%"))
       ((error) (error "Unable to read NonGNU ELPA package file: %S" err)))))
 
 (declare-function dom-by-tag "dom")
@@ -54,7 +54,7 @@
   "Return alist of package metadata."
   (when (libxml-available-p)
     (require 'dom)
-    (with-current-buffer (url-retrieve-synchronously "https://elpa.nongnu.org/nongnu/")
+    (with-current-buffer (url-retrieve-synchronously "https://elpa.nongnu.org/nongnu/" 'silent)
       (when-let ((html (libxml-parse-html-region (point-min) (point-max)))
                  (rows (dom-by-tag html 'tr)))
         (pop rows) ;discard table headers
