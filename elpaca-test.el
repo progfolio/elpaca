@@ -72,7 +72,7 @@ The following keys are recognized:
 
   :ref git ref to check out or `local' to use local copy in current repo state
 
-  :dir `user-emacs-directory' name expanded in `temporary-file-directory'.
+  :dir `user-emacs-directory' name expanded in the temporary file directory.
     Only relative paths are accepted.
 
   :init `user', (:file \"path/to/init.el\") or forms...
