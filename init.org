@@ -705,7 +705,8 @@ https://github.com/emacs-evil/evil-collection
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package evil-collection
-  :elpaca (:remotes ("fork" :repo "progfolio/evil-collection"))
+  :elpaca (:remotes ("origin"
+                     ("fork" :repo "progfolio/evil-collection")))
   :after (evil)
   :config (evil-collection-init)
   :custom
