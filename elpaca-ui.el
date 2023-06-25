@@ -110,6 +110,12 @@ exclamation point to it. e.g. !#installed."
                      ((< emacs-major-version 29) #'button-buttonize)
                      (t #'buttonize))))
 
+(defcustom elpaca-ui-waiting-indicator
+  (elpaca-ui--buttonize "⚠️" (lambda (&rest _) (call-interactively #'keyboard-quit))
+                        nil "Blocking due to elpaca-wait. \\[keyboard-quit] to quit.")
+  "Indicator shown in progress bar when `elpaca-wait' is polling."
+  :type (or 'string 'nil))
+
 ;;;; Variables:
 (defvar-local elpaca-ui--search-timer nil "Timer to debounce search input.")
 (defvar-local elpaca-ui--marked-packages nil
@@ -196,7 +202,8 @@ It receives one argument, the parsed search query list.")
    do (setq counts (concat counts " " count) total (+ total plen))
    (when (memq s '(finished failed)) (cl-incf finalized plen))
    finally return
-   (concat counts "|" (format "%6.2f%%%%" (* 100 (/ (float finalized) (max total 1)))) "|")))
+   (concat (when elpaca--waiting elpaca-ui-waiting-indicator)
+           counts "|" (format "%6.2f%%%%" (* 100 (/ (float finalized) (max total 1)))) "|")))
 
 (defvar elpaca-ui--header-line-matching (propertize "matching:" 'face '(:weight bold)))
 (defun elpaca-ui--header-line (&optional prefix)
