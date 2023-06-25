@@ -483,12 +483,6 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
   (init (not after-init-time))
   process log builtp)
 
-(defmacro elpaca--required-arg (try info)
-  "TRY to set arg. If error, fail E with INFO."
-  (declare (indent 1) (debug t))
-  `(condition-case err ,try
-     ((error) (setq status 'struct-failed info (format ,info err)) nil)))
-
 (defun elpaca--queued (&optional n)
   "Return list of elpacas from Nth queue.
 If N is nil return a list of all queued elpacas."
@@ -538,9 +532,14 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
   (let* ((status 'queued)
          (info "Package queued")
          (id (elpaca--first order))
-         (recipe (elpaca--required-arg (elpaca-recipe order) "No recipe: %S"))
-         (repo-dir (and recipe (elpaca--required-arg (elpaca-repo-dir recipe)
-                                 "Unable to determine repo dir: %S")))
+         (recipe (condition-case err (elpaca-recipe order)
+                   ((error) (setq status 'struct-failed
+                                  info (format "No recipe: %S" err))
+                    nil)))
+         (repo-dir (and recipe (condition-case err (elpaca-repo-dir recipe)
+                                 ((error) (setq status 'struct-failed
+                                                info (format "Unable to determine repo dir: %S" err))
+                                  nil))))
          (build-dir (and recipe (elpaca-build-dir recipe)))
          (clonedp (and repo-dir (file-exists-p repo-dir)))
          (builtp (and clonedp build-dir (file-exists-p build-dir)))
