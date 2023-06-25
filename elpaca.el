@@ -532,11 +532,11 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
   (let* ((status 'queued)
          (info "Package queued")
          (id (elpaca--first order))
-         (recipe (condition-case err (elpaca-recipe order)
+         (recipe (condition-case-unless-debug err (elpaca-recipe order)
                    ((error) (setq status 'struct-failed
                                   info (format "No recipe: %S" err))
                     nil)))
-         (repo-dir (and recipe (condition-case err (elpaca-repo-dir recipe)
+         (repo-dir (and recipe (condition-case-unless-debug err (elpaca-repo-dir recipe)
                                  ((error) (setq status 'struct-failed
                                                 info (format "Unable to determine repo dir: %S" err))
                                   nil))))
