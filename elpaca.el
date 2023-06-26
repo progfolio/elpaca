@@ -632,6 +632,7 @@ check (and possibly change) their statuses."
   (unless (eq (elpaca--status e) 'failed)
     (let ((q (elpaca--q e)))
       (setf (elpaca-q<-forms q) (assq-delete-all (elpaca<-id e) (elpaca-q<-forms q))))
+    (when-let ((p (elpaca<-process e)) ((process-live-p p))) (kill-process p))
     (elpaca--signal e reason 'failed)
     (elpaca--finalize e)))
 
