@@ -111,8 +111,9 @@ exclamation point to it. e.g. !#installed."
                      (t #'buttonize))))
 
 (defcustom elpaca-ui-waiting-indicator
-  (elpaca-ui--buttonize "⚠️" (lambda (&rest _) (call-interactively #'keyboard-quit))
-                        nil "Blocking due to elpaca-wait. \\[keyboard-quit] to quit.")
+  (propertize
+   (elpaca-ui--buttonize "⚠️" (lambda (&rest _) (call-interactively #'keyboard-quit)) nil)
+   'help-echo "Blocking due to elpaca-wait. \\[keyboard-quit] to quit.")
   "Indicator shown in progress bar when `elpaca-wait' is polling."
   :type (or 'string 'nil))
 
