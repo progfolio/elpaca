@@ -1483,12 +1483,15 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
       (elpaca-log "#unique !finished")
       (sit-for elpaca-wait-interval))
     (elpaca-process-queues)
-    (unwind-protect
+    (condition-case nil
         (while (not (eq (elpaca-q<-status q) 'complete))
           (discard-input)
           (sit-for elpaca-wait-interval))
-      (elpaca-split-queue)
-      (setq elpaca--waiting nil))))
+      (quit (mapcar (lambda (it) (let ((e (cdr it))) (unless (eq (elpaca--status e) 'finished)
+                                                       (elpaca--fail e "User quit"))))
+                    (elpaca-q<-elpacas q))))
+    (elpaca-split-queue)
+    (setq elpaca--waiting nil)))
 
 (defun elpaca--maybe-log (condition &rest queries)
   "Log latest QUERIES when CONDITION is non-nil."
