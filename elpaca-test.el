@@ -39,29 +39,94 @@
 
 ;;; Code:
 (require 'elpaca)
+(require 'url)
 (defvar elpaca-test--keywords '(:args :before :dir :early-init :init :keep :name :ref :interactive))
-(eval-and-compile
-  (defun elpaca-test--args (body)
-    "Return arg plist from BODY."
-    (cl-loop with (acc results)
-             for form in (reverse body)
-             for flushp = (keywordp form)
-             when (and flushp (not (memq form elpaca-test--keywords)))
-             do (user-error "Unrecognized keyword %s" form)
-             do (if (not flushp)
-                    (push form acc)
-                  (push acc results)
-                  (setq acc nil)
-                  (push form results))
-             finally do (when acc (user-error "Missing first keyword"))
-             finally return results))
 
-  (defun elpaca-test--delete-files (files)
-    "Delete FILES."
-    (dolist (path files)
-      (when-let ((expanded (expand-file-name path)))
-        (if (file-directory-p expanded) (delete-directory expanded 'recursive)
-          (delete-file expanded))))))
+(defun elpaca-test--args (body)
+  "Return arg plist from BODY."
+  (cl-loop with (acc results)
+           for form in (reverse body)
+           for flushp = (keywordp form)
+           when (and flushp (not (memq form elpaca-test--keywords)))
+           do (user-error "Unrecognized keyword %s" form)
+           do (if (not flushp)
+                  (push form acc)
+                (push acc results)
+                (setq acc nil)
+                (push form results))
+           finally do (when acc (user-error "Missing first keyword"))
+           finally return results))
+
+(defun elpaca-test--form (args)
+  "Return test form string from ARGS."
+  (let ((form `(elpaca-test ,@(cl-loop for (k v) on args by #'cddr append `(,k ,@v)))))
+    (with-temp-buffer
+      (if (fboundp 'pp-emacs-lisp-code)
+          (pp-emacs-lisp-code form)
+        (insert (pp-to-string form)))
+      (buffer-string))))
+
+(defun elpaca-test--dir (&optional name)
+  "Return valid test directory from NAME.
+Creates a temporary dir if NAME is nil."
+  (if-let ((name)
+           (expanded (file-name-as-directory (expand-file-name name)))
+           ((or (not (equal expanded (file-name-as-directory name)))
+                (user-error ":dir must be relative path")))
+           ((or (not (equal expanded (expand-file-name user-emacs-directory)))
+                (user-error ":dir cannot be user-emacs-directory"))))
+      (expand-file-name name temporary-file-directory)
+    (make-temp-file "elpaca." 'directory)))
+
+(defvar url-http-end-of-headers)
+(defvar url-http-response-status)
+(defconst elpaca-test--upstream-format
+  "https://raw.githubusercontent.com/progfolio/elpaca/%s/doc/init.el"
+  "Format string for upstream URL. @TODO: don't hardcode this.")
+(defun elpaca-test--upstream-init (&optional ref)
+  "Return upstream REF's init.el body as a string."
+  (let ((url (format elpaca-test--upstream-format (or ref "master"))))
+    (with-current-buffer (url-retrieve-synchronously url nil 'inhibit-cookies)
+      (unless (equal url-http-response-status 200)
+        (error "Unable to download %S %S" url url-http-response-status))
+      (delete-region (point-min) url-http-end-of-headers)
+      (string-trim (buffer-substring-no-properties (point-min) (point-max))))))
+
+(defun elpaca-test--copy-local-store ()
+  "Copy host `elpaca-directory' store to test env."
+  (cl-loop with env = (expand-file-name "./elpaca/")
+           for path in '("./repos/elpaca" "./builds/elpaca" "./cache/")
+           do (when-let ((local (expand-file-name path elpaca-directory))
+                         ((file-exists-p local)))
+                (copy-directory local (expand-file-name path env) nil t t))))
+
+(defun elpaca-test--format-output-buffer (buffer test)
+  "Format TEST output BUFFER ."
+  (let ((standard-output (get-buffer-create buffer))
+        print-circle print-length)
+    (princ "<!-- copy buffer contents to issue comment or new issue -->\n")
+    (princ "<details open><summary>Test Case</summary>\n\n```emacs-lisp\n")
+    (princ test)
+    (princ "```\n\n</details>\n<details><summary>Host Env</summary>\n\n<table>\n")
+    (cl-loop for (cat . info) in (elpaca-version)
+             do (princ (format "<tr><td>%s</td><td>%s</td>\n" cat
+                               (string-trim (replace-regexp-in-string "\n" "" (format "%s" info))))))
+    (princ "</table>\n</details>\n\n<details><summary>Output</summary>\n\n```emacs-lisp\n")))
+
+(defun elpaca-test--sentinel (process _)
+  "Prepare post-test PROCESS buffer output, display, test environment.
+If DELETE is non-nil, delete test environment."
+  (when-let (((member (process-status process) '(exit signal failed)))
+             (buffer (process-buffer process))
+             ((buffer-live-p buffer)))
+    (with-current-buffer buffer (insert "```\n</details>")
+                         (when (fboundp 'markdown-mode) (markdown-mode)))
+    (when-let ((vars (process-get process :vars))
+               ((not (car-safe (plist-get vars :keep))))
+               (dir (plist-get vars :computed-dir)))
+      (message "Removing Elpaca test env: %S" dir)
+      (delete-directory dir 'recursive))
+    (run-with-idle-timer 1 nil (lambda () (pop-to-buffer buffer) (goto-char (point-min))))))
 
 ;;;###autoload
 (defmacro elpaca-test (&rest body)
@@ -73,104 +138,56 @@ The following keys are recognized:
   :ref git ref to check out or `local' to use local copy in current repo state
 
   :dir `user-emacs-directory' name expanded in the temporary file directory.
-    Only relative paths are accepted.
 
   :init `user', (:file \"path/to/init.el\") or forms...
     Content of the init.el file.
     `user' is shorthand for `user-emacs-diretory'/init.el.
 
-  :early-init `user', (:file \"path/to/early-init.el\") or forms...
-    Content of the early-init.el file.
-    `user' is shorthand for `user-emacs-diretory'/early-init.el.
+  :early-init Content of the init.el file. Accepts same args as :init.
 
-  :interactive t or nil
-    When non-nil, start an interactive Emacs session.
+  :interactive t or nil. When non-nil, start an interactive Emacs session.
 
-  :args command line args
+  :args String... Emacs subprocess command line args
 
-  :keep t or a list containing any of the following symbols:
-    `builds'
-    `cache'
-    `repos'
-   If t, the directory is left in the state it was in as of last run.
-   If a symbol list, those specific `elpaca-directory' folders are not removed."
+  :keep t or nil. When non-nil, do prevent test environment deletion after test."
   (declare (indent 0))
+  (unless lexical-binding (user-error "Lexical binding required for elpaca-test"))
   (let* ((args (elpaca-test--args body))
-         (interactivep (car (plist-get args :interactive)))
-         (keep (car (plist-get args :keep)))
-         (keep-all-p (eq keep t))
-         (keep-builds-p (or keep-all-p (member 'builds keep)))
-         (keep-cache-p  (or keep-all-p (member 'cache  keep)))
-         (keep-repos-p  (or keep-all-p (member 'repos  keep)))
+         (batchp (not (car (plist-get args :interactive))))
+         (test (and batchp (elpaca-test--form args)))
          (init (plist-get args :init))
-         (init-filep (or (eq (car-safe (car-safe init)) :file)
-                         (eq (car-safe init) 'user)))
+         (init-filep (or (and (eq (car-safe (car-safe init)) :file) 'file)
+                         (and (eq (car-safe init) 'user) 'user)))
          (early (plist-get args :early-init))
-         (early-filep (or (eq (car-safe (car-safe early)) :file)
-                          (eq (car-safe early) 'user)))
+         (early-filep (or (and (eq (car-safe (car-safe early)) :file) 'file)
+                          (and (eq (car-safe early) 'user) 'user)))
          (ref (car (plist-get args :ref)))
          (localp (eq ref 'local))
-         (test-builds "./elpaca/builds/")
-         (test-repos "./elpaca/repos/")
-         (test-cache "./elpaca/cache/")
-         (dir (car (plist-get args :dir)))
-         print-length print-circle print-level)
-    (when-let ((dir)
-               (expanded (file-name-as-directory (expand-file-name dir))))
-      (when (equal expanded (file-name-as-directory dir))
-        (user-error ":dir must be relative path"))
-      (when (equal expanded (expand-file-name user-emacs-directory))
-        (user-error ":dir cannot be user-emacs-directory")))
-    (when-let (((listp keep))
-               (err (cl-remove-if (lambda (el) (memq el '(builds cache repos))) keep)))
-      (user-error "Unknown :keep value %S" err))
-    `(let* ((default-directory ,(if dir `(expand-file-name ,dir temporary-file-directory)
-                                  '(make-temp-file "elpaca." 'directory)))
-            (procname (format "elpaca-test-%s" default-directory))
-            (interactivep ,interactivep))
+         (procname (make-symbol "procname"))
+         print-length print-circle print-level
+         eval-expression-print-level eval-expression-print-length)
+    `(let* ((default-directory (elpaca-test--dir ,(car (plist-get args :dir))))
+            (,procname (format "elpaca-test-%s" default-directory))
+            (buffer ,@(if batchp `((generate-new-buffer ,procname)) '(nil))))
        (unless (file-exists-p default-directory) (make-directory default-directory 'parents))
-       (elpaca-test--delete-files ',`(,@(unless keep-builds-p (list test-builds))
-                                      ,@(unless keep-repos-p  (list test-repos))
-                                      ,@(unless keep-cache-p  (list test-cache))
-                                      "./early-init.el"
-                                      "./init.el"
-                                      ,@(and localp '("./elpaca/repos/elpaca"
-                                                      "./elpaca/builds/elpaca"))))
-       ,@(when localp
-           '((dolist (path '("./repos/elpaca" "./builds/elpaca" "./cache/"))
-               (when-let ((local (expand-file-name path elpaca-directory))
-                          ((file-exists-p local)))
-                 (copy-directory local (expand-file-name path (expand-file-name "./elpaca/"))
-                                 nil 'parents 'copy-contents)))))
-       ,@(when early
-           `((with-temp-buffer
-               ,@(if early-filep
-                     `((insert-file-contents
-                        (expand-file-name ,(if (eq (car-safe early) 'user)
-                                               (locate-user-emacs-file "./early-init.el")
-                                             (cadar early)))))
-                   `((insert ,(pp-to-string `(progn ,@early)))))
-               (write-file (expand-file-name "./early-init.el")))))
-       (with-temp-buffer
+       ,@(when localp '((elpaca-test--copy-local-store)))
+       ,@(when early `((with-temp-file (expand-file-name "./early-init.el")
+                         ,@(if early-filep
+                               `((insert-file-contents
+                                  (expand-file-name ,(if (eq early-filep 'user)
+                                                         (locate-user-emacs-file "./early-init.el")
+                                                       (cadar early)))))
+                             `((insert ,(pp-to-string `(progn ,@early))))))))
+       (with-temp-file (expand-file-name "./init.el")
          ,@`(,(cond
-               (init-filep `(insert-file-contents
-                             (expand-file-name ,(if (eq (car-safe init) 'user)
-                                                    (locate-user-emacs-file "./init.el")
-                                                  (cadar init)))))
+               (init-filep `(insert-file-contents (expand-file-name ,(if (eq init-filep 'user)
+                                                                         (locate-user-emacs-file "./init.el")
+                                                                       (cadar init)))))
                (localp '(insert-file-contents
                          (expand-file-name "./repos/elpaca/doc/init.el" elpaca-directory)))
                ;;@TODO :repo arg which alllows to specify different URL.
                ;; Would also need to search/replace :repo in demo init.
-               (t `(let ((url ,(format "https://raw.githubusercontent.com/progfolio/elpaca/%s/doc/init.el" (or ref "master"))))
-                     (defvar url-http-end-of-headers)
-                     (defvar url-http-response-status)
-                     (insert
-                      (with-current-buffer (url-retrieve-synchronously url nil 'inhibit-cookies)
-                        (unless (equal url-http-response-status 200)
-                          (error "Unable to download %S %S" url
-                                 url-http-response-status))
-                        (delete-region (point-min) url-http-end-of-headers)
-                        (string-trim (buffer-string))))))))
+               (t `(insert (elpaca-test--upstream-init ,ref)))))
          ,@(unless (or (null ref) init-filep localp)
              `((goto-char (point-min))
                (re-search-forward ":ref nil")
@@ -181,39 +198,39 @@ The following keys are recognized:
                (re-search-backward "^;; Install" nil 'noerror)
                (delete-region (point) (point-max))
                (insert ,(pp-to-string `(progn ,@init)))))
-         (elisp-enable-lexical-binding)
-         (write-file (expand-file-name "./init.el")))
-       ,@(plist-get args :before)
-       (make-process
-        :name procname
-        :buffer (unless interactivep (generate-new-buffer (format "*%s*" procname)))
-        :command (list ,(elpaca--emacs-path)
-                       ,@(if-let ((args (plist-get args :args)))
-                             (unless (equal args '(nil)) args)
-                           '("--debug-init"))
-                       ,@(if (not interactivep) '("--batch"))
-                       ,@(if (or (not interactivep) (< emacs-major-version 29))
-                             `("-Q" ; Approximate startup.el sequence
-                               "--eval" "(setq debug-on-error t after-init-time nil)"
-                               "--eval" (format "(setq user-emacs-directory %S)" default-directory)
-                               ,@(when early '("-l" "./early-init.el"))
-                               "--eval" "(run-hooks 'before-init-hook)"
-                               "-l" "./init.el"
-                               "--eval" "(setq after-init-time (current-time))"
-                               "--eval" "(run-hooks 'after-init-hook)"
-                               "--eval" "(run-hooks 'emacs-startup-hook)")
-                           '((format "--init-directory=%s" default-directory))))
-        :sentinel (lambda (process event)
-                    (when-let (((member (process-status process) '(exit signal failed)))
-                               (buffer (process-buffer process))
-                               ((buffer-live-p buffer)))
-                      (run-with-idle-timer 1 nil (lambda () (pop-to-buffer buffer)
-                                                   (goto-char (point-min)))))))
-       (message "testing Elpaca @ %s in %s"
-                ,@(or (and ref (not localp) (list ref))
+         (elisp-enable-lexical-binding))
+       (let ((default-directory default-directory)) ,@(plist-get args :before))
+       (when buffer (elpaca-test--format-output-buffer buffer ,test))
+       (process-put
+        (make-process
+         :name ,procname
+         :buffer buffer
+         :command (list ,(elpaca--emacs-path)
+                        ,@(if-let ((args (plist-get args :args)))
+                              (unless (equal args '(nil)) args)
+                            '("--debug-init"))
+                        ,@(if batchp '("--batch"))
+                        ,@(if (or batchp (< emacs-major-version 29))
+                              `("-Q" ; Approximate startup.el sequence
+                                "--eval" "(setq debug-on-error t after-init-time nil)"
+                                "--eval" (format "(setq user-emacs-directory %S)" default-directory)
+                                ,@(when early '("-l" "./early-init.el"))
+                                "--eval" "(run-hooks 'before-init-hook)"
+                                "-l" "./init.el"
+                                "--eval" "(setq after-init-time (current-time))"
+                                "--eval" "(run-hooks 'after-init-hook)"
+                                "--eval" "(run-hooks 'emacs-startup-hook)"
+                                "--eval" "(message \"\n Test Env\n\")"
+                                "--eval" "(elpaca-version 'message)")
+                            '((format "--init-directory=%s" default-directory))))
+         :sentinel #'elpaca-test--sentinel)
+        :vars `(:computed-dir ,default-directory ,@',args))
+       (message "Testing Elpaca @ %s in %s"
+                ,@(if localp
                       `((let ((default-directory (expand-file-name "repos/elpaca/" elpaca-directory)))
-                          (concat (and ,localp (or (ignore-errors (elpaca-process-output "git" "diff" "--quiet")) "DIRTY "))
-                                  (string-trim (elpaca-process-output "git" "log" "--pretty=%h %D" "-1"))))))
+                          (concat (or (ignore-errors (elpaca-process-output "git" "diff" "--quiet")) "DIRTY ")
+                                  (string-trim (elpaca-process-output "git" "log" "--pretty=%h %D" "-1")))))
+                    `(,(or ref "master")))
                 default-directory))))
 
 (provide 'elpaca-test)
