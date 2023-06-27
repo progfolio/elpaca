@@ -1955,16 +1955,22 @@ If NOTRY is non-nil do not include `elpaca-try' recipes."
       (browse-url url)))
 
 ;;;###autoload
-(defun elpaca-version (&optional message)
+(defun elpaca-version (&optional output)
   "Return Elpaca version information string.
-If MESSAGE is non-nil, the information is messaged."
-  (interactive '(t))
+OUTPUT may be any of the following:
+  - nil Return raw alist of form ((category . info) ...)
+  - `string' Return formmatted string.
+  - `message' (used when called interactively) to message formatted string."
+  (interactive '(message))
   (let* ((default-directory (expand-file-name "elpaca/" elpaca-repos-directory))
          (git  (string-trim (elpaca-process-output "git" "--version")))
          (repo (string-trim (elpaca-process-output "git" "log" "--pretty=%h %D" "-1")))
-         (info (format "Elpaca %s\ninstaller:      %S\nemacs-version:  %s\ngit --version:  %s"
-                       repo elpaca-installer-version (emacs-version) git)))
-    (if message (message "%s" info) info)))
+         (info (list (cons 'elpaca repo) (cons 'isntaller elpaca-installer-version)
+                     (cons 'emacs (emacs-version)) (cons 'git git))))
+    (when (member output '(message string))
+      (setq info (format "Elpaca %s\ninstaller:      %S\nemacs-version:  %s\ngit --version:  %s"
+                         repo elpaca-installer-version (emacs-version) git)))
+    (if (eq output 'message) (message "%s" info) info)))
 
 (provide 'elpaca)
 ;;; elpaca.el ends here
