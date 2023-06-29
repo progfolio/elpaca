@@ -49,35 +49,62 @@
   "List of actions which can be taken on packages."
   :type 'list)
 
-(defcustom elpaca-ui-search-tags
-  '((dirty     . (lambda (items) (cl-remove-if-not #'elpaca-worktree-dirty-p items :key #'car)))
-    (declared  . (lambda (items) (cl-remove-if-not #'elpaca-declared-p items :key #'car)))
-    (orphan    . (lambda (_)
-                   (mapcar (lambda (dir)
-                             (let ((name (file-name-nondirectory (directory-file-name dir))))
-                               (list (intern name) (vector (propertize name 'orphan-dir dir)
-                                                           "orphan package" "n/a" "n/a" "n/a"))))
-                           (cl-set-difference
-                            (cl-remove-if-not
-                             #'file-directory-p
-                             (nthcdr 2 (mapcar #'file-name-as-directory
-                                               (directory-files elpaca-repos-directory t))))
-                            (mapcar (lambda (q) (elpaca<-repo-dir (cdr q))) (elpaca--queued))
-                            :test #'equal))))
-    (unique    . (lambda (items) (cl-remove-duplicates items :key #'car :from-end t)))
-    (random    . (lambda (items &optional limit)
-                   (if (< (length items) (or limit 10))
-                       items
-                     (cl-loop with (results seen)
-                              until (= (length results) (or limit 10))
-                              for n = (random (length items))
-                              unless (memq n seen) do (push (nth n items) results)
-                              (push n seen)
-                              finally return results))))
-    (installed . (lambda (items) (cl-remove-if-not #'elpaca-installed-p items :key #'car)))
-    (marked    . (lambda (items) (cl-loop for (item . _) in elpaca-ui--marked-packages
-                                          collect (assoc item items)))))
+(defvar-local elpaca-ui--marked-packages nil
+  "List of marked packages. Each element is a cons of (PACKAGE . ACTION).")
 
+(defun elpaca-ui--tag-dirty (items)
+  "Return ITEMS with dirty worktree."
+  (cl-remove-if-not #'elpaca-worktree-dirty-p items :key #'car))
+
+(defun elpaca-ui--tag-declared (items)
+  "Return ITEMS which are declared during init."
+  (cl-remove-if-not #'elpaca-declared-p items :key #'car))
+
+(defun elpaca-ui--tag-orphan (_)
+  "Return ITEMS which are not being tried or declared."
+  (mapcar (lambda (dir)
+            (let ((name (file-name-nondirectory (directory-file-name dir))))
+              (list (intern name) (vector (propertize name 'orphan-dir dir)
+                                          "orphan package" "n/a" "n/a" "n/a"))))
+          (cl-set-difference
+           (cl-remove-if-not
+            #'file-directory-p
+            (nthcdr 2 (mapcar #'file-name-as-directory
+                              (directory-files elpaca-repos-directory t))))
+           (mapcar (lambda (q) (elpaca<-repo-dir (cdr q))) (elpaca--queued))
+           :test #'equal)))
+
+(defun elpaca-ui--tag-random (items &optional limit)
+  "Return LIMIT random ITEMS."
+  (if (< (length items) (or limit 10))
+      items
+    (cl-loop with (results seen)
+             until (= (length results) (or limit 10))
+             for n = (random (length items))
+             unless (memq n seen) do (push (nth n items) results)
+             (push n seen)
+             finally return results)))
+
+(defun elpaca-ui--tag-installed (items)
+  "Return installed ITEMS."
+  (cl-remove-if-not #'elpaca-installed-p items :key #'car))
+
+(defun elpaca-ui--tag-marked (items)
+  "Return list of marked ITEMS."
+  (cl-loop for (item . _) in elpaca-ui--marked-packages
+           collect (assoc item items)))
+
+(defun elpaca-ui--tag-unique (items)
+  "Return last occurrence of each ITEMS."
+  (cl-remove-duplicates items :key #'car :from-end t))
+
+(defcustom elpaca-ui-search-tags '((dirty     . elpaca-ui--tag-dirty)
+                                   (declared  . elpaca-ui--tag-declared)
+                                   (orphan    . elpaca-ui--tag-orphan)
+                                   (unique    . elpaca-ui--tag-unique)
+                                   (random    . elpaca-ui--tag-random)
+                                   (installed . elpaca-ui--tag-installed)
+                                   (marked    . elpaca-ui--tag-marked))
   "Alist of search tags.
 Each cell is of form (NAME FILTER).
 FILTER must be a unary function which takes a list of menu items and returns a
@@ -119,8 +146,6 @@ exclamation point to it. e.g. !#installed."
 
 ;;;; Variables:
 (defvar-local elpaca-ui--search-timer nil "Timer to debounce search input.")
-(defvar-local elpaca-ui--marked-packages nil
-  "List of marked packages. Each element is a cons of (PACKAGE . ACTION).")
 (defvar-local elpaca-ui--prev-entry-count nil "Number of previously recorded entries.")
 (defvar elpaca-ui-mode-map
   (let ((m (make-sparse-keymap)))

@@ -33,10 +33,13 @@
 (defcustom elpaca-log-default-search-query ".*" "Default query for `elpaca-log-buffer'."
   :type 'string :group 'elpaca-ui)
 
+(defun elpaca-log--tag-latest (items)
+  "Log latest ITEMS."
+  (butlast (reverse (sort (copy-tree items) #'elpaca-log--sort-chronologically))
+           elpaca-ui--prev-entry-count))
 (defcustom elpaca-log-search-tags
   '((verbosity . elpaca-log--verbosity)
-    (latest    . (lambda (items) (butlast (reverse (sort (copy-tree items) #'elpaca-log--sort-chronologically))
-                                          elpaca-ui--prev-entry-count)))
+    (latest . elpaca-log--tag-latest)
     (linked-errors . elpaca-log--byte-comp-warnings)
     (update-log . elpaca-log--updates))
   "Alist of search tags (see `elpaca-ui-search-tags') exclusive to the log buffer."

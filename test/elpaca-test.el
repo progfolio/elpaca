@@ -80,6 +80,7 @@
     (setq elpaca--menu-items-cache nil)
     (should-not (elpaca-menu-item nil 'elpaca '(ignore)))))
 
+(defun elpaca-test--no-inheritance (order) '(:inherit nil))
 (ert-deftest elpaca-recipe ()
   "Compute recipe from ORDER."
   (let ((elpaca-recipe-functions nil))
@@ -88,12 +89,12 @@
              (elpaca-recipe '(elpaca :host github :repo "progfolio/elpaca" :inherit nil))
              '(:package "elpaca" :host github :repo "progfolio/elpaca" :inherit nil)))
     ;; basic default inheritance
-    (let ((elpaca-order-functions '((lambda (order) '(:inherit nil)))))
+    (let ((elpaca-order-functions '(elpaca-test--no-inheritance)))
       (should (elpaca-test--plist-equal-p
                (elpaca-recipe '(elpaca :host github :repo "progfolio/elpaca"))
                '(:package "elpaca" :host github :repo "progfolio/elpaca" :inherit nil))))
     ;; basic menu lookup
-    (let ((elpaca-order-functions '((lambda (order) '(:inherit nil))))
+    (let ((elpaca-order-functions '(elpaca-test--no-inheritance))
           (elpaca-menu-functions '(elpaca-test-menu))
           elpaca--menu-items-cache)
       (should (elpaca-test--plist-equal-p
