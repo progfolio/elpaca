@@ -449,8 +449,7 @@ And a macro to ease the creation of nested menu bindings:
   "M" '((lambda () (interactive) (switch-to-buffer "*Messages*"))
         :which-key "messages-buffer")
   "n"  'next-buffer
-  "s" '((lambda () (interactive) (switch-to-buffer "*scratch*"))
-        :which-key "scratch-buffer")
+  "s"  'scratch-buffer
   "TAB" '((lambda () (interactive) (switch-to-buffer nil))
           :which-key "other-buffer"))
 #+end_src
