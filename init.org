@@ -1862,7 +1862,7 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
   (add-hook 'mu4e-view-mode-hook #'+mu4e-view-settings)
 
   ;;Fold all threads by default.
-  (add-hook 'mu4e-thread-mode-hook #'mu4e-thread-fold-all)
+  ;;(add-hook 'mu4e-thread-mode-hook #'mu4e-thread-fold-all)
 
   :general
   (+general-global-application "m" 'mu4e :which-key "mail")
