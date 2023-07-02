@@ -593,17 +593,17 @@ The following commands are available in the `elpaca-ui-mode`:
 | elpaca-ui-unmark           | U       | Unmark current package.                                         |
 | elpaca-ui-browse-package   | b       | Browse current package’s URL via ‘browse-url’.                  |
 | elpaca-ui-copy             | c       | Copy formatted UI view ENTRIES to clipboard.                    |
-| elpaca-ui-mark-delete      | d       | Mark package for delete action.                                 |
-| elpaca-ui-mark-fetch       | f       | Mark package for fetch action.                                  |
-| elpaca-ui-mark-install     | i       | Mark package for install action.                                |
+| elpaca-ui-mark-delete      | d       | Mark package at point for ‘elpaca-delete’.                      |
+| elpaca-ui-mark-fetch       | f       | Mark package at point for ‘elpaca-fetch’.                       |
+| elpaca-ui-mark-try         | i       | Mark package at point for ‘elpaca-try’.                         |
 | elpaca-log                 | l       | Display ‘elpaca-log-buffer’.                                    |
 | elpaca-manager             | m       | Display elpaca’s package management UI.                         |
-| elpaca-ui-mark-rebuild     | r       | Mark package for rebuild action.                                |
+| elpaca-ui-mark-rebuild     | r       | Mark package at point for ‘elpaca-rebuild’.                     |
 | elpaca-ui-search           | s       | Filter current buffer by QUERY. If QUERY is nil, prompt for it. |
 | elpaca-status              | t       | Log most recent events for packages.                            |
-| elpaca-ui-mark-update      | u       | Mark package for update action.                                 |
+| elpaca-ui-mark-update      | u       | Mark package at point for ‘elpaca-update’.                      |
 | elpaca-ui-visit            | v       | Visit current package’s repo or BUILD directory.                |
-| elpaca-ui-execute-marks    | x       | Execute each action in ‘elpaca-ui-marked-packages’.             |
+| elpaca-ui-execute-marks    | x       | Execute each mark in ‘elpaca-ui-marked-packages’.               |
 
 -   **Function: elpaca-manager `&optional recache`:** Display packages registered with Elpaca. Packages can searched for, installed, updated, rebuilt, and deleted from this interface. When `RECACHE` is non-nil, via lisp or interactively via the `universal-argument`, recompute Elpaca&rsquo;s menu item cache before display.
 

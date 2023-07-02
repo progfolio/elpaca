@@ -827,13 +827,13 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @tab Copy formatted UI view ENTRIES to clipboard.
 @item elpaca-ui-mark-delete
 @tab d
-@tab Mark package for delete action.
+@tab Mark package at point for ‘elpaca-delete’.
 @item elpaca-ui-mark-fetch
 @tab f
-@tab Mark package for fetch action.
-@item elpaca-ui-mark-install
+@tab Mark package at point for ‘elpaca-fetch’.
+@item elpaca-ui-mark-try
 @tab i
-@tab Mark package for install action.
+@tab Mark package at point for ‘elpaca-try’.
 @item elpaca-log
 @tab l
 @tab Display ‘elpaca-log-buffer’.
@@ -842,7 +842,7 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @tab Display elpaca’s package management UI@.
 @item elpaca-ui-mark-rebuild
 @tab r
-@tab Mark package for rebuild action.
+@tab Mark package at point for ‘elpaca-rebuild’.
 @item elpaca-ui-search
 @tab s
 @tab Filter current buffer by QUERY@. If QUERY is nil, prompt for it.
@@ -851,13 +851,13 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @tab Log most recent events for packages.
 @item elpaca-ui-mark-update
 @tab u
-@tab Mark package for update action.
+@tab Mark package at point for ‘elpaca-update’.
 @item elpaca-ui-visit
 @tab v
 @tab Visit current package’s repo or BUILD directory.
 @item elpaca-ui-execute-marks
 @tab x
-@tab Execute each action in ‘elpaca-ui-marked-packages’.
+@tab Execute each mark in ‘elpaca-ui-marked-packages’.
 @end multitable
 
 @defun elpaca-manager 

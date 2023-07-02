@@ -35,22 +35,21 @@
   :type 'string)
 (make-variable-buffer-local 'elpaca-ui-default-query)
 
-(defcustom elpaca-ui-actions
-  '((delete  :prefix "💀" :action (lambda (i) (elpaca-delete i 'force 'deps))
-             :face elpaca-ui-marked-delete)
-    (install :prefix "⚙️" :action elpaca-try :face elpaca-ui-marked-install
-             :setup (lambda () (elpaca-split-queue) (elpaca--maybe-log t "#linked-errors")))
-    (rebuild :prefix "♻️️" :action elpaca-rebuild :face elpaca-ui-marked-rebuild
-             :setup (lambda () (elpaca--maybe-log t "#linked-errors")))
-    (fetch   :prefix "‍🐕‍🦺" :action elpaca-fetch :face elpaca-ui-marked-fetch
-             :setup (lambda () (elpaca--maybe-log t "#update-log")))
-    (update  :prefix "⬆️" :action elpaca-update :face elpaca-ui-marked-update
-             :setup (lambda () (elpaca--maybe-log t "#linked-errors"))))
-  "List of actions which can be taken on packages."
-  :type 'list)
+(defcustom elpaca-ui-marks
+  '((elpaca-delete  :prefix "💀" :face elpaca-ui-marked-delete :args (item 'force 'deps))
+    (elpaca-try     :prefix "⚙️" :face elpaca-ui-marked-install)
+    (elpaca-rebuild :prefix "♻️️" :face elpaca-ui-marked-rebuild)
+    (elpaca-fetch   :prefix "‍🐕‍🦺" :face elpaca-ui-marked-fetch)
+    (elpaca-update  :prefix "⬆️" :face elpaca-ui-marked-update))
+  "List of marks which can be applied to packages `elpaca-ui-mode' buffers.
+Each element is of the form (COMMAND :KEY VAL...).
+Accepted key val pairs are:
+  - :prefix STRING inserted to indicate mark in UI
+  - :face FACE for marked row in UI
+  - :args (ARG...) arguments passed to COMMAND.
+      The symbol `item' will be replaced with the package item." :type 'list)
 
-(defvar-local elpaca-ui--marked-packages nil
-  "List of marked packages. Each element is a cons of (PACKAGE . ACTION).")
+(defvar-local elpaca-ui--marked-packages nil "Aist of buffer's marked packages.")
 
 (defun elpaca-ui--tag-dirty (items)
   "Return ITEMS with dirty worktree."
@@ -162,7 +161,7 @@ exclamation point to it. e.g. !#installed."
     (define-key m (kbd "c") 'elpaca-ui-copy)
     (define-key m (kbd "d") 'elpaca-ui-mark-delete)
     (define-key m (kbd "f") 'elpaca-ui-mark-fetch)
-    (define-key m (kbd "i") 'elpaca-ui-mark-install)
+    (define-key m (kbd "i") 'elpaca-ui-mark-try)
     (define-key m (kbd "l") 'elpaca-log)
     (define-key m (kbd "m") 'elpaca-manager)
     (define-key m (kbd "r") 'elpaca-ui-mark-rebuild)
@@ -602,61 +601,60 @@ If region is active unmark all packages in region."
   (elpaca-ui--unmark (elpaca-ui-current-package))
   (forward-line))
 
-(defun elpaca-ui--mark (package action)
-  "Internally mark PACKAGE for ACTION."
-  (setf (alist-get package elpaca-ui--marked-packages) (assoc action elpaca-ui-actions))
+(defun elpaca-ui--mark (package command)
+  "Internally mark PACKAGE for COMMAND."
+  (setf (alist-get package elpaca-ui--marked-packages) (assoc command elpaca-ui-marks))
   (elpaca-ui--apply-face))
 
-(defun elpaca-ui-mark (package action)
-  "Mark PACKAGE for ACTION with PREFIX.
-ACTION is the description of a cell in `elpaca-ui-actions'.
-The action's function is passed the name of the package as its sole argument."
+(defun elpaca-ui-mark (package command)
+  "Mark PACKAGE for COMMAND."
   (interactive)
-  (elpaca-ui--mark package action)
+  (elpaca-ui--mark package command)
   (forward-line))
 
-(defun elpaca-ui--toggle-mark (&optional test action)
-  "Toggle ACTION mark for current package.
+(defun elpaca-ui--toggle-mark (&optional test command)
+  "Toggle COMMAND mark for current package.
 TEST is a unary function evaluated prior to toggling the mark.
 The current package is its sole argument."
   (let ((package (elpaca-ui-current-package)))
     (when test (funcall test package))
-    (if (eq (car (alist-get package elpaca-ui--marked-packages)) action)
+    (if (eq (car (alist-get package elpaca-ui--marked-packages)) command)
         (elpaca-ui-unmark)
-      (elpaca-ui-mark package action))))
+      (elpaca-ui-mark package command))))
 
 (defmacro elpaca-ui-defmark (name test)
   "Define a marking command with NAME and TEST."
   (declare (indent 1) (debug t))
-  `(defun ,(intern (format "elpaca-ui-mark-%s" name)) ()
-     ,(format "Mark package for %s action." name)
-     (interactive)
-     (if (not (use-region-p))
-         (elpaca-ui--toggle-mark ,test ',name)
-       (let ((end (region-end))
-             (beg (region-beginning)))
-         (save-restriction
-           (goto-char beg)
-           (while (not (>= (point) end))
-             (condition-case _
-                 (elpaca-ui--toggle-mark ,test ',name)
-               ((error) (forward-line))))
-           (deactivate-mark))))))
+  `(defun ,(intern (format "elpaca-ui-mark-%s"
+                           (replace-regexp-in-string "^elpaca-" "" (symbol-name name))))
+       () ,(format "Mark package at point for `%s'." name)
+       (interactive)
+       (if (not (use-region-p))
+           (elpaca-ui--toggle-mark ,test ',name)
+         (let ((end (region-end))
+               (beg (region-beginning)))
+           (save-restriction
+             (goto-char beg)
+             (while (not (>= (point) end))
+               (condition-case _
+                   (elpaca-ui--toggle-mark ,test ',name)
+                 ((error) (forward-line))))
+             (deactivate-mark))))))
 
-(elpaca-ui-defmark rebuild
+(elpaca-ui-defmark elpaca-rebuild
   (lambda (p) (unless (or (elpaca-installed-p p) (alist-get p (elpaca--queued)))
                 (user-error "Package %S is not installed" p))))
 
-(elpaca-ui-defmark install
+(elpaca-ui-defmark elpaca-try
   (lambda (p) (when (elpaca-installed-p p) (user-error "Package %S already installed" p))))
 
-(elpaca-ui-defmark fetch
+(elpaca-ui-defmark elpaca-fetch
   (lambda (p) (unless (elpaca-installed-p p) (user-error "Package %S is not installed" p))))
 
-(elpaca-ui-defmark update
+(elpaca-ui-defmark elpaca-update
   (lambda (p) (unless (elpaca-installed-p p) (user-error "Package %S is not installed" p))))
 
-(elpaca-ui-defmark delete
+(elpaca-ui-defmark elpaca-delete
   (lambda (p) (unless (or (elpaca-installed-p p)
                           (alist-get p (elpaca--queued))
                           (get-text-property (point) 'orphan-dir))
@@ -681,22 +679,14 @@ The current package is its sole argument."
       (elpaca-ui-search-refresh buffer))))
 
 (defun elpaca-ui-execute-marks ()
-  "Execute each action in `elpaca-ui-marked-packages'."
+  "Execute each mark in `elpaca-ui-marked-packages'."
   (interactive)
   (when (null elpaca-ui--marked-packages) (user-error "No marked packages"))
-  (deactivate-mark)
-  (cl-loop with setups
-           with actions
-           for (item _ . props) in elpaca-ui--marked-packages
-           for action = (plist-get props :action)
-           for setup = (plist-get props :setup)
-           when (functionp setup) do (cl-pushnew setup setups)
-           when action do (cl-pushnew (list action item) actions)
+  (cl-loop initially do (deactivate-mark) (elpaca--maybe-log)
+           for (item command . props) in elpaca-ui--marked-packages
+           do (apply command (or (cl-subst item 'item (plist-get props :args)) (list item)))
            (pop elpaca-ui--marked-packages)
-           finally do
-           (mapc #'funcall (nreverse setups))
-           (mapc #'apply actions))
-  (setq elpaca--post-queues-hook '(elpaca-ui--post-execute))
+           finally (setq elpaca--post-queues-hook '(elpaca-ui--post-execute)))
   (elpaca-process-queues (lambda (qs) (cl-remove-if-not #'elpaca-q<-elpacas qs))))
 
 (defun elpaca-ui-send-input ()
