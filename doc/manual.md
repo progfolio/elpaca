@@ -607,7 +607,7 @@ The following commands are available in the `elpaca-ui-mode`:
 
 -   **Function: elpaca-manager `&optional recache`:** Display packages registered with Elpaca. Packages can searched for, installed, updated, rebuilt, and deleted from this interface. When `RECACHE` is non-nil, via lisp or interactively via the `universal-argument`, recompute Elpaca&rsquo;s menu item cache before display.
 
--   **Function: elpaca-log `&optional filter`:** Display the log for queued packages. When `FILTER` is non-nil, filter entries by the given query. For acceptable values for `FILTER` see [searching](#searching).
+-   **Function: elpaca-log `&optional query`:** Display the log for queued packages filtered by `QUERY`. For acceptable values for `QUERY` see [searching](#searching).
 
 -   **Function: elpaca-status:** Display the log for the most recent events for queued packages. This allows one to quickly determine the status and reason for the status of each queued package.
 
@@ -616,7 +616,7 @@ The following commands are available in the `elpaca-ui-mode`:
 
 ## Searching
 
-The `elpaca-ui-search` command (`s`) prompts the user for a search query in the minibuffer. Altering the query updates the UI table. Calling with a `universal-argument` (`C-u`) populates the minibuffer with the current search query for editing. Setting the query to an empty string sets the filter to `elpaca-ui-default-query`. The buffer&rsquo;s header line displays the current query.
+The `elpaca-ui-search` command (`s`) prompts the user for a search query in the minibuffer. Altering the query updates the UI table. Calling with a `universal-argument` (`C-u`) populates the minibuffer with the current search query for editing. Setting the query to an empty string resets the query to `elpaca-ui-default-query`. The buffer&rsquo;s header line displays the current query.
 
 Queries are regular expressions checked against each row of the UI table. For example, `test` will match any row which contains the string &ldquo;test&rdquo;. Some characters change the matching behavior in queries.
 

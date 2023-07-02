@@ -173,7 +173,7 @@ exclamation point to it. e.g. !#installed."
     m)
   "Keymap for `elpaca-ui-mode'.")
 (defvar-local elpaca-ui--want-faces t "When non-nil, faces are applied to packages.")
-(defvar-local elpaca-ui-search-filter nil "Filter for package searches.")
+(defvar-local elpaca-ui-search-query nil "Package search query.")
 (defvar-local elpaca-ui-header-line-prefix nil "Header line prefix.")
 (defvar-local elpaca-ui-header-line-function #'elpaca-ui--header-line
   "Function responsible for setting the UI buffer's `header-line-format'.
@@ -241,7 +241,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                                          (lambda (_) (elpaca-ui-show-hidden-rows))))))
     (setq header-line-format
           (string-join (list (elpaca-ui--progress-bar) prefix (number-to-string tlen)
-                             hidden elpaca-ui--header-line-matching elpaca-ui-search-filter)
+                             hidden elpaca-ui--header-line-matching elpaca-ui-search-query)
                        " "))))
 
 (define-derived-mode elpaca-ui-mode tabulated-list-mode "elpaca-ui"
@@ -502,11 +502,11 @@ ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
                             (put-text-property start (+ start (length name)) 'display mark)
                           (remove-text-properties start end '(display))))))))))
 
-(defun elpaca-ui--update-search-filter (&optional buffer query)
+(defun elpaca-ui--update-search-query (&optional buffer query)
   "Update the BUFFER to reflect search QUERY.
 If QUERY is nil, the contents of the minibuffer are used instead."
   (let ((query (or query (and (minibufferp) (minibuffer-contents-no-properties))
-                   elpaca-ui-search-filter elpaca-ui-default-query)))
+                   elpaca-ui-search-query elpaca-ui-default-query)))
     (with-current-buffer
         (get-buffer-create (or buffer (with-minibuffer-selected-window (current-buffer))))
       (when (string-empty-p query) (setq query elpaca-ui-default-query))
@@ -520,22 +520,22 @@ If QUERY is nil, the contents of the minibuffer are used instead."
                          ((<= elen elpaca-ui-row-limit)))
                     elpaca-ui-entries
                   (cl-subseq elpaca-ui-entries 0 (min elpaca-ui-row-limit elen)))
-                elpaca-ui-search-filter query))
+                elpaca-ui-search-query query))
         (elpaca-ui--print)
         (when elpaca-ui-header-line-function
           (setq header-line-format (funcall elpaca-ui-header-line-function
                                             elpaca-ui-header-line-prefix)))))))
 
 (defun elpaca-ui--debounce-search (buffer)
-  "Update BUFFER's search filter from minibuffer."
+  "Update BUFFER's search query from minibuffer."
   (let ((input (string-trim (minibuffer-contents-no-properties))))
     (unless (or (string-empty-p input)
-                (string= input (with-current-buffer buffer elpaca-ui-search-filter)))
+                (string= input (with-current-buffer buffer elpaca-ui-search-query)))
       (if elpaca-ui--search-timer
           (cancel-timer elpaca-ui--search-timer))
       (setq elpaca-ui--search-timer (run-at-time elpaca-ui-search-debounce-interval
                                                  nil
-                                                 #'elpaca-ui--update-search-filter
+                                                 #'elpaca-ui--update-search-query
                                                  buffer)))))
 
 (defun elpaca-ui--ensure-mode ()
@@ -550,14 +550,14 @@ If QUERY is nil, the contents of the minibuffer are used instead."
           (list (string-trim
                  (condition-case nil
                      (read-from-minibuffer elpaca-ui-search-prompt
-                                           (and current-prefix-arg elpaca-ui-search-filter)
+                                           (and current-prefix-arg elpaca-ui-search-query)
                                            nil nil elpaca-ui--history)
-                   (quit elpaca-ui-search-filter))))))
+                   (quit elpaca-ui-search-query))))))
   (elpaca-ui--ensure-mode)
   (when (string-empty-p query) (setq query elpaca-ui-default-query))
-  (when (not (string= query elpaca-ui-search-filter))
-    (setq elpaca-ui-search-filter query)
-    (elpaca-ui--update-search-filter (current-buffer))))
+  (unless (string= query elpaca-ui-search-query)
+    (setq elpaca-ui-search-query query)
+    (elpaca-ui--update-search-query (current-buffer))))
 
 (defun elpaca-ui-search-refresh (&optional buffer silent)
   "Rerun the current search for BUFFER.
@@ -565,10 +565,10 @@ If BUFFER is non-nil, the current buffer is used.
 If SILENT is non-nil, suppress update message."
   (interactive (list (current-buffer)))
   (with-current-buffer (or buffer (current-buffer))
-    (elpaca-ui--update-search-filter (or buffer (current-buffer))
-                                     (or elpaca-ui-search-filter
+    (elpaca-ui--update-search-query (or buffer (current-buffer))
+                                     (or elpaca-ui-search-query
                                          elpaca-ui-default-query))
-    (unless silent (message "Search %S refreshed" elpaca-ui-search-filter))))
+    (unless silent (message "Search %S refreshed" elpaca-ui-search-query))))
 
 (defun elpaca-ui-current-package ()
   "Return current package of UI line."
@@ -705,10 +705,10 @@ The current package is its sole argument."
   (unless window-system (user-error "Cannot copy in current window-system"))
   (let ((cols (mapconcat (lambda (col) (format "<th>%s</th>" (car col)))
                          tabulated-list-format ""))
-        (filter elpaca-ui-search-filter))
+        (query elpaca-ui-search-query))
     (with-temp-buffer
       (insert "<details><summary>Log @" (format-time-string "%Y-%m-%d %H:%M:%S %z")
-              "</summary>\n" "search filter: " (format "%S" filter) "\n"
+              "</summary>\n" "search query: " (format "%S" query) "\n"
               "<table>\n<thead>" cols "</thead>\n<tbody>\n"
               (mapconcat (lambda (entry)
                            (format "<tr>%s</tr>"

@@ -165,7 +165,7 @@ If it is a function, it's return value is used."
 (defun elpaca-log--verbosity (_ &optional limit)
   "Filter log entries according to `elpaca-verbosity' LIMIT."
   (let* ((elpaca-verbosity (or limit most-positive-fixnum))
-         (elpaca-ui-search-filter
+         (elpaca-ui-search-query
           (replace-regexp-in-string
            "\\(?:#(?verbosity[^z-a]*?)\\|#verbosity\\)"
            ""
@@ -173,7 +173,7 @@ If it is a function, it's return value is used."
                  (when-let ((s (buffer-substring-no-properties (point-min) (point-max)))
                             ((string-match-p elpaca-ui-search-prompt s)))
                    (substring s (length elpaca-ui-search-prompt))))
-               elpaca-ui-search-filter))))
+               elpaca-ui-search-query))))
     (elpaca-ui-search-refresh (get-buffer elpaca-log-buffer) 'silent)
     tabulated-list-entries))
 
@@ -212,15 +212,14 @@ If it is a function, it's return value is used."
      (string-to-number (aref (cadr b) 3))))
 
 ;;;###autoload
-(defun elpaca-log (&optional filter)
-  "Display `elpaca-log-buffer'.
-If FILTER is non-nil, it is used as the initial search query."
+(defun elpaca-log (&optional query)
+  "Display `elpaca-log-buffer' filtered by QUERY."
   (interactive (list (when-let ((pkg (ignore-errors (elpaca-ui-current-package)))
                                 (query (format "^%s$|" (symbol-name pkg)))
                                 (quoted (regexp-quote query)))
-                       (if (string-match-p quoted elpaca-ui-search-filter)
-                           (replace-regexp-in-string quoted "" elpaca-ui-search-filter)
-                         (concat (string-trim elpaca-ui-search-filter) " " query)))))
+                       (if (string-match-p quoted elpaca-ui-search-query)
+                           (replace-regexp-in-string quoted "" elpaca-ui-search-query)
+                         (concat (string-trim elpaca-ui-search-query) " " query)))))
   (with-current-buffer (get-buffer-create elpaca-log-buffer)
     (unless (derived-mode-p 'elpaca-ui-mode)
       (elpaca-ui-mode)
@@ -238,8 +237,7 @@ If FILTER is non-nil, it is used as the initial search query."
             tabulated-list-sort-key '("Time"))
       (setq-local elpaca-ui-search-tags (append elpaca-ui-search-tags elpaca-log-search-tags))
       (tabulated-list-init-header))
-    (elpaca-ui--update-search-filter (current-buffer)
-                                     (or filter elpaca-ui-search-filter))
+    (elpaca-ui--update-search-query (current-buffer) (or query elpaca-ui-search-query))
     (pop-to-buffer elpaca-log-buffer '((display-buffer-reuse-window display-buffer-same-window)))))
 
 ;;;###autoload

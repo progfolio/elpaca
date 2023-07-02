@@ -74,7 +74,7 @@ If RECACHE is non-nil, recompute menu items from `elpaca-menu-functions'."
               elpaca-ui-default-query elpaca-manager-default-search-query)
         (tabulated-list-init-header))
       (when (or (not initializedp) recache)
-        (elpaca-ui--update-search-filter (current-buffer) elpaca-ui-search-filter))))
+        (elpaca-ui--update-search-query (current-buffer) elpaca-ui-search-query))))
   (pop-to-buffer elpaca-manager-buffer '((display-buffer-reuse-window display-buffer-same-window))))
 
 (provide 'elpaca-manager)

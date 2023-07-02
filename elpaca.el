@@ -587,12 +587,12 @@ The first function, if any, which returns a non-nil is used." :type 'hook)
 (defsubst elpaca--status (e) "Return E's status." (car (elpaca<-statuses e)))
 
 (declare-function elpaca-status "elpaca-status")
-(declare-function elpaca-ui--update-search-filter "elpaca-ui")
+(declare-function elpaca-ui--update-search-query "elpaca-ui")
 (defun elpaca--update-log-buffer ()
   "Update views in `elpaca-log-buffer'."
   (when-let ((log (bound-and-true-p elpaca-log-buffer))
              ((get-buffer-window log t))) ;; log buffer visible
-    (with-current-buffer log (elpaca-ui--update-search-filter log))))
+    (with-current-buffer log (elpaca-ui--update-search-query log))))
 
 (defun elpaca--log (e text &optional verbosity replace)
   "Store TEXT in E's log.
