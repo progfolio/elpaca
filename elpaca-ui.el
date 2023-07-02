@@ -106,8 +106,8 @@ Accepted key val pairs are:
                                    (marked    . elpaca-ui--tag-marked))
   "Alist of search tags.
 Each cell is of form (NAME FILTER).
-FILTER must be a unary function which takes a list of menu items and returns a
-list of menu items.
+FILTER must be a function which takes a menu item list as its first argument.
+It optionally returns a list of menu items.
 
 Each tag can be inverted in the minibuffer by prepending an
 exclamation point to it. e.g. !#installed."
