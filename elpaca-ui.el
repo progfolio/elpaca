@@ -143,6 +143,7 @@ exclamation point to it. e.g. !#installed."
   "Indicator shown in progress bar when `elpaca-wait' is polling."
   :type (or 'string 'nil))
 
+(define-obsolete-function-alias 'elpaca-ui-mark-install 'elpaca-ui-mark-try "0.0.0")
 ;;;; Variables:
 (defvar-local elpaca-ui--search-timer nil "Timer to debounce search input.")
 (defvar-local elpaca-ui--prev-entry-count nil "Number of previously recorded entries.")
