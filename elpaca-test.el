@@ -116,17 +116,17 @@ Creates a temporary dir if NAME is nil."
 (defun elpaca-test--sentinel (process _)
   "Prepare post-test PROCESS buffer output, display, test environment.
 If DELETE is non-nil, delete test environment."
-  (when-let (((member (process-status process) '(exit signal failed)))
-             (buffer (process-buffer process))
-             ((buffer-live-p buffer)))
-    (with-current-buffer buffer (insert "```\n</details>")
-                         (when (fboundp 'markdown-mode) (markdown-mode)))
+  (when (member (process-status process) '(exit signal failed))
     (when-let ((vars (process-get process :vars))
                ((not (car-safe (plist-get vars :keep))))
                (dir (plist-get vars :computed-dir)))
       (message "Removing Elpaca test env: %S" dir)
       (delete-directory dir 'recursive))
-    (run-with-idle-timer 1 nil (lambda () (pop-to-buffer buffer) (goto-char (point-min))))))
+    (when-let ((buffer (process-buffer process))
+               ((buffer-live-p buffer)))
+      (with-current-buffer buffer (insert "```\n</details>")
+                           (when (fboundp 'markdown-mode) (markdown-mode)))
+      (run-with-idle-timer 1 nil (lambda () (pop-to-buffer buffer) (goto-char (point-min)))))))
 
 ;;;###autoload
 (defmacro elpaca-test (&rest body)
