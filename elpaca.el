@@ -518,12 +518,34 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
       (when clonedp (setq steps (delq 'elpaca--clone steps)))
       steps)))
 
+(declare-function elpaca-log-defaults "elpaca-log")
+(defcustom elpaca-log-functions #'elpaca-log-defaults
+  "Hook run prior to logging.
+It's functions should return either:
+  - t to log with the buffer's default filter.
+  - a string which is used as the search query.
+  - `silent' to prevent logging altogether.
+  - nil to skip the function.
+
+The first function, if any, which returns a non-nil is used." :type 'hook)
+
+(declare-function elpaca-log--set-latest "elpaca-log")
 (declare-function elpaca-log "elpaca-log")
+(defun elpaca--maybe-log ()
+  "Log if `elpaca-log-functions' return non-nil."
+  (when-let ((query (run-hook-with-args-until-success 'elpaca-log-functions)))
+    (require 'elpaca-log)
+    (elpaca-log--set-latest)
+    (unless (eq query 'silent)
+      (elpaca-log (cond ((eq query t) nil)
+                        ((stringp query) query)
+                        (t (signal 'wrong-type-error `((stringp t) ,query))))))))
+
+(defvar elpaca-log-buffer)
 (defun elpaca--ibs ()
   "Return initial status buffer if `elpaca-hide-initial-build' is nil."
-  (elpaca-log "#unique !finished")
-  (when (bound-and-true-p elpaca-log-buffer)
-    (with-current-buffer (get-buffer-create elpaca-log-buffer)
+  (when (elpaca--maybe-log)
+    (with-current-buffer elpaca-log-buffer
       (when (equal initial-buffer-choice #'elpaca--ibs) (setq initial-buffer-choice elpaca--ibc))
       (setq-local elpaca-ui-want-tail nil)
       (current-buffer))))
@@ -609,7 +631,7 @@ check (and possibly change) their statuses."
       (mapc (lambda (d) (elpaca--check-status e (elpaca-alist-get d queued)))
             (elpaca<-dependents e))
       (when (and (not elpaca-after-init-time) (eq status 'failed))
-        (elpaca-log "#unique !finished")))
+        (elpaca--maybe-log)))
     (when-let ((siblings (elpaca<-siblings e))
                (statuses (elpaca<-statuses e))
                ((or (memq 'ref-checked-out statuses) (memq 'queueing-deps statuses)))
@@ -734,7 +756,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
                 (and next (eq (elpaca-q<-type next) 'init))) ; More init queues.
       (elpaca-split-queue)
       (remove-variable-watcher 'initial-buffer-choice #'elpaca--set-ibc)
-      (setq elpaca-after-init-time (current-time))
+      (setq elpaca-after-init-time (current-time) elpaca--ibs-set nil)
       (run-hooks 'elpaca-after-init-hook))
     (if (and next (or (elpaca-q<-elpacas next) (elpaca-q<-forms next)))
         (elpaca--process-queue next)
@@ -1441,6 +1463,7 @@ When MESSAGE is non-nil, message the list of dependents."
   :type 'number)
 (defvar elpaca--interactive-timer nil
   "Debounces interactive evaluation of multiple `elpaca' forms.")
+
 ;;;; COMMANDS/MACROS
 ;;;###autoload
 (defmacro elpaca (order &rest body)
@@ -1459,7 +1482,7 @@ If ORDER is `nil`, defer BODY until orders have been processed."
        (when ,o (elpaca--queue ,o ,q))
        (when after-init-time
          (when-let ((e (elpaca-get ,item)))
-           (elpaca--maybe-log t)
+           (elpaca--maybe-log)
            (elpaca--unprocess e)
            (push 'queued (elpaca<-statuses e)))
          (when (member this-command '(eval-last-sexp eval-defun)) (elpaca-process-queues))
@@ -1481,7 +1504,7 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
                             elpaca--queues)))
     (setq elpaca--waiting t)
     (unless (or elpaca-after-init-time (not elpaca--ibs-set))
-      (elpaca-log "#unique !finished")
+      (elpaca--maybe-log)
       (sit-for elpaca-wait-interval))
     (elpaca-process-queues)
     (condition-case nil
@@ -1494,12 +1517,7 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
     (elpaca-split-queue)
     (setq elpaca--waiting nil)))
 
-(defun elpaca--maybe-log (condition &rest queries)
-  "Log latest QUERIES when CONDITION is non-nil."
-  (when condition (require 'elpaca-log) (apply #'elpaca-log--latest queries)))
-
 (defvar elpaca--try-package-history nil "History for `elpaca-try'.")
-(declare-function elpaca-log--latest "elpaca-log")
 ;;;###autoload
 (defun elpaca-try (order &optional interactive)
   "Try ORDER.
@@ -1518,7 +1536,7 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
          t))
   (if (not interactive)
       (elpaca--queue (elpaca--first order))
-    (elpaca--maybe-log t "#linked-errors")
+    (elpaca--maybe-log)
     (elpaca-queue
      (eval `(elpaca ,order
               ,(when-let (((equal current-prefix-arg '(4)))
@@ -1671,7 +1689,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
     (elpaca--signal e "Rebuilding" 'queued)
     (setf elpaca-cache-autoloads nil (elpaca<-files e) nil)
     (when interactive
-      (elpaca--maybe-log t "#linked-errors")
+      (elpaca--maybe-log)
       (elpaca-process-queues))))
 
 ;;@TODO: leverage git log pretty formatting instead of parsing.
@@ -1704,14 +1722,14 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
     (elpaca--signal e "Fetching updates" 'queued)
     (setf (elpaca<-build-steps e) (list #'elpaca--fetch #'elpaca--log-updates))
     (when interactive
-      (elpaca--maybe-log t "#update-log")
+      (elpaca--maybe-log)
       (elpaca--process e))))
 
 ;;;###autoload
 (defun elpaca-fetch-all (&optional interactive)
   "Fetch queued elpaca remotes. If INTERACTIVE is non-nil, process queues."
   (interactive (list t))
-  (when interactive (elpaca--maybe-log t "#update-log"))
+  (when interactive (elpaca--maybe-log))
   (cl-loop for q in elpaca--queues
            do (setf (elpaca-q<-processed q) 0 (elpaca-q<-status q) 'incomplete))
   (cl-loop for (_ . e) in (reverse (elpaca--queued)) do
@@ -1769,14 +1787,14 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
                    elpaca--activate-package))))
           (elpaca<-statuses e) (list 'queued))
     (when interactive
-      (elpaca--maybe-log t "#linked-errors")
+      (elpaca--maybe-log)
       (elpaca--process e))))
 
 ;;;###autoload
 (defun elpaca-update-all (&optional interactive)
   "Update all queued packages. If INTERACTIVE is non-nil, process queues."
   (interactive (list t))
-  (when interactive (elpaca--maybe-log t))
+  (when interactive (elpaca--maybe-log))
   (cl-loop for q in elpaca--queues
            do (setf (elpaca-q<-processed q) 0 (elpaca-q<-status q) 'incomplete))
   (cl-loop with (seen repos)

@@ -660,7 +660,6 @@ The current package is its sole argument."
                           (get-text-property (point) 'orphan-dir))
                 (user-error "Package %S is not installed" p))))
 
-(declare-function elpaca-log--latest "elpaca-log")
 (defvar elpaca-manager-buffer)
 (defvar elpaca-log-buffer)
 (defun elpaca-ui--post-execute ()

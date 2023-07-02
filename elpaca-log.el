@@ -45,6 +45,34 @@
   "Alist of search tags (see `elpaca-ui-search-tags') exclusive to the log buffer."
   :type '(alist :key-type symbol :value-type function) :group 'elpaca-ui)
 
+(defcustom elpaca-log-command-queries
+  '(((elpaca-fetch elpaca-fetch-all)   . "#update-log")
+    ((elpaca-try elpaca-rebuild)       . "#latest #linked-errors")
+    ((elapca-update elpaca-update-all) . "#unique | !finished")
+    ((eval-buffer eval-region eval-defun eval-last-sexp org-ctrl-c-ctrl-c) . silent)
+    (elpaca-ui-execute-marks . elpaca-log--marked-query))
+  "Alist of form ((COMMAND-OR-COMMAND-LIST . QUERY-OR-FUNCTION)...).
+If query is a string it is used when logging for that command.
+If it is a function, it's return value is used."
+  :type 'alist :group 'elpaca-ui)
+
+(defun elpaca-log--marked-query ()
+  "Return query for marked packages."
+  (when (= (length elpaca-ui--marked-packages) 1)
+    (let ((this-command (cadar elpaca-ui--marked-packages))) (elpaca-log-defaults))))
+
+(defun elpaca-log--find-command (val key)
+  "Return t if KEY VAL."
+  (or (eq key val) (and (listp val) (member key val))))
+
+;;;###autoload
+(defun elpaca-log-defaults ()
+  "Return contextual logging queries."
+  (if-let ((found (alist-get this-command elpaca-log-command-queries
+                             nil nil #'elpaca-log--find-command)))
+      (if (functionp found) (funcall found) found)
+    (if elpaca--ibs-set "#unique | !finished" "#latest")))
+
 (defun elpaca-log--visit-byte-comp-warning (file line col)
   "Visit warning location in FILE at LINE and COL."
   (or (file-exists-p file) (user-error "File does not exist: %S" file))
@@ -172,13 +200,11 @@
       (list item (vector pkg (symbol-name status) info delta)))
     when entry collect entry)))
 
-;;;###autoload
-(defun elpaca-log--latest (&rest queries)
-  "Log latest activity with QUERIES."
-  (elpaca-log)
-  (with-current-buffer elpaca-log-buffer
-    (setq elpaca-ui--prev-entry-count (length (funcall elpaca-ui-entries-function)))
-    (elpaca-log (concat "#latest " (string-join queries " ")))))
+(defun elpaca-log--set-latest ()
+  "Set context for #latest tag."
+  (with-current-buffer (get-buffer-create elpaca-log-buffer)
+    (when (bound-and-true-p elpaca-ui-entries-function)
+      (setq elpaca-ui--prev-entry-count (length (funcall elpaca-ui-entries-function))))))
 
 (defun elpaca-log--sort-chronologically (a b)
   "Sort entries A and B chronologically."
@@ -221,7 +247,8 @@ If FILTER is non-nil, it is used as the initial search query."
   "Log most recent events for packages."
   (interactive)
   (with-current-buffer (elpaca-log)
-    (let (elpaca-ui-want-tail) (elpaca-log "#unique"))))
+    (let (elpaca-ui-want-tail)
+      (elpaca-log (alist-get 'elpaca-status elpaca-log-command-queries "#unique")))))
 
 (provide 'elpaca-log)
 ;;; elpaca-log.el ends here
