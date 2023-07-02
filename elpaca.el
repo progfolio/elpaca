@@ -1579,8 +1579,8 @@ FILTER must be a unary function which accepts and returns a queue list."
 ;;@MAYBE: Should this delete user's declared package if it is a dependency?
 ;;@MAYBE: user option for deletion policy when repo is dirty.
 ;;;###autoload
-(defun elpaca-delete (id &optional force deps ignored)
-  "Remove a package with ID from item cache and disk.
+(defun elpaca-delete (item &optional force deps ignored)
+  "Remove a package associated with ITEM from cache and disk.
 If DEPS is non-nil (interactively with \\[universal-argument]) delete dependencies.
 IGNORED dependencies are not deleted.
 If FORCE is non-nil (interactively with \\[universal-argument] \\[universal-argument])
@@ -1588,17 +1588,17 @@ do not confirm before deleting package and DEPS."
   (interactive (list (elpaca--read-queued "Delete Package: ")
                      (equal current-prefix-arg '(16))
                      (and current-prefix-arg (listp current-prefix-arg))))
-  (when (or force (yes-or-no-p (format "Delete package %S? " id)))
-    (if-let ((e (elpaca-get id)))
+  (when (or force (yes-or-no-p (format "Delete package %S? " item)))
+    (if-let ((e (elpaca-get item)))
         (let* ((repo-dir      (elpaca<-repo-dir  e))
                (repo-p        (and repo-dir (file-exists-p repo-dir)
                                    (cl-assert (not (equal repo-dir elpaca-repos-directory)))))
                (build-dir     (elpaca<-build-dir e))
                (ignored       (if (listp ignored) ignored (list ignored)))
-               (dependents    (cl-set-difference (ignore-errors (elpaca-dependents id)) ignored))
+               (dependents    (cl-set-difference (ignore-errors (elpaca-dependents item)) ignored))
                (dependencies  (and deps repo-p
                                    (ignore-errors (elpaca-dependencies
-                                                   id elpaca-ignored-dependencies))))
+                                                   item elpaca-ignored-dependencies))))
                (recipe        (elpaca<-recipe e))
                (url           (plist-get recipe :url))
                (repo          (plist-get recipe :repo))
@@ -1606,20 +1606,20 @@ do not confirm before deleting package and DEPS."
                (info          (intern (concat url repo (and host (format "%s" host))))))
           (if (cl-some #'elpaca--on-disk-p dependents)
               (message "Cannot delete %S unless dependents %S are deleted first"
-                       id dependents)
+                       item dependents)
             (when repo-p (delete-directory repo-dir 'recursive))
             (when (file-exists-p build-dir)
               (setq load-path (delete build-dir load-path))
               (delete-directory build-dir 'recursive))
             (dolist (queue elpaca--queues)
               (setf (elpaca-q<-elpacas queue)
-                    (cl-remove id (elpaca-q<-elpacas queue) :key #'car)))
+                    (cl-remove item (elpaca-q<-elpacas queue) :key #'car)))
             (setf (alist-get info elpaca--repo-dirs nil 'remove) nil)
-            (message "Deleted package %S" id)
+            (message "Deleted package %S" item)
             (dolist (dependency (and deps dependencies))
-              (elpaca-delete dependency 'force deps (push id ignored)))))
-      (let ((recipe (elpaca-recipe id)))
-        (unless recipe (user-error "No recipe for %S" id))
+              (elpaca-delete dependency 'force deps (push item ignored)))))
+      (let ((recipe (elpaca-recipe item)))
+        (unless recipe (user-error "No recipe for %S" item))
         (when-let ((r (elpaca-repo-dir  recipe))) (delete-directory r 'recursive))
         (when-let ((b (elpaca-build-dir recipe))) (delete-directory b 'recursive))))))
 
