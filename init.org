@@ -1372,6 +1372,20 @@ https://github.com/rnkn/fountain-mode
 (use-package fountain-mode
   :mode "\\.fountain\\'")
 #+end_src
+** forge
+#+begin_quote
+Work with Git forges from the comfort of Magit
+#+end_quote
+
+https://github.com/magit/forge
+
+#+begin_src emacs-lisp :lexical t
+(use-package forge
+  :elpaca (:files (:defaults "docs/*"))
+  :after magit
+  :init (setq forge-add-default-bindings nil forge-display-in-status-buffer nil))
+#+end_src
+
 ** helm
 #+begin_quote
 Helm is an Emacs framework for incremental completions and narrowing selections.
