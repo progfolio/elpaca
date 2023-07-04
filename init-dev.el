@@ -11,8 +11,9 @@
 (auto-tangle-mode)
 (add-hook 'auto-tangle-before-tangle-hook #'check-parens)
 (add-hook 'auto-tangle-after-tangle-hook (lambda ()
-                                           (load-file "~/.emacs.d/init.el")
-                                           (elpaca-process-queues)))
+                                           (let ((elpaca-log-functions nil))
+                                             (load-file "~/.emacs.d/init.el")
+                                             (elpaca-process-queues))))
 (eldoc-mode)
 (setq ispell-buffer-session-localwords '( "ELPA"
                                           "EPUB"
