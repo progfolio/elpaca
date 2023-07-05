@@ -33,10 +33,6 @@
 (defcustom elpaca-log-default-search-query ".*" "Default query for `elpaca-log-buffer'."
   :type 'string :group 'elpaca-ui)
 
-(defun elpaca-log--tag-latest (items)
-  "Log latest ITEMS."
-  (butlast (reverse (sort (copy-tree items) #'elpaca-log--sort-chronologically))
-           elpaca-ui--prev-entry-count))
 (defcustom elpaca-log-search-tags
   '((verbosity . elpaca-log--verbosity)
     (latest . elpaca-log--tag-latest)
@@ -74,6 +70,13 @@ If it is a function, it's return value is used."
                              nil nil #'elpaca-log--find-command)))
       (if (functionp found) (funcall found) found)
     (if elpaca--ibs-set "#unique | !finished" "#latest")))
+
+(defun elpaca-log--tag-latest (items)
+  "Log latest ITEMS."
+  (cl-remove-if
+   (lambda (i) (time-less-p (get-text-property 0 'time (aref (cadr i) 3))
+                            elpaca--log-request-time))
+                items))
 
 (defun elpaca-log--visit-byte-comp-warning (file line col)
   "Visit warning location in FILE at LINE and COL."
@@ -199,14 +202,8 @@ If it is a function, it's return value is used."
                   (setf (alist-get status (alist-get item elpaca-ui--string-cache))
                         (propertize
                          package 'face (elpaca-alist-get status elpaca-status-faces 'default)))))))
-      (list item (vector pkg (symbol-name status) info delta)))
+      (list item (vector pkg (symbol-name status) info (propertize delta 'time time))))
     when entry collect entry)))
-
-(defun elpaca-log--set-latest ()
-  "Set context for #latest tag."
-  (with-current-buffer (get-buffer-create elpaca-log-buffer)
-    (when (bound-and-true-p elpaca-ui-entries-function)
-      (setq elpaca-ui--prev-entry-count (length (funcall elpaca-ui-entries-function))))))
 
 (defun elpaca-log--sort-chronologically (a b)
   "Sort entries A and B chronologically."

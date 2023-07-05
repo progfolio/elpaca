@@ -524,14 +524,14 @@ It's functions should return either:
 
 The first function, if any, which returns a non-nil is used." :type 'hook)
 
-(declare-function elpaca-log--set-latest "elpaca-log")
+(defvar elpaca--log-request-time nil "Time of most recent log event.")
 (declare-function elpaca-log "elpaca-log")
 (defun elpaca--maybe-log ()
   "Log if `elpaca-log-functions' return non-nil."
   (when-let ((query (run-hook-with-args-until-success 'elpaca-log-functions)))
     (require 'elpaca-log)
-    (elpaca-log--set-latest)
     (unless (eq query 'silent)
+      (setq elpaca--log-request-time (current-time)) ;;@MAYBE: move into elpaca-log?
       (elpaca-log (cond ((eq query t) nil)
                         ((stringp query) query)
                         (t (signal 'wrong-type-error `((stringp t) ,query))))))))
