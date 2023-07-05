@@ -9,9 +9,7 @@
 ;;; Code:
 (defgroup elpaca-ui nil "Elpaca's UI options." :group 'elpaca)
 
-(defface elpaca-ui-marked-delete
-  '((((class color) (background light)) :weight bold :foreground "red")
-    (((class color) (background dark))  :weight bold :foreground "red"))
+(defface elpaca-ui-marked-delete  '((t (:inherit error)))
   "Face for packages marked for deletion.")
 (defface elpaca-ui-marked-install
   '((((class color) (background light)) :weight bold :foreground "blue")
