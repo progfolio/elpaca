@@ -1383,7 +1383,9 @@ https://github.com/magit/forge
 (use-package forge
   :elpaca (:files (:defaults "docs/*"))
   :after magit
-  :init (setq forge-add-default-bindings nil forge-display-in-status-buffer nil))
+  :init (setq forge-add-default-bindings nil
+              forge-display-in-status-buffer nil
+              forge-add-pullreq-refspec nil))
 #+end_src
 
 ** helm
