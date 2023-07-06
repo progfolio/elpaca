@@ -63,8 +63,10 @@
          (setq mine-faces (nreverse (push spec mine-faces)))))))
 
 (mine-add-faces nil
-  (default :background ,purple :foreground ,yellow :weight normal :height 130)
   (cursor  :background ,green :foreground ,dark-purple :weight bold)
+  (default :background ,purple :foreground ,yellow :weight normal :height 130)
+  (error :foreground ,red :weight bold)
+  (warning :foreground "yellow" :weight bold)
   (fringe :inherit default)
   (header-line :inherit default :underline t)
   (highlight :inherit org-block)
