@@ -67,8 +67,9 @@ If it is a function, it's return value is used."
 (defun elpaca-log-defaults ()
   "Return contextual logging queries."
   (if-let ((found (alist-get this-command elpaca-log-command-queries
-                             nil nil #'elpaca-log--find-command)))
-      (if (functionp found) (funcall found) found)
+                             nil nil #'elpaca-log--find-command))
+           (result (if (functionp found) (funcall found) found)))
+      result
     (if elpaca--ibs-set "#unique | !finished" "#latest")))
 
 (defun elpaca-log--tag-latest (items)
