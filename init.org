@@ -425,7 +425,8 @@ And a macro to ease the creation of nested menu bindings:
   "p" '(:ignore t "elpaca")
   "pb" 'elpaca-browse
   "pr"  '((lambda () (interactive)
-            (let ((current-prefix-arg (not current-prefix-arg)))
+            (let ((current-prefix-arg (not current-prefix-arg))
+                  (this-command 'elpaca-rebuild))
               (call-interactively #'elpaca-rebuild)))
           :which-key "rebuild")
   "pm" 'elpaca-manager
