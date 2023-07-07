@@ -596,7 +596,7 @@ The following commands are available in the `elpaca-ui-mode`:
 | elpaca-ui-mark-delete      | d       | Mark package at point for ‘elpaca-delete’.                      |
 | elpaca-ui-mark-fetch       | f       | Mark package at point for ‘elpaca-fetch’.                       |
 | elpaca-ui-mark-try         | i       | Mark package at point for ‘elpaca-try’.                         |
-| elpaca-log                 | l       | Display ‘elpaca-log-buffer’.                                    |
+| elpaca-log                 | l       | Display ‘elpaca-log-buffer’ filtered by QUERY.                  |
 | elpaca-manager             | m       | Display elpaca’s package management UI.                         |
 | elpaca-ui-mark-rebuild     | r       | Mark package at point for ‘elpaca-rebuild’.                     |
 | elpaca-ui-search           | s       | Filter current buffer by QUERY. If QUERY is nil, prompt for it. |

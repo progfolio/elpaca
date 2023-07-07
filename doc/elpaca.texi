@@ -836,7 +836,7 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @tab Mark package at point for ‘elpaca-try’.
 @item elpaca-log
 @tab l
-@tab Display ‘elpaca-log-buffer’.
+@tab Display ‘elpaca-log-buffer’ filtered by QUERY@.
 @item elpaca-manager
 @tab m
 @tab Display elpaca’s package management UI@.
