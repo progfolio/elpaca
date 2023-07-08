@@ -737,11 +737,10 @@ Optional ARGS are passed to `elpaca--signal', which see."
       ((error) (warn "Autoload Error: %S" err))))
   (setf (elpaca-q<-status q) 'complete) ; Avoid loop when forms call elpaca-process-queue.
   (when-let ((forms (nreverse (elpaca-q<-forms q))))
-    (with-temp-buffer (setq-local lexical-binding t)
-                      (cl-loop for (item . body) in forms
-                               do (condition-case-unless-debug err
-                                      (eval `(progn ,@body) t)
-                                    ((error) (warn "Config Error %s: %S" item err)))))
+    (cl-loop for (item . thunk) in forms
+             do (condition-case-unless-debug err
+                    (funcall thunk)
+                  ((error) (warn "Config Error %s: %S" item err))))
     (setf (elpaca-q<-forms q) nil))
   (run-hooks 'elpaca-post-queue-hook)
   (let ((next (nth (1+ (elpaca-q<-id q)) (reverse elpaca--queues))))
@@ -1472,9 +1471,9 @@ If ORDER is `nil`, defer BODY until orders have been processed."
             (,q (or (and after-init-time (elpaca--q (elpaca-get ,item))) (car elpaca--queues))))
        ,@(when body
            `((if ,item
-                 (setf (alist-get ,item (elpaca-q<-forms ,q)) ',body)
+                 (setf (alist-get ,item (elpaca-q<-forms ,q)) (lambda () ,@body))
                ;;@FIX: nil semantics not good for multiple deferred...
-               (push (cons ,item ',body) (elpaca-q<-forms ,q)))))
+               (push (cons ,item (lambda () ,@body)) (elpaca-q<-forms ,q)))))
        (when ,o (elpaca--queue ,o ,q))
        (when after-init-time
          (when-let ((e (elpaca-get ,item)))
