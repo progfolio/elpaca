@@ -1271,17 +1271,16 @@ This is the branch that would be checked out upon cloning."
                 e (concat "unblocked by dependency " (elpaca<-package dependency)) 'unblocked))))))
 
 (defun elpaca--clone-process-sentinel (process _event)
-  "Sentinel for clone PROCESS." ;;@HACK: relies on locale dependent output
+  "Sentinel for clone PROCESS."
   (let ((e   (process-get process :elpaca))
-        (raw (process-get process :raw-output))
         (success (= (process-exit-status process) 0)))
-    (unless (or success (string-match-p "already exists" raw))
-      (if (not (string-match-p "does not support shallow capabilities" raw))
-          (elpaca--fail e (nth 2 (car (elpaca<-log e))))
+    (if (not (or success (plist-get (elpaca<-recipe e) :depth)))
+        (elpaca--fail e (nth 2 (car (elpaca<-log e))))
+      (unless success
         (setf (elpaca<-recipe e) (plist-put (elpaca<-recipe e) :depth nil))
         (elpaca--signal e "Re-cloning with recipe :depth nil")
-        (push #'elpaca--clone (elpaca<-build-steps e))))
-    (elpaca--continue-build e)))
+        (push #'elpaca--clone (elpaca<-build-steps e)))
+      (elpaca--continue-build e))))
 
 (defun elpaca--remote (remotes)
   "Return default remote from :REMOTES."
