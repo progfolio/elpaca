@@ -886,10 +886,8 @@ FILES and NOCONS are used recursively."
              (e (process-get process :elpaca)))
     (elpaca--signal e (process-get process :parsed) 'busy)))
 
-(defun elpaca--process-filter (process output &optional pattern status)
-  "Filter PROCESS OUTPUT.
-PATTERN is a string which is checked against the entire process output.
-If it matches, the E associated with process has its STATUS updated."
+(defun elpaca--process-filter (process output)
+  "Filter PROCESS OUTPUT."
   (process-put process :raw-output (concat (process-get process :raw-output) output))
   (let* ((e       (process-get process :elpaca))
          (parsed  (process-get process :parsed))
@@ -910,13 +908,7 @@ If it matches, the E associated with process has its STATUS updated."
       (setq lines (butlast lines)))
     (dolist (line lines)
       (unless (string-empty-p line)
-        (elpaca--signal e (car (last (split-string line "\r" t)))
-                        (and pattern (string-match-p pattern line) status) returnp)))
-    (when (and pattern (string-match-p pattern output))
-      (if (eq status 'failed)
-          (elpaca--fail e output)
-        (elpaca--signal e (process-get process :parsed) status)
-        (process-put process :parsed nil)))))
+        (elpaca--signal e (car (last (split-string line "\r" t))) nil returnp)))))
 
 (defun elpaca--process-sentinel (&optional info status process event)
   "Update E's INFO and STATUS when PROCESS EVENT is finished."
@@ -1271,9 +1263,10 @@ This is the branch that would be checked out upon cloning."
 
 (defun elpaca--clone-process-sentinel (process _event)
   "Sentinel for clone PROCESS."
-  (let ((e   (process-get process :elpaca))
+  (let ((e (process-get process :elpaca))
         (success (= (process-exit-status process) 0)))
-    (if (not (or success (plist-get (elpaca<-recipe e) :depth)))
+    (if (or (not (or success (plist-get (elpaca<-recipe e) :depth)))
+            (member 'reclone (elpaca<-statuses e)))
         (elpaca--fail e (nth 2 (car (elpaca<-log e))))
       (unless success
         (setf (elpaca<-recipe e) (plist-put (elpaca<-recipe e) :depth nil))
@@ -1308,10 +1301,6 @@ This is the branch that would be checked out upon cloning."
     (elpaca--signal e "Cloning" 'cloning)
     (elpaca--make-process e
       :name "clone" :command command :connection-type 'pty
-      :filter (lambda (process output)
-                (elpaca--process-filter
-                 process output
-                 "\\(?:^\\(?:Password\\|Username\\|passphrase\\)\\)" 'blocked))
       :sentinel #'elpaca--clone-process-sentinel)))
 
 (defun elpaca-generate-autoloads (package dir)
@@ -1729,23 +1718,26 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
                  (elpaca<-builtp e) nil))
   (when interactive (elpaca-process-queues)))
 
-(defun elpaca--merge-process-sentinel (process event)
+(defun elpaca--merge-process-sentinel (process _event)
   "Handle PROCESS EVENT."
-  (when-let (((equal event "finished\n"))
-             (e (process-get process :elpaca)))
-    (when (string-match-p "Already up to date" (nth 2 (car (elpaca<-log e))))
-      (setf (elpaca<-build-steps e) nil))
-    (elpaca--continue-build e)))
+  (if-let (((= (process-exit-status process) 0))
+           (e (process-get process :elpaca))
+           (default-directory (elpaca<-repo-dir e)))
+      (progn (when (equal (elpaca-process-output "git" "rev-parse" "HEAD")
+                          (process-get process :elpaca-git-rev))
+               (setf (elpaca<-build-steps e) nil))
+             (elpaca--continue-build e))
+    (elpaca--fail e)))
 
 (defun elpaca--merge (e)
   "Merge E's fetched commits."
-  (let* ((default-directory (elpaca<-repo-dir e)))
-    (elpaca--make-process e
-      :name "merge"
-      :command  '("git" "merge" "--ff-only")
-      :filter (lambda (process output)
-                (elpaca--process-filter process output "Aborting" 'failed))
-      :sentinel #'elpaca--merge-process-sentinel)
+  (let* ((default-directory (elpaca<-repo-dir e))
+         (rev (elpaca-process-output "git" "rev-parse" "HEAD")))
+    (process-put (elpaca--make-process e
+                   :name "merge"
+                   :command  '("git" "merge" "--ff-only")
+                   :sentinel #'elpaca--merge-process-sentinel)
+                 :elpaca-git-rev rev)
     (elpaca--signal e "Merging updates" 'merging)))
 
 (defun elpaca--announce-pin (e)
