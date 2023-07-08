@@ -44,7 +44,7 @@
 (defcustom elpaca-log-command-queries
   '(((elpaca-fetch elpaca-fetch-all)   . "#update-log")
     ((elpaca-try elpaca-rebuild)       . "#latest #linked-errors")
-    ((elapca-update elpaca-update-all) . "#unique | !finished")
+    ((elpaca-update elpaca-update-all) . "#unique | !finished")
     ((eval-buffer eval-region eval-defun eval-last-sexp org-ctrl-c-ctrl-c) . silent)
     (elpaca-delete . (lambda () (if (equal (buffer-name) elpaca-log-buffer)
                                     elpaca-ui-search-query 'silent)))
