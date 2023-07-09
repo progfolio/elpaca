@@ -1833,29 +1833,6 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
     (not (string-empty-p (elpaca-process-output
                           "git" "-c" "status.branch=false" "status" "--short")))))
 
-;;;###autoload
-(defun elpaca-unshallow (item) ;;@TODO: make async?
-  "Convert ITEM's repo to an unshallow repository."
-  (interactive (list (elpaca--read-queued "Unshallow Package Repository: ")))
-  (when-let ((e (or (alist-get item (elpaca--queued))
-                    (user-error "%s is not queued" item)))
-             (repo-dir (or (elpaca<-repo-dir e)
-                           (user-error "%s has no associated repo dir" item)))
-             (default-directory repo-dir)
-             ((or (equal
-                   (string-trim
-                    (elpaca-process-output "git" "rev-parse" "--is-shallow-repository"))
-                   "true")
-                  (user-error "%s is not a shallow repository" repo-dir)))
-             (remotes (plist-get (elpaca<-recipe e) :remotes)))
-    (cl-loop for remote in (if (stringp remotes) (list remotes) remotes)
-             for name = (elpaca--first remote)
-             do
-             (progn
-               (elpaca-process-call "git" "config" (format "remote.%s.fetch" name)
-                                    (format "+refs/heads/*:refs/remotes/%s/*" name))
-               (elpaca-process-call "git" "fetch" "--unshallow" name)))))
-
 (defun elpaca-load-lockfile (&optional lockfile _force)
   "Load LOCKFILE. If FORCE is non-nil, @TODO."
   (interactive "fLockfile: ")
