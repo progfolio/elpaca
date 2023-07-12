@@ -277,7 +277,7 @@ Values for each key are that of the right-most plist containing that key."
 
 (defun elpaca--menu-items (&optional cache menus)
   "Return alist of `elpaca-menu-functions' candidates from MENUS.
-If CACHE may be any of the following symbols:
+CACHE may be any of the following symbols:
   `t` Return cache or recompute if nil. Ignore MENUS.
   `nil` Recompute items, ignoring cache altogether.
   `recache` Invalidate and recompute cache considering MENUS.
