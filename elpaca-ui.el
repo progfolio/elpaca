@@ -725,7 +725,7 @@ The current package is its sole argument."
 (defun elpaca-ui-info ()
   "Show info for current package."
   (interactive)
-  (elpaca-info (elpaca-ui-current-package)))
+  (elpaca-info (elpaca-ui-current-package) (aref (tabulated-list-get-entry) 3)))
 
 (provide 'elpaca-ui)
 ;;; elpaca-ui.el ends here

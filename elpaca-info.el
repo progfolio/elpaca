@@ -116,7 +116,7 @@
     (setq-local elpaca--info
                 (mapcar #'cdr (cl-remove-if-not (lambda (it) (eq it item))
                                                 (append (elpaca--custom-candidates t)
-                                                        (elpaca--menu-items t))
+                                                        (elpaca--flattened-menus))
                                                 :key #'car))
                 elpaca-info--item item)
     (when (> elpaca-info--source-index (1- (length elpaca--info)))
@@ -170,15 +170,21 @@
     (goto-char (point-min))))
 
 ;;;###autoload
-(defun elpaca-info (item)
-  "Display package info for ITEM in a dedicated buffer."
-  (interactive (list (let* ((elpaca-overriding-prompt "Package info: ")
-                            (items (append (elpaca--custom-candidates t) (elpaca--menu-items t))))
-                       (car (elpaca-menu-item t items)))))
+(defun elpaca-info (item &optional source)
+  "Display package info for ITEM from SOURCE in a dedicated buffer."
+  (interactive (if-let ((elpaca-overriding-prompt "Package info: ")
+                        (items (append (elpaca--custom-candidates t) (elpaca--flattened-menus)))
+                        (item (elpaca-menu-item t items)))
+                   (list (car item) (plist-get (cdr item) :source))))
   (with-current-buffer (get-buffer-create "*elpaca-info*")
-    (unless (derived-mode-p 'elpaca-info-mode)
-      (elpaca-info-mode)
-      (setq-local elpaca-info--source-index 0))
+    (unless (derived-mode-p 'elpaca-info-mode) (elpaca-info-mode))
+    (setq-local elpaca-info--source-index
+                (or (cl-position source (cl-remove-if-not (lambda (it) (eq (car it) item))
+                                                          (append (elpaca--custom-candidates t)
+                                                                  (elpaca--flattened-menus)))
+                                 :key (lambda (item) (plist-get (cdr item) :source))
+                                 :test #'equal)
+                    0))
     (elpaca-info--print item)
     (pop-to-buffer (current-buffer))))
 
