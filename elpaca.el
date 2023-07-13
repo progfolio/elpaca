@@ -509,7 +509,7 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
                        ((listp steps) steps)))))
     (if builtp
         steps
-      (when (and mono-repo (memq 'ref-checked-out (elpaca<-statuses mono-repo)))
+      (when mono-repo
         (setq steps
               (cl-set-difference steps '(elpaca--clone elpaca--configure-remotes elpaca--checkout-ref))))
       (when clonedp (setq steps (delq 'elpaca--clone steps)))
@@ -563,13 +563,13 @@ The first function, if any, which returns a non-nil is used." :type 'hook)
          (build-dir (and recipe (elpaca-build-dir recipe)))
          (clonedp (and repo-dir (file-exists-p repo-dir)))
          (builtp (and clonedp build-dir (file-exists-p build-dir)))
-         (mono-repo (unless builtp
-                      (if-let ((e (elpaca--mono-repo id repo-dir))
-                               ((eq (elpaca<-queue-id e) (elpaca-q<-id (car elpaca--queues))))
-                               ((not (memq 'ref-checked-out (elpaca<-statuses e)))))
-                          (progn (setq status 'blocked info (concat "Waiting on monorepo " repo-dir))
-                                 (cl-pushnew id (elpaca<-siblings e)))
-                        e)))
+         (mono-repo (when-let (((not builtp))
+                               (e (elpaca--mono-repo id repo-dir)))
+                      (when (and (eq (elpaca<-queue-id e) (elpaca-q<-id (car elpaca--queues)))
+                                 (not (memq 'ref-checked-out (elpaca<-statuses e))))
+                        (setq status 'blocked info (concat "Waiting on monorepo " repo-dir))
+                        (cl-pushnew id (elpaca<-siblings e)))
+                      e))
          (build-steps (elpaca--build-steps recipe builtp clonedp mono-repo)))
     (unless (or builtp elpaca--ibs-set elpaca-hide-initial-build elpaca-after-init-time)
       (setq initial-buffer-choice #'elpaca--ibs elpaca--ibs-set t))
