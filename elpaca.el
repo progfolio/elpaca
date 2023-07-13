@@ -1791,6 +1791,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
              (setf (elpaca<-build-steps e) nil)
              (cond
               ((plist-get recipe :pin) (elpaca--signal e "Skipping pinned repo" 'queued))
+              ;;@FIX: we still want to rebuild after the repo has been pulled.
               ((member repo repos) (elpaca--signal e "Skipping mono-repo" 'queued))
               (t (setf (elpaca<-build-steps e)
                        `(elpaca--fetch
