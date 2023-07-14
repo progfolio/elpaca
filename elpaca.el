@@ -667,10 +667,6 @@ check (and possibly change) their statuses."
         (apply #'elpaca-process-poll command)
       (eval command t))))
 
-(defsubst elpaca--info (e)
-  "Return E's most recent log event info."
-  (nth 2 (car (elpaca<-log e))))
-
 (defun elpaca--continue-build (e &rest args)
   "Run E's next build step.
 Optional ARGS are passed to `elpaca--signal', which see."
