@@ -117,11 +117,9 @@
                                 ,(if core "master" (concat branch-prefix (when releasep "-release") "/" name))))
                          (when-let ((branch (plist-get props :branch))) `(:branch ,branch)))
                    ,@(let ((ignored (plist-get props :ignored-files)))
-                       (when (or ignored core)
-                         (unless (listp ignored) (setq ignored (list ignored)))
-                         `(:files (,@(unless core '(:defaults))
-                                   ,@core
-                                   ,@(when ignored `(:exclude ,@ignored))))))))
+                       ;;@TODO: support :core ((file new-name)...) format
+                       `(:files (,@(or core '("*")) ; ("*" :exclude ".git") is what package/straight.el default to.
+                                 ,@(append '(:exclude ".git") (if (listp ignored) ignored (list ignored))))))))
         (item-props (list :source elpa-name
                           :url (concat metadata-url name ".html")
                           :description (or (alist-get id metadata) "n/a")
