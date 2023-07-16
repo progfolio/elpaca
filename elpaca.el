@@ -1262,15 +1262,15 @@ This is the branch that would be checked out upon cloning."
 
 (defun elpaca--clone-process-sentinel (process _event)
   "Sentinel for clone PROCESS."
-  (let ((e (process-get process :elpaca))
-        (success (= (process-exit-status process) 0)))
-    (if (or (not (or success (plist-get (elpaca<-recipe e) :depth)))
-            (member 'reclone (elpaca<-statuses e)))
+  (if-let ((e (process-get process :elpaca))
+           (success (= (process-exit-status process) 0)))
+      (elpaca--continue-build e)
+    (if (or (memq 'reclone (elpaca<-statuses e))
+            (not (plist-get (elpaca<-recipe e) :depth)))
         (elpaca--fail e (nth 2 (car (elpaca<-log e))))
-      (unless success
-        (setf (elpaca<-recipe e) (plist-put (elpaca<-recipe e) :depth nil))
-        (elpaca--signal e "Re-cloning with recipe :depth nil")
-        (push #'elpaca--clone (elpaca<-build-steps e)))
+      (setf (elpaca<-recipe e) (plist-put (elpaca<-recipe e) :depth nil))
+      (elpaca--signal e "Re-cloning with recipe :depth nil" 'reclone)
+      (push #'elpaca--clone (elpaca<-build-steps e))
       (elpaca--continue-build e))))
 
 (defun elpaca--remote (remotes)
