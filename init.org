@@ -3116,19 +3116,13 @@ https://depp.brause.cc/shackle/
   :custom
   (smtpmail-queue-mail nil))
 #+end_src
-** stardict-utils
+** dictionary
 #+begin_src emacs-lisp :lexical t
-(use-package stardict-utils
-  :elpaca (stardict-utils :host github :repo "progfolio/stardict-utils" :protocol ssh)
-  :after (general helm)
-  :commands (stardict-define)
+(use-feature dictionary
   :general
-  (global-definer
-    "W" '(stardict-define :which-key "define word"))
-  (+general-global-application
-    "D" '((lambda () (interactive) (stardict-define nil)) :which-key "dictionary"))
-  (+general-global-text
-    "d" '(stardict-define :which-key "dictionary")))
+  (global-definer "W" 'dictionary-lookup-definition)
+  (+general-global-application "D" 'dictionary-search)
+  (+general-global-text "d" 'dictionary-search))
 #+end_src
 ** straight.el
 #+begin_src emacs-lisp :lexical t
