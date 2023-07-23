@@ -119,7 +119,7 @@
                    ,@(let ((ignored (plist-get props :ignored-files)))
                        ;;@TODO: support :core ((file new-name)...) format
                        `(:files (,@(or core '("*")) ; ("*" :exclude ".git") is what package/straight.el default to.
-                                 ,@(append '(:exclude ".git") (if (listp ignored) ignored (list ignored))))))))
+                                 ,@(list (append '(:exclude ".git") (if (listp ignored) ignored (list ignored)))))))))
         (item-props (list :source elpa-name
                           :url (concat metadata-url name ".html")
                           :description (or (alist-get id metadata) "n/a")
