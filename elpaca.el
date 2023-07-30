@@ -853,6 +853,25 @@ FILES and NOCONS are used recursively."
                 (cons (expand-file-name target)
                       (expand-file-name (file-name-nondirectory target) build-dir)))))))
 
+(defun elpaca--find-source-file-maybe ()
+  "Find corresponding source file for `current-buffer'."
+  (when-let ((file (buffer-file-name))
+             ((string-prefix-p elpaca-builds-directory file))
+             (e (cdr (cl-find-if (lambda (bdir) (string-match-p bdir file))
+                                 (elpaca--queued)
+                                 :key (lambda (qd) (elpaca<-build-dir (cdr qd))))))
+             (source (car (rassoc file (elpaca--files e))))
+             ((file-exists-p source)))
+    (find-alternate-file source)
+    (message "Found Elpaca build file source")))
+
+(define-minor-mode elpaca-no-symlink-mode
+  "Global minor mode which installs build files by copying."
+  :global t :group 'elpaca
+  (if elpaca-no-symlink-mode
+      (add-hook 'find-file-hook #'elpaca--find-source-file-maybe)
+    (remove-hook 'find-file-hook #'elpaca--find-source-file-maybe)))
+
 (defun elpaca--link-build-files (e)
   "Link E's :files into its builds subdirectory."
   (elpaca--signal e "Linking build files" 'linking)
@@ -866,7 +885,11 @@ FILES and NOCONS are used recursively."
                  ((file-exists-p file))
                  (link   (cdr spec)))
         (make-directory (file-name-directory link) 'parents)
-        (make-symbolic-link file link 'overwrite))))
+        (if elpaca-no-symlink-mode
+            (if (file-directory-p file)
+                (copy-directory file link nil 'parents 'recursive)
+              (copy-file file link 'overwrite))
+          (make-symbolic-link file link 'overwrite)))))
   (elpaca--continue-build e "Build files linked"))
 
 (defun elpaca--add-info-path (e)

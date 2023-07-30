@@ -96,8 +96,6 @@ Elpaca requires:
 Emacs >= 27.1
 @item
 git (minimum version TBD)
-@item
-Windows users must be able to create symlinks@footnote{@uref{https://www.howtogeek.com/16226/complete-guide-to-symbolic-links-symlinks-on-windows-or-linux/, windows symlink guide}}.
 @end itemize
 
 @node Installer
@@ -145,6 +143,16 @@ It then builds and activates Elpaca.
     (load "./elpaca-autoloads")))
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@@elpaca-order))
+@end lisp
+
+@itemize
+@item
+Windows users must be able to create symlinks@footnote{@uref{https://www.howtogeek.com/16226/complete-guide-to-symbolic-links-symlinks-on-windows-or-linux/, windows symlink guide}}, or enable @samp{elpaca-no-symlink-mode}
+@end itemize
+
+@lisp
+;; Uncomment for systems which cannot create symlinks:
+;; (elpaca-no-symlink-mode)
 @end lisp
 
 You'll also want to disable package.el in your early-init file@footnote{@uref{https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html, early-init file}}:

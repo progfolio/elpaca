@@ -46,7 +46,6 @@ It is a replacement for the built-in Emacs package manager, package.el.
 Elpaca requires:
 - Emacs >= 27.1
 - git (minimum version TBD)
-- Windows users must be able to create symlinks[fn:1].
 ** Installer
 :PROPERTIES:
 :CUSTOM_ID: installer
@@ -98,6 +97,13 @@ It then builds and activates Elpaca.
     (load "./elpaca-autoloads")))
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
+#+end_src
+
+- Windows users must be able to create symlinks[fn:1], or enable =elpaca-no-symlink-mode=
+
+#+begin_src emacs-lisp :lexical t :eval never-export :tangle "./init.el"
+;; Uncomment for systems which cannot create symlinks:
+;; (elpaca-no-symlink-mode)
 #+end_src
 
 You'll also want to disable package.el in your early-init file[fn:2]:

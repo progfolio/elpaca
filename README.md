@@ -29,7 +29,6 @@ Elpaca requires:
 
 -   Emacs >= 27.1
 -   git (minimum version TBD)
--   Windows users must be able to create symlinks<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>.
 
 
 <a id="installer"></a>
@@ -75,6 +74,13 @@ To install Elpaca, add the following elisp to your init.el. It must come before 
     (load "./elpaca-autoloads")))
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
+```
+
+-   Windows users must be able to create symlinks<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>, or enable `elpaca-no-symlink-mode`
+
+```emacs-lisp
+;; Uncomment for systems which cannot create symlinks:
+;; (elpaca-no-symlink-mode)
 ```
 
 You'll also want to disable package.el in your early-init file<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup>:
