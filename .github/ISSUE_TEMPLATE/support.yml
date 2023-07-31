@@ -1,0 +1,44 @@
+name: Support Request
+description: Use this if you need help using Elpaca (after reading the documentation)
+title: "[Support]: "
+labels: ["support"]
+body:
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      description: Please ensure you have read the documentation (including command/function docstrings), searched previous issues (open and closed) on the github issue  tracker,  and checked the github wiki before creating a support ticket. 
+      options:
+        - label: I have read the documentation and need clarification.
+          required: true
+        - label: I have searched previous issues to see if my question is a duplicate.
+          required: true
+        - label: I am  checking these without reading them.
+          required: false
+        - label: I have checked the Elpaca github wiki to see if my issue is covered.
+          required: true
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out a report.
+        Please keep reports focused to a single issue and provide all the requested details.
+  - type: textarea
+    id: elpaca-version
+    attributes:
+      label: Elpaca Version
+      description: Output of the elpaca-version command (not elpaca-installer-version)
+      placeholder: Please include the output of the elpaca-version command (M-x elpaca-version)
+    validations:
+      required: true
+  - type: textarea
+    id: operating-system
+    attributes:
+      label: Operating System
+      description: What operating system are you using Emacs on?
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Please be as specific as possible. Include examples if possible.
