@@ -210,10 +210,10 @@ Each function is passed a request, which may be any of the following symbols:
 
 (defcustom elpaca-ignored-dependencies
   `( emacs cl-lib cl-generic nadvice org org-mode map seq json project auth-source-pass
-     let-alist flymake jsonrpc eldoc erc external-completion ntlm python so-long soap-client
+     let-alist flymake jsonrpc eldoc erc ntlm python so-long soap-client
      svg ruby-mode verilog-mode xref
      ,@(unless (< emacs-major-version 28) '(transient))
-     ,@(unless (< emacs-major-version 29) '(use-package bind-key eglot)))
+     ,@(unless (< emacs-major-version 29) '(external-completion use-package bind-key eglot)))
   "List of items which are not installed unless the user explicitly requests them."
   :type '(repeat symbol))
 
