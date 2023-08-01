@@ -130,41 +130,34 @@ If it is a function, it's return value is used."
 (defun elpaca-log--updates (entries)
   "Return compact update log from ENTRIES."
   (cl-loop
-   with (current compact)
+   with compact
    with buttonp = (fboundp 'magit-show-commit)
-   for entry in (reverse entries)
-   for cols = (cadr entry)
-   for status = (aref cols 1)
-   for info = (aref cols 2)
-   do (if (and (equal status "update-log")
-               (not (string-match-p "\\(?:^\\(?:\\(?:Author\\|Merge\\):\\)\\)" info)))
-          (cond
-           ((string-prefix-p "commit " info)
-            (setf (alist-get 'commit current)
-                  (if-let ((abbreviated  (substring info 7 13))
-                           (buttonp))
-                      (elpaca-ui--buttonize abbreviated #'elpaca-log--show-ref
-                                            (cons (car entry) abbreviated))
-                    (propertize abbreviated 'face 'elpaca-log-highlight))))
-           ((string-prefix-p "Date: " info)
-            (let ((ws (split-string (string-trim info) " ")))
-              (setf (alist-get 'date current)
-                    (format "(%s %s %s)" (nth 4 ws) (nth 5 ws) (nth 7 ws)))))
-           (current ;; on first message line
-            (let* ((copy (copy-tree entry))
-                   (info (thread-last
-                           (string-trim info)
-                           (replace-regexp-in-string "^\\* +" "")
-                           (replace-regexp-in-string
-                            "\\(?:[([]\\{1\\}[^z-a]*?#[^z-a]+?[])]\\{1\\}\\)"
-                            (lambda (s) (propertize s 'face 'elpaca-log-highlight)))
-                           (replace-regexp-in-string
-                            "^.*: " (lambda (s) (propertize s 'face 'elpaca-log-highlight))))))
-              (setf (aref (cadr copy) 2)
-                    (concat (alist-get 'commit current) " " info " "
-                            (propertize (alist-get 'date current) 'face 'elpaca-log-info))
-                    current nil)
-              (push copy compact))))
+   for entry in entries
+   do (if-let ((cols (cadr entry))
+               (status (aref cols 1))
+               ((equal status "update-log"))
+               (info (aref cols 2))
+               (tokens (string-split info " "))
+               (commit (pop tokens))
+               (date (propertize (replace-regexp-in-string "^.*\\((.*)\\)" "\\1" info)
+                                 'face 'elpaca-log-info))
+               (info (let* ((i (string-trim (replace-regexp-in-string (regexp-quote date) ""
+                                                                      (string-join tokens " "))))
+                            (i (replace-regexp-in-string "^\\* +" "" i))
+                            (i (replace-regexp-in-string
+                                "\\(?:[([]\\{1\\}[^z-a]*?#[^z-a]+?[])]\\{1\\}\\)"
+                                (lambda (s) (propertize s 'face 'elpaca-log-highlight))
+                                i)))
+                       (replace-regexp-in-string
+                        "^.*: " (lambda (s) (propertize s 'face 'elpaca-log-highlight))
+                        i nil t)))
+               (button (if buttonp (elpaca-ui--buttonize commit #'elpaca-log--show-ref
+                                                         (cons (car entry) commit))
+                         commit))
+               (copy (copy-tree entry)))
+          (progn
+            (setf (aref (cadr copy) 2) (concat button " " info " " date))
+            (push copy compact))
         (when (string-match-p "failed" status) (push entry compact)))
    finally return compact))
 

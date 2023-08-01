@@ -1672,14 +1672,16 @@ With a prefix argument, rebuild current file's package or prompt if none found."
       (elpaca--maybe-log)
       (elpaca-process-queues))))
 
-;;@TODO: leverage git log pretty formatting instead of parsing.
 (defun elpaca--log-updates (e)
   "Log E's fetched commits."
   (elpaca--signal e nil 'update-log)
-  (let* ((default-directory (elpaca<-repo-dir e)))
+  (let* ((default-directory (elpaca<-repo-dir e))
+         (date (string-trim (elpaca-process-output "git" "show" "-s" "--format=%ci"))))
     (elpaca--make-process e
       :name "log-updates"
-      :command (list "git" "--no-pager" "log" "..@{u}") ;Pager breaks pipe process.
+      ;; Pager breaks pipe process.
+      :command (list "git" "--no-pager" "log" "--reverse" (concat "--since=" date)
+                     "--pretty=%h %s (%ch)" "..@{u}")
       :sentinel (apply-partially #'elpaca--process-sentinel nil nil))))
 
 (defun elpaca--fetch (e)
