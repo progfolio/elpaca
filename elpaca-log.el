@@ -74,9 +74,8 @@ If it is a function, it's return value is used."
 
 (defun elpaca-log--tag-latest (items)
   "Log latest ITEMS."
-  (cl-remove-if
-   (lambda (i) (time-less-p (get-text-property 0 'time (aref (cadr i) 3))
-                            elpaca--log-request-time))
+  (cl-remove-if (lambda (i) (time-less-p (get-text-property 0 'time (aref (cadr i) 3))
+                                         elpaca--log-request-time))
                 items))
 
 (defun elpaca-log--visit-byte-comp-warning (file line col)
