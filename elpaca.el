@@ -612,7 +612,7 @@ If REPLACE is non-nil, the most recent log entry is replaced."
            finally return statuses))
 
 (defun elpaca--signal (e &optional info status replace verbosity)
-  "Signal a change to E.
+  "Signal a change to E. Return nil.
 If INFO is non-nil, log and possibly print it in `elpaca-log-buffer'.
 If REPLACE is non-nil, E's log is updated instead of appended.
 If VERBOSITY is non-nil, log event is given that verbosity number.
@@ -642,8 +642,8 @@ check (and possibly change) their statuses."
       (if elpaca--waiting ; Don't set timer. We're already polling.
           (elpaca--update-log-buffer)
         (setq elpaca--log-timer
-              (and info (run-at-time elpaca-log-interval nil #'elpaca--update-log-buffer)))
-        nil))))
+              (and info (run-at-time elpaca-log-interval nil #'elpaca--update-log-buffer))))))
+  nil)
 
 (defun elpaca--fail (e &optional reason)
   "Fail E for REASON."
