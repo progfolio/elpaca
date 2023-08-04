@@ -1232,7 +1232,7 @@ This is the branch that would be checked out upon cloning."
           `("git" "-c" "advice.detachedHead=false" ;ref, tag may detach HEAD
             ,@(cond
                (ref    (list "checkout" ref))
-               (tag    (list "checkout" (concat ".git/refs/tags/" tag)))
+               (tag    (list "checkout" (concat "tags/" tag)))
                (branch (list "switch" "-C" branch ; "--no-guess"?
                              (concat (or (elpaca--first remote)
                                          elpaca-default-remote-name)
