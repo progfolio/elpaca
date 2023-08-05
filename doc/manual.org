@@ -493,6 +493,70 @@ If /ORDER/ is nil, /BODY/ is still executed after processing the current queue.
 (elpaca third (message "Third configured"))
 #+end_src
 
+Interactively evaluating an =elpaca= declaration will re-process the order.
+This can be used to change a package's recipe prior to rebuilding it.
+Note that rebuilding a package does not *reload* a package.
+It's best to restart Emacs after a successful rebuild if you wish to have the changes loaded.
+
+** use-package Integration
+:PROPERTIES:
+:CUSTOM_ID: use-package-integration
+:END:
+
+Adding the following elisp to your init file will enable Elpaca's optional integration with the use-package configuration macro:
+
+#+begin_src emacs-lisp :lexical t
+(elpaca elpaca-use-package
+  ;; Enable :elpaca use-package keyword.
+  (elpaca-use-package-mode)
+  ;; Assume :elpaca t unless otherwise specified.
+  (setq elpaca-use-package-by-default t))
+
+;; Necessary to use the `:elpaca' use-package keyword at the top-level.
+(elpaca-wait)
+#+end_src
+
+#+begin_src emacs-lisp :lexical t
+(use-package example)
+#+end_src
+
+Expands to:
+
+#+begin_src emacs-lisp :lexical t
+(elpaca example (use-package example))
+#+end_src
+
+The =:elpaca= use-package keyword can also accept a recipe
+
+#+begin_src emacs-lisp :lexical t
+(use-package example :elpaca (:host host :repo "user/repo"))
+#+end_src
+
+Expands to:
+
+#+begin_src emacs-lisp :lexical t
+(elpaca (example :host host :repo "user/repo")
+  (use-package example))
+#+end_src
+
+When installing a package which modifies a form used at the top-level (e.g. a package which adds a use-package key word), use `elpaca-wait' to block until that package has been installed and configured.
+For example:
+
+#+begin_src emacs-lisp :lexical t
+(use-package general :demand t)
+(elpaca-wait)
+;; use-package declarations beyond this point may use the `:general' use-package keyword.
+#+end_src
+
+
+In order to turn off =elpaca-use-package-mode= for a given delcaration, specify =:elpaca nil=:
+
+#+begin_src emacs-lisp :lexical t
+;; `emacs' is a pseudo-feature which can to configure built-in functionality.
+(use-package emacs :elpaca nil :config (setq ring-bell-function #'ignore))
+#+end_src
+
+Note this will cause the declaration to be interpreted immediately (not deferred).
 * UI
 :PROPERTIES:
 :DESCRIPTION: Elpaca's package management UI.

@@ -61,6 +61,7 @@ Usage
 
 * Quick Start::
 * Basic concepts::
+* use-package Integration::
 
 Basic concepts
 
@@ -160,6 +161,7 @@ And remove anything related to package.el in your init file. e.g. calls to @code
 @menu
 * Quick Start::
 * Basic concepts::
+* use-package Integration::
 @end menu
 
 @node Quick Start
@@ -778,6 +780,69 @@ If @emph{ORDER} is nil, @emph{BODY} is still executed after processing the curre
 (elpaca nil (message "Second"))
 (elpaca third (message "Third configured"))
 @end lisp
+
+Interactively evaluating an @samp{elpaca} declaration will re-process the order.
+This can be used to change a package's recipe prior to rebuilding it.
+Note that rebuilding a package does not @strong{reload} a package.
+It's best to restart Emacs after a successful rebuild if you wish to have the changes loaded.
+
+@node use-package Integration
+@section use-package Integration
+
+Adding the following elisp to your init file will enable Elpaca's optional integration with the use-package configuration macro:
+
+@lisp
+(elpaca elpaca-use-package
+  ;; Enable :elpaca use-package keyword.
+  (elpaca-use-package-mode)
+  ;; Assume :elpaca t unless otherwise specified.
+  (setq elpaca-use-package-by-default t))
+
+;; Necessary to use the `:elpaca' use-package keyword at the top-level.
+(elpaca-wait)
+@end lisp
+
+@lisp
+(use-package example)
+@end lisp
+
+Expands to:
+
+@lisp
+(elpaca example (use-package example))
+@end lisp
+
+The @samp{:elpaca} use-package keyword can also accept a recipe
+
+@lisp
+(use-package example :elpaca (:host host :repo "user/repo"))
+@end lisp
+
+Expands to:
+
+@lisp
+(elpaca (example :host host :repo "user/repo")
+  (use-package example))
+@end lisp
+
+When installing a package which modifies a form used at the top-level (e.g. a package which adds a use-package key word), use `elpaca-wait' to block until that package has been installed and configured.
+For example:
+
+@lisp
+(use-package general :demand t)
+(elpaca-wait)
+;; use-package declarations beyond this point may use the `:general' use-package keyword.
+@end lisp
+
+
+In order to turn off @samp{elpaca-use-package-mode} for a given delcaration, specify @samp{:elpaca nil}:
+
+@lisp
+;; `emacs' is a pseudo-feature which can to configure built-in functionality.
+(use-package emacs :elpaca nil :config (setq ring-bell-function #'ignore))
+@end lisp
+
+Note this will cause the declaration to be interpreted immediately (not deferred).
 
 @node UI
 @chapter UI

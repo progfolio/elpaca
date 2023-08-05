@@ -9,6 +9,7 @@
     - [Orders](#orders)
     - [Queues](#queues)
     - [Installing Packages](#installing-packages)
+  - [use-package Integration](#use-package-integration)
 - [UI](#ui)
   - [Searching](#searching)
   - [Search tags](#search-tags)
@@ -570,6 +571,66 @@ If *ORDER* is nil, *BODY* is still executed after processing the current queue.
 (elpaca nil (message "Second"))
 (elpaca third (message "Third configured"))
 ```
+
+Interactively evaluating an `elpaca` declaration will re-process the order. This can be used to change a package&rsquo;s recipe prior to rebuilding it. Note that rebuilding a package does not **reload** a package. It&rsquo;s best to restart Emacs after a successful rebuild if you wish to have the changes loaded.
+
+
+<a id="use-package-integration"></a>
+
+## use-package Integration
+
+Adding the following elisp to your init file will enable Elpaca&rsquo;s optional integration with the use-package configuration macro:
+
+```emacs-lisp
+(elpaca elpaca-use-package
+  ;; Enable :elpaca use-package keyword.
+  (elpaca-use-package-mode)
+  ;; Assume :elpaca t unless otherwise specified.
+  (setq elpaca-use-package-by-default t))
+
+;; Necessary to use the `:elpaca' use-package keyword at the top-level.
+(elpaca-wait)
+```
+
+```emacs-lisp
+(use-package example)
+```
+
+Expands to:
+
+```emacs-lisp
+(elpaca example (use-package example))
+```
+
+The `:elpaca` use-package keyword can also accept a recipe
+
+```emacs-lisp
+(use-package example :elpaca (:host host :repo "user/repo"))
+```
+
+Expands to:
+
+```emacs-lisp
+(elpaca (example :host host :repo "user/repo")
+  (use-package example))
+```
+
+When installing a package which modifies a form used at the top-level (e.g. a package which adds a use-package key word), use \`elpaca-wait&rsquo; to block until that package has been installed and configured. For example:
+
+```emacs-lisp
+(use-package general :demand t)
+(elpaca-wait)
+;; use-package declarations beyond this point may use the `:general' use-package keyword.
+```
+
+In order to turn off `elpaca-use-package-mode` for a given delcaration, specify `:elpaca nil`:
+
+```emacs-lisp
+;; `emacs' is a pseudo-feature which can to configure built-in functionality.
+(use-package emacs :elpaca nil :config (setq ring-bell-function #'ignore))
+```
+
+Note this will cause the declaration to be interpreted immediately (not deferred).
 
 
 <a id="ui"></a>
