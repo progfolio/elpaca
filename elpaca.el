@@ -1450,20 +1450,21 @@ When MESSAGE is non-nil, message the list of dependents."
   "Debounces interactive evaluation of multiple `elpaca' forms.")
 
 ;;;; COMMANDS/MACROS
-;;;###autoload
-(defmacro elpaca (order &rest body)
-  "Queue ORDER for installation/activation, defer execution of BODY.
-If ORDER is `nil`, defer BODY until orders have been processed."
-  (declare (indent 1) (debug t))
+(defun elpaca--expand (order body make-thunk)
+  "Expand `elpaca' and alike.
+ORDER and BODY are as in `elpaca', while MAKE-THUNK is used to produce
+the thunk when given BODY."
+  (declare (side-effect-free t))
   (let ((o (gensym "order-")) (item (gensym "item-")) (q (gensym "q-")))
     `(let* ((,o ,@(if (memq (car-safe order) '(quote \`)) `(,order) `(',order)))
             (,item (elpaca--first ,o))
             (,q (or (and after-init-time (elpaca--q (elpaca-get ,item))) (car elpaca--queues))))
        ,@(when body
-           `((if ,item
-                 (setf (alist-get ,item (elpaca-q<-forms ,q)) (lambda () (eval '(progn ,@body) t)))
-               ;;@FIX: nil semantics not good for multiple deferred...
-               (push (cons ,item (lambda () (eval '(progn ,@body) t))) (elpaca-q<-forms ,q)))))
+           (let ((thunk (funcall make-thunk body)))
+             `((if ,item
+                   (setf (alist-get ,item (elpaca-q<-forms ,q)) ,thunk)
+                 ;;@FIX: nil semantics not good for multiple deferred...
+                 (push (cons ,item ,thunk) (elpaca-q<-forms ,q))))))
        (when ,o (elpaca--queue ,o ,q))
        (when after-init-time
          (when-let ((e (elpaca-get ,item)))
@@ -1475,6 +1476,23 @@ If ORDER is `nil`, defer BODY until orders have been processed."
            (when elpaca--interactive-timer (cancel-timer elpaca--interactive-timer))
            (run-at-time elpaca-interactive-interval nil #'elpaca-process-queues)))
        nil)))
+
+;;;###autoload
+(defmacro elpaca (order &rest body)
+  "Queue ORDER for installation/activation, defer execution of BODY.
+If ORDER is `nil`, defer BODY until orders have been processed."
+  (declare (indent 1) (debug t))
+  (elpaca--expand
+   order body
+   (lambda (body) `(lambda () (eval '(progn ,@body) t)))))
+
+;;;###autoload
+(defmacro elpaca-thunk (order &rest body)
+  "Queue ORDER like `elpaca', but BODY is wrapped in a thunk."
+  (declare (indent 1) (debug t))
+  (elpaca--expand
+   order body
+   (lambda (body) `(lambda () ,@body))))
 
 (defcustom elpaca-wait-interval 0.01 "Seconds between `elpaca-wait' status checks."
   :type 'number)
