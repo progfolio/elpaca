@@ -210,7 +210,8 @@ The following keys are recognized:
                (delete-region (point) (point-max))
                (insert ,(pp-to-string `(progn ,@init)))))
          (elisp-enable-lexical-binding))
-       (let ((default-directory default-directory)) ,@(plist-get args :before))
+       ,@(when-let ((before (plist-get args :before)))
+           `((let ((default-directory default-directory)) ,@before)))
        (when buffer (elpaca-test--format-output-buffer buffer ,test))
        (process-put
         (make-process
