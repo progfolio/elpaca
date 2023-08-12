@@ -769,9 +769,11 @@ Optional ARGS are passed to `elpaca--signal', which see."
      e (concat  "✓ " (format-time-string "%s.%3N" (elpaca--log-duration e)) " secs")
      'finished))
   (let* ((q (elpaca--q e))
-         (es (elpaca-q<-elpacas q))
-         (next (and elpaca-queue-limit (cdr (cl-find-if #'elpaca--throttled-p es :key #'cdr)))))
-    (when next
+         (es (elpaca-q<-elpacas q)))
+    (when-let ((elpaca-queue-limit)
+               (next (cl-some (lambda (qd) (let ((e (cdr qd)))
+                                             (and (elpaca--throttled-p e) e)))
+                              es)))
       (elpaca--signal next nil 'unthrottled)
       (elpaca--continue-build next))
     (when (= (cl-incf (elpaca-q<-processed q)) (length es)) (elpaca--finalize-queue q))))
@@ -1485,9 +1487,10 @@ If ORDER is `nil`, defer BODY until orders have been processed."
 (defun elpaca-wait ()
   "Block until currently queued orders are processed.
 When quit with \\[keyboard-quit], running sub-processes are not stopped."
-  (when-let ((q (cl-find-if (lambda (q) (and (eq (elpaca-q<-status q) 'incomplete)
-                                             (or (elpaca-q<-elpacas q) (elpaca-q<-forms q))))
-                            elpaca--queues)))
+  (when-let ((q (cl-some (lambda (q) (and (eq (elpaca-q<-status q) 'incomplete)
+                                          (or (elpaca-q<-elpacas q) (elpaca-q<-forms q))
+                                          q))
+                         elpaca--queues)))
     (setq elpaca--waiting t)
     (unless (or elpaca-after-init-time (not elpaca--ibs-set))
       (elpaca--maybe-log)

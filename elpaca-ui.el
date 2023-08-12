@@ -449,7 +449,8 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
   "Propertize entries which are marked/installed.
 ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
   (if-let ((name (propertize (aref cols 0) 'display nil))
-           (found (cl-find (intern name) elpaca-ui--print-cache :key #'car))
+           (namesym (intern name))
+           (found (cl-some (lambda (it) (and (eq namesym (car it)) it)) elpaca-ui--print-cache))
            (target (cdr found))
            (result (if (elpaca<-p target) ;;not marked
                        (if elpaca-ui--want-faces
