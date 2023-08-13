@@ -553,6 +553,15 @@ The same as @samp{:pre-build}, but run just before activating a package.
 (elpaca (example :post-build (message "activate next")))
 @end lisp
 
+@table @asis
+@item :autoloads
+The name of the file the package's autoload file.
+When @samp{nil}, autoload loading and generation are disabled for the package.
+When @samp{t}, the default autoload file is generated/loaded (@samp{PACKAGE-NAME-autoloads.el}).
+The value may also be a string which is expanded relative to the package's build directory.
+e.g. @samp{"org-loaddefs.el"}.
+@end table
+
 @enumerate
 @item
 @anchor{Inheritance precedence}Inheritance precedence

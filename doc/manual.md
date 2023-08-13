@@ -393,6 +393,8 @@ For example:
 (elpaca (example :post-build (message "activate next")))
 ```
 
+-   **:autoloads:** The name of the file the package&rsquo;s autoload file. When `nil`, autoload loading and generation are disabled for the package. When `t`, the default autoload file is generated/loaded (`PACKAGE-NAME-autoloads.el`). The value may also be a string which is expanded relative to the package&rsquo;s build directory. e.g. `"org-loaddefs.el"`.
+
 1.  Inheritance precedence
 
     The following list shows the order of precedence for inheritance. Each item takes precedence over the items which follow it.

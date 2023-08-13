@@ -292,6 +292,12 @@ For example:
 (elpaca (example :post-build (message "activate next")))
 #+end_src
 
+- :autoloads :: The name of the file the package's autoload file.
+  When =nil=, autoload loading and generation are disabled for the package.
+  When =t=, the default autoload file is generated/loaded (=PACKAGE-NAME-autoloads.el=).
+  The value may also be a string which is expanded relative to the package's build directory.
+  e.g. ="org-loaddefs.el"=.
+
 **** Inheritance precedence
 :PROPERTIES:
 :CUSTOM_ID: inheritance-precedence

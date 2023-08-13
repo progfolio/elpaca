@@ -1311,8 +1311,9 @@ This is the branch that would be checked out upon cloning."
   "Generate autoloads in DIR for PACKAGE."
   (or (require 'loaddefs-gen nil t) (require 'autoload))
   (let* ((default-directory dir)
-         (name (concat package "-autoloads.el"))
-         (output    (expand-file-name name dir))
+         (output (expand-file-name (or generated-autoload-file
+                                       (concat package "-autoloads.el")
+                                       dir)))
          (generated-autoload-file output)
          (autoload-timestamps nil)
          (backup-inhibited t)
@@ -1328,65 +1329,75 @@ This is the branch that would be checked out upon cloning."
                 for d = (file-name-directory file)
                 unless (member d seen)
                 collect d do (push d seen))
-       name nil nil nil t)) ;; Emacs 29
+       output nil nil nil t)) ;; Emacs 29
      ((fboundp 'make-directory-autoloads) (make-directory-autoloads dir output))
      ((fboundp 'update-directory-autoloads) ;; Compatibility for Emacs < 28.1
       (with-no-warnings (update-directory-autoloads dir))))
     (when-let ((buf (find-buffer-visiting output))) (kill-buffer buf))
-    name))
+    output))
 
 (defun elpaca--generate-autoloads-async (e)
   "Generate E's autoloads asynchronously."
-  (let* ((package           (elpaca<-package  e))
-         (default-directory (elpaca<-build-dir e))
-         (elpaca            (expand-file-name "elpaca/" elpaca-repos-directory))
-         (program           (let (print-level print-circle)
-                              (format "%S" `(progn (setq gc-cons-percentage 1.0)
-                                                   (elpaca-generate-autoloads
-                                                    ,package ,default-directory))))))
-    (elpaca--make-process e
-      :name "autoloads"
-      :command (list (elpaca--emacs-path) "-Q" "-L" elpaca
-                     "-l" (expand-file-name "elpaca.el" elpaca)
-                     "--batch" "--eval" program)
-      :sentinel (apply-partially #'elpaca--process-sentinel "Autoloads Generated" nil))
-    (elpaca--signal e (concat "Generating autoloads: " default-directory) 'autoloads)))
+  (if-let ((recipe (elpaca<-recipe e))
+           (autoloads (let ((member (plist-member recipe :autoloads)))
+                        (if member (cadr member) t)))
+           (package (elpaca<-package  e))
+           (default-directory (elpaca<-build-dir e))
+           (elpaca (expand-file-name "elpaca/" elpaca-repos-directory))
+           (program (let (print-level print-circle)
+                      (format "%S" `(progn (setq gc-cons-percentage 1.0
+                                                 ,@(when (stringp autoloads)
+                                                     `(generated-autoload-file ,autoloads)))
+                                           (elpaca-generate-autoloads
+                                            ,package ,default-directory))))))
+      (progn
+        (elpaca--make-process e
+          :name "autoloads"
+          :command (list (elpaca--emacs-path) "-Q" "-L" elpaca
+                         "-l" (expand-file-name "elpaca.el" elpaca)
+                         "--batch" "--eval" program)
+          :sentinel (apply-partially #'elpaca--process-sentinel "Autoloads Generated" nil))
+        (elpaca--signal e (concat "Generating autoloads: " default-directory) 'autoloads))
+    (elpaca--continue-build e)))
 
 (defun elpaca--activate-package (e)
   "Activate E's package.
 Adds package's build dir to `load-path'.
 Loads or caches autoloads."
-  (elpaca--signal e "Activating package" 'activation)
-  (let* ((build-dir (elpaca<-build-dir e))
-         (default-directory build-dir)
-         (package           (elpaca<-package e))
-         (autoloads         (expand-file-name (concat package "-autoloads.el"))))
-    (cl-pushnew build-dir load-path :test #'equal)
-    ;;@TODO: condition on a slot we set on the e to indicate cached recipe?
+  (let ((default-directory (elpaca<-build-dir e)))
+    (elpaca--signal e "Activating package" 'activation)
+    (cl-pushnew default-directory load-path :test #'equal)
     (elpaca--signal e "Package build dir added to load-path")
-    (when (file-exists-p autoloads)
-      (if elpaca-cache-autoloads
-          (let ((forms nil))
-            (elpaca--signal e "Caching autoloads")
-            (with-temp-buffer
-              (insert-file-contents autoloads)
-              (goto-char (point-min))
-              (condition-case _
-                  (while t (push (read (current-buffer)) forms))
-                ((end-of-file)))
-              (push `(let ((load-file-name ,autoloads)
-                           (load-in-progress t))
-                       (condition-case err
-                           (progn ,@(nreverse forms))
-                         ((error) (warn "Error loading %S autoloads: %S" ,package err))))
-                    (elpaca-q<-autoloads (elpaca--q e))))
-            (elpaca--signal e "Autoloads cached"))
-        (condition-case err
-            (progn
-              (load autoloads nil 'nomessage)
-              (elpaca--signal e "Package activated" 'activated))
-          ((error) (elpaca--signal
-                    e (format "Failed to load %S: %S" autoloads err) 'failed-to-activate))))))
+    (if-let ((recipe (elpaca<-recipe e))
+             (key (let ((member (plist-member recipe :autoloads)))
+                     (if (not member) 'undeclared (cadr member))))
+             (pkg (elpaca<-package e)) ;;@MAYBE: strip file extension
+             (autoloads (expand-file-name
+                         (or (and (stringp key) key) (concat pkg "-autoloads.el"))))
+             ((file-exists-p autoloads)))
+        (if elpaca-cache-autoloads
+            (let ((forms nil))
+              (elpaca--signal e "Caching autoloads")
+              (with-temp-buffer
+                (insert-file-contents autoloads)
+                (goto-char (point-min))
+                (condition-case _
+                    (while t (push (read (current-buffer)) forms))
+                  ((end-of-file)))
+                (push `(let ((load-file-name ,autoloads)
+                             (load-in-progress t))
+                         (condition-case err
+                             (progn ,@(nreverse forms))
+                           ((error) (warn "Error loading %S autoloads: %S" ,pkg err))))
+                      (elpaca-q<-autoloads (elpaca--q e))))
+              (elpaca--signal e "Autoloads cached"))
+          (condition-case err
+              (progn
+                (load autoloads nil 'nomessage)
+                (elpaca--signal e "Package activated" 'activated))
+            ((error) (elpaca--signal
+                      e (format "Failed to load %S: %S" autoloads err) 'failed-to-activate))))
+      (and (stringp key) (elpaca--signal e (concat "nonexistent :autoloads file \"" key "\"")))))
   (elpaca--continue-build e))
 
 (defun elpaca--byte-compile (e)
