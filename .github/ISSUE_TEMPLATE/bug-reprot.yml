@@ -27,4 +27,4 @@ body:
     id: description
     attributes:
       label: Description
-      description: Describe the problem. What did you expected to happen? What actually happened? Please include steps (preferably via the `elpaca-test` macro) to reproduce the bug if possible.
+      description: Describe the problem. What did you expected to happen? What actually happened? Please include steps (preferably via the `elpaca-test` macro) to reproduce the bug if possible. Please do not inlcude a screenshot if you sharing text (error messages, log output, etc).
