@@ -56,7 +56,7 @@ If it is a function, it's return value is used."
 
 (defun elpaca-log--marked-query ()
   "Return query for marked packages."
-  (when (= (length elpaca-ui--marked-packages) 1)
+  (when (= (length (delete-dups (mapcar #'cadr elpaca-ui--marked-packages))) 1)
     (let ((this-command (cadar elpaca-ui--marked-packages))) (elpaca-log-defaults))))
 
 (defun elpaca-log--find-command (val key)
