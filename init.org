@@ -1115,6 +1115,7 @@ Ement.el is a new Matrix client for Emacs. It aims to be simple, fast, featurefu
 #+begin_src emacs-lisp :lexical t
 (use-package ement
   :elpaca (ement :host github :repo "alphapapa/ement.el" :branch nil)
+  :commands (ement-connect)
   :custom
   (ement-room-avatars t)
   (ement-room-images t)
@@ -1122,15 +1123,26 @@ Ement.el is a new Matrix client for Emacs. It aims to be simple, fast, featurefu
   (ement-sessions-file "~/.cache/ement.eld.gpg")
 
   :config
-  (add-hook 'ement-room-compose-hook #'flyspell-mode)
-  (add-hook 'epa-key-list-mode-hook #'exit-recursive-edit)
+  (require 'ement-tabulated-room-list)
+  (add-hook 'ement-room-compose-hook #'ement-room-compose-org)
+  (add-to-list 'display-buffer-alist
+               (cons "^\\*Ement compose: "
+                     (cons 'display-buffer-below-selected
+                           '((window-height . 6)
+                             (inhibit-same-window . t)
+                             (reusable-frames . nil)))))
+
+  (define-advice ement--kill-emacs-hook (:around (fn &rest args) "no-epa-key-prompt")
+    (let ((epa-file-select-keys 'symmetric)) (apply fn args)))
+
   :general
-  (+general-global-application
-    "e" '(:ignore t :which-key "Matrix")
-    "ee" '(lambda () (interactive) (call-interactively (if (bound-and-true-p ement-sessions) #'ement-room-list #'ement-connect)))
-    "el" 'ement-room-list
-    "en" 'ement-notify-switch-to-notifications-buffer
-    "em" 'ement-notify-switch-to-mentions-buffer))
+  (+general-global-application ;; "c" for chat
+    "c" '(:ignore t :which-key "Matrix")
+    "ce" '(lambda () (interactive) (call-interactively (if (bound-and-true-p ement-sessions) #'ement-room-list #'ement-connect)))
+    "cl" 'ement-room-list
+    "cn" 'ement-notify-switch-to-notifications-buffer
+    "cm" 'ement-notify-switch-to-mentions-buffer
+    "cs" 'ement-directory-search))
 #+end_src
 ** emp
 #+begin_quote
