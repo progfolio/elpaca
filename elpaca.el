@@ -1758,10 +1758,6 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
                  :elpaca-git-rev rev)
     (elpaca--signal e "Merging updates" 'merging)))
 
-(defun elpaca--announce-pin (e)
-  "Dummy build step to announce a E's package is pinned."
-  (elpaca--continue-build e "Skipping pinned package" 'pinned))
-
 ;;;###autoload
 (defun elpaca-update (item &optional interactive)
   "Update ITEM's associated package.
@@ -1773,7 +1769,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
     (elpaca--unprocess e)
     (setf (elpaca<-build-steps e)
           (if pin
-              (list #'elpaca--announce-pin)
+              '((lambda (e) (elpaca--continue-build e "Skipping pinned package" 'pinned)))
             `(elpaca--fetch
               elpaca--log-updates
               elpaca--merge
