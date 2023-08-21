@@ -139,6 +139,17 @@ If DELETE is non-nil, delete test environment."
                            (when (fboundp 'markdown-mode) (markdown-mode)))
       (run-with-idle-timer 1 nil (lambda () (pop-to-buffer buffer) (goto-char (point-min)))))))
 
+(declare-function elpaca-log "elpaca-log")
+;;;###autoload
+(defun elpaca-test-log (&rest queries)
+  "Print `elpaca-log' QUERIES."
+  (dolist (q queries)
+    (with-current-buffer (elpaca-log q)
+      (message "elpaca-log: %S\n%S" q
+               (buffer-substring-no-properties
+                (save-excursion (goto-char (point-min)) (line-end-position))
+                (point-max))))))
+
 ;;;###autoload
 (defmacro elpaca-test (&rest body)
   "Test Elpaca in a clean environment.
