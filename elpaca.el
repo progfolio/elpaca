@@ -1370,7 +1370,7 @@ Loads or caches autoloads."
     (elpaca--signal e "Package build dir added to load-path")
     (if-let ((recipe (elpaca<-recipe e))
              (key (let ((member (plist-member recipe :autoloads)))
-                     (if (not member) 'undeclared (cadr member))))
+                    (if (not member) 'undeclared (cadr member))))
              (pkg (elpaca<-package e)) ;;@MAYBE: strip file extension
              (autoloads (expand-file-name
                          (or (and (stringp key) key) (concat pkg "-autoloads.el"))))
