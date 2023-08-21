@@ -1734,6 +1734,14 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
                  (elpaca<-builtp e) nil))
   (when interactive (elpaca-process-queues)))
 
+
+(defun elpaca--unblock-merged-monorepo (e)
+  "Unblock E waiting on mono-repo merge." ;;@MAYBE: decompose similar code in `elpaca--signal'?
+  (cl-loop for sibling in (elpaca<-siblings e)
+           unless (memq sibling (elpaca<-dependents e))
+           do (elpaca--continue-build (elpaca-get sibling) nil 'unblocked-mono-repo))
+  (elpaca--continue-build e))
+
 (defun elpaca--merge-process-sentinel (process _event)
   "Handle PROCESS EVENT."
   (if-let (((= (process-exit-status process) 0))
@@ -1741,7 +1749,7 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
            (default-directory (elpaca<-repo-dir e)))
       (progn (when (equal (elpaca-process-output "git" "rev-parse" "HEAD")
                           (process-get process :elpaca-git-rev))
-               (setf (elpaca<-build-steps e) nil))
+               (setf (elpaca<-build-steps e) (list #'elpaca--unblock-merged-monorepo)))
              (elpaca--continue-build e))
     (elpaca--fail e)))
 
@@ -1795,32 +1803,39 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
            for (id . e) in (elpaca--queued)
            unless (memq id seen) do
            (let* ((repo (elpaca<-repo-dir e))
+                  (mono-repo (alist-get repo repos nil nil #'equal))
                   (deps (elpaca-dependencies id ignored))
-                  (recipe (elpaca<-recipe e)))
+                  (recipe (elpaca<-recipe e))
+                  (pin (plist-get recipe :pin))
+                  (build-steps (unless pin
+                                 (cl-set-difference
+                                  (elpaca--build-steps recipe nil 'cloned (elpaca<-mono-repo e))
+                                  '(elpaca--configure-remotes
+                                    elpaca--fetch
+                                    elpaca--checkout-ref
+                                    elpaca--clone-dependencies
+                                    elpaca--activate-package)))))
              (cl-loop for dep in deps do (cl-pushnew id (elpaca<-dependents (elpaca-get dep))))
              (setf (elpaca<-build-steps e) nil)
              (cond
-              ((plist-get recipe :pin) (elpaca--signal e "Skipping pinned repo" 'queued))
-              ;;@FIX: we still want to rebuild after the repo has been pulled.
-              ((member repo repos) (elpaca--signal e "Skipping mono-repo" 'queued))
+              (pin (elpaca--signal e "Skipping pinned repo" 'queued))
+              (mono-repo
+               (cl-pushnew id (elpaca<-siblings (elpaca-get mono-repo)))
+               (setf (elpaca<-build-steps e) build-steps)
+               (elpaca--signal e (format "Blocked mono-repo. waiting for %s" mono-repo) 'blocked))
               (t (setf (elpaca<-build-steps e)
                        `(elpaca--fetch
                          elpaca--log-updates
                          elpaca--merge
-                         ,@(cl-set-difference
-                            (elpaca--build-steps recipe nil 'cloned (elpaca<-mono-repo e))
-                            '(elpaca--configure-remotes
-                              elpaca--fetch
-                              elpaca--checkout-ref
-                              elpaca--clone-dependencies
-                              elpaca--activate-package)))
+                         elpaca--unblock-merged-monorepo
+                         ,@build-steps)
                        (elpaca<-queue-time e) (current-time)
                        (elpaca<-statuses e) (list 'queued)
                        (elpaca<-builtp e) nil)
                  (elpaca--signal e (concat "Fetching " (if deps "dependencies" "remotes"))
                                  (when deps 'blocked))))
              (push id seen)
-             (push repo repos)))
+             (push (cons repo id) repos)))
   (when interactive (elpaca-process-queues)))
 
 ;;; Lockfiles
