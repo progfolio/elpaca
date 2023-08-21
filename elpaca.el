@@ -1726,12 +1726,17 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
   (when interactive (elpaca--maybe-log))
   (cl-loop for q in elpaca--queues
            do (setf (elpaca-q<-processed q) 0 (elpaca-q<-status q) 'incomplete))
-  (cl-loop for (_ . e) in (reverse (elpaca--queued)) do
-           (setf (elpaca<-build-steps e)
-                 '(elpaca--queue-dependencies elpaca--fetch elpaca--log-updates)
-                 (elpaca<-queue-time e) (current-time)
-                 (elpaca<-statuses e) (list 'queued)
-                 (elpaca<-builtp e) nil))
+  (cl-loop with repos
+           for (_ . e) in (reverse (elpaca--queued))
+           for repo = (elpaca<-repo-dir e)
+           do (setf (elpaca<-build-steps e)
+                    (if (member repo repos) ; skip queued mono-repos
+                        '((lambda (e) (elpaca--continue-build e "Skipping queued mono-repo")))
+                      '(elpaca--queue-dependencies elpaca--fetch elpaca--log-updates))
+                    (elpaca<-queue-time e) (current-time)
+                    (elpaca<-statuses e) (list 'queued)
+                    (elpaca<-builtp e) nil)
+           (cl-pushnew (elpaca<-repo-dir e) repos))
   (when interactive (elpaca-process-queues)))
 
 
