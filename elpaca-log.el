@@ -42,7 +42,7 @@
   :type '(alist :key-type symbol :value-type function) :group 'elpaca-ui)
 
 (defcustom elpaca-log-command-queries
-  '(((elpaca-fetch elpaca-fetch-all)   . "#update-log")
+  '(((elpaca-fetch elpaca-fetch-all)   . "#latest #update-log")
     ((elpaca-try elpaca-rebuild)       . "#latest #linked-errors")
     ((elpaca-update elpaca-update-all) . "#unique | !finished")
     ((eval-buffer eval-region eval-defun eval-last-sexp org-ctrl-c-ctrl-c) . silent)
