@@ -3351,7 +3351,7 @@ https://github.com/justbur/emacs-which-key
   (which-key-side-window-location 'bottom)
   (which-key-sort-order 'which-key-key-order-alpha)
   (which-key-side-window-max-width 0.33)
-  (which-key-idle-delay 0.05)
+  (which-key-idle-delay 0.2)
   :diminish which-key-mode)
 #+end_src
 ** wikinforg
