@@ -1605,9 +1605,8 @@ Installing Lilypond puts these in =/usr/share/Emacs/site-lisp=, but I plan on ed
 #+begin_src emacs-lisp :lexical t :tangle no
 (use-package lilypond-mode
   :elpaca (lilypond-mode :host gitlab :repo "lilypond/lilypond"
-                         :remotes (("fork" :host github :repo "progfolio/lilypond" :protocol ssh)
+                         :remotes (("fork" :host github :repo "progfolio/lilypond" :branch "fix/lilypond-mode" :protocol ssh)
                                    "origin")
-                         :branch "fix/lilypond-mode"
                          :files ("elisp/*.el" "elisp/out/lilypond-words.el")
                          :protocol ssh
                          :pre-build (("./autogen.sh" "--noconfigure")
