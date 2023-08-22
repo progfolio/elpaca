@@ -452,7 +452,7 @@ ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
            (namesym (intern name))
            (found (cl-some (lambda (it) (and (eq namesym (car it)) it)) elpaca-ui--print-cache))
            (target (cdr found))
-           (result (if (elpaca<-p target) ;;not marked
+           (result (if (elpaca-p target) ;;not marked
                        (if elpaca-ui--want-faces
                            (propertize name 'face (elpaca-alist-get (elpaca--status target) elpaca-status-faces 'default))
                          name)

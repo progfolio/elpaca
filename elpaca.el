@@ -242,10 +242,9 @@ e.g. elisp forms may be printed via `prin1'."
   (elpaca--read-file (expand-file-name "menu-items.eld" elpaca-cache-directory))
   "Cache for menu candidates.")
 
-(cl-defstruct (elpaca-q< (:constructor elpaca-q<-create)
-                         (:type list)
-                         (:copier nil)
-                         (:named))
+(cl-defstruct (elpaca-q (:constructor elpaca-q<-create)
+                        (:type list) (:copier nil)
+                        (:named) (:conc-name elpaca-q<-))
   "Queue to hold elpacas."
   (type (when (or (not after-init-time)
                   (let ((init (expand-file-name "init.el" user-emacs-directory)))
@@ -470,7 +469,8 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
            (concat (car p) h (cdr p) (when (eq host 'sourcehut) "~") repo
                    (unless (eq host 'sourcehut) ".git")))))))
 
-(cl-defstruct (elpaca< (:constructor elpaca<--create) (:type list) (:named))
+(cl-defstruct (elpaca (:constructor elpaca<--create) (:type list) (:named)
+                      (:conc-name elpaca<-))
   "Order for queued processing."
   id package order statuses
   repo-dir build-dir mono-repo
@@ -1979,7 +1979,7 @@ If NOTRY is non-nil do not include `elpaca-try' recipes."
                     (file-name-sans-extension
                      (elpaca--repo-uri (elpaca-merge-plists
                                         (or (plist-get found :recipe)
-                                            (and (elpaca<-p found) (elpaca<-recipe found))
+                                            (and (elpaca-p found) (elpaca<-recipe found))
                                             (user-error "No URL associated with item %S" item))
                                         '(:protocol https)))))))
       (browse-url url)))
