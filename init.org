@@ -1595,8 +1595,7 @@ https://github.com/mooz/js2-mode
 (use-package js2-mode
   :commands (js2-mode)
   :mode "\\.js\\'"
-  :interpreter (("nodejs" . js2-mode) ("node" . js2-mode))
-  :hook (js2-mode . tern-mode))
+  :interpreter (("nodejs" . js2-mode) ("node" . js2-mode)))
 #+end_src
 *** TODO May not need this on Emacs 27+
 Need to investigate, but js-mode might have been fixed/updated.
