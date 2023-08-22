@@ -130,6 +130,16 @@ Anaphoric bindings provided:
      (ignore result exit invoked success failure stdout stderr)
      ,@body))
 
+(defmacro elpaca-with-process-call (args &rest body)
+  "Execute BODY in `elpaca-with-process', applying `elpaca-process-call' to ARGS."
+  (declare (indent 1) (debug t))
+  `(elpaca-with-process (elpaca-process-call ,@(if (listp args) args (list args))) ,@body))
+
+(defmacro elpaca-process-cond (args &rest conditions)
+  "Eval CONDITIONS in context of `elpaca-with-process-call' with ARGS."
+  (declare (indent 1) (debug t))
+  `(elpaca-with-process-call ,args (cond ,@conditions)))
+
 (defun elpaca-process-output (program &rest args)
   "Return result of running PROGRAM with ARGS.
 If the command cannot be run or returns a nonzero exit code, throw an error."
