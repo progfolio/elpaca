@@ -70,7 +70,7 @@
 (defun elpaca-menu-melpa--update ()
   "Update recipes in MELPA menu."
   (message "Downloading MELPA...")
-  (elpaca-with-process (elpaca-process-call "git" "pull")
+  (elpaca-with-process-call ("git" "pull")
     (message (if success "Downloading MELPA...100%%" "Unable to pull MELPA recipes"))))
 
 (defun elpaca-menu-melpa--convert (file metadata)

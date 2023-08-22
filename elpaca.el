@@ -1209,12 +1209,12 @@ If RECACHE is non-nil, do not use cached dependencies."
 (defun elpaca--remote-default-branch (remote)
   "Return REMOTE's \"default\" branch.
 This is the branch that would be checked out upon cloning."
-  (elpaca-with-process (elpaca-process-call "git" "remote" "show" remote)
-    (if success
-        (if (string-match "\\(?:[^z-a]*HEAD branch:[[:space:]]+\\([^z-a]*?\\)$\\)" stdout)
-            (match-string 1 stdout)
-          (error "Unable to determine remote default branch"))
-      (error (format "Remote default branch error: %S" stderr)))))
+  (elpaca-process-cond ("git" "remote" "show" remote)
+    ((and success (string-match "\\(?:[^z-a]*HEAD branch:[[:space:]]+\\([^z-a]*?\\)$\\)"
+                                stdout))
+     (match-string 1 stdout))
+    (invoked (error "Remote default branch error: %S" stderr))
+    (t (error "Unable to determine remote default branch: %S" result))))
 
 (defun elpaca--checkout-ref (e)
   "Check out E's ref."
@@ -1905,8 +1905,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
                   unless (member item seen)
                   for rev =
                   (let ((default-directory (elpaca<-repo-dir e)))
-                    (elpaca-with-process
-                        (elpaca-process-call "git" "rev-parse" "HEAD")
+                    (elpaca-with-process-call ("git" "rev-parse" "HEAD")
                       (if success
                           (string-trim stdout)
                         (error "Unable to write lockfile: %s %S" item stderr))))
