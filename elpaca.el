@@ -1773,14 +1773,14 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
 
 (defun elpaca--merge-process-sentinel (process _event)
   "Handle PROCESS EVENT."
-  (if-let (((= (process-exit-status process) 0))
-           (e (process-get process :elpaca))
+  (if-let ((e (process-get process :elpaca))
+           ((= (process-exit-status process) 0))
            (default-directory (elpaca<-repo-dir e)))
       (progn (when (equal (elpaca-process-output "git" "rev-parse" "HEAD")
                           (process-get process :elpaca-git-rev))
                (setf (elpaca<-build-steps e) (list #'elpaca--unblock-merged-monorepo)))
              (elpaca--continue-build e))
-    (elpaca--fail e)))
+    (elpaca--fail e "Merge failed")))
 
 (defun elpaca--merge (e)
   "Merge E's fetched commits."
