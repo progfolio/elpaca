@@ -566,8 +566,8 @@ If SILENT is non-nil, suppress update message."
   (interactive (list (current-buffer)))
   (with-current-buffer (or buffer (current-buffer))
     (elpaca-ui--update-search-query (or buffer (current-buffer))
-                                     (or elpaca-ui-search-query
-                                         elpaca-ui-default-query))
+                                    (or elpaca-ui-search-query
+                                        elpaca-ui-default-query))
     (unless silent (message "Search %S refreshed" elpaca-ui-search-query))))
 
 (defun elpaca-ui-current-package ()
