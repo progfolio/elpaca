@@ -865,6 +865,7 @@ FILES and NOCONS are used recursively."
     (find-alternate-file source)
     (message "Found Elpaca build file source")))
 
+;;;###autoload
 (define-minor-mode elpaca-no-symlink-mode
   "Global minor mode which installs build files by copying."
   :global t :group 'elpaca
