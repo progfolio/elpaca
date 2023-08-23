@@ -45,18 +45,12 @@
 Return a list of form: (EXITCODE STDOUT STDERR).
 If the process is unable to start, return an elisp error object."
   (when (string-match-p "/" program) (setq program (expand-file-name program)))
-  (condition-case err
-      (with-temp-buffer
-        (list (apply #'call-process program nil (list t elpaca-process--stderr)
-                     nil args)
-              (when-let ((s (buffer-substring-no-properties (point-min) (point-max)))
-                         ((not (= (length s) 0))))
-                s)
-              (when-let (((insert-file-contents elpaca-process--stderr nil nil nil t))
-                         (s (buffer-substring-no-properties (point-min) (point-max)))
-                         ((not (= (length s) 0))))
-                s)))
-    (error err)))
+  (with-temp-buffer
+    (list (apply #'call-process program nil (list t elpaca-process--stderr) nil args)
+          (unless (= (buffer-size) 0) (buffer-substring-no-properties (point-min) (point-max)))
+          (unless (= (file-attribute-size (file-attributes elpaca-process--stderr)) 0)
+            (insert-file-contents elpaca-process--stderr nil nil nil t)
+            (buffer-substring-no-properties (point-min) (point-max))))))
 
 (declare-function elpaca--emacs-path "elpaca")
 (defun elpaca-process-poll--filter (process output &optional pattern error)
