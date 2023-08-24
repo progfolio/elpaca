@@ -116,7 +116,10 @@ Creates a temporary dir if NAME is nil."
   (let ((standard-output (get-buffer-create buffer))
         print-circle print-length)
     (princ "<!-- copy buffer contents to issue comment or new issue -->\n")
-    (princ "<details open><summary>Test Case</summary>\n\n```emacs-lisp\n")
+    (princ "<details open><summary>Test Case</summary>\n\n")
+    (princ "[How to run this test?]\
+(https://github.com/progfolio/elpaca/wiki/Troubleshooting#the-elpaca-test-macro)\n")
+    (princ "\n```emacs-lisp\n")
     (princ test)
     (princ "```\n\n</details>\n<details><summary>Host Env</summary>\n\n<table>\n")
     (cl-loop for (cat . info) in (elpaca-version)
