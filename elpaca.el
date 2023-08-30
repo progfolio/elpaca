@@ -413,7 +413,7 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
          (info (concat url repo hostname))
          (key (or (and info (> (length info) 0) (intern info))
                   (error "Cannot determine URL from recipe: %S" recipe)))
-         (mono-repo (alist-get key elpaca--repo-dirs))
+         (mono-repo (elpaca-alist-get key elpaca--repo-dirs))
          (dirs (and (not mono-repo) (mapcar #'cdr elpaca--repo-dirs)))
          (name (cond
                 (local-repo
