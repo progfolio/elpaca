@@ -641,15 +641,17 @@ The current package is its sole argument."
         (funcall elpaca-ui-entries-function))
       (elpaca-ui-search-refresh buffer))))
 
+(defvar elpaca-ui--pre-execute-marks-hook nil)
 (defun elpaca-ui-execute-marks ()
   "Execute each mark in `elpaca-ui-marked-packages'."
   (interactive)
   (when (null elpaca-ui--marked-packages) (user-error "No marked packages"))
+  (run-hooks 'elpaca-ui--pre-execute-marks-hook)
   (cl-loop initially do (deactivate-mark) (elpaca--maybe-log)
            for (item command . props) in elpaca-ui--marked-packages
            do (apply command (or (cl-subst item 'item (plist-get props :args)) (list item)))
            (pop elpaca-ui--marked-packages)
-           finally (setq elpaca--post-queues-hook '(elpaca-ui--post-execute)))
+           finally (add-hook 'elpaca--post-queues-hook #'elpaca-ui--post-execute))
   (elpaca-process-queues (lambda (qs) (cl-remove-if-not #'elpaca-q<-elpacas qs))))
 
 (defun elpaca-ui-send-input ()

@@ -53,9 +53,11 @@ If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
         (message "Elpaca menu item cache refreshed."))))
 
 ;;;###autoload
-(defun elpaca-manager (&optional recache)
+(defun elpaca-manager (&optional recache nodisplay)
   "Display elpaca's package management UI.
-If RECACHE is non-nil, recompute menu items from `elpaca-menu-functions'."
+If RECACHE is non-nil, recompute menu items from `elpaca-menu-functions'.
+IF NODISPLAY is non-nil, do not display buffer.
+Return `elpaca-manager-buffer'."
   (interactive "P")
   (when recache (elpaca-manager--entries recache))
   (with-current-buffer (get-buffer-create elpaca-manager-buffer)
@@ -75,7 +77,8 @@ If RECACHE is non-nil, recompute menu items from `elpaca-menu-functions'."
         (tabulated-list-init-header))
       (when (or (not initializedp) recache)
         (elpaca-ui--update-search-query (current-buffer) elpaca-ui-search-query))))
-  (pop-to-buffer elpaca-manager-buffer '((display-buffer-reuse-window display-buffer-same-window))))
+  (if nodisplay elpaca-manager-buffer
+    (pop-to-buffer elpaca-manager-buffer '((display-buffer-reuse-window display-buffer-same-window)))))
 
 (provide 'elpaca-manager)
 ;;; elpaca-manager.el ends here
