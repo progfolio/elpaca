@@ -735,11 +735,12 @@ Optional ARGS are passed to `elpaca--signal', which see."
       ((error) (warn "Autoload Error: %S" err))))
   (setf (elpaca-q<-status q) 'complete) ; Avoid loop when forms call elpaca-process-queue.
   (when-let ((forms (nreverse (elpaca-q<-forms q))))
-    (with-temp-buffer (setq-local lexical-binding t)
-                      (cl-loop for (item . body) in forms
-                               do (condition-case-unless-debug err
-                                      (eval `(progn ,@body) t)
-                                    ((error) (warn "Config Error %s: %S" item err)))))
+    (with-current-buffer (get-buffer-create " *elpaca--finalize-queue*")
+      (setq-local lexical-binding t)
+      (cl-loop for (item . body) in forms
+               do (condition-case-unless-debug err
+                      (eval `(progn ,@body) t)
+                    ((error) (warn "Config Error %s: %S" item err)))))
     (setf (elpaca-q<-forms q) nil))
   (run-hooks 'elpaca-post-queue-hook)
   (let ((next (nth (1+ (elpaca-q<-id q)) (reverse elpaca--queues))))
@@ -1400,8 +1401,8 @@ Loads or caches autoloads."
         (if elpaca-cache-autoloads
             (let ((forms nil))
               (elpaca--signal e "Caching autoloads")
-              (with-temp-buffer
-                (insert-file-contents autoloads)
+              (with-current-buffer (get-buffer-create " *elpaca--activate-package*")
+                (insert-file-contents autoloads nil nil nil 'replace)
                 (goto-char (point-min))
                 (condition-case _
                     (while t (push (read (current-buffer)) forms))
