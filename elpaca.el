@@ -956,7 +956,7 @@ FILES and NOCONS are used recursively."
 (defun elpaca--make-process (e &rest spec)
   "Attach process to E from `make-process' SPEC plist."
   (declare (indent 1))
-  (let ((process (make-process
+  (let ((process (make-process ;;@MAYBE: wrap in stop-process, continue at end?
                   :name (concat "elpaca-" (plist-get spec :name) "-" (elpaca<-package e))
                   :connection-type (or (plist-get spec :connection-type) 'pipe)
                   :command (plist-get spec :command)
