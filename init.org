@@ -976,7 +976,7 @@ DOOM Themes is an opinionated UI plugin and pack of themes extracted from [hliss
 https://github.com/hlissner/emacs-doom-themes
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(use-package doom-themes :defer t)
+(use-package doom-themes :elpaca (:local-repo "doom-themes") :defer t)
 #+end_src
 ** edebug
 #+begin_quote
