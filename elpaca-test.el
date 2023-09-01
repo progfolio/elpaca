@@ -38,7 +38,7 @@
 ;;; Code:
 (require 'elpaca)
 (require 'url)
-(defvar elpaca-test--keywords '(:args :before :dir :early-init :init :keep :name :ref :interactive))
+(defvar elpaca-test--keywords '(:args :before :dir :early-init :init :keep :name :ref :interactive :timeout))
 
 (defun elpaca-test--args (body)
   "Return arg plist from BODY."
@@ -152,6 +152,12 @@ If DELETE is non-nil, delete test environment."
                 (point-max))))))
 
 ;;;###autoload
+(defun elpaca-test-timeout ()
+  "Cancel pending orders."
+  (dolist (e (mapcar #'cdr (elpaca--queued)))
+    (unless (memq (elpaca--status e) '(finished failed)) (elpaca--fail e "Test timeout"))))
+
+;;;###autoload
 (defmacro elpaca-test (&rest body)
   "Test Elpaca in a clean environment.
 BODY is a plist which allows multiple values for certain keys.
@@ -172,11 +178,15 @@ The following keys are recognized:
 
   :args String... Emacs subprocess command line args
 
-  :keep t or nil. When non-nil, prevent test environment deletion after test."
+  :keep t or nil. When non-nil, prevent test environment deletion after test
+
+  :timeout N. A number or seconds to wait for package installations to complete.
+              Pending orders are failed after this time."
   (declare (indent 0))
   (unless lexical-binding (user-error "Lexical binding required for elpaca-test"))
   (let* ((args (elpaca-test--args body))
          (batchp (not (car (plist-get args :interactive))))
+         (timeout (car (plist-get args :timeout)))
          (test (and batchp (elpaca-test--form args)))
          (init (plist-get args :init))
          (init-filep (or (and (eq (car-safe (car-safe init)) :file) 'file)
@@ -236,6 +246,7 @@ The following keys are recognized:
                         ,@(if batchp '("--batch"))
                         ,@(if (or batchp (< emacs-major-version 29))
                               `("-Q" ; Approximate startup.el sequence
+                                ,@(when timeout (list "--eval" (format "(run-at-time %d nil #'elpaca-test-timeout)" timeout)))
                                 "--eval" "(setq debug-on-error t after-init-time nil)"
                                 "--eval" (format "(setq user-emacs-directory %S)" default-directory)
                                 ,@(when early '("-l" "./early-init.el"))
