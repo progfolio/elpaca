@@ -35,8 +35,6 @@
 ;; As above, with forms replacing everything after the installer in doc/init.el
 ;; (elpaca-test :ref "feat/example" :init (elpaca one) (elpaca two))
 
-;; @TODO: Once elpaca-wait installed, re-implement to use yodel?
-
 ;;; Code:
 (require 'elpaca)
 (require 'url)
