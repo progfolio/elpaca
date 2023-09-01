@@ -174,7 +174,7 @@ The following keys are recognized:
 
   :args String... Emacs subprocess command line args
 
-  :keep t or nil. When non-nil, do prevent test environment deletion after test."
+  :keep t or nil. When non-nil, prevent test environment deletion after test."
   (declare (indent 0))
   (unless lexical-binding (user-error "Lexical binding required for elpaca-test"))
   (let* ((args (elpaca-test--args body))
