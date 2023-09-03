@@ -1391,7 +1391,8 @@ Adds package's build dir to `load-path'.
 Loads or caches autoloads."
   (let ((default-directory (elpaca<-build-dir e)))
     (elpaca--signal e "Activating package" 'activation)
-    (when (featurep (elpaca<-id e)) (warn "%S loaded before Elpaca activation" (elpaca<-id e)))
+    (when (and (not elpaca-after-init-time) (featurep (elpaca<-id e)))
+      (warn "%S loaded before Elpaca activation" (elpaca<-id e)))
     (cl-pushnew default-directory load-path :test #'equal)
     (elpaca--signal e "Package build dir added to load-path")
     (if-let ((recipe (elpaca<-recipe e))
