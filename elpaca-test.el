@@ -84,7 +84,7 @@ Creates a temporary dir if NAME is nil."
 (defun elpaca-test--upstream-init (&optional ref)
   "Return upstream REF's init.el body as a string."
   (let ((url (format elpaca-test--upstream-format (or ref "master"))))
-    (with-current-buffer (url-retrieve-synchronously url nil 'inhibit-cookies)
+    (with-current-buffer (url-retrieve-synchronously url 'silent 'inhibit-cookies)
       (unless (equal url-http-response-status 200)
         (error "Unable to download %S %S" url url-http-response-status))
       (delete-region (point-min) url-http-end-of-headers)
