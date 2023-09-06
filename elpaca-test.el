@@ -39,6 +39,7 @@
 (require 'elpaca)
 (require 'url)
 (defvar elpaca-test--keywords '(:args :before :dir :early-init :init :keep :name :ref :interactive :timeout))
+(defvar elpaca-test--dirs nil "List of directories created by `elpaca-test'.")
 
 (defun elpaca-test--args (body)
   "Return arg plist from BODY."
@@ -69,12 +70,20 @@
 Creates a temporary dir if NAME is nil."
   (if-let ((name)
            (expanded (file-name-as-directory (expand-file-name name)))
-           ((or (not (equal expanded (file-name-as-directory name)))
-                (user-error ":dir must be relative path")))
            ((or (not (equal expanded (expand-file-name user-emacs-directory)))
                 (user-error ":dir cannot be user-emacs-directory"))))
-      (expand-file-name name temporary-file-directory)
-    (make-temp-file "elpaca." 'directory)))
+      (if (equal name expanded) expanded (expand-file-name name temporary-file-directory))
+    (expand-file-name (make-temp-name "elpaca.") temporary-file-directory)))
+
+(defun elpaca-test--ensure-dir (dir args)
+  "Ensure user wants to run test in DIR. ARGS :keep may be overridden."
+  (let ((dirp (file-exists-p dir))
+        (warning (format "%S not created by elpaca-test. Run test in this directory?" dir)))
+    (cond
+     ((not dirp) (cl-pushnew dir elpaca-test--dirs :test #'equal))
+     ((not (or (member dir elpaca-test--dirs) (yes-or-no-p warning)))
+      (user-error "Elpaca test aborted"))
+     (t (setq args (plist-put args :keep '(t)))))))
 
 (defvar url-http-end-of-headers)
 (defvar url-http-response-status)
@@ -243,7 +252,9 @@ The following keys are recognized:
 
   :ref git ref to check out or `local' to use local copy in current repo state
 
-  :dir `user-emacs-directory' name expanded in the temporary file directory.
+  :dir `user-emacs-directory' name.
+    Expanded in temporary filedirectory if it is a relative path or nil.
+    Otherwise, the absolute file path is used.
 
   :init `user', (:file \"path/to/init.el\") or forms...
     Content of the init.el file.
@@ -278,6 +289,7 @@ The following keys are recognized:
          (dir (elpaca-test--dir (car (plist-get args :dir))))
          print-length print-circle print-level
          eval-expression-print-level eval-expression-print-length)
+    (elpaca-test--ensure-dir dir args) ;;TODO: Move out of expansion.
     `(let* ((default-directory ,dir)
             (,procname (format "elpaca-test-%s" default-directory))
             (buffer ,@(if batchp `((generate-new-buffer ,procname)) '(nil))))
