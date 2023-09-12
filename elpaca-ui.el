@@ -426,12 +426,13 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
            (elen (length elpaca-ui-entries))
            ((< tlen elen)))
       (let ((elpaca-ui--print-cache (append elpaca-ui--marked-packages (elpaca--queued)))
-            (inhibit-read-only t))
+            (inhibit-read-only t)
+            (limit (or elpaca-ui-row-limit most-positive-fixnum)))
         (goto-char (point-max))
         (delete-region (line-beginning-position) (line-end-position))
         (when-let ((sorter (tabulated-list--get-sorter)))
           (setq tabulated-list-entries (sort tabulated-list-entries sorter)))
-        (dotimes (i (min (* elpaca-ui-row-limit (or n 1)) (- elen tlen)))
+        (dotimes (i (min (* limit (or n 1)) (- elen tlen)))
           (when-let ((entry (nth (+ i tlen) elpaca-ui-entries)))
             (setcdr (last tabulated-list-entries) (cons entry nil))
             (elpaca-ui--apply-faces (car entry) (cadr entry))))
@@ -517,7 +518,7 @@ If QUERY is nil, the contents of the minibuffer are used instead."
           (setq elpaca-ui-entries entries
                 tabulated-list-entries
                 (if-let ((elen (length elpaca-ui-entries))
-                         ((<= elen elpaca-ui-row-limit)))
+                         ((or (not elpaca-ui-row-limit) (<= elen elpaca-ui-row-limit))))
                     elpaca-ui-entries
                   (cl-subseq elpaca-ui-entries 0 (min elpaca-ui-row-limit elen)))
                 elpaca-ui-search-query query))
