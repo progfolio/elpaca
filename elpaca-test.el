@@ -102,13 +102,12 @@ Creates a temporary dir if NAME is nil."
 
 (defun elpaca-test--replace-init-ref (ref)
   "Replace elpaca-order's :ref with REF."
-  (save-excursion
-    (goto-char (point-min))
-    (if (re-search-forward "elpaca-order" nil t)
-        (if (not (re-search-forward ":ref nil" nil t))
-            (user-error "Unable to replace :ref in init file")
-          (replace-match ":ref %S" ref))
-      (user-error "Unable to locate elpaca-order in init file"))))
+  (save-excursion (goto-char (point-min))
+                  (or (re-search-forward "elpaca-order" nil t)
+                      (user-error "Unable to locate elpaca-order in init file"))
+                  (or (re-search-forward ":ref nil" nil t)
+                      (user-error "Unable to replace :ref in init file"))
+                  (replace-match (format ":ref %S" ref))))
 
 (defun elpaca-test--upstream-init (&optional ref)
   "Create and return upstream REF's init.el file."
