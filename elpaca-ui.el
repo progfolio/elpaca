@@ -45,7 +45,8 @@ Accepted key val pairs are:
   - :prefix STRING inserted to indicate mark in UI
   - :face FACE for marked row in UI
   - :args (ARG...) arguments passed to COMMAND.
-      The symbol `item' will be replaced with the package item." :type 'list)
+      The symbol `item' will be replaced with the package item."
+  :type '(list (function :tag "command") plist))
 
 (defvar-local elpaca-ui--marked-packages nil "Aist of buffer's marked packages.")
 
