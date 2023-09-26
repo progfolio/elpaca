@@ -2684,7 +2684,7 @@ emacsclient --create-frame \
 ** org-chronicle
 #+begin_src emacs-lisp :lexical t :tangle no
 (use-package org-chronicle
-  :straight (org-chronicle :host github :repo "progfolio/org-chronicle")
+  :elpaca (:host github :repo "progfolio/org-chronicle")
   :commands (org-chronicle)
   :custom (org-chronicle-directory "~/Documents/journal/")
   (org-chronicle-file-format-string "%Y.%m.%d"))
@@ -2925,7 +2925,7 @@ https://github.com/alphapapa/org-make-toc
 #+begin_src emacs-lisp :lexical t :tangle no
 (use-package org-relativity
   :after (org)
-  :straight (:type git :host github :repo "progfolio/org-relativity"))
+  :elpaca (:host github :repo "progfolio/org-relativity"))
 #+end_src
 ** org-superstar
 #+begin_quote
