@@ -1432,7 +1432,7 @@ https://github.com/emacsorphanage/helm-ag
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package helm-ag
-  :commands (helm-ag helm-projectile-ag))
+  :commands (helm-ag))
 #+end_src
 *** helm-describe-modes
 #+begin_quote
@@ -1482,6 +1482,7 @@ Necessary for completion of multiple tags with Helm.
 #+begin_src emacs-lisp :lexical t
 (use-package helm-projectile
   :after (helm)
+  :commands (helm-projectile-ag)
   :general
   (+general-global-project
     "a" 'helm-projectile-ag
