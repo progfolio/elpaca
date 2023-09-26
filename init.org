@@ -1897,6 +1897,7 @@ https://github.com/rnkn/olivetti
 ** org
 #+begin_src emacs-lisp :lexical t
 (use-package org
+  :elpaca (:autoloads "org-loaddefs.el")
   :defer t
   :general
   (general-define-key :states '(normal) :keymaps 'org-mode-map
