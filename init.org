@@ -3410,20 +3410,6 @@ https://github.com/justbur/emacs-which-key
   (evil-make-intercept-map wordel-select-mode-map)
   (evil-set-initial-state  'wordel-select-mode 'insert))
 #+end_src
-** wordnut
-#+begin_quote
-An Emacs interface to the wordnet (wn) command line tool.
-
-https://github.com/gromnitsky/wordnut
-#+end_quote
-#+begin_src emacs-lisp :lexical t
-(use-package wordnut
-  :general
-  (+general-global-application
-    "w"    '(:ignore t :which-key "wordnut")
-    "ws"   'wordnut-search
-    "ww"   'wordnut-lookup-current-word))
-#+end_src
 ** writegood
 #+begin_quote
 This is a minor mode to aid in finding common writing problems.
