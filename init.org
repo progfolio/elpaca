@@ -1671,6 +1671,7 @@ https://magit.vc/
 (use-package magit
   :defer t
   :after (general)
+  :custom (magit-repository-directories (list (cons elpaca-repos-directory 1)))
   :general
   (+general-global-git/version-control
     "b"  'magit-branch
