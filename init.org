@@ -3460,7 +3460,7 @@ https://github.com/NicolasPetton/zerodark-theme
       (evil-set-initial-state 'spiel-input-mode 'insert))))
 #+end_src
 ** greg
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :tangle no
 (use-package greg
   :defer t
   :elpaca (greg :host github :repo "progfolio/greg"
@@ -3480,3 +3480,13 @@ https://github.com/NicolasPetton/zerodark-theme
   :elpaca (:host github :repo "progfolio/subp"))
 #+end_src
 
+** game
+#+begin_src emacs-lisp :lexical t
+(use-package game
+  :defer t
+  :elpaca (:host github :repo "progfolio/game" :depth nil :protocol ssh
+                 :files (:defaults "assets"))
+  :config
+  (evil-set-initial-state 'game-mode 'insert)
+  (evil-make-intercept-map game-mode-map))
+#+end_src
