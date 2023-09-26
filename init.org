@@ -3473,3 +3473,10 @@ https://github.com/NicolasPetton/zerodark-theme
   :elpaca (ox-context :host github :repo "progfolio/ox-context" :depth nil :protocol ssh)
   :defer t)
 #+end_src
+** subp
+#+begin_src emacs-lisp :lexical t
+(use-package subp
+  :defer t
+  :elpaca (:host github :repo "progfolio/subp"))
+#+end_src
+
