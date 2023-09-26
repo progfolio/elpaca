@@ -261,6 +261,7 @@ This package gets the correct environment variables so elpaca can use the ssh pr
 ;; We need this loaded for SSH protocol
 (elpaca-queue
  (elpaca keychain-environment
+   (require 'keychain-environment)
    (keychain-refresh-environment)))
 #+end_src
 *** melpulls
@@ -283,6 +284,7 @@ An Elpaca menu for MELPA submissions.
 
 #+begin_src emacs-lisp :lexical t
 (elpaca elpaca-use-package
+  (require 'elpaca-use-package)
   (elpaca-use-package-mode)
   (setq elpaca-use-package-by-default t))
 #+end_src
