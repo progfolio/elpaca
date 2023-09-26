@@ -20,6 +20,7 @@
     (orange          "#DD845A"      "#FF9868")
     (purple          "#0F0E16"      "#202020")
     (light-purple    "#29263D"      "#202020")
+    (bright-purple   "#49465D"      "#202020")
     (dark-purple     "#0E0D14"      "#101010")
     (red             "#dd5668"      "#d64249")
     (yellow          "#AFA27C"      "#C6B78D"))
@@ -132,6 +133,11 @@
   (search-title-face :inherit font-lock-builtin-face)
   (search-unread-count-face :foreground ,green :box ,yellow)
   (search-unread-title-face :inherit default :height ,(nth 0 mine-font-sizes) :weight bold))
+
+(mine-add-faces ement
+  (room-quote :foreground ,bright-purple :background ,dark-purple :extend t :height unspecified)
+  (room-self :foreground ,green :weight ultra-bold)
+  (room-self-message :foreground ,green))
 
 (mine-add-faces erc
   (input-face :foreground ,red)
