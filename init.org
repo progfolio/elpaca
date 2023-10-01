@@ -750,6 +750,8 @@ https://github.com/emacs-evil/evil-collection
     "e" '(accord-edit-message   :which-key "accord-edit-message")
     "s" '(accord-send-message   :which-key "accord-send-message"))
   :config
+  (add-to-list 'display-buffer-alist
+               '("\\*accord\\*" display-buffer-below-selected (window-height . 0.20)))
   (defun accord-setup ()
     (flyspell-mode)
     (visual-line-mode))
@@ -1272,7 +1274,9 @@ https://www.flycheck.org/en/latest/
 #+begin_src emacs-lisp :lexical t
 (use-package flycheck-package
   :after (flychceck)
-  :config (flycheck-package-setup))
+  :config (flycheck-package-setup)
+  (add-to-list 'display-buffer-alist
+               '("\\*Flycheck errors\\*"  display-buffer-below-selected (window-height . 0.15))))
 #+end_src
 ** flymake
 #+begin_src emacs-lisp :lexical t
@@ -1287,6 +1291,10 @@ https://www.flycheck.org/en/latest/
     "fp" 'flymake-goto-prev-error)
   :hook (flymake-mode . +flymake-toggle-diagnostics-buffer)
   :config
+  (add-to-list 'display-buffer-alist
+               '("\\`\\*Flymake diagnostics.*?\\*\\'"
+                 display-buffer-below-selected (window-height . 0.25)))
+
   (defun +flymake-elpaca-bytecomp-load-path ()
     "Augment `elisp-flymake-byte-compile-load-path' to support Elpaca."
     (setq-local elisp-flymake-byte-compile-load-path
@@ -3103,21 +3111,6 @@ ten, but opening my org agenda files wipes that list out.
   :defer t
   :custom (send-mail-function 'smtpmail-send-it "inform emacs-bug-report how we want to send mail"))
 #+end_src
-** shackle
-#+begin_quote
-shackle gives you the means to put an end to popped up buffers not behaving they way you'd like them to.
-
-https://depp.brause.cc/shackle/
-#+end_quote
-#+begin_src emacs-lisp :lexical t
-(use-package shackle
-  :commands (shackle-mode)
-  :custom (shackle-rules '(("*Flycheck errors*"  :align below :size 0.15)
-                           ("\\`\\*Flymake diagnostics.*?\\*\\'" :align below :size 0.15 :regexp t :same nil)
-                           ("*accord*" :align below :size 0.20)
-                           ("*padscape*" :align below :size 0.20)))
-  :hook ((flycheck-mode global-flycheck-mode flymake-mode accord-mode padscape-mode) . shackle-mode))
-#+end_src
 ** shr-color
 #+begin_src emacs-lisp :lexical t
 (use-feature shr-color
@@ -3212,7 +3205,10 @@ https://github.com/ternjs/tern
 #+begin_src emacs-lisp :lexical t
 (use-package padscape
   :elpaca (padscape :host github :repo "progfolio/padscape" :protocol ssh)
-  :commands (padscape))
+  :commands (padscape)
+  :config
+  (add-to-list 'display-buffer-alist '("\\*padscape\\*" display-buffer-below-selected
+                                       (window-height . 0.20))))
 #+end_src
 ** speedo
 #+begin_src emacs-lisp :lexical t
