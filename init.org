@@ -3393,7 +3393,7 @@ https://github.com/justbur/emacs-which-key
   :custom
   (switch-to-buffer-obey-display-actions t)
   (switch-to-prev-buffer-skip-regexp
-   '("\\*Help\\*" "\\*Calendar\\*" "\\*helm.*"
+   '("\\*Help\\*" "\\*Calendar\\*" "\\*helm.*" "\\*mu4e-last-update\\*"
      "\\*Messages\\*" "\\*scratch\\*" "\\magit-.*")))
 #+end_src
 ** wordel
