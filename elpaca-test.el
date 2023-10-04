@@ -125,9 +125,9 @@ If FILE is nil, use upstream demo init file determined by REF."
   (elpaca--write-file (expand-file-name "./init.el")
     (if file
         (insert-file-contents (expand-file-name file))
-      (insert (elpaca-test--upstream-init ref))
-      (when forms (elpaca-test--replace-init-forms forms))
-      (elisp-enable-lexical-binding))))
+      (insert (elpaca-test--upstream-init ref)))
+    (when forms (elpaca-test--replace-init-forms forms))
+    (elisp-enable-lexical-binding)))
 
 (defun elpaca-test--write-early-init (file forms)
   "Write test environment early-init.el FILE with FORMS."
