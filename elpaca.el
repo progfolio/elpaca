@@ -367,7 +367,7 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
          (id (elpaca--first order))
          (nonheritable-p (elpaca--nonheritable-p props))
          (mods (unless nonheritable-p (run-hook-with-args-until-success
-                                      'elpaca-order-functions order)))
+                                       'elpaca-order-functions order)))
          (inherit (plist-member props :inherit))
          (item (unless (or interactive ;; we already queried for this.
                            (elpaca--nonheritable-p (elpaca-merge-plists mods inherit)))
