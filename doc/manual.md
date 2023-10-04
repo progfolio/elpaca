@@ -5,8 +5,28 @@
   - [Quick Start](#quick-start)
   - [Basic concepts](#basic-concepts)
     - [Recipes](#recipes)
+      - [:host | :fetcher](#recipe-keyword-host)
+      - [:repo](#recipe-keyword-repo)
+      - [:branch](#recipe-keyword-branch)
+      - [:tag](#recipe-keyword-tag)
+      - [:ref](#recipe-keyword-ref)
+      - [:pin](#recipe-keyword-pin)
+      - [:depth](#recipe-keyword-depth)
+      - [:files](#recipe-keyword-files)
+      - [:protocol](#recipe-keyword-protocol)
+      - [:remotes](#recipe-keyword-remotes)
+      - [:main](#recipe-keyword-main)
+      - [:build](#recipe-keyword-build)
+      - [:inherit](#recipe-keyword-inherit)
+      - [:pre-build](#recipe-keyword-pre-build)
+      - [:post-build](#recipe-keyword-post-build)
+      - [:autoloads](#recipe-keyword-autoloads)
+      - [Inheritance precedence](#inheritance-precedence)
+      - [elpaca-recipe-functions](#elpaca-recipe-functions)
     - [Menus](#menus)
+      - [elpaca-menu-functions](#elpaca-menu-functions)
     - [Orders](#orders)
+      - [elpaca-order-functions](#elpaca-order-functions)
     - [Queues](#queues)
     - [Installing Packages](#installing-packages)
   - [use-package Integration](#use-package-integration)
@@ -233,7 +253,12 @@ A recipe provides Elpaca with the metadata necessary to build and install a pack
 
 *ITEM* is a symbol uniquely identifying the package. *PROPS* is a plist with any of the following recipe keywords:
 
--   **:host | :fetcher:** A symbol or string representing the hosting service of the repository.
+
+<a id="recipe-keyword-host"></a>
+
+#### :host | :fetcher
+
+A symbol or string representing the hosting service of the repository.
 
 ```emacs-lisp
 (example :host github)
@@ -241,7 +266,12 @@ A recipe provides Elpaca with the metadata necessary to build and install a pack
 (example :host "www.example.com")
 ```
 
--   **:repo:** A string of the form `USER/REPO` when used with the `:host` keyword; a local file path or remote URL when `:host` is not used.
+
+<a id="recipe-keyword-repo"></a>
+
+#### :repo
+
+A string of the form `USER/REPO` when used with the `:host` keyword; a local file path or remote URL when `:host` is not used.
 
 ```emacs-lisp
 (example :host github :repo "user/example") ;;downloaded from github
@@ -255,51 +285,86 @@ A recipe provides Elpaca with the metadata necessary to build and install a pack
 (remote :repo "https://foo.example/example.git") ;;remote clone
 ```
 
--   **:branch:** The repository branch to check out when installing the package.
+
+<a id="recipe-keyword-branch"></a>
+
+#### :branch
+
+The repository branch to check out when installing the package.
 
 ```emacs-lisp
 (example :host github :repo "user/example" :branch "main")
 ```
 
--   **:tag:** The tag to check out when installing the package.
+
+<a id="recipe-keyword-tag"></a>
+
+#### :tag
+
+The tag to check out when installing the package.
 
 ```emacs-lisp
 (example :host github :repo "user/example" :tag "v1.0")
 ```
 
--   **:ref:** The git ref<sup><a id="fnr.4" class="footref" href="#fn.4" role="doc-backlink">4</a></sup> to check out when installing the package.
+
+<a id="recipe-keyword-ref"></a>
+
+#### :ref
+
+The git ref<sup><a id="fnr.4" class="footref" href="#fn.4" role="doc-backlink">4</a></sup> to check out when installing the package.
 
 ```emacs-lisp
 (example :host github :repo "user/example" :ref "a76ca0a") ;; Check out a specific commit.
 ```
 
--   **:pin:** When non-nil, ignore the package during update commands.
+
+<a id="recipe-keyword-pin"></a>
+
+#### :pin
+
+When non-nil, ignore the package during update commands.
 
 ```emacs-lisp
 (example :pin t)
 ```
 
--   **:depth:** The package repository&rsquo;s history depth.
+
+<a id="recipe-keyword-depth"></a>
+
+#### :depth
+
+The package repository&rsquo;s history depth.
 
 ```emacs-lisp
 (example :depth 1) ;; Shallow clone with history truncated to 1 commit.
 (example :depth nil) ;; Full repository clone.
 ```
 
--   **:files:** The files linked from the package&rsquo;s repository to its build directory.
-    
-    Each element of the list is either:
-    
-    -   The symbol `:defaults`, which expands to `elpaca-default-files-directive`.
-    -   A string naming files or folders. Shell glob patterns may be used to match multiple files.
-    -   A list starting with the `:exclude` keyword. The remaining elements are not linked.
+
+<a id="recipe-keyword-files"></a>
+
+#### :files
+
+The files linked from the package&rsquo;s repository to its build directory.
+
+Each element of the list is either:
+
+-   The symbol `:defaults`, which expands to `elpaca-default-files-directive`.
+-   A string naming files or folders. Shell glob patterns may be used to match multiple files.
+-   A list starting with the `:exclude` keyword. The remaining elements are not linked.
 
 ```emacs-lisp
 (example :files (:defaults "extensions/*")) ;; Link everything in the extensions folder.
 (example :files (:defaults (:exclude "*.c"))) ;; Exclude all files with the "c" file extension.
 ```
 
--   **:protocol:** The protocol to use when cloning repositories.
+
+<a id="recipe-keyword-protocol"></a>
+
+#### :protocol
+
+The protocol to use when cloning repositories.
 
 The value must be a symbol, either `https` or `ssh`.
 
@@ -308,7 +373,12 @@ The value must be a symbol, either `https` or `ssh`.
 (example :protocol ssh) ; Use the ssh protocol.
 ```
 
--   **:remotes:** Configures the repository remotes<sup><a id="fnr.5" class="footref" href="#fn.5" role="doc-backlink">5</a></sup>.
+
+<a id="recipe-keyword-remotes"></a>
+
+#### :remotes
+
+Configures the repository remotes<sup><a id="fnr.5" class="footref" href="#fn.5" role="doc-backlink">5</a></sup>.
 
 The value must be a single remote spec or a list of remote specs. The first remote given will have its ref checked out when cloning the repository. A spec may be a string to rename the default remote. The following will rename the cloned remote (usually &ldquo;origin&rdquo; by git convention) to &ldquo;upstream&rdquo;:
 
@@ -339,7 +409,12 @@ Will add a remote named fork which points to a repository hosted on the same for
                    ("other" :host gitlab :repo "other/zenburn-emacs")))
 ```
 
--   **:main:** The name of the main elisp file. When provided this can speed up the process of cloning and loading a package&rsquo;s dependencies. When declared `nil`, skip dependency check.
+
+<a id="recipe-keyword-main"></a>
+
+#### :main
+
+The name of the main elisp file. When provided this can speed up the process of cloning and loading a package&rsquo;s dependencies. When declared `nil`, skip dependency check.
 
 ```emacs-lisp
 (example :main "example.el")
@@ -349,13 +424,23 @@ Will add a remote named fork which points to a repository hosted on the same for
 (example :main nil)
 ```
 
--   **:build:** A list of build steps, nil or t. To remove steps from `elpaca-default-build-steps` by starting the list with the `:not` keyword.
+
+<a id="recipe-keyword-build"></a>
+
+#### :build
+
+A list of build steps, nil or t. To remove steps from `elpaca-default-build-steps` by starting the list with the `:not` keyword.
 
 ```emacs-lisp
 (example :build (:not elpaca--byte-compile))
 ```
 
--   **:inherit:** When non-nil, inherit *PROPS* from `elpaca-order-functions` and possibly `elpaca-menu-functions`. For example, without inheritance:
+
+<a id="recipe-keyword-inherit"></a>
+
+#### :inherit
+
+When non-nil, inherit *PROPS* from `elpaca-order-functions` and possibly `elpaca-menu-functions`. For example, without inheritance:
 
 ```emacs-lisp
 (elpaca-example (elpaca-recipe '(burger :inherit nil)))
@@ -373,15 +458,30 @@ With inheritance enabled:
 (elpaca-example (elpaca-recipe '(burger :inherit t)))
 ```
 
-the elpaca-example-menu provides the rest of the &ldquo;burger&rdquo; recipe.
-
 ```emacs-lisp
-(:package "burger" :inherit t)
+(:package "burger" :beef t :buns 2 :cheese t :cook well-done :from
+          elpaca-example-menu :inherit t :lettuce t :tomato t)
 ```
 
--   **:pre-build:** Commands and/or elisp evaluated prior to `:build` steps.
+the elpaca-example-menu provides the rest of the &ldquo;burger&rdquo; recipe.
 
-Each command is either an elisp form or a list of strings executed in a shell context of the form:
+The value may also be a menu-item symbol or list of menu-item symbols, in which case those menus are tried in order. This is a per-recipe way of setting `elpaca-menu-functions`.
+
+```emacs-lisp
+(elpaca-example (elpaca-recipe '(burger :inherit elpaca-example-menu)))
+```
+
+```emacs-lisp
+(:package "burger" :beef t :buns 2 :cheese t :cook well-done :from
+          elpaca-example-menu :inherit elpaca-example-menu :lettuce t :tomato t)
+```
+
+
+<a id="recipe-keyword-pre-build"></a>
+
+#### :pre-build
+
+Commands and/or elisp evaluated prior to `:build` steps. Each command is either an elisp form or a list of strings executed in a shell context of the form:
 
 ```emacs-lisp
 ("executable" "argument"...)
@@ -393,52 +493,70 @@ For example:
 (elpaca (example :pre-build (("configure") ("make" "install"))))
 ```
 
--   **:post-build:** The same as `:pre-build`, but run just before activating a package.
+
+<a id="recipe-keyword-post-build"></a>
+
+#### :post-build
+
+The same as `:pre-build`, but run just before activating a package.
 
 ```emacs-lisp
 (elpaca (example :post-build (message "activate next")))
 ```
 
--   **:autoloads:** The name of the file the package&rsquo;s autoload file. When `nil`, autoload loading and generation are disabled for the package. When `t`, the default autoload file is generated/loaded (`PACKAGE-NAME-autoloads.el`). The value may also be a string which is expanded relative to the package&rsquo;s build directory. e.g. `"org-loaddefs.el"`.
 
-1.  Inheritance precedence
+<a id="recipe-keyword-autoloads"></a>
 
-    The following list shows the order of precedence for inheritance. Each item takes precedence over the items which follow it.
-    
-    -   elpaca-recipe-functions
-    -   declared recipe
-    -   elpaca-order-functions
-    -   elpaca-menu-functions
-    
-    ```emacs-lisp
-    (elpaca-example
-     (let ((elpaca-recipe-functions (lambda (recipe) '(:from recipe-functions :cheese extra)))
-           (elpaca-order-functions (lambda (order) '(:from order-functions :tomato nil))))
-       (elpaca-recipe '(burger))))
-    ```
-    
-    ```emacs-lisp
-    (:package "burger" :cheese extra :from recipe-functions :tomato nil)
-    ```
+#### :autoloads
 
-2.  elpaca-recipe-functions
+The name of the file the package&rsquo;s autoload file. When `nil`, autoload loading and generation are disabled for the package. When `t`, the default autoload file is generated/loaded (`PACKAGE-NAME-autoloads.el`). The value may also be a string which is expanded relative to the package&rsquo;s build directory. e.g. `"org-loaddefs.el"`.
 
-    The abnormal hook `elpaca-recipe-functions` runs via `run-hook-with-args-until-success` just before installing the package. Each function in the list should accept the current recipe as its sole argument and return either nil or a plist. The first function to return a plist has its return value merged with the current recipe.
-    
-    This is useful if you want to guarantee the values of certain keywords despite allowing recipe inheritance.
-    
-    ```emacs-lisp
-    (elpaca-example
-     (let ((elpaca-recipe-functions
-            '((lambda (recipe)
-                "If a recipe calls for cheese, I always want extra."
-                (when (plist-get recipe :cheese) (list :cheese 'extra))))))
-       (elpaca-recipe '(burger))))
-    ```
-    
-    ```emacs-lisp
-    (:package "burger")
-    ```
+
+<a id="inheritance-precedence"></a>
+
+#### Inheritance precedence
+
+The following list shows the order of precedence for inheritance. Each item takes precedence over the items which follow it.
+
+-   elpaca-recipe-functions
+-   declared recipe
+-   elpaca-order-functions
+-   elpaca-menu-functions
+
+```emacs-lisp
+(elpaca-example
+ (let ((elpaca-recipe-functions (lambda (recipe) '(:from recipe-functions :cheese extra)))
+       (elpaca-order-functions (lambda (order) '(:from order-functions :tomato nil))))
+   (elpaca-recipe '(burger))))
+```
+
+```emacs-lisp
+(:package "burger" :beef t :buns 2 :cheese extra :cook well-done :from
+          recipe-functions :lettuce t :tomato nil)
+```
+
+
+<a id="elpaca-recipe-functions"></a>
+
+#### elpaca-recipe-functions
+
+The abnormal hook `elpaca-recipe-functions` runs via `run-hook-with-args-until-success` just before installing the package. Each function in the list should accept the current recipe as its sole argument and return either nil or a plist. The first function to return a plist has its return value merged with the current recipe.
+
+This is useful if you want to guarantee the values of certain keywords despite allowing recipe inheritance.
+
+```emacs-lisp
+(elpaca-example
+ (let ((elpaca-recipe-functions
+        '((lambda (recipe)
+            "If a recipe calls for cheese, I always want extra."
+            (when (plist-get recipe :cheese) (list :cheese 'extra))))))
+   (elpaca-recipe '(burger))))
+```
+
+```emacs-lisp
+(:package "burger" :beef t :buns 2 :cheese extra :cook well-done :from
+          elpaca-example-menu :lettuce t :tomato t)
+```
 
 
 <a id="menus"></a>
@@ -477,17 +595,20 @@ Ignore REQUEST, as this is a static, curated list of packages."
 
 Menus allow one to offer Elpaca users curated lists of package recipes. For example, [melpulls](https://www.github.com/progfolio/melpulls) implements an Elpaca menu for pending MELPA packages.
 
-1.  elpaca-menu-functions
 
-    The `elpaca-menu-functions` variable contains menu functions for the following package sources by default:
-    
-    -   [MELPA](https://www.github.com/melpa/melpa)
-    -   [Org](https://git.savannah.gnu.org/cgit/emacs/org-mode.git/)
-    -   [Org-contrib](https://git.sr.ht/~bzg/org-contrib)
-    -   [GNU ELPA Mirror](https://www.github.com/emacs-straight/gnu-elpa-mirror)
-    -   [NonGNU ELPA](https://elpa.nongnu.org)
-    
-    Menus are checked in order until one returns the requested menu item or the menu list is exhausted.
+<a id="elpaca-menu-functions"></a>
+
+#### elpaca-menu-functions
+
+The `elpaca-menu-functions` variable contains menu functions for the following package sources by default:
+
+-   [MELPA](https://www.github.com/melpa/melpa)
+-   [Org](https://git.savannah.gnu.org/cgit/emacs/org-mode.git/)
+-   [Org-contrib](https://git.sr.ht/~bzg/org-contrib)
+-   [GNU ELPA Mirror](https://www.github.com/emacs-straight/gnu-elpa-mirror)
+-   [NonGNU ELPA](https://elpa.nongnu.org)
+
+Menus are checked in order until one returns the requested menu item or the menu list is exhausted.
 
 
 <a id="orders"></a>
@@ -507,21 +628,24 @@ An order may also be a partial or full recipe:
 (elpaca (example :host gitlab :repo "user/example" :inherit nil))
 ```
 
-1.  elpaca-order-functions
 
-    The abnormal hook `elpaca-order-functions` runs via `run-hook-with-args-until-success` before `elpaca-menu-functions`. Each function in the list should accept the current order as its sole argument and return either nil or a plist. The first function to return a plist has its return value merged with the current order.
-    
-    This is useful for declaring default order properties. For example, the following function disables recipe inheritance by default:
-    
-    ```emacs-lisp
-    (elpaca-example
-     (let ((elpaca-order-functions '((lambda (_) '(:inherit nil)))))
-       (elpaca-recipe 'burger)))
-    ```
-    
-    ```emacs-lisp
-    (:package "burger" :inherit nil)
-    ```
+<a id="elpaca-order-functions"></a>
+
+#### elpaca-order-functions
+
+The abnormal hook `elpaca-order-functions` runs via `run-hook-with-args-until-success` before `elpaca-menu-functions`. Each function in the list should accept the current order as its sole argument and return either nil or a plist. The first function to return a plist has its return value merged with the current order.
+
+This is useful for declaring default order properties. For example, the following function disables recipe inheritance by default:
+
+```emacs-lisp
+(elpaca-example
+ (let ((elpaca-order-functions '((lambda (_) '(:inherit nil)))))
+   (elpaca-recipe 'burger)))
+```
+
+```emacs-lisp
+(:package "burger" :inherit nil)
+```
 
 
 <a id="queues"></a>

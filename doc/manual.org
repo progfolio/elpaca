@@ -10,7 +10,7 @@
 #+texinfo_dir_desc: Elisp Package Manager
 #+subtitle: version 0.0.0
 #+texinfo: @noindent
-#+options: creator: ':t html-postamble:nil
+#+options: creator: ':t html-postamble:nil H:5
 
 #+include: "./common.org::introduction" :only-contents t
 
@@ -115,7 +115,11 @@ It is a list of the form:
 /ITEM/ is a symbol uniquely identifying the package.
 /PROPS/ is a plist with any of the following recipe keywords:
 
-- :host | :fetcher :: A symbol or string representing the hosting service of the repository.
+**** :host | :fetcher
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-host
+:END:
+A symbol or string representing the hosting service of the repository.
 
 #+begin_src emacs-lisp :lexical t :eval never-export
 (example :host github)
@@ -123,7 +127,11 @@ It is a list of the form:
 (example :host "www.example.com")
 #+end_src
 
-- :repo :: A string of the form =USER/REPO= when used with the =:host= keyword; a local file path or remote URL when =:host= is not used.
+**** :repo
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-repo
+:END:
+A string of the form =USER/REPO= when used with the =:host= keyword; a local file path or remote URL when =:host= is not used.
 
 #+begin_src emacs-lisp :lexical t :eval never-export
 (example :host github :repo "user/example") ;;downloaded from github
@@ -137,50 +145,78 @@ It is a list of the form:
 (remote :repo "https://foo.example/example.git") ;;remote clone
 #+end_src
 
-- :branch :: The repository branch to check out when installing the package.
+**** :branch
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-branch
+:END:
+The repository branch to check out when installing the package.
 
 #+begin_src emacs-lisp :lexical t :eval never-export
 (example :host github :repo "user/example" :branch "main")
 #+end_src
 
-- :tag :: The tag to check out when installing the package.
+**** :tag
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-tag
+:END:
+The tag to check out when installing the package.
 
 #+begin_src emacs-lisp :lexical t :eval never-export
 (example :host github :repo "user/example" :tag "v1.0")
 #+end_src
 
-- :ref :: The git ref[fn:1] to check out when installing the package.
+**** :ref
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-ref
+:END:
+The git ref[fn:1] to check out when installing the package.
 
 #+begin_src emacs-lisp :lexical t :eval never-export
 (example :host github :repo "user/example" :ref "a76ca0a") ;; Check out a specific commit.
 #+end_src
 
-- :pin :: When non-nil, ignore the package during update commands.
+**** :pin
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-pin
+:END:
+When non-nil, ignore the package during update commands.
 
 #+begin_src emacs-lisp :lexical t :eval never-export
 (example :pin t)
 #+end_src
 
-- :depth :: The package repository's history depth.
+**** :depth
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-depth
+:END:
+The package repository's history depth.
 
 #+begin_src emacs-lisp :lexical t :eval never-export
 (example :depth 1) ;; Shallow clone with history truncated to 1 commit.
 (example :depth nil) ;; Full repository clone.
 #+end_src
 
-- :files :: The files linked from the package's repository to its build directory.
+**** :files
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-files
+:END:
+The files linked from the package's repository to its build directory.
 
-  Each element of the list is either:
-  - The symbol =:defaults=, which expands to =elpaca-default-files-directive=.
-  - A string naming files or folders. Shell glob patterns may be used to match multiple files.
-  - A list starting with the =:exclude= keyword. The remaining elements are not linked.
+Each element of the list is either:
+- The symbol =:defaults=, which expands to =elpaca-default-files-directive=.
+- A string naming files or folders. Shell glob patterns may be used to match multiple files.
+- A list starting with the =:exclude= keyword. The remaining elements are not linked.
 
 #+begin_src emacs-lisp :lexical t
 (example :files (:defaults "extensions/*")) ;; Link everything in the extensions folder.
 (example :files (:defaults (:exclude "*.c"))) ;; Exclude all files with the "c" file extension.
 #+end_src
 
-- :protocol :: The protocol to use when cloning repositories.
+**** :protocol
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-protocol
+:END:
+The protocol to use when cloning repositories.
 
 The value must be a symbol, either =https= or =ssh=.
 
@@ -189,7 +225,11 @@ The value must be a symbol, either =https= or =ssh=.
 (example :protocol ssh) ; Use the ssh protocol.
 #+end_src
 
-- :remotes :: Configures the repository remotes[fn:2].
+**** :remotes
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-remotes
+:END:
+Configures the repository remotes[fn:2].
 
 The value must be a single remote spec or a list of remote specs.
 The first remote given will have its ref checked out when cloning the repository.
@@ -225,9 +265,13 @@ The following does the same above, additionally adding a third remote at a diffe
                    ("other" :host gitlab :repo "other/zenburn-emacs")))
 #+end_src
 
-- :main :: The name of the main elisp file.
-  When provided this can speed up the process of cloning and loading a package's dependencies.
-  When declared =nil=, skip dependency check.
+**** :main
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-main
+:END:
+The name of the main elisp file.
+When provided this can speed up the process of cloning and loading a package's dependencies.
+When declared =nil=, skip dependency check.
 
 #+begin_src emacs-lisp :lexical t :eval never-export
 (example :main "example.el")
@@ -237,15 +281,23 @@ The following does the same above, additionally adding a third remote at a diffe
 (example :main nil)
 #+end_src
 
-- :build :: A list of build steps, nil or t.
-  To remove steps from =elpaca-default-build-steps= by starting the list with the =:not= keyword.
+**** :build
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-build
+:END:
+A list of build steps, nil or t.
+To remove steps from =elpaca-default-build-steps= by starting the list with the =:not= keyword.
 
 #+begin_src emacs-lisp :lexical t :eval never-export
 (example :build (:not elpaca--byte-compile))
 #+end_src
 
-- :inherit :: When non-nil, inherit /PROPS/ from =elpaca-order-functions= and possibly =elpaca-menu-functions=.
-  For example, without inheritance:
+**** :inherit
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-inherit
+:END:
+When non-nil, inherit /PROPS/ from =elpaca-order-functions= and possibly =elpaca-menu-functions=.
+For example, without inheritance:
 
 #+name: recipe-inheritance-nil
 #+begin_src emacs-lisp :lexical t :results raw code :exports both
@@ -261,19 +313,38 @@ returns the recipe as declared:
 
 With inheritance enabled:
 
-#+name: recipe-inheritance-menu
+#+name: recipe-inheritance-t
 #+begin_src emacs-lisp :lexical t :results raw code :exports both
 (elpaca-example (elpaca-recipe '(burger :inherit t)))
 #+end_src
 
-the elpaca-example-menu provides the rest of the "burger" recipe.
-
-#+results: recipe-inheritance-menu
+#+RESULTS: recipe-inheritance-t
 #+begin_src emacs-lisp
-(:package "burger" :beef t :buns 2 :cheese t :cook well-done :from elpaca-example-menu :inherit t :lettuce t :tomato t)
+(:package "burger" :beef t :buns 2 :cheese t :cook well-done :from
+          elpaca-example-menu :inherit t :lettuce t :tomato t)
 #+end_src
 
-- :pre-build :: Commands and/or elisp evaluated prior to =:build= steps.
+the elpaca-example-menu provides the rest of the "burger" recipe.
+
+The value may also be a menu-item symbol or list of menu-item symbols, in which case those menus are tried in order.
+This is a per-recipe way of setting =elpaca-menu-functions=.
+
+#+name: recipe-inheritance-menu
+#+begin_src emacs-lisp :lexical t :results raw code :exports both
+(elpaca-example (elpaca-recipe '(burger :inherit elpaca-example-menu)))
+#+end_src
+
+#+RESULTS: recipe-inheritance-menu
+#+begin_src emacs-lisp
+(:package "burger" :beef t :buns 2 :cheese t :cook well-done :from
+          elpaca-example-menu :inherit elpaca-example-menu :lettuce t :tomato t)
+#+end_src
+
+**** :pre-build
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-pre-build
+:END:
+Commands and/or elisp evaluated prior to =:build= steps.
 Each command is either an elisp form or a list of strings executed in a shell context of the form:
 
 #+begin_src emacs-lisp :lexical t :eval never
@@ -286,17 +357,25 @@ For example:
 (elpaca (example :pre-build (("configure") ("make" "install"))))
 #+end_src
 
-- :post-build :: The same as =:pre-build=, but run just before activating a package.
+**** :post-build
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-post-build
+:END:
+The same as =:pre-build=, but run just before activating a package.
 
 #+begin_src emacs-lisp :lexical t :eval never
 (elpaca (example :post-build (message "activate next")))
 #+end_src
 
-- :autoloads :: The name of the file the package's autoload file.
-  When =nil=, autoload loading and generation are disabled for the package.
-  When =t=, the default autoload file is generated/loaded (=PACKAGE-NAME-autoloads.el=).
-  The value may also be a string which is expanded relative to the package's build directory.
-  e.g. ="org-loaddefs.el"=.
+**** :autoloads
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-autoloads
+:END:
+The name of the file the package's autoload file.
+When =nil=, autoload loading and generation are disabled for the package.
+When =t=, the default autoload file is generated/loaded (=PACKAGE-NAME-autoloads.el=).
+The value may also be a string which is expanded relative to the package's build directory.
+e.g. ="org-loaddefs.el"=.
 
 **** Inheritance precedence
 :PROPERTIES:
@@ -389,6 +468,9 @@ Menus allow one to offer Elpaca users curated lists of package recipes.
 For example, [[https://www.github.com/progfolio/melpulls][melpulls]] implements an Elpaca menu for pending MELPA packages.
 
 **** elpaca-menu-functions
+:PROPERTIES:
+:CUSTOM_ID: elpaca-menu-functions
+:END:
 The =elpaca-menu-functions= variable contains menu functions for the following package sources by default:
 
 - [[https://www.github.com/melpa/melpa][MELPA]]
@@ -419,6 +501,9 @@ An order may also be a partial or full recipe:
 #+end_src
 
 **** elpaca-order-functions
+:PROPERTIES:
+:CUSTOM_ID: elpaca-order-functions
+:END:
 The abnormal hook =elpaca-order-functions= runs via =run-hook-with-args-until-success= before =elpaca-menu-functions=.
 Each function in the list should accept the current order as its sole argument and return either nil or a plist.
 The first function to return a plist has its return value merged with the current order.

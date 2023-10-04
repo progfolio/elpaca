@@ -42,6 +42,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE@.  See the GNU
 General Public License for more details.
 
 @end quotation
+
 @end ifnottex
 
 @menu
@@ -70,6 +71,35 @@ Basic concepts
 * Orders::                       Incomplete, or custom recipes.
 * Queues::                       Order processing groups.
 * Installing Packages::
+
+Recipes
+
+* host |fetcher: host | fetcher. 
+* repo::
+* branch::
+* tag::
+* ref::
+* pin::
+* depth::
+* files::
+* protocol::
+* remotes::
+* main::
+* build::
+* inherit::
+* pre-build::
+* post-build::
+* autoloads::
+* Inheritance precedence::
+* elpaca-recipe-functions::
+
+Menus
+
+* elpaca-menu-functions::
+
+Orders
+
+* elpaca-order-functions::
 
 UI
 
@@ -338,10 +368,31 @@ It is a list of the form:
 @emph{ITEM} is a symbol uniquely identifying the package.
 @emph{PROPS} is a plist with any of the following recipe keywords:
 
-@table @asis
-@item :host | :fetcher
+@menu
+* host |fetcher: host | fetcher. 
+* repo::
+* branch::
+* tag::
+* ref::
+* pin::
+* depth::
+* files::
+* protocol::
+* remotes::
+* main::
+* build::
+* inherit::
+* pre-build::
+* post-build::
+* autoloads::
+* Inheritance precedence::
+* elpaca-recipe-functions::
+@end menu
+
+@node host | fetcher
+@subsubsection :host | :fetcher
+
 A symbol or string representing the hosting service of the repository.
-@end table
 
 @lisp
 (example :host github)
@@ -349,10 +400,10 @@ A symbol or string representing the hosting service of the repository.
 (example :host "www.example.com")
 @end lisp
 
-@table @asis
-@item :repo
+@node repo
+@subsubsection :repo
+
 A string of the form @samp{USER/REPO} when used with the @samp{:host} keyword; a local file path or remote URL when @samp{:host} is not used.
-@end table
 
 @lisp
 (example :host github :repo "user/example") ;;downloaded from github
@@ -366,54 +417,55 @@ A string of the form @samp{USER/REPO} when used with the @samp{:host} keyword; a
 (remote :repo "https://foo.example/example.git") ;;remote clone
 @end lisp
 
-@table @asis
-@item :branch
+@node branch
+@subsubsection :branch
+
 The repository branch to check out when installing the package.
-@end table
 
 @lisp
 (example :host github :repo "user/example" :branch "main")
 @end lisp
 
-@table @asis
-@item :tag
+@node tag
+@subsubsection :tag
+
 The tag to check out when installing the package.
-@end table
 
 @lisp
 (example :host github :repo "user/example" :tag "v1.0")
 @end lisp
 
-@table @asis
-@item :ref
+@node ref
+@subsubsection :ref
+
 The git ref@footnote{@uref{https://git-scm.com/book/en/v2/Git-Internals-Git-References, git ref}} to check out when installing the package.
-@end table
 
 @lisp
 (example :host github :repo "user/example" :ref "a76ca0a") ;; Check out a specific commit.
 @end lisp
 
-@table @asis
-@item :pin
+@node pin
+@subsubsection :pin
+
 When non-nil, ignore the package during update commands.
-@end table
 
 @lisp
 (example :pin t)
 @end lisp
 
-@table @asis
-@item :depth
+@node depth
+@subsubsection :depth
+
 The package repository's history depth.
-@end table
 
 @lisp
 (example :depth 1) ;; Shallow clone with history truncated to 1 commit.
 (example :depth nil) ;; Full repository clone.
 @end lisp
 
-@table @asis
-@item :files
+@node files
+@subsubsection :files
+
 The files linked from the package's repository to its build directory.
 
 Each element of the list is either:
@@ -425,17 +477,16 @@ A string naming files or folders. Shell glob patterns may be used to match multi
 @item
 A list starting with the @samp{:exclude} keyword. The remaining elements are not linked.
 @end itemize
-@end table
 
 @lisp
 (example :files (:defaults "extensions/*")) ;; Link everything in the extensions folder.
 (example :files (:defaults (:exclude "*.c"))) ;; Exclude all files with the "c" file extension.
 @end lisp
 
-@table @asis
-@item :protocol
+@node protocol
+@subsubsection :protocol
+
 The protocol to use when cloning repositories.
-@end table
 
 The value must be a symbol, either @samp{https} or @samp{ssh}.
 
@@ -444,10 +495,10 @@ The value must be a symbol, either @samp{https} or @samp{ssh}.
 (example :protocol ssh) ; Use the ssh protocol.
 @end lisp
 
-@table @asis
-@item :remotes
+@node remotes
+@subsubsection :remotes
+
 Configures the repository remotes@footnote{@uref{https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes, remotes}}.
-@end table
 
 The value must be a single remote spec or a list of remote specs.
 The first remote given will have its ref checked out when cloning the repository.
@@ -483,12 +534,12 @@ The following does the same above, additionally adding a third remote at a diffe
                    ("other" :host gitlab :repo "other/zenburn-emacs")))
 @end lisp
 
-@table @asis
-@item :main
+@node main
+@subsubsection :main
+
 The name of the main elisp file.
 When provided this can speed up the process of cloning and loading a package's dependencies.
 When declared @samp{nil}, skip dependency check.
-@end table
 
 @lisp
 (example :main "example.el")
@@ -498,21 +549,21 @@ When declared @samp{nil}, skip dependency check.
 (example :main nil)
 @end lisp
 
-@table @asis
-@item :build
+@node build
+@subsubsection :build
+
 A list of build steps, nil or t.
 To remove steps from @samp{elpaca-default-build-steps} by starting the list with the @samp{:not} keyword.
-@end table
 
 @lisp
 (example :build (:not elpaca--byte-compile))
 @end lisp
 
-@table @asis
-@item :inherit
+@node inherit
+@subsubsection :inherit
+
 When non-nil, inherit @emph{PROPS} from @samp{elpaca-order-functions} and possibly @samp{elpaca-menu-functions}.
 For example, without inheritance:
-@end table
 
 @lisp
 (elpaca-example (elpaca-recipe '(burger :inherit nil)))
@@ -530,16 +581,29 @@ With inheritance enabled:
 (elpaca-example (elpaca-recipe '(burger :inherit t)))
 @end lisp
 
-the elpaca-example-menu provides the rest of the ``burger'' recipe.
-
 @lisp
-(:package "burger" :inherit t)
+(:package "burger" :beef t :buns 2 :cheese t :cook well-done :from
+          elpaca-example-menu :inherit t :lettuce t :tomato t)
 @end lisp
 
-@table @asis
-@item :pre-build
+the elpaca-example-menu provides the rest of the ``burger'' recipe.
+
+The value may also be a menu-item symbol or list of menu-item symbols, in which case those menus are tried in order.
+This is a per-recipe way of setting @samp{elpaca-menu-functions}.
+
+@lisp
+(elpaca-example (elpaca-recipe '(burger :inherit elpaca-example-menu)))
+@end lisp
+
+@lisp
+(:package "burger" :beef t :buns 2 :cheese t :cook well-done :from
+          elpaca-example-menu :inherit elpaca-example-menu :lettuce t :tomato t)
+@end lisp
+
+@node pre-build
+@subsubsection :pre-build
+
 Commands and/or elisp evaluated prior to @samp{:build} steps.
-@end table
 Each command is either an elisp form or a list of strings executed in a shell context of the form:
 
 @lisp
@@ -552,28 +616,26 @@ For example:
 (elpaca (example :pre-build (("configure") ("make" "install"))))
 @end lisp
 
-@table @asis
-@item :post-build
+@node post-build
+@subsubsection :post-build
+
 The same as @samp{:pre-build}, but run just before activating a package.
-@end table
 
 @lisp
 (elpaca (example :post-build (message "activate next")))
 @end lisp
 
-@table @asis
-@item :autoloads
+@node autoloads
+@subsubsection :autoloads
+
 The name of the file the package's autoload file.
 When @samp{nil}, autoload loading and generation are disabled for the package.
 When @samp{t}, the default autoload file is generated/loaded (@samp{PACKAGE-NAME-autoloads.el}).
 The value may also be a string which is expanded relative to the package's build directory.
 e.g. @samp{"org-loaddefs.el"}.
-@end table
 
-@enumerate
-@item
-@anchor{Inheritance precedence}Inheritance precedence
-
+@node Inheritance precedence
+@subsubsection Inheritance precedence
 
 The following list shows the order of precedence for inheritance.
 Each item takes precedence over the items which follow it.
@@ -597,12 +659,12 @@ elpaca-menu-functions
 @end lisp
 
 @lisp
-(:package "burger" :cheese extra :from recipe-functions :tomato nil)
+(:package "burger" :beef t :buns 2 :cheese extra :cook well-done :from
+          recipe-functions :lettuce t :tomato nil)
 @end lisp
 
-@item
-@anchor{elpaca-recipe-functions}elpaca-recipe-functions
-
+@node elpaca-recipe-functions
+@subsubsection elpaca-recipe-functions
 
 The abnormal hook @samp{elpaca-recipe-functions} runs via @samp{run-hook-with-args-until-success} just before installing the package.
 Each function in the list should accept the current recipe as its sole argument and return either nil or a plist.
@@ -620,9 +682,9 @@ This is useful if you want to guarantee the values of certain keywords despite a
 @end lisp
 
 @lisp
-(:package "burger")
+(:package "burger" :beef t :buns 2 :cheese extra :cook well-done :from
+          elpaca-example-menu :lettuce t :tomato t)
 @end lisp
-@end enumerate
 
 @node Menus
 @subsection Menus
@@ -675,10 +737,12 @@ Ignore REQUEST, as this is a static, curated list of packages."
 Menus allow one to offer Elpaca users curated lists of package recipes.
 For example, @uref{https://www.github.com/progfolio/melpulls, melpulls} implements an Elpaca menu for pending MELPA packages.
 
-@enumerate
-@item
-@anchor{elpaca-menu-functions}elpaca-menu-functions
+@menu
+* elpaca-menu-functions::
+@end menu
 
+@node elpaca-menu-functions
+@subsubsection elpaca-menu-functions
 
 The @samp{elpaca-menu-functions} variable contains menu functions for the following package sources by default:
 
@@ -696,7 +760,6 @@ The @samp{elpaca-menu-functions} variable contains menu functions for the follow
 @end itemize
 
 Menus are checked in order until one returns the requested menu item or the menu list is exhausted.
-@end enumerate
 
 @node Orders
 @subsection Orders
@@ -714,10 +777,12 @@ An order may also be a partial or full recipe:
 (elpaca (example :host gitlab :repo "user/example" :inherit nil))
 @end lisp
 
-@enumerate
-@item
-@anchor{elpaca-order-functions}elpaca-order-functions
+@menu
+* elpaca-order-functions::
+@end menu
 
+@node elpaca-order-functions
+@subsubsection elpaca-order-functions
 
 The abnormal hook @samp{elpaca-order-functions} runs via @samp{run-hook-with-args-until-success} before @samp{elpaca-menu-functions}.
 Each function in the list should accept the current order as its sole argument and return either nil or a plist.
@@ -735,7 +800,6 @@ For example, the following function disables recipe inheritance by default:
 @lisp
 (:package "burger" :inherit nil)
 @end lisp
-@end enumerate
 
 @node Queues
 @subsection Queues
