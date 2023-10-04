@@ -223,8 +223,11 @@ The `elpaca-example` macro in the following examples reduces verbosity. It is no
   `(let (elpaca-cache-menu-items
          elpaca-order-functions
          elpaca-recipe-functions
+         elpaca--menu-items-cache
          (elpaca-menu-functions '(elpaca-example-menu)))
-     (elpaca-example-sort-plist ,@body)))
+     ;; Prevent cache corruption
+     (cl-letf (((symbol-function 'elpaca--write-menu-cache) #'ignore))
+       (elpaca-example-sort-plist ,@body))))
 ```
 
 Examples will use the following recipe menu. ([recipe menu](#menus)) It offers a &ldquo;burger&rdquo; package recipe:
