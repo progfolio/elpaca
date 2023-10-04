@@ -468,7 +468,7 @@ With inheritance enabled:
 
 the elpaca-example-menu provides the rest of the &ldquo;burger&rdquo; recipe.
 
-The value may also be a menu-item symbol or list of menu-item symbols, in which case those menus are tried in order. This is a per-recipe way of setting `elpaca-menu-functions`.
+The value may also be a menu symbol or list of menu symbols. This is a per-recipe way of setting `elpaca-menu-functions`.
 
 ```emacs-lisp
 (elpaca-example (elpaca-recipe '(burger :inherit elpaca-example-menu)))
