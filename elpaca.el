@@ -1357,14 +1357,13 @@ This is the branch that would be checked out upon cloning."
          (write-file-functions nil)
          (left-margin 0)) ; Prevent spurious parens in autoloads.
     (cond
-     ((fboundp 'loaddefs-generate)
-      (loaddefs-generate
-       (cl-loop with seen
-                for file in (elpaca--directory-files-recursively dir "\\.el$")
-                for d = (file-name-directory file)
-                unless (member d seen)
-                collect d do (push d seen))
-       output nil nil nil t)) ;; Emacs 29
+     ((fboundp 'loaddefs-generate) ;; Emacs 29+
+      (cl-loop with seen
+               for file in (elpaca--directory-files-recursively dir "\\.el\\'")
+               for d = (file-name-directory file)
+               unless (member d seen) collect d into dirs do (push d seen)
+               finally do (if (null dirs) (error "No elisp files in %s" dir)
+                            (loaddefs-generate dirs output nil nil nil t))))
      ((fboundp 'make-directory-autoloads) (make-directory-autoloads dir output))
      ((fboundp 'update-directory-autoloads) ;; Compatibility for Emacs < 28.1
       (with-no-warnings (update-directory-autoloads dir))))
