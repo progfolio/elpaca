@@ -295,7 +295,8 @@ The following keys are recognized:
        (unless (file-exists-p default-directory) (make-directory default-directory 'parents))
        ,@(when localp '((elpaca-test--copy-local-store)))
        ,@(when early `((elpaca-test--write-early-init ,early-file ',early)))
-       (elpaca--test-write-init ,init-file ,ref ',(unless init-file init))
+       (elpaca--test-write-init ,init-file ,(unless localp ref)
+                                ',(when (or localp (null init-file)) init))
        ,@(when-let ((before (plist-get args :before)))
            `((let ((default-directory default-directory)) ,@before)))
        (when buffer (elpaca-test--format-output-buffer buffer ,test))
@@ -303,7 +304,7 @@ The following keys are recognized:
         ,procname buffer
         (elpaca-test--command ',(plist-get args :args) ,batchp ,timeout ',early)
         `(:computed-dir ,default-directory ,@',args))
-       (elpaca-test--announce ,localp ,ref))))
+       (elpaca-test--announce ,localp ,(unless (eq ref 'local) ref)))))
 
 (provide 'elpaca-test)
 ;;; elpaca-test.el ends here
