@@ -133,6 +133,7 @@ If FILE is nil, use upstream demo init file determined by REF."
   "Write test environment early-init.el FILE with FORMS."
   (elpaca--write-file (expand-file-name "./early-init.el")
     (if file (insert-file-contents (expand-file-name file))
+      (emacs-lisp-mode)
       (dolist (form forms) (prin1 form))
       (elisp-enable-lexical-binding))))
 
