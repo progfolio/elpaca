@@ -1843,7 +1843,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
            do (setf (elpaca-q<-processed q) 0 (elpaca-q<-status q) 'incomplete))
   (cl-loop with (seen repos)
            with ignored = (remove 'elpaca elpaca-ignored-dependencies)
-           for (id . e) in (elpaca--queued)
+           for (id . e) in (reverse (elpaca--queued))
            unless (memq id seen) do
            (let* ((repo (elpaca<-repo-dir e))
                   (mono-repo (alist-get repo repos nil nil #'equal))
