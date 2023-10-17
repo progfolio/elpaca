@@ -485,7 +485,7 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
   id package order statuses
   repo-dir build-dir mono-repo
   files build-steps recipe siblings
-  dependencies dependents -dependencies
+  dependencies dependents -depcache
   (queue-id (1- (length elpaca--queues)))
   (queue-time (current-time))
   (init (not after-init-time))
@@ -1108,7 +1108,7 @@ The keyword's value is expected to be one of the following:
 (defun elpaca--dependencies (e &optional recache)
   "Return a list of E's declared dependencies.
 If RECACHE is non-nil, do not use cached dependencies."
-  (let ((cache (elpaca<--dependencies e)))
+  (let ((cache (elpaca<--depcache e)))
     (if-let (((or recache (not cache)))
              (recipe (elpaca<-recipe e))
              (declared (if-let ((declared (plist-member recipe :main)))
@@ -1150,7 +1150,7 @@ If RECACHE is non-nil, do not use cached dependencies."
                                  (read (string-join (nreverse deps) " "))))))
                  ((end-of-file) (warn "Malformed dependency metadata: %S" main) nil)
                  ((error) (error "Dependency detection error: %S %S" main err)))))
-          (setf (elpaca<--dependencies e) (or deps :nil))
+          (setf (elpaca<--depcache e) (or deps :nil))
           deps)
       (and (not (eq cache :nil)) cache))))
 
