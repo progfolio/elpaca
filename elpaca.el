@@ -1297,7 +1297,7 @@ This is the branch that would be checked out upon cloning."
                         e (concat "Blocked by dependencies: " (prin1-to-string blocked)) 'blocked))
               ((eq e-status 'blocked)
                (elpaca--continue-build
-                e (concat "unblocked by dependency " (elpaca<-package dependency)) 'unblocked))))))
+                e (concat "Unblocked by dependency " (elpaca<-package dependency)) 'unblocked))))))
 
 (defun elpaca--clone-process-sentinel (process _event)
   "Sentinel for clone PROCESS."
