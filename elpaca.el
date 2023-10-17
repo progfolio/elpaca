@@ -1764,26 +1764,31 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
   (cl-loop for q in elpaca--queues
            do (setf (elpaca-q<-processed q) 0 (elpaca-q<-status q) 'incomplete))
   (cl-loop with repos
-           for (_ . e) in (reverse (elpaca--queued))
+           for (id . e) in (reverse (elpaca--queued))
            for repo = (elpaca<-repo-dir e)
+           for mono-repo = (alist-get repo repos nil nil #'equal)
            do (setf (elpaca<-build-steps e)
-                    (if (member repo repos) ; skip queued mono-repos
-                        '((lambda (e) (elpaca--continue-build e "Skipping queued mono-repo")))
+                    (if mono-repo ; skip queued mono-repos
+                        `((lambda (e)
+                            (elpaca--continue-build e ,(format "Mono-repo fetched by %s" mono-repo))))
                       '(elpaca--queue-dependencies elpaca--fetch elpaca--log-updates))
-                    (elpaca<-queue-time e) (current-time)
                     (elpaca<-statuses e) (list 'queued)
-                    (elpaca<-builtp e) nil)
-           (cl-pushnew (elpaca<-repo-dir e) repos))
+                    (elpaca<-builtp e) nil
+                    (elpaca<-queue-time e) (current-time))
+           (unless mono-repo (push (cons (elpaca<-repo-dir e) id) repos)))
   (when interactive (elpaca-process-queues)))
 
 (defun elpaca--merge-process-sentinel (process _event)
   "Handle PROCESS EVENT."
   (if-let ((e (process-get process :elpaca))
            ((= (process-exit-status process) 0))
-           (default-directory (elpaca<-repo-dir e)))
+           (repo (elpaca<-repo-dir e))
+           (default-directory repo))
       (progn (when (equal (elpaca-process-output "git" "rev-parse" "HEAD")
                           (process-get process :elpaca-git-rev))
-               (setf (elpaca<-build-steps e) nil))
+               (cl-loop for (_ . d) in (elpaca--queued)
+                        when (equal (elpaca<-repo-dir d) repo) do
+                        (setf (elpaca<-build-steps d) nil)))
              (elpaca--continue-build e))
     (elpaca--fail e "Merge failed")))
 
@@ -1826,9 +1831,11 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
       (elpaca--process e))))
 
 ;;;###autoload
-(defun elpaca-update-all (&optional interactive)
-  "Update all queued packages. If INTERACTIVE is non-nil, process queues."
-  (interactive (list t))
+(defun elpaca-update-all (&optional fetch interactive)
+  "Merge and rebuild queued packages.
+If FETCH is non-nil fetch updates first.
+If INTERACTIVE is non-nil, process queues."
+  (interactive (list current-prefix-arg t))
   (when interactive (elpaca--maybe-log))
   (cl-loop for q in elpaca--queues
            do (setf (elpaca-q<-processed q) 0 (elpaca-q<-status q) 'incomplete))
@@ -1849,27 +1856,26 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
                                     elpaca--checkout-ref
                                     elpaca--clone-dependencies
                                     elpaca--activate-package)))))
-             (cl-loop for dep in deps do (cl-pushnew id (elpaca<-dependents (elpaca-get dep))))
-             (setf (elpaca<-build-steps e) nil)
+             (setf (elpaca<-build-steps e) nil
+                   (elpaca<-queue-time e) (current-time))
              (cond
               (pin (elpaca--signal e "Skipping pinned repo" 'queued))
               (mono-repo
                (cl-pushnew id (elpaca<-blocking (elpaca-get mono-repo)))
+               (cl-pushnew mono-repo (elpaca<-blockers e))
                (setf (elpaca<-build-steps e) build-steps)
-               (elpaca--signal e (format "Blocked mono-repo. waiting for %s" mono-repo) 'blocked))
+               (when (cdr deps) (push 'blocked-by-mono-repo (elpaca<-statuses e)))
+               (elpaca--signal e (format "Waiting for mono-repo %s" mono-repo) 'blocked))
               (t (setf (elpaca<-build-steps e)
-                       `(elpaca--fetch
-                         elpaca--log-updates
+                       `(,@(when fetch '(elpaca--fetch elpaca--log-updates))
                          elpaca--merge
-                         elpaca--unblock-merged-monorepo
                          ,@build-steps)
-                       (elpaca<-queue-time e) (current-time)
                        (elpaca<-statuses e) (list 'queued)
                        (elpaca<-builtp e) nil)
                  (elpaca--signal e (concat "Fetching " (if deps "dependencies" "remotes"))
                                  (when (elpaca<-blockers e) 'blocked))))
              (push id seen)
-             (push (cons repo id) repos)))
+             (unless mono-repo (push (cons repo id) repos))))
   (when interactive (elpaca-process-queues)))
 
 ;;; Lockfiles
