@@ -306,7 +306,7 @@ The following keys are recognized:
         ,procname buffer
         (elpaca-test--command ',(plist-get args :args) ,batchp ,timeout ',early)
         `(:computed-dir ,default-directory ,@',args))
-       (elpaca-test--announce ,localp ,(unless (eq ref 'local) ref)))))
+       (elpaca-test--announce ,localp ,(unless localp ref)))))
 
 (provide 'elpaca-test)
 ;;; elpaca-test.el ends here
