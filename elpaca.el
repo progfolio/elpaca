@@ -484,7 +484,7 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
   "Order for queued processing."
   id package order statuses
   repo-dir build-dir mono-repo
-  files build-steps recipe siblings
+  files build-steps recipe blocking blockers
   dependencies dependents -depcache
   (queue-id (1- (length elpaca--queues)))
   (queue-time (current-time))
@@ -573,12 +573,14 @@ The first function, if any, which returns a non-nil is used." :type 'hook)
          (build-dir (and recipe (elpaca-build-dir recipe)))
          (clonedp (and repo-dir (file-exists-p repo-dir)))
          (builtp (and clonedp build-dir (file-exists-p build-dir)))
+         (blockers nil)
          (mono-repo (when-let (((not builtp))
                                (e (elpaca--mono-repo id repo-dir)))
                       (when (and (eq (elpaca<-queue-id e) (elpaca-q<-id (car elpaca--queues)))
                                  (not (memq 'ref-checked-out (elpaca<-statuses e))))
                         (setq status 'blocked info (concat "Waiting on monorepo " repo-dir))
-                        (cl-pushnew id (elpaca<-siblings e)))
+                        (push (elpaca<-id e) blockers)
+                        (cl-pushnew id (elpaca<-blocking e)))
                       e))
          (build-steps (elpaca--build-steps recipe builtp clonedp mono-repo)))
     (unless (or builtp elpaca--ibs-set elpaca-hide-initial-build elpaca-after-init-time)
@@ -588,7 +590,7 @@ The first function, if any, which returns a non-nil is used." :type 'hook)
     (elpaca<--create
      :id id :package (symbol-name id) :order order :statuses (list status)
      :repo-dir repo-dir :build-dir build-dir :mono-repo mono-repo
-     :build-steps build-steps :recipe recipe :builtp builtp
+     :build-steps build-steps :recipe recipe :builtp builtp :blockers blockers
      :log (list (list status nil info)))))
 
 (defsubst elpaca--status (e) "Return E's status." (car (elpaca<-statuses e)))
@@ -629,21 +631,14 @@ If VERBOSITY is non-nil, log event is given that verbosity number.
 If STATUS is non-nil and is not E's current STATUS, signal E's dependents to
 check (and possibly change) their statuses."
   (let* ((new-status-p (and status (not (eq status (elpaca--status e)))))
-         (siblings (elpaca<-siblings e))
-         (queued (and (or new-status-p siblings) (elpaca--queued))))
+         (queued (and new-status-p (elpaca--queued))))
     (when-let ((new-status-p)
                ((push status (elpaca<-statuses e)))
                ((memq status elpaca--inactive-states)))
       (setq elpaca--status-counts (elpaca--count-statuses))
-      (dolist (d (elpaca<-dependents e)) (elpaca--check-status e (elpaca-alist-get d queued)))
+      (dolist (blocked (elpaca<-blocking e))
+        (elpaca--check-status e (elpaca-alist-get blocked queued)))
       (and (not elpaca-after-init-time) (eq status 'failed) (elpaca--maybe-log)))
-    (when-let ((siblings)
-               (statuses (elpaca<-statuses e))
-               ((or (memq 'ref-checked-out statuses) (memq 'queueing-deps statuses)))
-               (sibling t))
-      (while (setq sibling (elpaca-alist-get (pop (elpaca<-siblings e)) queued))
-        (push 'ref-checked-out     (elpaca<-statuses sibling))
-        (elpaca--continue-build sibling nil 'unblocked-mono-repo)))
     (when info (elpaca--log e info verbosity replace))
     (when (<= (or verbosity 0) elpaca-verbosity)
       (when elpaca--log-timer (cancel-timer elpaca--log-timer))
@@ -777,6 +772,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
     (elpaca--signal
      e (concat  "✓ " (format-time-string "%s.%3N" (elpaca--log-duration e)) " secs")
      'finished))
+  (setf (elpaca<-blocking e) nil)
   (let* ((q (elpaca--q e))
          (es (elpaca-q<-elpacas q)))
     (when-let ((elpaca-queue-limit)
@@ -1168,8 +1164,12 @@ If RECACHE is non-nil, do not use cached dependencies."
                                   (elpaca--queue item)))
                  when (and d (eq (elpaca--status d) 'queued))
                  collect (prog1 d
+                           (unless (memq item (elpaca<-blockers e))
+                             (push item (elpaca<-dependencies e)))
                            (unless (memq item (elpaca<-dependencies e))
                              (push item (elpaca<-dependencies e)))
+                           (unless (memq e-id (elpaca<-blocking d))
+                             (push e-id (elpaca<-blocking d)))
                            (unless (memq e-id (elpaca<-dependents d))
                              (push e-id (elpaca<-dependents d)))))))
     (if (not queued)
@@ -1207,8 +1207,12 @@ If RECACHE is non-nil, do not use cached dependencies."
                    (elpaca--fail e (format "dependency %S in future queue" d-id)))
                  (unless (memq d-id (elpaca<-dependencies e))
                    (push d-id (elpaca<-dependencies e)))
+                 (unless (memq d-id (elpaca<-blockers e))
+                   (push d-id (elpaca<-blockers e)))
                  (unless (memq e-id (elpaca<-dependents d))
                    (push e-id (elpaca<-dependents d)))
+                 (unless (memq e-id (elpaca<-blocking d))
+                   (push e-id (elpaca<-blocking d)))
                  (unless (and queued (not (elpaca--throttled-p queued)))
                    (elpaca--signal e nil 'blocked)
                    (push 'requested-as-dependency (elpaca<-statuses d))
@@ -1282,22 +1286,21 @@ This is the branch that would be checked out upon cloning."
   "Possibly change E's status depending on DEPENDENCY statuses."
   (when-let ((e-status (elpaca--status e))
              ((not (eq e-status 'finished))))
-    (cl-loop with failed
-             with blocked
-             with queued = (elpaca--queued)
-             for d in (elpaca<-dependencies e)
-             for found = (elpaca-alist-get d queued)
-             for status = (elpaca--status found)
-             unless (eq status 'finished)
-             do (push d (if (eq status 'failed) failed blocked))
-             finally
-             (cond
-              (failed (elpaca--fail e (format "Failed dependencies: %S" failed)))
-              (blocked (elpaca--signal
-                        e (concat "Blocked by dependencies: " (prin1-to-string blocked)) 'blocked))
-              ((eq e-status 'blocked)
-               (elpaca--continue-build
-                e (concat "Unblocked by dependency " (elpaca<-package dependency)) 'unblocked))))))
+    (cl-loop
+     with failed
+     with blockers = (elpaca<-blockers e)
+     with queued = (elpaca--queued)
+     for blocker in blockers
+     for b = (elpaca-alist-get blocker queued)
+     for status = (elpaca--status b) do
+     (cond ((eq status 'finished) (setf (elpaca<-blockers e) (delq blocker blockers)))
+           ((eq status 'failed)   (push blocker failed)))
+     finally
+     (let ((blockers (elpaca<-blockers e)))
+       (cond (failed (elpaca--fail e (format "Failed dependencies: %s" failed)))
+             (blockers (elpaca--signal e (format "Blocked dependencies: %s" blockers)) 'blocked)
+             ((eq (elpaca--status e) 'blocked)
+              (elpaca--continue-build e (concat "Unblocked by: " (elpaca<-package dependency)) 'unblocked)))))))
 
 (defun elpaca--clone-process-sentinel (process _event)
   "Sentinel for clone PROCESS."
@@ -1777,14 +1780,6 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
            (cl-pushnew (elpaca<-repo-dir e) repos))
   (when interactive (elpaca-process-queues)))
 
-
-(defun elpaca--unblock-merged-monorepo (e)
-  "Unblock E waiting on mono-repo merge." ;;@MAYBE: decompose similar code in `elpaca--signal'?
-  (cl-loop for sibling in (elpaca<-siblings e)
-           unless (memq sibling (elpaca<-dependents e))
-           do (elpaca--continue-build (elpaca-get sibling) nil 'unblocked-mono-repo))
-  (elpaca--continue-build e))
-
 (defun elpaca--merge-process-sentinel (process _event)
   "Handle PROCESS EVENT."
   (if-let ((e (process-get process :elpaca))
@@ -1792,7 +1787,7 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
            (default-directory (elpaca<-repo-dir e)))
       (progn (when (equal (elpaca-process-output "git" "rev-parse" "HEAD")
                           (process-get process :elpaca-git-rev))
-               (setf (elpaca<-build-steps e) (list #'elpaca--unblock-merged-monorepo)))
+               (setf (elpaca<-build-steps e) nil))
              (elpaca--continue-build e))
     (elpaca--fail e "Merge failed")))
 
@@ -1863,7 +1858,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
              (cond
               (pin (elpaca--signal e "Skipping pinned repo" 'queued))
               (mono-repo
-               (cl-pushnew id (elpaca<-siblings (elpaca-get mono-repo)))
+               (cl-pushnew id (elpaca<-blocking (elpaca-get mono-repo)))
                (setf (elpaca<-build-steps e) build-steps)
                (elpaca--signal e (format "Blocked mono-repo. waiting for %s" mono-repo) 'blocked))
               (t (setf (elpaca<-build-steps e)
@@ -1876,7 +1871,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
                        (elpaca<-statuses e) (list 'queued)
                        (elpaca<-builtp e) nil)
                  (elpaca--signal e (concat "Fetching " (if deps "dependencies" "remotes"))
-                                 (when deps 'blocked))))
+                                 (when (elpaca<-blockers e) 'blocked))))
              (push id seen)
              (push (cons repo id) repos)))
   (when interactive (elpaca-process-queues)))
