@@ -291,7 +291,7 @@ The following keys are recognized:
          (dir (elpaca-test--dir (car (plist-get args :dir))))
          print-length print-circle print-level
          eval-expression-print-level eval-expression-print-length)
-    (elpaca-test--ensure-dir dir args) ;;TODO: Move out of expansion.
+    (elpaca-test--ensure-dir dir args)
     `(let* ((default-directory ,dir)
             (,procname (format "elpaca-test-%s" default-directory))
             (buffer ,@(if batchp `((generate-new-buffer ,procname)) '(nil))))
