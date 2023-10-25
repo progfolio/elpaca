@@ -267,7 +267,7 @@ For example:
 ;; Expands to: (elpaca evil (use-package evil :demand t))
 (use-package evil :demand t)
 
-;;Turns off elpaca-use-package-mode current declartion
+;;Turns off elpaca-use-package-mode current declaration
 ;;Note this will cause the declaration to be interpreted immediately (not deferred).
 ;;Useful for configuring built-in emacs features.
 (use-package emacs :elpaca nil :config (setq ring-bell-function #'ignore))
