@@ -512,7 +512,7 @@ If QUERY is nil, the contents of the minibuffer are used instead."
     (with-current-buffer
         (get-buffer-create (or buffer (with-minibuffer-selected-window (current-buffer))))
       (when (string-empty-p query) (setq query elpaca-ui-default-query))
-      (when-let ((parsed (elpaca-ui--parse-search query))
+      (when-let ((parsed (elpaca-ui--parse-search (regexp-quote query)))
                  (fn (elpaca-ui--search-fn parsed)))
         (let ((entries (funcall (byte-compile fn))))
           (when-let ((fn (tabulated-list--get-sorter))) (setq entries (sort entries fn)))
