@@ -304,13 +304,13 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
 
 (defvar elpaca-ui--search-cache (make-hash-table :test #'equal))
 
-(defun elpaca-ui--parse-search (search)
-  "Parse SEARCH." ;by abusing the elisp reader
-  (or (gethash search elpaca-ui--search-cache)
+(defun elpaca-ui--parse-query (query &optional nocache)
+  "Return list of tokens from QUERY. If NOCACHE is non-nil, bypass cache."
+  (or (unless nocache (gethash query elpaca-ui--search-cache))
       (let ((adjustp (< emacs-major-version 29))
             ops chunk finished tagp negatedp)
         (with-temp-buffer
-          (insert search)
+          (insert query)
           (goto-char (point-min))
           (while (not finished)
             (condition-case err
@@ -344,7 +344,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
           (when chunk
             (push (elpaca-ui--parse-tokens (string-join (nreverse chunk) " ")) ops))
           (let ((parsed (apply #'append (nreverse ops))))
-            (puthash search parsed elpaca-ui--search-cache)
+            (unless nocache (puthash query parsed elpaca-ui--search-cache))
             parsed)))))
 
 (defun elpaca-ui--search-fn (parsed)
@@ -512,7 +512,7 @@ If QUERY is nil, the contents of the minibuffer are used instead."
     (with-current-buffer
         (get-buffer-create (or buffer (with-minibuffer-selected-window (current-buffer))))
       (when (string-empty-p query) (setq query elpaca-ui-default-query))
-      (when-let ((parsed (elpaca-ui--parse-search (regexp-quote query)))
+      (when-let ((parsed (elpaca-ui--parse-query (regexp-quote query)))
                  (fn (elpaca-ui--search-fn parsed)))
         (let ((entries (funcall (byte-compile fn))))
           (when-let ((fn (tabulated-list--get-sorter))) (setq entries (sort entries fn)))
