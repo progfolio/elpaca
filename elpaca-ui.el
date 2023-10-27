@@ -508,9 +508,9 @@ ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
   "Update the BUFFER to reflect search QUERY.
 If QUERY is nil, the contents of the minibuffer are used instead."
   (let ((query (or query (and (minibufferp) (minibuffer-contents-no-properties))
-                   elpaca-ui-search-query elpaca-ui-default-query)))
-    (with-current-buffer
-        (get-buffer-create (or buffer (with-minibuffer-selected-window (current-buffer))))
+                   elpaca-ui-search-query elpaca-ui-default-query))
+        (b (or buffer (with-minibuffer-selected-window (current-buffer)) (current-buffer))))
+    (with-current-buffer (get-buffer-create b)
       (when (string-empty-p query) (setq query elpaca-ui-default-query))
       (when-let ((parsed (elpaca-ui--parse-query (regexp-quote query)))
                  (fn (elpaca-ui--search-fn parsed)))
