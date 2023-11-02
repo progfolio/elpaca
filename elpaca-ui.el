@@ -355,8 +355,10 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
            ((eq type 'elisp)
             (let ((sym (caar props))
                   (args (cdar props)))
-              (push `(apply (function ,(or (alist-get sym elpaca-ui-search-tags) sym))
-                            (list entries ,@args))
+              (push (if (eq sym 'lambda)
+                        `(funcall ,@props entries)
+                      `(apply (function ,(alist-get sym elpaca-ui-search-tags sym))
+                              (list entries ,@args)))
                     body))))
           (cl-incf i)))
       `(with-no-warnings
