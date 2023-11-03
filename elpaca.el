@@ -847,7 +847,7 @@ FILES and NOCONS are used recursively."
                                     with-subdirs)))))
    finally return
    (let ((targets (cl-nset-difference (flatten-tree targets) (flatten-tree exclusions)
-                                     :test #'equal)))
+                                      :test #'equal)))
      (if nocons
          targets
        (append with-subdirs
