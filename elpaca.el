@@ -846,7 +846,7 @@ FILES and NOCONS are used recursively."
                                           (expand-file-name path build-dir))
                                     with-subdirs)))))
    finally return
-   (let ((targets (cl-set-difference (flatten-tree targets) (flatten-tree exclusions)
+   (let ((targets (cl-nset-difference (flatten-tree targets) (flatten-tree exclusions)
                                      :test #'equal)))
      (if nocons
          targets
