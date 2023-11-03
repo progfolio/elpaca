@@ -268,7 +268,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
 (defun elpaca-ui--lex-query (query &optional nocache)
   "Return list of tokens from QUERY. If NOCACHE is non-nil, bypass cache."
   (or (unless nocache (gethash query elpaca-ui--search-cache))
-      (with-current-buffer (get-buffer-create "*elpaca-ui--parse-query*")
+      (with-current-buffer (get-buffer-create " *elpaca-ui--parse-query*")
         (cl-loop
          with (tokens acc tag-p negated-p escaped-p skip-p column finished-p elisp-p)
          with colcount = -1
