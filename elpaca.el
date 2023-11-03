@@ -221,9 +221,12 @@ Each function is passed a request, which may be any of the following symbols:
 
 (defun elpaca--read-file (path)
   "Read file at PATH into memory."
-  (when (file-exists-p path)
+  (when-let (((file-exists-p path))
+             (dir default-directory))
     (condition-case-unless-debug err
-        (with-temp-buffer (insert-file-contents path) (read (current-buffer)))
+        (with-current-buffer (get-buffer-create " elpaca--read-file")
+          (setq default-directory dir)
+          (insert-file-contents path nil nil nil 'replace) (read (current-buffer)))
       ((error) (warn "Error reading %S into memory: %S" path err) nil))))
 
 (defmacro elpaca--write-file (file &rest body)

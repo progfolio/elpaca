@@ -75,8 +75,8 @@
 
 (defun elpaca-menu-melpa--convert (file metadata)
   "Return menu item candidate for FILE's MELPA recipe and METADATA."
-  (with-temp-buffer
-    (insert-file-contents file)
+  (with-current-buffer (get-buffer-create " elpaca-menu-melpa--convert")
+    (insert-file-contents file nil nil nil 'replace)
     (condition-case-unless-debug _
         (when-let ((recipe (read (buffer-string)))
                    (package (pop recipe))
