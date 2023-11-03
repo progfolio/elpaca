@@ -813,7 +813,9 @@ Optional ARGS are passed to `elpaca--signal', which see."
                             (inherited (elpaca-merge-plists recipe props))
                             (URI       (elpaca--repo-uri inherited)))
                    (setq fetchp t)
-                   (elpaca--call-with-log e 1 "git" "remote" "add" remote URI)))))
+                   (elpaca-with-process
+                       (elpaca--call-with-log e 1 "git" "remote" "add" remote URI)
+                     (unless success (elpaca--fail e stderr)))))))
     (when fetchp (push #'elpaca--fetch (elpaca<-build-steps e))))
   (elpaca--continue-build e))
 
