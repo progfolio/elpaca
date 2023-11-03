@@ -46,7 +46,7 @@
 (defvar Info-directory-list)
 (defconst elpaca--inactive-states '(blocked finished failed))
 (defvar elpaca-installer-version -1)
-(unless (or noninteractive (= elpaca-installer-version 0.5)) (warn "Elpaca installer version mismatch"))
+(unless (or noninteractive (= elpaca-installer-version 0.6)) (warn "Elpaca installer version mismatch"))
 (unless (executable-find "git") (error "Elpaca unable to find git executable"))
 (when (and (not after-init-time) load-file-name (featurep 'package))
   (warn "Package.el loaded before Elpaca"))
@@ -824,41 +824,37 @@ Optional ARGS are passed to `elpaca--signal', which see."
 (defun elpaca--files (e &optional files nocons)
   "Return alist of E :files to be symlinked: (PATH . TARGET PATH).
 FILES and NOCONS are used recursively."
-  (let* ((repo-dir          (elpaca<-repo-dir e))
-         (default-directory repo-dir)
-         (build-dir         (elpaca<-build-dir e))
-         (recipe            (elpaca<-recipe e))
-         (files             (or files (if-let ((member (plist-member recipe :files)))
-                                          (cadr member) elpaca-default-files-directive)))
-         (exclusions        nil)
-         (targets           nil)
-         (with-subdirs      nil))
-    (dolist (el files)
-      (pcase el
-        ((pred stringp) (push (or (file-expand-wildcards el) el) targets))
-        (`(:exclude  . ,excluded)
-         (push (elpaca--files e excluded 'nocons) exclusions)
-         nil)
-        (:defaults
-         (push (elpaca--files e elpaca-default-files-directive 'nocons) targets))
-        ;;@FIX: subdir needn't be same name as globbed path...
-        (`(,_subdir . ,paths)
-         (cl-loop for path in paths
-                  for expanded = (file-expand-wildcards path)
-                  do (cl-loop for path in expanded
-                              do (push (cons (expand-file-name path repo-dir)
-                                             (expand-file-name path build-dir))
-                                       with-subdirs))))))
-    (if nocons
-        targets
-      (append
-       with-subdirs
-       (cl-loop for target in (flatten-tree targets)
-                unless (or (not (file-exists-p (expand-file-name target)))
-                           (member target (flatten-tree exclusions)))
-                collect
-                (cons (expand-file-name target)
-                      (expand-file-name (file-name-nondirectory target) build-dir)))))))
+  (cl-loop
+   with repo-dir = (elpaca<-repo-dir e)
+   with default-directory = repo-dir
+   with build-dir = (elpaca<-build-dir e)
+   with recipe    = (elpaca<-recipe e)
+   with files     = (or files (if-let ((member (plist-member recipe :files)))
+                                  (cadr member) elpaca-default-files-directive))
+   with (exclusions targets with-subdirs)
+   for el in files do
+   (pcase el
+     ((pred stringp) (push (or (file-expand-wildcards el) el) targets))
+     (`(:exclude  . ,excluded) (push (elpaca--files e excluded 'nocons) exclusions))
+     (:defaults (push (elpaca--files e elpaca-default-files-directive 'nocons) targets))
+     ;;@FIX: subdir needn't be same name as globbed path...
+     (`(,_subdir . ,paths)
+      (cl-loop for path in paths
+               for expanded = (file-expand-wildcards path)
+               do (cl-loop for path in expanded
+                           do (push (cons (expand-file-name path repo-dir)
+                                          (expand-file-name path build-dir))
+                                    with-subdirs)))))
+   finally return
+   (let ((targets (cl-set-difference (flatten-tree targets) (flatten-tree exclusions)
+                                     :test #'equal)))
+     (if nocons
+         targets
+       (append with-subdirs
+               (cl-loop for target in targets when (file-exists-p target)
+                        collect (cons (expand-file-name target)
+                                      (expand-file-name (file-name-nondirectory target)
+                                                        build-dir))))))))
 
 (defun elpaca--find-source-file-maybe ()
   "Find corresponding source file for `current-buffer'."
