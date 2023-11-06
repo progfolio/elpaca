@@ -686,7 +686,7 @@ check (and possibly change) their statuses."
 Optional ARGS are passed to `elpaca--signal', which see."
   (elpaca--signal e (format "Continued by: %S"
                             (elpaca--caller-name 2 'elpaca--process-sentinel 'apply))
-   nil nil 2)
+                  nil nil 2)
   (when args (apply #'elpaca--signal e args))
   (unless (memq (elpaca--status e) elpaca--inactive-states)
     (if-let ((elpaca-queue-limit)
