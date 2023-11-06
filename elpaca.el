@@ -1729,8 +1729,8 @@ With a prefix argument, rebuild current file's package or prompt if none found."
 
 (defun elpaca--fetch (e)
   "Fetch E's remotes' commits."
-  (elpaca--signal e nil 'fetching-remotes)
-  (let* ((default-directory (elpaca<-repo-dir e)))
+  (elpaca--signal e "Fetching remotes" 'fetching-remotes)
+  (let ((default-directory (elpaca<-repo-dir e)))
     (elpaca--make-process e
       :name "fetch"
       :command  '("git" "fetch" "--all" "-v") ;;@TODO: make --all optional
