@@ -1744,7 +1744,7 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
   (interactive (list (elpaca--read-queued "Fetch Package Updates: ") t))
   (let ((e (or (elpaca-get item) (user-error "Package %S is not queued" item))))
     (elpaca--unprocess e)
-    (elpaca--signal e "Fetching updates" 'queued)
+    (elpaca--signal e nil 'queued)
     (setf (elpaca<-build-steps e) (list #'elpaca--fetch #'elpaca--log-updates))
     (when interactive
       (elpaca--maybe-log)
@@ -1866,8 +1866,7 @@ If INTERACTIVE is non-nil, process queues."
                          ,@build-steps)
                        (elpaca<-statuses e) (list 'queued)
                        (elpaca<-builtp e) nil)
-                 (elpaca--signal e (concat "Fetching " (if deps "dependencies" "remotes"))
-                                 (when (elpaca<-blockers e) 'blocked))))
+                 (elpaca--signal e "Updating" (when (elpaca<-blockers e) 'blocked))))
              (push id seen)
              (unless mono-repo (push (cons repo id) repos))))
   (when interactive (elpaca-process-queues)))
