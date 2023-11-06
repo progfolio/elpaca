@@ -124,7 +124,7 @@ Setting it too high causes prints fewer status updates."
                                 elpaca--configure-remotes
                                 elpaca--checkout-ref
                                 elpaca--run-pre-build-commands
-                                elpaca--clone-dependencies
+                                elpaca--queue-dependencies
                                 elpaca--link-build-files
                                 elpaca--generate-autoloads-async
                                 elpaca--byte-compile
@@ -788,7 +788,6 @@ Optional ARGS are passed to `elpaca--signal', which see."
     (elpaca--signal
      e (concat  "✓ " (format-time-string "%s.%3N" (elpaca--log-duration e)) " secs")
      'finished))
-  (setf (elpaca<-blocking e) nil)
   (let* ((q (elpaca--q e))
          (es (elpaca-q<-elpacas q)))
     (when-let ((elpaca-queue-limit)
@@ -1164,78 +1163,56 @@ If RECACHE is non-nil, do not use cached dependencies."
           deps)
       (and (not (eq cache :nil)) cache))))
 
-;;@DECOMPOSE: The body of this function is similar to `elpaca--clone-dependencies'.
-;; Refactor into a macro to operate on dependencies?
-(defun elpaca--queue-dependencies (e)
-  "Queue E's dependencies."
-  (elpaca--signal e "Queueing Dependencies" 'queueing-deps nil 1)
-  (let ((queued (cl-loop
-                 with queued = (elpaca--queued)
-                 with e-id = (elpaca<-id e)
-                 for (item . _) in (elpaca--dependencies e)
-                 for d = (and (not (memq item elpaca-ignored-dependencies))
-                              (or (elpaca-alist-get item queued)
-                                  (elpaca--queue item)))
-                 when (and d (eq (elpaca--status d) 'queued))
-                 collect (prog1 d
-                           (unless (memq item (elpaca<-blockers e))
-                             (push item (elpaca<-dependencies e)))
-                           (unless (memq item (elpaca<-dependencies e))
-                             (push item (elpaca<-dependencies e)))
-                           (unless (memq e-id (elpaca<-blocking d))
-                             (push e-id (elpaca<-blocking d)))
-                           (unless (memq e-id (elpaca<-dependents d))
-                             (push e-id (elpaca<-dependents d)))))))
-    (if (not queued)
-        (elpaca--continue-build e "No dependencies to queue" nil nil 1)
-      ;; We do this in two steps so that e is aware of all its
-      ;; dependencies before any single dependency starts its build.
-      ;; Otherwise a dependency may finish prior to other dependencies being
-      ;; registered. This will cause the dependent e to become unblocked
-      ;; multiple times and run its build steps simultaneously/out of order.
-      (elpaca--signal e nil 'blocked)
-      (mapc #'elpaca--continue-build queued))))
+(defun elpaca--continue-dependency (e)
+  "Continue E unless it has already been continued."
+  (unless (memq 'continued-dep (elpaca<-statuses e))
+    (elpaca--continue-build e nil 'continued-dep)))
 
 ;;@MAYBE: Package major version checks.
-(defun elpaca--clone-dependencies (e)
-  "Clone E's dependencies."
-  (elpaca--signal e "Cloning Dependencies" 'blocked)
-  (if-let ((dependencies (elpaca--dependencies e))
-           (externals (cl-loop for dependency in dependencies
-                               for item = (car dependency)
-                               unless (memq item elpaca-ignored-dependencies)
-                               collect item)))
-      (if-let ((emacs (assoc 'emacs dependencies)) ;@TODO: check in prev loop?
-               ((< emacs-major-version (truncate (string-to-number (cadr emacs))))))
-          (elpaca--fail e (format "Requires %S; running %S" emacs emacs-version))
-        (cl-loop with finished = 0
-                 with pending = nil
-                 with e-id = (elpaca<-id e)
-                 with q = (elpaca--q e)
-                 for dependency in externals
-                 for queued = (elpaca-alist-get dependency (elpaca--queued))
-                 for d = (or queued (elpaca--queue dependency q))
-                 for d-id = (elpaca<-id d) do
-                 (when (and queued (> (elpaca<-queue-id d) (elpaca<-queue-id e)))
-                   (elpaca--fail d (format "dependent %S in past queue" e-id))
-                   (elpaca--fail e (format "dependency %S in future queue" d-id)))
-                 (unless (memq d-id (elpaca<-dependencies e))
-                   (push d-id (elpaca<-dependencies e)))
-                 (unless (memq d-id (elpaca<-blockers e))
-                   (push d-id (elpaca<-blockers e)))
-                 (unless (memq e-id (elpaca<-dependents d))
-                   (push e-id (elpaca<-dependents d)))
-                 (unless (memq e-id (elpaca<-blocking d))
-                   (push e-id (elpaca<-blocking d)))
-                 (unless (and queued (not (elpaca--throttled-p queued)))
-                   (elpaca--signal e nil 'blocked)
-                   (push 'requested-as-dependency (elpaca<-statuses d))
-                   (push d pending))
-                 (when (and queued (eq (elpaca--status queued) 'finished)) (cl-incf finished))
-                 finally (if (= (length externals) finished)
-                             (elpaca--continue-build e nil 'unblocked)
-                           (mapc #'elpaca--continue-build pending))))
-    (elpaca--continue-build e "No external dependencies detected" 'no-deps)))
+(defun elpaca--queue-dependencies (e)
+  "Queue E's dependencies."
+  (cl-loop named out
+           initially (elpaca--signal e "Queueing Dependencies" 'blocked nil 1)
+           with externals =
+           (cl-loop for (item version) in (elpaca--dependencies e)
+                    when (and (eq item 'emacs)
+                              (< emacs-major-version (truncate (string-to-number version))))
+                    do (cl-return-from out (elpaca--fail e (concat "Requires Emacs " version)))
+                    unless (memq item elpaca-ignored-dependencies) collect item)
+           with q = (when externals (elpaca--q e))
+           with qd = (when externals (elpaca--queued))
+           with finished = 0
+           with q-id = (elpaca<-queue-id e)
+           with e-id = (elpaca<-id e)
+           with pending
+           for dependency in externals
+           for queued = (elpaca-alist-get dependency qd)
+           for d = (or queued (elpaca--queue dependency q))
+           for d-id = (elpaca<-id d)
+           for d-status = (elpaca--status d)
+           do (when (and queued (> (elpaca<-queue-id d) q-id))
+                (cl-return-from out
+                  (elpaca--fail d (format "dependent %S in past queue" e-id))))
+           (cl-pushnew e-id (elpaca<-dependents d))
+           (when (or (eq d-status 'queued)
+                     (and (elpaca--throttled-p d)
+                          (when (= elpaca-queue-limit 1) ;; Dependency must be continued.
+                            (setf (elpaca<-statuses d)
+                                  (remq 'continued-dep (elpaca<-statuses d))))
+                          (progn (elpaca--signal d nil 'unthrottled) t))
+                     (and (memq e-id (elpaca<-blockers d)) ;; Mono-repo dep blocked.
+                          (equal (elpaca<-repo-dir e) (elpaca<-repo-dir d))
+                          (eq d-status 'blocked)))
+             (push d pending))
+           (if (eq d-status 'finished)
+               (cl-incf finished)
+             (cl-pushnew e-id (elpaca<-blocking d))
+             (cl-pushnew d-id (elpaca<-blockers e)))
+           finally do
+           (if (= (length externals) finished)
+               (elpaca--continue-build
+                e (when (zerop finished) "No external dependencies") 'unblocked)
+             (mapc #'elpaca--continue-dependency pending))))
 
 (defun elpaca--remote-default-branch (remote)
   "Return REMOTE's \"default\" branch.
@@ -1729,7 +1706,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
                                  elpaca--configure-remotes
                                  elpaca--fetch
                                  elpaca--checkout-ref
-                                 elpaca--clone-dependencies
+                                 elpaca--queue-dependencies
                                  elpaca--activate-package))))
     (elpaca--unprocess e)
     (elpaca--signal e "Rebuilding" 'queued)
@@ -1840,7 +1817,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
                  '(elpaca--configure-remotes
                    elpaca--fetch
                    elpaca--checkout-ref
-                   elpaca--clone-dependencies
+                   elpaca--queue-dependencies
                    elpaca--activate-package))))
           (elpaca<-statuses e) (list 'queued))
     (when interactive
@@ -1871,7 +1848,7 @@ If INTERACTIVE is non-nil, process queues."
                                   '(elpaca--configure-remotes
                                     elpaca--fetch
                                     elpaca--checkout-ref
-                                    elpaca--clone-dependencies
+                                    elpaca--queue-dependencies
                                     elpaca--activate-package)))))
              (setf (elpaca<-build-steps e) nil
                    (elpaca<-queue-time e) (current-time))
