@@ -123,6 +123,7 @@ It is a list of the form:
 :CUSTOM_ID: recipe-keyword-host
 :END:
 A symbol or string representing the hosting service of the repository.
+If a string is used, it is inserted in the URI verbatim.
 
 #+begin_src emacs-lisp :lexical t :eval never-export
 (example :host github)

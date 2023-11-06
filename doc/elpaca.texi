@@ -396,6 +396,7 @@ It is a list of the form:
 @subsubsection :host | :fetcher
 
 A symbol or string representing the hosting service of the repository.
+If a string is used, it is inserted in the URI verbatim.
 
 @lisp
 (example :host github)

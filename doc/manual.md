@@ -261,7 +261,7 @@ A recipe provides Elpaca with the metadata necessary to build and install a pack
 
 #### :host | :fetcher
 
-A symbol or string representing the hosting service of the repository.
+A symbol or string representing the hosting service of the repository. If a string is used, it is inserted in the URI verbatim.
 
 ```emacs-lisp
 (example :host github)
