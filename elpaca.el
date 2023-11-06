@@ -651,6 +651,7 @@ check (and possibly change) their statuses."
               (and info (run-at-time elpaca-log-interval nil #'elpaca--update-log-buffer))))))
   nil)
 
+;;@TODO: Should this cause a non-local exit? Signal custom error type or just `throw'?
 (defun elpaca--fail (e &optional reason)
   "Fail E for REASON."
   (unless (eq (elpaca--status e) 'failed)
