@@ -1297,23 +1297,22 @@ This is the branch that would be checked out upon cloning."
 
 (defun elpaca--check-status (dependency e)
   "Possibly change E's status depending on DEPENDENCY statuses."
-  (when-let ((e-status (elpaca--status e))
-             ((not (eq e-status 'finished))))
-    (cl-loop
-     with failed
-     with blockers = (elpaca<-blockers e)
-     with queued = (elpaca--queued)
-     for blocker in blockers
-     for b = (elpaca-alist-get blocker queued)
-     for status = (elpaca--status b) do
-     (cond ((eq status 'finished) (setf (elpaca<-blockers e) (delq blocker blockers)))
-           ((eq status 'failed)   (push blocker failed)))
-     finally
-     (let ((blockers (elpaca<-blockers e)))
-       (cond (failed (elpaca--fail e (format "Failed dependencies: %s" failed)))
-             (blockers (elpaca--signal e (format "Blocked dependencies: %s" blockers)) 'blocked)
-             ((eq (elpaca--status e) 'blocked)
-              (elpaca--continue-build e (concat "Unblocked by: " (elpaca<-package dependency)) 'unblocked)))))))
+  (cl-loop
+   initially (when (eq (elpaca--status e) 'failed) (cl-return))
+   with failed
+   with blockers = (elpaca<-blockers e)
+   with queued = (elpaca--queued)
+   for blocker in blockers
+   for b = (elpaca-alist-get blocker queued)
+   for status = (elpaca--status b) do
+   (cond ((eq status 'finished) (setf (elpaca<-blockers e) (delq blocker blockers)))
+         ((eq status 'failed)   (push blocker failed)))
+   finally (let ((blockers (elpaca<-blockers e)))
+             (cond (failed (elpaca--fail e (format "Failed dependencies: %s" failed)))
+                   (blockers (elpaca--signal e (format "Blocked by: %s" blockers)) 'blocked)
+                   ((eq (elpaca--status e) 'blocked)
+                    (elpaca--continue-build e (concat "Unblocked by: " (elpaca<-package dependency))
+                                            'unblocked))))))
 
 (defun elpaca--clone-process-sentinel (process _event)
   "Sentinel for clone PROCESS."
