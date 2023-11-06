@@ -128,18 +128,22 @@ And remove anything related to package.el in your init file. e.g. calls to `(pac
 
 ## Quick Start
 
-| Operation                             | UI (keys apply in elpaca-ui-mode)  | completing-read interface commands           |
-|------------------------------------- |---------------------------------- |-------------------------------------------- |
-| Finding Packages                      | `M-x elpaca-manager`               | `elpaca-try`                                 |
-| Trying Packages (for current session) | `i` `x`                            | `elpaca-try`                                 |
-| Updating Packages                     | `u` `x`                            | `elpaca-update` or `M-x` `elpaca-update-all` |
-| Rebuilding Packages                   | `r` `x`                            | `elpaca-rebuild`                             |
-| Deleting Packages                     | `d` `x`                            | `elpaca-delete`                              |
-| View Package Logs                     | `l` filters log to current package | `elpaca-log`                                 |
-| View Package Statuses                 | `t` show most recent log entries   | `elpaca-status`                              |
-| Visit Package Repository Directory    | `v`                                | `elpaca-visit`                               |
-| Visit Package Build Directory         | `C-u` `v`                          | `C-u` `elpaca-visit`                         |
-| Browse Package Website                | `b`                                | `elpaca-browse`                              |
+| Operation                             | UI (keys apply in elpaca-ui-mode)  | completing-read interface commands                       |
+|------------------------------------- |---------------------------------- |-------------------------------------------------------- |
+| Finding Packages                      | `M-x elpaca-manager`               | `elpaca-try`                                             |
+| Trying Packages (for current session) | `i` `x`                            | `elpaca-try`                                             |
+| Fetching Package Updates              | `f` `x`                            | `elpaca-fetch` or `elpaca-fetch-all`                     |
+| Merging Updates                       | `u` `x`                            | `elpaca-merge` or `elpaca-merge-all`                     |
+| Pulling Updates<sup>\*</sup>          | `C-u u` `x`                        | `C-u M-x` `elpaca-merge` or `C-u M-x` `elpaca-merge-all` |
+| Rebuilding Packages                   | `r` `x`                            | `elpaca-rebuild`                                         |
+| Deleting Packages                     | `d` `x`                            | `elpaca-delete`                                          |
+| View Package Logs                     | `l` filters log to current package | `elpaca-log`                                             |
+| View Package Statuses                 | `t` show most recent log entries   | `elpaca-status`                                          |
+| Visit Package Repository Directory    | `v`                                | `elpaca-visit`                                           |
+| Visit Package Build Directory         | `C-u` `v`                          | `C-u M-x` `elpaca-visit`                                 |
+| Browse Package Website                | `b`                                | `elpaca-browse`                                          |
+
+​\* It&rsquo;s encouraged to fetch, review, and **then** merge package updates rather than pulling.
 
 Packages installed via the above commands are not loaded on subsequent Emacs sessions (after restarting). To install and load packages persistently (across Emacs restarts), use the `elpaca` macro in your init file after the installer. ([installer](#installer))
 
@@ -797,7 +801,7 @@ The following commands are available in the `elpaca-ui-mode`:
 | elpaca-ui-mark-rebuild     | r       | Mark package at point for ‘elpaca-rebuild’.                     |
 | elpaca-ui-search           | s       | Filter current buffer by QUERY. If QUERY is nil, prompt for it. |
 | elpaca-status              | t       | Log most recent events for packages.                            |
-| elpaca-ui-mark-update      | u       | Mark package at point for ‘elpaca-update’.                      |
+| elpaca-ui-mark-merge       | u       | Mark package at point for ‘elpaca-merge’.                       |
 | elpaca-ui-visit            | v       | Visit current package’s repo or BUILD directory.                |
 | elpaca-ui-execute-marks    | x       | Execute each mark in ‘elpaca-ui-marked-packages’.               |
 

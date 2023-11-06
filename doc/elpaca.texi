@@ -205,7 +205,7 @@ And remove anything related to package.el in your init file. e.g. calls to @code
 @node Quick Start
 @section Quick Start
 
-@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @headitem Operation
 @tab UI (keys apply in elpaca-ui-mode)
 @tab completing-read interface commands
@@ -215,9 +215,15 @@ And remove anything related to package.el in your init file. e.g. calls to @code
 @item Trying Packages (for current session)
 @tab @code{i} @code{x}
 @tab @code{elpaca-try}
-@item Updating Packages
+@item Fetching Package Updates
+@tab @code{f} @code{x}
+@tab @code{elpaca-fetch} or @code{elpaca-fetch-all}
+@item Merging Updates
 @tab @code{u} @code{x}
-@tab @code{elpaca-update} or @code{M-x} @code{elpaca-update-all}
+@tab @code{elpaca-merge} or @code{elpaca-merge-all}
+@item Pulling Updates@math{^*}
+@tab @code{C-u u} @code{x}
+@tab @code{C-u M-x} @code{elpaca-merge} or @code{C-u M-x} @code{elpaca-merge-all}
 @item Rebuilding Packages
 @tab @code{r} @code{x}
 @tab @code{elpaca-rebuild}
@@ -235,11 +241,13 @@ And remove anything related to package.el in your init file. e.g. calls to @code
 @tab @code{elpaca-visit}
 @item Visit Package Build Directory
 @tab @code{C-u} @code{v}
-@tab @code{C-u} @code{elpaca-visit}
+@tab @code{C-u M-x} @code{elpaca-visit}
 @item Browse Package Website
 @tab @code{b}
 @tab @code{elpaca-browse}
 @end multitable
+​* It's encouraged to fetch, review, and @strong{then} merge package updates rather than pulling.
+
 
 Packages installed via the above commands are not loaded on subsequent Emacs sessions (after restarting).
 To install and load packages persistently (across Emacs restarts), use the @samp{elpaca} macro in your init file after the installer. (@ref{Installer, , installer})
@@ -999,9 +1007,9 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @item elpaca-status
 @tab t
 @tab Log most recent events for packages.
-@item elpaca-ui-mark-update
+@item elpaca-ui-mark-merge
 @tab u
-@tab Mark package at point for ‘elpaca-update’.
+@tab Mark package at point for ‘elpaca-merge’.
 @item elpaca-ui-visit
 @tab v
 @tab Visit current package’s repo or BUILD directory.

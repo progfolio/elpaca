@@ -23,7 +23,7 @@
   '((((class color) (background light)) :weight bold :foreground "brown")
     (((class color) (background dark))  :weight bold :foreground "#EFC88B"))
   "Face for packages marked for fetch.")
-(defface elpaca-ui-marked-update
+(defface elpaca-ui-marked-merge
   '((((class color) (background light)) :weight bold :foreground "#F28500")
     (((class color) (background dark))  :weight bold :foreground "orange"))
   "Face for packages marked for update.")
@@ -38,14 +38,15 @@
     (elpaca-try     :prefix "⚙️" :face elpaca-ui-marked-install)
     (elpaca-rebuild :prefix "♻️️" :face elpaca-ui-marked-rebuild)
     (elpaca-fetch   :prefix "‍🐕‍🦺" :face elpaca-ui-marked-fetch)
-    (elpaca-update  :prefix "⬆️" :face elpaca-ui-marked-update))
+    (elpaca-merge   :prefix "🤝" :face elpaca-ui-marked-merge :args (item prefix-arg)))
   "List of marks which can be applied to packages `elpaca-ui-mode' buffers.
 Each element is of the form (COMMAND :KEY VAL...).
 Accepted key val pairs are:
   - :prefix STRING inserted to indicate mark in UI
   - :face FACE for marked row in UI
   - :args (ARG...) arguments passed to COMMAND.
-      The symbol `item' will be replaced with the package item."
+      `item` is replaced with the package item.
+      `prefix-arg` is replaced with `current-prefix-arg' at time of marking."
   :type '(list (function :tag "command") plist))
 
 (defvar-local elpaca-ui--marked-packages nil "Aist of buffer's marked packages.")
@@ -143,6 +144,7 @@ exclamation point to it. e.g. !#installed."
   :type (or 'string 'nil))
 
 (define-obsolete-function-alias 'elpaca-ui-mark-install 'elpaca-ui-mark-try "0.0.0")
+(define-obsolete-function-alias 'elpaca-ui-mark-update 'elpaca-ui-mark-merge "0.0.0")
 ;;;; Variables:
 (defvar-local elpaca-ui--search-timer nil "Timer to debounce search input.")
 (defvar-local elpaca-ui--prev-entry-count nil "Number of previously recorded entries.")
@@ -167,7 +169,7 @@ exclamation point to it. e.g. !#installed."
     (define-key m (kbd "r") 'elpaca-ui-mark-rebuild)
     (define-key m (kbd "s") 'elpaca-ui-search)
     (define-key m (kbd "t") 'elpaca-status)
-    (define-key m (kbd "u") 'elpaca-ui-mark-update)
+    (define-key m (kbd "u") 'elpaca-ui-mark-merge)
     (define-key m (kbd "v") 'elpaca-ui-visit)
     (define-key m (kbd "x") 'elpaca-ui-execute-marks)
     m)
@@ -441,21 +443,23 @@ ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
                              when (eq (car entry) item) collect i)))
     (save-excursion
       (with-silent-modifications
-        (cl-loop with marked = (cl-find item elpaca-ui--marked-packages :key #'car)
-                 with props  = (nthcdr 2 marked)
-                 with face   = (or (plist-get props :face) 'default)
-                 with prefix = (or (plist-get props :prefix) "*")
-                 with mark   = (propertize (concat prefix " " name) 'face face)
-                 with len    = (length name)
-                 for line in lines
-                 do (progn
-                      (goto-char (point-min))
-                      (forward-line (+ line offset))
-                      (let* ((start (line-beginning-position))
-                             (end (+ start len)))
-                        (if marked
-                            (put-text-property start (+ start (length name)) 'display mark)
-                          (remove-text-properties start end '(display))))))))))
+        (cl-loop
+         with marked = (cl-find item elpaca-ui--marked-packages :key #'car)
+         with props  = (nthcdr 2 marked)
+         with face   = (or (plist-get props :face) 'default)
+         with prefix = (or (plist-get props :prefix) "*")
+         with parg   = (plist-get props :prefix-arg)
+         with mark   = (propertize (concat prefix (when parg "+") " " name) 'face face)
+         with len    = (length name)
+         for line in lines
+         do (progn
+              (goto-char (point-min))
+              (forward-line (+ line offset))
+              (let* ((start (line-beginning-position))
+                     (end (+ start len)))
+                (if marked
+                    (put-text-property start (+ start (length name)) 'display mark)
+                  (remove-text-properties start end '(display))))))))))
 
 (defun elpaca-ui--update-search-query (&optional buffer query)
   "Update the BUFFER to reflect search QUERY.
@@ -558,7 +562,8 @@ If region is active unmark all packages in region."
 
 (defun elpaca-ui--mark (package command)
   "Internally mark PACKAGE for COMMAND."
-  (setf (alist-get package elpaca-ui--marked-packages) (assoc command elpaca-ui-marks))
+  (setf (alist-get package elpaca-ui--marked-packages)
+        (append (assoc command elpaca-ui-marks) (list :prefix-arg current-prefix-arg)))
   (elpaca-ui--apply-face))
 
 (defun elpaca-ui-mark (package command)
@@ -606,7 +611,7 @@ The current package is its sole argument."
 (elpaca-ui-defmark elpaca-fetch
   (lambda (p) (unless (elpaca-installed-p p) (user-error "Package %S is not installed" p))))
 
-(elpaca-ui-defmark elpaca-update
+(elpaca-ui-defmark elpaca-merge
   (lambda (p) (unless (elpaca-installed-p p) (user-error "Package %S is not installed" p))))
 
 (elpaca-ui-defmark elpaca-delete
@@ -632,13 +637,17 @@ The current package is its sole argument."
         (funcall elpaca-ui-entries-function))
       (elpaca-ui-search-refresh buffer))))
 
-(defun elpaca-ui-execute-marks ()
+(defun elpaca-ui-execute-marks () ;;@TODO: make more flexible with regard to :args, :prefix-arg
   "Execute each mark in `elpaca-ui-marked-packages'."
   (interactive)
   (when (null elpaca-ui--marked-packages) (user-error "No marked packages"))
   (cl-loop initially do (deactivate-mark) (elpaca--maybe-log)
            for (item command . props) in elpaca-ui--marked-packages
-           do (apply command (or (cl-subst item 'item (plist-get props :args)) (list item)))
+           for args = (cl-loop for arg in (plist-get props :args) collect
+                               (cond ((eq arg 'item) item)
+                                     ((eq arg 'prefix-arg) (plist-get props :prefix-arg))
+                                     (t arg)))
+           do (apply command (or args (list item)))
            (pop elpaca-ui--marked-packages)
            finally (setq elpaca--post-queues-hook '(elpaca-ui--post-execute)))
   (elpaca-process-queues (lambda (qs) (cl-remove-if-not #'elpaca-q<-elpacas qs))))

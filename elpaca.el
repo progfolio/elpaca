@@ -1797,19 +1797,20 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
                  :elpaca-git-rev rev)
     (elpaca--signal e "Merging updates" 'merging)))
 
+(define-obsolete-function-alias 'elpaca-update 'elpaca-merge "0.0.0")
 ;;;###autoload
-(defun elpaca-update (item &optional interactive)
-  "Update ITEM's associated package.
+(defun elpaca-merge (item &optional fetch interactive)
+  "Merge package commits associated with ITEM.
+If FETCH is non-nil, download package changes before merging.
 If INTERACTIVE is non-nil, the queued order is processed immediately."
-  (interactive (list (elpaca--read-queued "Update package: ") t))
+  (interactive (list (elpaca--read-queued "Merge package: ") current-prefix-arg t))
   (let* ((e (or (elpaca-get item) (user-error "Package %S is not queued" item)))
          (recipe (elpaca<-recipe e)))
     (elpaca--unprocess e)
     (setf (elpaca<-build-steps e)
           (if (plist-get recipe :pin)
               (list #'elpaca--announce-pin)
-            `(elpaca--fetch
-              elpaca--log-updates
+            `(,@(when fetch '(elpaca--fetch elpaca--log-updates))
               elpaca--merge
               ,@(cl-set-difference
                  (elpaca--build-steps recipe nil 'cloned (elpaca<-mono-repo e))
@@ -1823,8 +1824,9 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
       (elpaca--maybe-log)
       (elpaca--process e))))
 
+(define-obsolete-function-alias 'elpaca-update-all 'elpaca-merge-all "0.0.0")
 ;;;###autoload
-(defun elpaca-update-all (&optional fetch interactive)
+(defun elpaca-merge-all (&optional fetch interactive)
   "Merge and rebuild queued packages.
 If FETCH is non-nil fetch updates first.
 If INTERACTIVE is non-nil, process queues."
