@@ -3452,10 +3452,12 @@ https://github.com/NicolasPetton/zerodark-theme
 (use-package spiel
   :elpaca (spiel :host github :repo "progfolio/spiel" :depth nil :protocol ssh)
   :defer t
+  :hook (spiel-mode . (lambda () (olivetti-mode 1)))
   :config
   (with-eval-after-load "evil"
+    (evil-make-intercept-map spiel-mode-map)
     (when (fboundp 'evil-set-initial-state)
-      (evil-set-initial-state 'spiel-input-mode 'insert))))
+      (evil-set-initial-state 'spiel-mode 'insert))))
 #+end_src
 ** greg
 #+begin_src emacs-lisp :lexical t :tangle no
