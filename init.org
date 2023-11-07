@@ -3460,33 +3460,16 @@ https://github.com/NicolasPetton/zerodark-theme
       (evil-set-initial-state 'spiel-mode 'insert))))
 #+end_src
 ** greg
-#+begin_src emacs-lisp :lexical t :tangle no
+#+begin_src emacs-lisp :lexical t :tangle yes
 (use-package greg
   :defer t
   :elpaca (greg :host github :repo "progfolio/greg"
                 :depth nil :protocol ssh
-                :files (:defaults "assets")))
-#+end_src
-** ox-context
-#+begin_src emacs-lisp :lexical t
-(use-package ox-context
-  :elpaca (ox-context :host github :repo "progfolio/ox-context" :depth nil :protocol ssh)
-  :defer t)
+                :files (:defaults "assets" "objects")))
 #+end_src
 ** subp
 #+begin_src emacs-lisp :lexical t
 (use-package subp
   :defer t
   :elpaca (:host github :repo "progfolio/subp"))
-#+end_src
-
-** game
-#+begin_src emacs-lisp :lexical t
-(use-package game
-  :defer t
-  :elpaca (:host github :repo "progfolio/game" :depth nil :protocol ssh
-                 :files (:defaults "assets"))
-  :config
-  (evil-set-initial-state 'game-mode 'insert)
-  (evil-make-intercept-map game-mode-map))
 #+end_src
