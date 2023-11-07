@@ -2895,7 +2895,7 @@ org-mime can be used to send HTML email using Org-mode HTML export.
 https://github.com/org-mime/org-mime
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(use-feature org-mime
+(use-package org-mime
   :after (org)
   :commands (org-mime-htmlize
              org-mime-org-buffer-htmlize
