@@ -307,64 +307,55 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
          (ignore-errors (forward-char))
          finally return (nreverse tokens)))))
 
-(defun elpaca-ui--search-fn (parsed)
-  "Return query function from PARSED." ;;@TODO: Clean this up. Repetition.
-  (when parsed
-    (let ((body nil)
-          (i 0))
-      (while (< i (length parsed))
-        (let* ((op (nth i parsed))
-               (type (car op))
-               (props (cdr op)))
-          (cond
-           ((eq type 'tag)
-            (when-let ((fn (alist-get (intern (car props)) elpaca-ui-search-tags))
-                       ((functionp fn)))
-              (push (if (cadr props)
-                        `(cl-set-difference entries (,fn entries))
-                      `(,fn entries))
-                    body)))
-           ((eq type 'full-text)
-            (push `(cl-loop for entry in entries
-                            for data = (string-join (cadr entry) " ")
-                            when (and
-                                  ,@(cl-loop for (query negated) in props
-                                             collect (if negated
-                                                         `(not (string-match-p ,query data))
-                                                       `(string-match-p ,query data))))
-                            collect entry)
-                  body))
-           ((eq type 'col)
-            (let ((cols (cl-loop for p in (nthcdr i parsed)
-                                 when (eq (car p) 'col)
-                                 collect (and (cl-incf i) p))))
-              (cl-decf i)
-              (push `(cl-loop
-                      for entry in entries
-                      for data = (cadr entry)
-                      when (and
-                            ,@(cl-loop
-                               for (_ n . queries) in cols
-                               append (cl-loop for (q negated) in queries
-                                               collect
-                                               (if negated
-                                                   `(not (string-match-p ,q (aref data ,n)))
-                                                 `(string-match-p ,q (aref data ,n))))))
-                      collect entry)
-                    body)))
-           ((eq type 'elisp)
-            (let ((sym (caar props))
-                  (args (cdar props)))
-              (push (if (eq sym 'lambda)
-                        `(funcall ,@props entries)
-                      `(apply (function ,(alist-get sym elpaca-ui-search-tags sym))
-                              (list entries ,@args)))
-                    body))))
-          (cl-incf i)))
-      `(with-no-warnings
-         (lambda ()
-           (let ((entries (funcall elpaca-ui-entries-function)))
-             ,@(mapcar (lambda (form) `(setq entries ,form)) (nreverse body))))))))
+(defun elpaca-ui--search-fn (tokens)
+  "Return query function from TOKENS."
+  (cl-loop
+   with i = -1 with limit = (length tokens)
+   initially do (unless tokens (cl-return))
+   while (< (cl-incf i) limit)
+   for op = (nth i tokens) for type = (car op) for props = (cdr op)
+   collect
+   (cond
+    ((eq type 'full-text)
+     `(cl-loop for entry in entries
+               for data = (string-join (cadr entry) " ")
+               when (and ,@(cl-loop for (query negated) in props
+                                    collect (if negated
+                                                `(not (string-match-p ,query data))
+                                              `(string-match-p ,query data))))
+               collect entry))
+    ((eq type 'tag)
+     (when-let ((fn (alist-get (intern (car props)) elpaca-ui-search-tags))
+                ((functionp fn)))
+       (if (cadr props)
+           `(cl-set-difference entries (,fn entries))
+         `(,fn entries))))
+    ((eq type 'col)
+     (let ((cols (cl-loop for p in (nthcdr i tokens)
+                          when (eq (car p) 'col)
+                          collect (and (cl-incf i) p))))
+       (cl-decf i)
+       `(cl-loop
+         for entry in entries
+         for data = (cadr entry)
+         when (and ,@(cl-loop
+                      for (_ n . queries) in cols
+                      append (cl-loop for (q negated) in queries
+                                      collect
+                                      (if negated
+                                          `(not (string-match-p ,q (aref data ,n)))
+                                        `(string-match-p ,q (aref data ,n))))))
+         collect entry)))
+    ((eq type 'elisp) (let ((sym (caar props))
+                            (args (cdar props)))
+                        (if (eq sym 'lambda)
+                            `(funcall ,@props entries)
+                          `(apply (function ,(alist-get sym elpaca-ui-search-tags sym))
+                                  (list entries ,@args))))))
+   into body finally return
+   `(with-no-warnings (lambda () (let ((entries (funcall elpaca-ui-entries-function)))
+                                   ,@(mapcar (lambda (form) `(setq entries ,form))
+                                             (nreverse (delq nil body))))))))
 
 (defvar-local elpaca-ui--print-cache nil "Used when printing entries via `elpaca-ui--apply-faces'.")
 (defvar-local elpaca-ui-want-tail nil "If non-nil, point is moved to end of buffer as entries are printed.")
