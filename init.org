@@ -1409,11 +1409,9 @@ https://github.com/emacs-helm/helm
   (add-hook 'helm-after-initialize-hook (lambda () (with-helm-buffer (visual-line-mode))))
   (helm-mode)
 
-  ;;credit: alphapapa
-  (defun +helm-info-emacs-elisp-cl ()
-    "Helm for Emacs, Elisp, and CL_library info pages."
-    (interactive)
-    (helm :sources '(helm-source-info-elisp helm-source-info-emacs helm-source-info-cl)))
+  (add-to-list 'display-buffer-alist '("HELM" display-buffer-below-selected
+                                       (window-height . 0.3)))
+
   :general
   (:keymaps 'helm-map
             "TAB"   #'helm-execute-persistent-action
