@@ -1736,6 +1736,10 @@ With a prefix argument, rebuild current file's package or prompt if none found."
       :command  '("git" "fetch" "--all" "-v") ;;@TODO: make --all optional
       :sentinel (apply-partially #'elpaca--process-sentinel "Remotes fetched" nil))))
 
+(defun elpaca--announce-pin (e)
+  "Log that pinned E is being skipped."
+  (elpaca--continue-build e "Skipping pinned package" 'pinned))
+
 ;;;###autoload
 (defun elpaca-fetch (item &optional interactive)
   "Fetch ITEM's associated package remote commits.
@@ -1745,7 +1749,9 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
   (let ((e (or (elpaca-get item) (user-error "Package %S is not queued" item))))
     (elpaca--unprocess e)
     (elpaca--signal e nil 'queued)
-    (setf (elpaca<-build-steps e) (list #'elpaca--fetch #'elpaca--log-updates))
+    (setf (elpaca<-build-steps e) (if (plist-get (elpaca<-recipe e) :pin)
+                                      (list #'elpaca--announce-pin)
+                                    (list #'elpaca--fetch #'elpaca--log-updates)))
     (when interactive
       (elpaca--maybe-log)
       (elpaca--process e))))
@@ -1803,12 +1809,11 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
 If INTERACTIVE is non-nil, the queued order is processed immediately."
   (interactive (list (elpaca--read-queued "Update package: ") t))
   (let* ((e (or (elpaca-get item) (user-error "Package %S is not queued" item)))
-         (recipe (elpaca<-recipe e))
-         (pin (plist-get recipe :pin)))
+         (recipe (elpaca<-recipe e)))
     (elpaca--unprocess e)
     (setf (elpaca<-build-steps e)
-          (if pin
-              '((lambda (e) (elpaca--continue-build e "Skipping pinned package" 'pinned)))
+          (if (plist-get recipe :pin)
+              (list #'elpaca--announce-pin)
             `(elpaca--fetch
               elpaca--log-updates
               elpaca--merge
