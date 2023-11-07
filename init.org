@@ -1135,7 +1135,12 @@ Ement.el is a new Matrix client for Emacs. It aims to be simple, fast, featurefu
                            '((window-height . 6)
                              (inhibit-same-window . t)
                              (reusable-frames . nil)))))
+  (add-to-list 'display-buffer-alist
+               '("\\*Ement image:" (display-buffer-reuse-window)
+                 (reusable-frames . nil)))
 
+  (define-advice ement-disconnect (:around (fn &rest args) "no-epa-key-prompt")
+    (let ((epa-file-select-keys 'symmetric)) (apply fn args)))
   (define-advice ement--kill-emacs-hook (:around (fn &rest args) "no-epa-key-prompt")
     (let ((epa-file-select-keys 'symmetric)) (apply fn args)))
 
