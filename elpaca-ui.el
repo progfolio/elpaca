@@ -355,7 +355,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
    into body finally return
    `(with-no-warnings (lambda () (let ((entries (funcall elpaca-ui-entries-function)))
                                    ,@(mapcar (lambda (form) `(setq entries ,form))
-                                             (nreverse (delq nil body))))))))
+                                             (delq nil body)))))))
 
 (defvar-local elpaca-ui--print-cache nil "Used when printing entries via `elpaca-ui--apply-faces'.")
 (defvar-local elpaca-ui-want-tail nil "If non-nil, point is moved to end of buffer as entries are printed.")
