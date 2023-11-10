@@ -136,7 +136,7 @@ If it is a function, it's return value is used."
                (status (aref cols 1))
                ((equal status "update-log"))
                (info (aref cols 2))
-               (tokens (string-split info " "))
+               (tokens (split-string info " "))
                (commit (pop tokens))
                (date (propertize (replace-regexp-in-string "^.*\\((.*)\\)" "\\1" info)
                                  'face 'elpaca-log-info))
