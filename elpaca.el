@@ -26,13 +26,6 @@
 
 ;;; Commentary:
 
-;; Would-be Developers:
-;; This package has a few idiosyncracies I'm experimenting with.
-;; I've defined all structs to end with the character "<", such that slots are
-;; accessed via a faux "arrow" like syntax. e.g. elpaca<-repo-dir
-;; The main data structures of this program are "elpacas" and "queues".
-;; They are abbreviated as "e" and "q" when used as function parameters.
-
 ;;; Code:
 (eval-and-compile (require 'cl-lib))
 (eval-when-compile (require 'subr-x))
@@ -150,7 +143,7 @@ is used in a `:files' directive.")
 (defvar elpaca-order-defaults (list :protocol 'https :inherit t :depth 1)
   "Default order modifications.")
 
-(defun elpaca-order-defaults (_order) "Matches any order." elpaca-order-defaults)
+(defun elpaca-order-defaults (_order) "Return order defaults." elpaca-order-defaults)
 
 (defcustom elpaca-order-functions '(elpaca-order-defaults)
   "Abnormal hook run to alter orders.
@@ -284,7 +277,7 @@ Values for each key are that of the right-most plist containing that key."
 (defun elpaca--menu-items (&optional cache menus)
   "Return alist of `elpaca-menu-functions' candidates from MENUS.
 CACHE may be any of the following symbols:
-  `t` Return cache or recompute if nil. Ignore MENUS.
+  `t` Return cache or recompute if nil.  Ignore MENUS.
   `nil` Recompute items, ignoring cache altogether.
   `recache` Invalidate and recompute cache considering MENUS.
 See `elpaca-menu-functions' for valid values of MENUS."
@@ -356,7 +349,7 @@ When called interactively with \\[universal-argument] update all menus."
 (defun elpaca-recipe (order &optional items interactive)
   "Return recipe computed from ORDER.
 ORDER is any of the following values:
-  - nil. The order is prompted for.
+  - nil.  The order is prompted for.
   - an item symbol, looked up in ITEMS or `elpaca-menu-functions' cache.
   - an order list of the form: \\='(ITEM . PROPS).
 When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
@@ -552,6 +545,7 @@ The first function, if any, which returns a non-nil is used." :type 'hook)
                         (t (signal 'wrong-type-error `((stringp t) ,query))))))))
 
 (defvar elpaca-log-buffer)
+(defvar elpaca-ui-want-tail)
 (defun elpaca--ibs ()
   "Return initial status buffer if `elpaca-hide-initial-build' is nil."
   (when (elpaca--maybe-log)
@@ -709,7 +703,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
   (time-subtract (nth 1 (car (elpaca<-log e))) (elpaca<-queue-time e)))
 
 (defun elpaca--queue (order &optional queue)
-  "ADD ORDER to QUEUE or current queue. Return E."
+  "ADD ORDER to QUEUE or current queue.  Return E."
   (if-let ((item (elpaca--first order))
            ((not after-init-time))
            (e (elpaca-get item)))
@@ -1758,7 +1752,7 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
 
 ;;;###autoload
 (defun elpaca-fetch-all (&optional interactive)
-  "Fetch queued elpaca remotes. If INTERACTIVE is non-nil, process queues."
+  "Fetch queued elpaca remotes.  If INTERACTIVE is non-nil, process queues."
   (interactive (list t))
   (when interactive (elpaca--maybe-log))
   (cl-loop for q in elpaca--queues
@@ -1900,7 +1894,7 @@ If INTERACTIVE is non-nil, process queues."
                           "git" "-c" "status.branch=false" "status" "--short")))))
 
 (defun elpaca-load-lockfile (&optional lockfile _force)
-  "Load LOCKFILE. If FORCE is non-nil, @TODO."
+  "Load LOCKFILE.  If FORCE is non-nil, @TODO."
   (interactive "fLockfile: ")
   (message "%S" lockfile))
 
