@@ -1318,8 +1318,8 @@ This is the branch that would be checked out upon cloning."
                     (elpaca--signal e "Ignoring :depth in favor of :ref")
                   `("--depth" ,(number-to-string depth))))
             ;;@FIX: allow override
-            ,@(when-let ((branch (plist-get recipe :branch)))
-                `("--single-branch" "--branch" ,branch))
+            ,@(when-let ((ref (or (plist-get recipe :branch) (plist-get recipe :tag))))
+                `("--single-branch" "--branch" ,ref))
             ,@(when-let ((remote (elpaca--remote (plist-get recipe :remotes)))
                          ((not (stringp remote))))
                 '("--no-checkout"))
