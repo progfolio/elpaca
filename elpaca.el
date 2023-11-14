@@ -1306,14 +1306,14 @@ This is the branch that would be checked out upon cloning."
 (defun elpaca--clone (e)
   "Clone E's repo to `elpaca-directory'."
   (let* ((recipe  (elpaca<-recipe   e))
-         (depth   (plist-get recipe :depth))
          (repodir (elpaca<-repo-dir e))
          (URI     (elpaca--repo-uri recipe))
          (default-directory elpaca-directory)
          (command
           `("git" "clone"
             ;;@TODO: Some refs will need a full clone or specific branch.
-            ,@(when (numberp depth)
+            ,@(when-let ((depth (plist-get recipe :depth))
+                         ((numberp depth)))
                 (if (plist-get recipe :ref)
                     (elpaca--signal e "Ignoring :depth in favor of :ref")
                   `("--depth" ,(number-to-string depth))))
