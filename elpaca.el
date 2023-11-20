@@ -219,7 +219,9 @@ Each function is passed a request, which may be any of the following symbols:
     (condition-case-unless-debug err
         (with-current-buffer (get-buffer-create " elpaca--read-file")
           (setq default-directory dir)
-          (insert-file-contents path nil nil nil 'replace) (read (current-buffer)))
+          (insert-file-contents path nil nil nil 'replace)
+          (goto-char (point-min))
+          (read (current-buffer)))
       ((error) (warn "Error reading %S into memory: %S" path err) nil))))
 
 (defmacro elpaca--write-file (file &rest body)
