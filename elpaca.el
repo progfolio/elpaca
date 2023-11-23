@@ -1757,22 +1757,20 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
   "Fetch queued elpaca remotes.  If INTERACTIVE is non-nil, process queues."
   (interactive (list t))
   (when interactive (elpaca--maybe-log))
-  (cl-loop for q in elpaca--queues
-           do (setf (elpaca-q<-processed q) 0 (elpaca-q<-status q) 'incomplete))
   (cl-loop with repos
            for (id . e) in (reverse (elpaca--queued))
            for repo = (elpaca<-repo-dir e)
            for mono-repo = (alist-get repo repos nil nil #'equal)
-           do (setf (elpaca<-build-steps e)
-                    (if mono-repo ; skip queued mono-repos
+           do (if mono-repo ; skip queued mono-repos
+                  (setf (elpaca<-build-steps e)
                         `((lambda (e)
                             (elpaca--continue-build e ,(format "Mono-repo fetched by %s" mono-repo))))
-                      '(elpaca--queue-dependencies elpaca--fetch elpaca--log-updates))
-                    (elpaca<-statuses e) (list 'queued)
-                    (elpaca<-builtp e) nil
-                    (elpaca<-queue-time e) (current-time))
+                        (elpaca<-statuses e) (list 'queued))
+                (elpaca-fetch id))
            (unless mono-repo (push (cons (elpaca<-repo-dir e) id) repos)))
-  (when interactive (elpaca-process-queues)))
+  (when interactive
+    (elpaca--maybe-log)
+    (elpaca-process-queues)))
 
 (defun elpaca--merge-process-sentinel (process _event)
   "Handle PROCESS EVENT."
@@ -1834,45 +1832,25 @@ If FETCH is non-nil fetch updates first.
 If INTERACTIVE is non-nil, process queues."
   (interactive (list current-prefix-arg t))
   (when interactive (elpaca--maybe-log))
-  (cl-loop for q in elpaca--queues
-           do (setf (elpaca-q<-processed q) 0 (elpaca-q<-status q) 'incomplete))
   (cl-loop with (seen repos)
            with ignored = (remove 'elpaca elpaca-ignored-dependencies)
            for (id . e) in (reverse (elpaca--queued))
            unless (memq id seen) do
            (let* ((repo (elpaca<-repo-dir e))
                   (mono-repo (alist-get repo repos nil nil #'equal))
-                  (deps (elpaca-dependencies id ignored))
-                  (recipe (elpaca<-recipe e))
-                  (pin (plist-get recipe :pin))
-                  (build-steps (unless pin
-                                 (cl-set-difference
-                                  (elpaca--build-steps recipe nil 'cloned (elpaca<-mono-repo e))
-                                  '(elpaca--configure-remotes
-                                    elpaca--fetch
-                                    elpaca--checkout-ref
-                                    elpaca--queue-dependencies
-                                    elpaca--activate-package)))))
-             (setf (elpaca<-build-steps e) nil
-                   (elpaca<-queue-time e) (current-time))
-             (cond
-              (pin (elpaca--signal e "Skipping pinned repo" 'queued))
-              (mono-repo
+                  (deps (elpaca-dependencies id ignored)))
+             (elpaca-merge id fetch)
+             (if (not mono-repo)
+                 (elpaca--signal e "Updating" (when (elpaca<-blockers e) 'blocked))
                (cl-pushnew id (elpaca<-blocking (elpaca-get mono-repo)))
                (cl-pushnew mono-repo (elpaca<-blockers e))
-               (setf (elpaca<-build-steps e) build-steps)
                (when (cdr deps) (push 'blocked-by-mono-repo (elpaca<-statuses e)))
                (elpaca--signal e (format "Waiting for mono-repo %s" mono-repo) 'blocked))
-              (t (setf (elpaca<-build-steps e)
-                       `(,@(when fetch '(elpaca--fetch elpaca--log-updates))
-                         elpaca--merge
-                         ,@build-steps)
-                       (elpaca<-statuses e) (list 'queued)
-                       (elpaca<-builtp e) nil)
-                 (elpaca--signal e "Updating" (when (elpaca<-blockers e) 'blocked))))
              (push id seen)
              (unless mono-repo (push (cons repo id) repos))))
-  (when interactive (elpaca-process-queues)))
+  (when interactive
+    (elpaca--maybe-log)
+    (elpaca-process-queues)))
 
 ;;; Lockfiles
 (defun elpaca-declared-p (item)
