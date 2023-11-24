@@ -601,6 +601,18 @@ This can be used to change a package's recipe prior to rebuilding it.
 Note that rebuilding a package does not *reload* a package.
 It's best to restart Emacs after a successful rebuild if you wish to have the changes loaded.
 
+*** Lock Files
+:PROPERTIES:
+:CUSTOM_ID: lock-files
+:END:
+
+A lock file is a collection of recipes for the exact versions of installed packages.
+They can be used to build different versions of an Emacs configuration when combined with init file package declarations. 
+
+The =elpaca-write-lock-file= command is used to write a lock file to disk.
+Setting the =elpaca-lock-file= variable to that file's path will cause Elpaca to use those versions of the recipes when installing packages assuming the =elpaca-lock-file-menu= is the first menu in =elpaca-menu-functions=.
+
+
 ** use-package Integration
 :PROPERTIES:
 :CUSTOM_ID: use-package-integration

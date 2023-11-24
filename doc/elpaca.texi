@@ -71,6 +71,7 @@ Basic concepts
 * Orders::                       Incomplete, or custom recipes.
 * Queues::                       Order processing groups.
 * Installing Packages::
+* Lock Files::
 
 Recipes
 
@@ -324,6 +325,7 @@ This includes loading of saved customizations. e.g.
 * Orders::                       Incomplete, or custom recipes.
 * Queues::                       Order processing groups.
 * Installing Packages::
+* Lock Files::
 @end menu
 
 @node Recipes
@@ -883,6 +885,15 @@ Interactively evaluating an @samp{elpaca} declaration will re-process the order.
 This can be used to change a package's recipe prior to rebuilding it.
 Note that rebuilding a package does not @strong{reload} a package.
 It's best to restart Emacs after a successful rebuild if you wish to have the changes loaded.
+
+@node Lock Files
+@subsection Lock Files
+
+A lock file is a collection of recipes for the exact versions of installed packages.
+They can be used to build different versions of an Emacs configuration when combined with init file package declarations. 
+
+The @samp{elpaca-write-lock-file} command is used to write a lock file to disk.
+Setting the @samp{elpaca-lock-file} variable to that file's path will cause Elpaca to use those versions of the recipes when installing packages assuming the @samp{elpaca-lock-file-menu} is the first menu in @samp{elpaca-menu-functions}.
 
 @node use-package Integration
 @section use-package Integration

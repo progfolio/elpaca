@@ -32,6 +32,7 @@
       - [elpaca-order-functions](#elpaca-order-functions)
     - [Queues](#queues)
     - [Installing Packages](#installing-packages)
+    - [Lock Files](#lock-files)
   - [use-package Integration](#use-package-integration)
 - [UI](#ui)
   - [Searching](#searching)
@@ -714,6 +715,15 @@ This macro is for programmatic use in one&rsquo;s init file. Any of the followin
 ```
 
 Interactively evaluating an `elpaca` declaration will re-process the order. This can be used to change a package&rsquo;s recipe prior to rebuilding it. Note that rebuilding a package does not **reload** a package. It&rsquo;s best to restart Emacs after a successful rebuild if you wish to have the changes loaded.
+
+
+<a id="lock-files"></a>
+
+### Lock Files
+
+A lock file is a collection of recipes for the exact versions of installed packages. They can be used to build different versions of an Emacs configuration when combined with init file package declarations.
+
+The `elpaca-write-lock-file` command is used to write a lock file to disk. Setting the `elpaca-lock-file` variable to that file&rsquo;s path will cause Elpaca to use those versions of the recipes when installing packages assuming the `elpaca-lock-file-menu` is the first menu in `elpaca-menu-functions`.
 
 
 <a id="use-package-integration"></a>

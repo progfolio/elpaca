@@ -186,7 +186,7 @@ Simplified, faster version of `alist-get'."
                                           :build '(:not elpaca--compile-info))))))))
 
 (defcustom elpaca-menu-functions
-  '( elpaca-menu-extensions elpaca-menu-org elpaca-menu-melpa
+  '( elpaca-menu-lock-file elpaca-menu-extensions elpaca-menu-org elpaca-menu-melpa
      elpaca-menu-non-gnu-elpa elpaca-menu-gnu-elpa elpaca-menu-declarations)
   "Abnormal hook to lookup packages in menus.
 Each function is passed a request, which may be any of the following symbols:
@@ -1971,32 +1971,25 @@ If INTERACTIVE is non-nil, process queues."
     (not (string-empty-p (elpaca-process-output
                           "git" "-c" "status.branch=false" "status" "--short")))))
 
-(defun elpaca-load-lockfile (&optional lockfile _force)
-  "Load LOCKFILE.  If FORCE is non-nil, @TODO."
-  (interactive "fLockfile: ")
-  (message "%S" lockfile))
+(defcustom elpaca-lock-file nil "Path of `elpaca-menu-lock-file' cache." :type 'file)
 
-(defun elpaca-write-lockfile (path)
-  "Write lockfile to PATH for current state of package repositories."
-  (interactive "FWrite lockfile to: ")
-  (elpaca--write-file path
-    (pp (nreverse
-         (cl-loop with seen
-                  for (item . e) in (elpaca--queued)
-                  unless (member item seen)
-                  for rev =
-                  (let ((default-directory (elpaca<-repo-dir e)))
-                    (elpaca-with-process-call ("git" "rev-parse" "HEAD")
-                      (if success
-                          (string-trim stdout)
-                        (error "Unable to write lockfile: %s %S" item stderr))))
-                  for recipe = (copy-tree (elpaca<-recipe e))
-                  do (setq recipe (plist-put recipe :ref rev))
-                  ;;@MAYBE: recipe (plist-put recipe :pin t))
-                  collect (cons item (list :source "lockfile"
-                                           :date (current-time)
-                                           :recipe recipe))
-                  do (push item seen))))))
+(defvar elpaca-menu-lock-file--cache nil)
+(defun elpaca-menu-lock-file (request &optional item)
+  "If REQUEST is `index`, return `elpaca-lock-file' ITEM, otherwise update menu."
+  (when elpaca-lock-file
+    (if-let* (((eq request 'index))
+              (cache (or elpaca-menu-lock-file--cache (elpaca-menu-lock-file 'update))))
+        (if item (alist-get item cache) cache)
+      (setq elpaca-menu-lock-file--cache (elpaca--read-file elpaca-lock-file)))))
+
+(defun elpaca--lock-file-init-p (e)
+  "Return non-nil if E declared in init file during startup."
+  (elpaca<-init e))
+
+(defcustom elpaca-lock-file-functions (list #'elpaca--lock-file-init-p)
+  "List of functions which take an E as a first argument.
+Any function returning nil will prevent the E from being written to the file."
+  :type 'hook)
 
 ;;;###autoload
 (defmacro elpaca-with-dir (id type &rest body)
@@ -2006,6 +1999,30 @@ TYPE is either `repo` or `build`, for repo or build directory."
   `(let* ((e (elpaca-get ,id))
           (default-directory (,(intern (format "elpaca<-%s-dir" (symbol-name type))) e)))
      ,@body))
+
+;;;###autoload
+(defun elpaca-write-lock-file (path &optional elpacas)
+  "Write lock file to PATH for current state of queued ELPACAS."
+  (interactive "FWrite lock-file to: ")
+  (elpaca--write-file path
+    (cl-loop
+     with print-circle = t with seen with es
+     for (id . e) in (or elpacas (elpaca--queued))
+     do (when (and (not (member id seen))
+                   (run-hook-with-args-until-failure 'elpaca-lock-file-functions e))
+          (push `(,id
+                  ( :source "elpaca-menu-lock-file" :date ,(current-time)
+                    :recipe
+                    ,(plist-put (copy-tree (elpaca<-recipe e))
+                                :ref
+                                (elpaca-with-dir id repo
+                                  (elpaca-with-process-call ("git" "rev-parse" "HEAD")
+                                    (if success (string-trim stdout)
+                                      (error "Unable to write lock-file: %s %S" id stderr)))))))
+                es)
+          (push id seen))
+     finally (message "wrote %d elpacas to %s" (length es) path)
+     (pp (nreverse es)))))
 
 (declare-function elpaca-ui-current-package "elpaca-ui")
 ;;;###autoload
