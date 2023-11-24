@@ -175,8 +175,9 @@ This hook is run via `run-hook-with-args-until-success'."
                                             :build '(:not elpaca--compile-info))))))))
 
 (defcustom elpaca-menu-functions
-  '( elpaca-menu-extensions elpaca-menu-org elpaca-menu-melpa elpaca-menu-non-gnu-devel-elpa
-     elpaca-menu-gnu-devel-elpa elpaca-menu-non-gnu-elpa elpaca-menu-gnu-elpa )
+  '( elpaca-menu-lockfile elpaca-menu-extensions elpaca-menu-org elpaca-menu-melpa
+     elpaca-menu-non-gnu-devel-elpa elpaca-menu-gnu-devel-elpa elpaca-menu-non-gnu-elpa
+     elpaca-menu-gnu-elpa )
   "Abnormal hook to lookup packages in menus.
 Each function is passed a request, which may be any of the following symbols:
   - `index`
@@ -1875,19 +1876,27 @@ If INTERACTIVE is non-nil, process queues."
     (not (string-empty-p (elpaca-process-output
                           "git" "-c" "status.branch=false" "status" "--short")))))
 
-(defun elpaca-load-lockfile (&optional lockfile _force)
-  "Load LOCKFILE.  If FORCE is non-nil, @TODO."
-  (interactive "fLockfile: ")
-  (message "%S" lockfile))
+(defcustom elpaca-lockfile nil "Name of the lockfile used by `elpaca-menu-lockfile'."
+  :type 'file)
+
+(defvar elpaca-menu-lockfile--cache nil)
+(defun elpaca-menu-lockfile (request)
+  "If REQUEST is `index`, return `elpaca-lockfile' items, otherwise update menu."
+  (when elpaca-lockfile
+    (if (and (eq request 'index) elpaca-menu-lockfile--cache)
+        elpaca-menu-lockfile--cache
+      (setq elpaca-menu-lockfile--cache (elpaca--read-file elpaca-lockfile)))))
 
 (defun elpaca-write-lockfile (path)
   "Write lockfile to PATH for current state of package repositories."
   (interactive "FWrite lockfile to: ")
   (elpaca--write-file path
-    (pp (nreverse
-         (cl-loop with seen
-                  for (item . e) in (elpaca--queued)
-                  unless (member item seen)
+    (let ((print-circle t)
+          (items (cl-loop
+                  with seen for (item . e) in (elpaca--queued)
+                  unless (or (member item seen)
+                             (equal (plist-get (cdr (elpaca-menu-item item)) :source)
+                                    "elpaca-try"))
                   for rev =
                   (let ((default-directory (elpaca<-repo-dir e)))
                     (elpaca-with-process-call ("git" "rev-parse" "HEAD")
@@ -1896,11 +1905,10 @@ If INTERACTIVE is non-nil, process queues."
                         (error "Unable to write lockfile: %s %S" item stderr))))
                   for recipe = (copy-tree (elpaca<-recipe e))
                   do (setq recipe (plist-put recipe :ref rev))
-                  ;;@MAYBE: recipe (plist-put recipe :pin t))
-                  collect (cons item (list :source "lockfile"
-                                           :date (current-time)
-                                           :recipe recipe))
-                  do (push item seen))))))
+                  collect (cons item (list :source "elpaca-menu-lockfile"
+                                           :date (current-time) :recipe recipe))
+                  do (push item seen))))
+      (pp (nreverse items)))))
 
 ;;;###autoload
 (defmacro elpaca-with-dir (item type &rest body)
