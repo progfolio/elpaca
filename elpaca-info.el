@@ -167,7 +167,8 @@
       (insert (propertize (plist-get recipe :package) 'face 'elpaca-info-package))
       (when (> (length elpaca--info) 1)
         (insert " [" (string-join (elpaca-info--source-buttons elpaca--info) "|") "]"))
-      (insert "\n" (plist-get info :description) "\n\n" (string-join (delq nil sections) "\n")))
+      (insert "\n" (or (plist-get info :description) "n/a") "\n\n"
+              (string-join (delq nil sections) "\n")))
     (goto-char (point-min))))
 
 ;;;###autoload
