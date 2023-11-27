@@ -40,6 +40,11 @@
 ;; Uncomment for systems which cannot create symlinks:
 ;; (elpaca-no-symlink-mode)
 
+;; Install a package via the elpaca macro
+;; See the "recipes" section of the manual for more details.
+
+;; (elpaca example-package)
+
 ;; Install use-package support
 (elpaca elpaca-use-package
   ;; Enable :elpaca use-package keyword.

@@ -255,6 +255,11 @@ To install and load packages persistently (across Emacs restarts), use the @samp
 For example:
 
 @lisp
+;; Install a package via the elpaca macro
+;; See the "recipes" section of the manual for more details.
+
+;; (elpaca example-package)
+
 ;; Install use-package support
 (elpaca elpaca-use-package
   ;; Enable :elpaca use-package keyword.

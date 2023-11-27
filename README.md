@@ -116,6 +116,11 @@ Packages installed via the above commands are not loaded on subsequent Emacs ses
 For example:
 
 ```emacs-lisp
+;; Install a package via the elpaca macro
+;; See the "recipes" section of the manual for more details.
+
+;; (elpaca example-package)
+
 ;; Install use-package support
 (elpaca elpaca-use-package
   ;; Enable :elpaca use-package keyword.
