@@ -1601,6 +1601,8 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
           (elpaca-q<-status q) (if (and (> processed 0) (= processed (length elpacas)))
                                    'complete 'incomplete))))
 
+(defcustom elpaca-process-queues-hook nil
+  "Hook run before queues are processed via `elpaca-process-queues'.")
 ;;;###autoload
 (defun elpaca-process-queues (&optional filter)
   "Process the incomplete queues.
@@ -1611,7 +1613,8 @@ FILTER must be a unary function which accepts and returns a queue list."
            ((mapc #'elpaca--maybe-reset-queue queues))
            (incomplete (cl-find 'incomplete queues :key #'elpaca-q<-status)))
       (progn (setq elpaca--status-counts (elpaca--count-statuses))
-             (elpaca--process-queue incomplete))
+             (elpaca--process-queue incomplete)
+             (run-hooks 'elpaca-process-queues-hook))
     (run-hooks 'elpaca--post-queues-hook)))
 
 (defun elpaca--on-disk-p (item)
