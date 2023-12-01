@@ -264,7 +264,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                             (derived-mode-p 'elpaca-ui-mode)
                             (eq this-command 'elpaca-ui-search)
                             (current-buffer)))))
-    (add-hook 'post-command-hook (lambda () (elpaca-ui--debounce-search buffer)) nil :local)))
+    (add-hook 'post-command-hook (lambda () (ignore-errors (elpaca-ui--debounce-search buffer))) nil :local)))
 
 (defvar elpaca-ui--search-cache (make-hash-table :test #'equal))
 (defun elpaca-ui--lex-query (query &optional nocache)
@@ -461,12 +461,12 @@ If QUERY is nil, the contents of the minibuffer are used instead."
   (let ((input (string-trim (minibuffer-contents-no-properties))))
     (unless (or (string-empty-p input)
                 (string= input (with-current-buffer buffer elpaca-ui-search-query)))
-      (if elpaca-ui--search-timer
-          (cancel-timer elpaca-ui--search-timer))
-      (setq elpaca-ui--search-timer (run-at-time elpaca-ui-search-debounce-interval
-                                                 nil
-                                                 #'elpaca-ui--update-search-query
-                                                 buffer)))))
+      (when elpaca-ui--search-timer (cancel-timer elpaca-ui--search-timer))
+      (setq elpaca-ui--search-timer
+            (run-at-time elpaca-ui-search-debounce-interval nil
+                         (lambda (buffer) (with-demoted-errors "elpaca-ui-search:...%S"
+                                            (elpaca-ui--update-search-query buffer)))
+                         buffer)))))
 
 (defun elpaca-ui--ensure-mode ()
   "Ensure current buffer is derived from `elpaca-ui-mode'."
