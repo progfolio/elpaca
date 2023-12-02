@@ -985,9 +985,6 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @item elpaca-ui-browse-package
 @tab b
 @tab Browse current package’s URL via ‘browse-url’.
-@item elpaca-ui-copy
-@tab c
-@tab Copy formatted UI view ENTRIES to clipboard.
 @item elpaca-ui-mark-delete
 @tab d
 @tab Mark package at point for ‘elpaca-delete’.

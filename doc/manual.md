@@ -797,7 +797,6 @@ The following commands are available in the `elpaca-ui-mode`:
 | elpaca-ui-search-tried     | T       | Search for &ldquo;#unique #installed !#declared&rdquo;          |
 | elpaca-ui-unmark           | U       | Unmark current package.                                         |
 | elpaca-ui-browse-package   | b       | Browse current package’s URL via ‘browse-url’.                  |
-| elpaca-ui-copy             | c       | Copy formatted UI view ENTRIES to clipboard.                    |
 | elpaca-ui-mark-delete      | d       | Mark package at point for ‘elpaca-delete’.                      |
 | elpaca-ui-mark-fetch       | f       | Mark package at point for ‘elpaca-fetch’.                       |
 | elpaca-ui-mark-try         | i       | Mark package at point for ‘elpaca-try’.                         |
