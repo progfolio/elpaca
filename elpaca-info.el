@@ -110,6 +110,7 @@
   "Return section for HEADING with DATA formatted according to SPEC."
   (format spec (propertize heading 'face 'elpaca-info-section) data))
 
+(declare-function elpaca--flattened-menus "elpaca")
 (defun elpaca-info--print (item)
   "Print info for ITEM."
   (with-silent-modifications
