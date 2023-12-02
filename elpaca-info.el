@@ -50,7 +50,6 @@
   (with-temp-buffer
     (delay-mode-hooks (emacs-lisp-mode) (auto-fill-mode))
     (insert recipe)
-    (font-lock-ensure)
     (goto-char (point-min))
     (while (re-search-forward "\\(?: :[[:alpha:]]+\\)" nil 'noerror) (replace-match "\n\\&"))
     (unless (= (char-after (1+ (point-min))) ?\s)
@@ -63,6 +62,7 @@
                             (let ((fill-column (if (looking-at ".*:files" eol) 40 fill-column)))
                               (fill-region (line-beginning-position) (line-end-position))))
                           (forward-line)))
+    (font-lock-ensure)
     (indent-region (point-min) (point-max))
     (string-trim (buffer-string))))
 
