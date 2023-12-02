@@ -379,8 +379,9 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
                                         do (error "Unrecognized menu: %S" source)
                                         append (alist-get source elpaca--menu-items-cache))))
                  ;;@FIX: let-binding elpaca-menu-functions won't work here
-                 (plist-get (cdr (elpaca-menu-item (or id t) items)) :recipe)))
-         (r (elpaca-merge-plists item mods props)))
+                 (cdr (elpaca-menu-item (or id t) items))))
+         (item-recipe (plist-put (plist-get item :recipe) :source (plist-get item :source)))
+         (r (elpaca-merge-plists item-recipe mods props)))
     (unless (plist-get r :package) (setq r (plist-put r :package (symbol-name id))))
     (when-let ((recipe-mods (run-hook-with-args-until-success 'elpaca-recipe-functions r)))
       (setq r (elpaca-merge-plists r recipe-mods)))
