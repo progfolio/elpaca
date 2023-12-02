@@ -361,8 +361,11 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
                          (cons (car item) (plist-get (cdr item) :recipe))
                        (user-error "No recipe selected"))
                      nil t))
-  (let* ((props (cdr-safe order))
-         (id (elpaca--first order))
+  (let* ((id (elpaca--first order))
+         (props (let ((it (cdr-safe order)))
+                  (unless (zerop (logand (length it) 1))
+                    (user-error "Uneven property list for order %S %s" id it))
+                  it))
          (nonheritable-p (elpaca--nonheritable-p props))
          (mods (unless nonheritable-p (run-hook-with-args-until-success
                                        'elpaca-order-functions order)))
