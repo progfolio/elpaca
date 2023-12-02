@@ -46,25 +46,61 @@
 \\{elpaca-info-mode-map}")
 
 (defun elpaca-info--format-recipe (recipe)
-  "Return formatted RECIPE string."
+  "Return formatted RECIPE."
   (with-temp-buffer
-    (insert "( "
-            (string-join
-             (cl-loop for (key val) on recipe by #'cddr
-                      when (eq key :files) do
-                      (let ((files (cl-set-difference val elpaca-default-files-directive
-                                                      :test #'equal)))
-                        (unless (memq :defaults files) (setq val (push :defaults files))))
-                      collect (format (concat "%-10S" (if (eq key :files) "\n" " ") "%S\n")
-                                      key val)
-                      into pairs
-                      finally (setf (car (last pairs)) (string-trim (car (last pairs))))
-                      finally return pairs))
-            ")")
-    (delay-mode-hooks (emacs-lisp-mode))
-    (let ((inhibit-message t)) (indent-region (point-min) (point-max)))
+    (delay-mode-hooks (emacs-lisp-mode) (auto-fill-mode))
+    (insert recipe)
     (font-lock-ensure)
+    (goto-char (point-min))
+    (while (re-search-forward "\\(?: :[[:alpha:]]+\\)" nil 'noerror) (replace-match "\n\\&"))
+    (unless (= (char-after (1+ (point-min))) ?\s)
+      (goto-char (1+ (point-min)))
+      (insert " "))
+    (flush-lines "^$")
+    (goto-char (point-min))
+    (while (not (eobp)) (let ((eol (line-end-position)))
+                          (unless (looking-at ";;" eol)
+                            (let ((fill-column (if (looking-at ".*:files" eol) 40 fill-column)))
+                              (fill-region (line-beginning-position) (line-end-position))))
+                          (forward-line)))
+    (indent-region (point-min) (point-max))
     (string-trim (buffer-string))))
+
+(defun elpaca-info--recipe (e)
+  "Print annotated version of E's recipe."
+  (when-let ((order (elpaca<-order e))
+             (recipe (elpaca-recipe order))
+             (id (elpaca<-id e)))
+    (with-temp-buffer
+      (delay-mode-hooks (emacs-lisp-mode) (auto-fill-mode))
+      (cl-loop
+       with sources =
+       (list (cons 'declaration (cdr-safe order))
+             (cons 'elpaca-order-functions
+                   (run-hook-with-args-until-success 'elpaca-order-functions order))
+             (cons 'elpaca-menu-item
+                   (plist-get (or (ignore-errors (nth elpaca-info--source-index elpaca--info))
+                                  (cdr (elpaca-menu-item id)))
+                              :recipe))
+             (cons 'elpaca-recipe-functions recipe))
+       for (prop val) on recipe by #'cddr
+       unless (or (eq prop :package) (and (eq prop :source) (null val)))
+       collect (cons (cl-some (lambda (source) (when-let ((member (plist-member (cdr source) prop))
+                                                          ((equal (cadr member) val)))
+                                                 (format "\n;; Inherited from %s.\n" (car source))))
+
+                              sources)
+                     (format " %s %S" prop
+                             (if (and (equal prop :files)
+                                      (equal val elpaca-default-files-directive))
+                                 :defaults
+                               val)))
+       into lines finally return
+       (cl-loop with previous with acc = (format "(:package %s " (plist-get recipe :package))
+                for (source . line) in (cl-sort lines #'string< :key #'car) do
+                (unless (equal source previous) (setq acc (concat acc source)))
+                (setq acc (concat acc line) previous source)
+                finally return (elpaca-info--format-recipe (concat acc ")")))))))
 
 (defun elpaca-info--source-buttons (info)
   "Return list of package source buttons from INFO."
@@ -135,13 +171,9 @@
                (elpaca-info--section "%-7s %s" "url:" (elpaca-ui--buttonize url #'browse-url url)))
              (unless (equal (plist-get info :source) "Init file")
                (elpaca-info--section "%s\n%s" "menu item:"
-                                     (elpaca-info--format-recipe (plist-get info :recipe))))
-             (when-let ((i (and e (elpaca<-order e))))
-               (elpaca-info--section
-                "%s\n%s" "recipe:"
-                (elpaca-info--format-recipe
-                 (elpaca-merge-plists (append `(:package ,(symbol-name (car-safe i))) (cdr-safe i))
-                                      (elpaca<-recipe e)))))
+                                     (elpaca-info--format-recipe
+                                      (format "%S" (plist-get info :recipe)))))
+             (when e (elpaca-info--section "%s\n%s" "recipe:" (elpaca-info--recipe e)))
              (elpaca-info--section
               "%s %s" "dependencies:"
               (if-let ((ds (remq 'emacs (ignore-errors (elpaca-dependencies item)))))
