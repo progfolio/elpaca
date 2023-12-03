@@ -38,18 +38,21 @@
 If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
   (or (and (not recache) elpaca-manager--entry-cache)
       (prog1 (setq elpaca-manager--entry-cache
-                   (cl-loop for (id . data) in
-                            (append (apply #'append (mapcar #'cdr (elpaca--menu-items
-                                                                   (or (and recache 'recache) t))))
-                                    (elpaca--custom-candidates))
-                            collect (list id
-                                          (vector (symbol-name id)
-                                                  (or (plist-get data :description) "")
-                                                  (or (ignore-errors (format-time-string
-                                                                      "%Y-%m-%d"
-                                                                      (plist-get data :date)))
-                                                      "")
-                                                  (or (plist-get data :source) "")))))
+                   (cl-loop
+                    with init = (elpaca--custom-candidates t)
+                    with try = (cl-set-difference (elpaca--custom-candidates) init :test #'equal)
+                    with menus = (append (list (cons 'init-file init))
+                                         (list (cons 'elpaca-try try))
+                                         (elpaca--menu-items (or (and recache 'recache) t)))
+                    for (menu . items) in menus append
+                    (cl-loop
+                     for (id . props) in items
+                     for date = (ignore-errors (format-time-string "%F" (plist-get props :date)))
+                     collect
+                     (list id (vector (symbol-name id)
+                                      (or (plist-get props :description) "")
+                                      (or date "")
+                                      (propertize (or (plist-get props :source) "") 'menu menu))))))
         (message "Elpaca manager cache refreshed."))))
 
 ;;;###autoload

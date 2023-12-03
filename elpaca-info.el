@@ -29,9 +29,6 @@
 (defface elpaca-info-package '((t (:height 2.0)))
   "The name of the package in `elpaca-info-mode'." :group 'elpaca-ui)
 
-(defvar-local elpaca--info nil)
-(defvar-local elpaca-info--item nil)
-(defvar-local elpaca-info--source-index nil)
 (defvar elpaca-info-mode-map
   (let ((m (make-sparse-keymap)))
     (define-key m (kbd "TAB")   'forward-button)
@@ -44,6 +41,22 @@
   "Major mode for viewing Elpaca package info.
 
 \\{elpaca-info-mode-map}")
+
+(defun elpaca-info--menus (id)
+  "Return alist of menus filtered for item matching ID."
+  (cl-loop with cache = (copy-tree elpaca--menu-cache)
+           for (fn . items) in (push (cons 'init-file (elpaca--custom-candidates t)) cache)
+           for found  = (cl-find id items :key #'car)
+           when found collect (cons fn found)))
+
+(defun elpaca-info--source-buttons (menus)
+  "Return list of package source buttons from MENUS."
+  (cl-loop for (menu . (id . props)) in menus collect
+           (elpaca-ui--buttonize (plist-get props :source)
+                                 (lambda (args) (let ((p (point)))
+                                                  (apply #'elpaca-info--print args)
+                                                  (goto-char p)))
+                                 (list id menu))))
 
 (defun elpaca-info--format-recipe (recipe)
   "Return formatted RECIPE."
@@ -66,63 +79,54 @@
     (indent-region (point-min) (point-max))
     (string-trim (buffer-string))))
 
-(defun elpaca-info--recipe (e)
-  "Print annotated version of E's recipe."
-  (when-let ((order (elpaca<-order e))
-             (recipe (elpaca-recipe order))
-             (id (elpaca<-id e)))
+(defun elpaca-info--recipe (item)
+  "Print annotated recipe, considering menu ITEM."
+  (let* ((item-recipe (plist-get item :recipe))
+         (id (intern (plist-get item-recipe :package)))
+         (e (elpaca-get id))
+         (order (if e (elpaca<-order e) id))
+         (declared (cdr-safe order)))
     (with-temp-buffer
       (delay-mode-hooks (emacs-lisp-mode) (auto-fill-mode))
       (cl-loop
-       with sources =
-       (list (cons 'declaration (cdr-safe order))
-             (cons 'elpaca-order-functions
-                   (run-hook-with-args-until-success 'elpaca-order-functions order))
-             (cons 'elpaca-menu-item
-                   (plist-get (or (ignore-errors (nth elpaca-info--source-index elpaca--info))
-                                  (cdr (elpaca-menu-item id)))
-                              :recipe))
-             (cons 'elpaca-recipe-functions recipe))
+       with ordered = '( nil elpaca-recipe-functions declaration
+                         elpaca-order-functions elpaca-menu-item)
+       with order-mods = (run-hook-with-args-until-success 'elpaca-order-functions order)
+       with recipe-mods =
+       (run-hook-with-args-until-success
+        'elpaca-recipe-functions (elpaca-merge-plists item-recipe order-mods declared))
+       with recipe = (elpaca-merge-plists item-recipe order-mods declared recipe-mods
+                                          `(:package ,(plist-get item-recipe :package)))
+       with lookup = `((nil ,(format "(:package %s " (plist-get recipe :package))))
+       with sources = `((elpaca-recipe-functions . ,recipe-mods)
+                        (declaration . ,declared) (elpaca-menu-item . ,item-recipe)
+                        (elpaca-order-functions .  ,order-mods))
        for (prop val) on recipe by #'cddr
        unless (or (eq prop :package) (and (eq prop :source) (null val)))
-       collect (cons (cl-some (lambda (source) (when-let ((member (plist-member (cdr source) prop))
-                                                          ((equal (cadr member) val)))
-                                                 (format "\n;; Inherited from %s.\n" (car source))))
+       do (push (format " %s %S" prop
+                        (if (equal val elpaca-default-files-directive) '(:defaults) val))
+                (alist-get (cl-some (lambda (source)
+                                      (when-let ((member (plist-member (cdr source) prop))
+                                                 ((equal (cadr member) val)))
+                                        (car source)))
+                                    sources)
+                           lookup))
+       finally return
+       (elpaca-info--format-recipe
+        (concat (cl-loop for source in ordered for vals = (alist-get source lookup)
+                         when (and source vals
+                                   (not (and (eq source 'elpaca-menu-item)
+                                             (equal (plist-get item :source) "Init file"))))
+                         concat (format "\n;; Inherited from %s.\n" source)
+                         when vals concat (string-join vals "\n"))
+                ")"))))))
 
-                              sources)
-                     (format " %s %S" prop
-                             (if (and (equal prop :files)
-                                      (equal val elpaca-default-files-directive))
-                                 :defaults
-                               val)))
-       into lines finally return
-       (cl-loop with previous with acc = (format "(:package %s " (plist-get recipe :package))
-                for (source . line) in (cl-sort lines #'string< :key #'car) do
-                (unless (equal source previous) (setq acc (concat acc source)))
-                (setq acc (concat acc line) previous source)
-                finally return (elpaca-info--format-recipe (concat acc ")")))))))
-
-(defun elpaca-info--source-buttons (info)
-  "Return list of package source buttons from INFO."
-  (cl-loop for i below (length info)
-           for spec = (nth i info)
-           for item = (intern (plist-get (plist-get spec :recipe) :package))
-           collect (elpaca-ui--buttonize (plist-get spec :source)
-                                         (lambda (args)
-                                           (setq elpaca-info--source-index (car args))
-                                           (let ((p (point)))
-                                             (elpaca-info--print (cdr args))
-                                             (goto-char p)))
-                                         (cons i item))))
-
-(defun elpaca-info--buttons (items)
-  "Return list of buttons from ITEMS."
-  (mapcar (lambda (i) (elpaca-ui--buttonize (symbol-name i)
-                                            (lambda (i)
-                                              (setq elpaca-info--source-index 0)
-                                              (elpaca-info--print i))
-                                            i))
-          items))
+(defun elpaca-info--buttons (ids)
+  "Return list of buttons from IDS."
+  (mapcar (lambda (id) (elpaca-ui--buttonize (symbol-name id)
+                                             (lambda (id) (elpaca-info--print id))
+                                             id))
+          ids))
 
 (defun elpaca-info--files (files)
   "Return list of formatted FILES strings."
@@ -147,43 +151,37 @@
   (format spec (propertize heading 'face 'elpaca-info-section) data))
 
 (declare-function elpaca--flattened-menus "elpaca")
-(defun elpaca-info--print (item)
-  "Print info for ITEM."
+(defun elpaca-info--print (id &optional menu)
+  "Print info for item with ID in MENU."
   (with-silent-modifications
     (erase-buffer)
-    (setq-local elpaca--info
-                (mapcar #'cdr (cl-remove-if-not (lambda (it) (eq it item))
-                                                (append (elpaca--custom-candidates t)
-                                                        (elpaca--flattened-menus))
-                                                :key #'car))
-                elpaca-info--item item)
-    (when (> elpaca-info--source-index (1- (length elpaca--info)))
-      (setq elpaca-info--source-index 0))
-    (let* ((info (nth elpaca-info--source-index elpaca--info))
-           (recipe (plist-get info :recipe))
-           (on-disk-p (elpaca--on-disk-p item))
-           (e (elpaca-get item))
+    (let* ((menus (elpaca-info--menus id))
+           (menu (or menu (caar menus)))
+           (item (cdr (alist-get menu menus)))
+           (recipe (plist-get item :recipe))
+           (on-disk-p (elpaca--on-disk-p id))
+           (e (elpaca-get id))
            (i  "\n  ")
            (sections
             (list
-             (elpaca-info--section "%-7s %s" "source:" (plist-get info :source))
-             (when-let ((url (plist-get info :url)))
+             (elpaca-info--section "%-7s %s" "source:" (plist-get item :source))
+             (when-let ((url (plist-get item :url)))
                (elpaca-info--section "%-7s %s" "url:" (elpaca-ui--buttonize url #'browse-url url)))
-             (unless (equal (plist-get info :source) "Init file")
-               (elpaca-info--section "%s\n%s" "menu item:"
+             (unless (equal (plist-get item :source) "Init file")
+               (elpaca-info--section "%s\n%s" "menu item recipe:"
                                      (elpaca-info--format-recipe
-                                      (format "%S" (plist-get info :recipe)))))
-             (when e (elpaca-info--section "%s\n%s" "recipe:" (elpaca-info--recipe e)))
+                                      (format "%S" (plist-get item :recipe)))))
+             (elpaca-info--section "%s\n%s" "full recipe:" (elpaca-info--recipe item))
              (elpaca-info--section
               "%s %s" "dependencies:"
-              (if-let ((ds (remq 'emacs (ignore-errors (elpaca-dependencies item)))))
+              (if-let ((ds (remq 'emacs (ignore-errors (elpaca-dependencies id)))))
                   (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
                 (if on-disk-p "nil"
                   (if (memq item (cl-set-difference elpaca-ignored-dependencies '(emacs elpaca)))
                       "built-in" "?"))))
              (elpaca-info--section
               "%s %s" "dependents:"
-              (if-let ((ds (remq 'emacs (elpaca--dependents item 'noerror))))
+              (if-let ((ds (remq 'emacs (elpaca--dependents id 'noerror))))
                   (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
                 (if on-disk-p "nil" "?")))
              (when e (elpaca-info--section
@@ -198,29 +196,22 @@
                (elpaca-info--section "%s\n  %s" "files:" (string-join (elpaca-info--files files) i))))))
       (when e (setq default-directory (elpaca<-repo-dir e)))
       (insert (propertize (plist-get recipe :package) 'face 'elpaca-info-package))
-      (when (> (length elpaca--info) 1)
-        (insert " [" (string-join (elpaca-info--source-buttons elpaca--info) "|") "]"))
-      (insert "\n" (or (plist-get info :description) "n/a") "\n\n"
+      (when (> (length menus) 1)
+        (insert " [" (string-join (elpaca-info--source-buttons menus) "|") "]"))
+      (insert "\n" (or (plist-get item :description) "n/a") "\n\n"
               (string-join (delq nil sections) "\n")))
     (goto-char (point-min))))
 
 ;;;###autoload
-(defun elpaca-info (item &optional source)
-  "Display package info for ITEM from SOURCE in a dedicated buffer."
+(defun elpaca-info (id &optional menu)
+  "Display package info for ID from MENU in a dedicated buffer."
   (interactive (if-let ((elpaca-overriding-prompt "Package info: ")
                         (items (append (elpaca--custom-candidates t) (elpaca--flattened-menus)))
                         (item (elpaca-menu-item t items)))
-                   (list (car item) (plist-get (cdr item) :source))))
+                   (list (car item) (elpaca-item-menu item))))
   (with-current-buffer (get-buffer-create "*elpaca-info*")
     (unless (derived-mode-p 'elpaca-info-mode) (elpaca-info-mode))
-    (setq-local elpaca-info--source-index
-                (or (cl-position source (cl-remove-if-not (lambda (it) (eq (car it) item))
-                                                          (append (elpaca--custom-candidates t)
-                                                                  (elpaca--flattened-menus)))
-                                 :key (lambda (item) (plist-get (cdr item) :source))
-                                 :test #'equal)
-                    0))
-    (elpaca-info--print item)
+    (elpaca-info--print id menu)
     (pop-to-buffer (current-buffer))))
 
 (provide 'elpaca-info)
