@@ -34,33 +34,33 @@
 (make-variable-buffer-local 'elpaca-ui-default-query)
 
 (defcustom elpaca-ui-marks
-  '((elpaca-delete  :prefix "💀" :face elpaca-ui-marked-delete :args (item 'force 'deps))
+  '((elpaca-delete  :prefix "💀" :face elpaca-ui-marked-delete :args (id 'force 'deps))
     (elpaca-try     :prefix "⚙️" :face elpaca-ui-marked-install)
     (elpaca-rebuild :prefix "♻️️" :face elpaca-ui-marked-rebuild)
     (elpaca-fetch   :prefix "‍🐕‍🦺" :face elpaca-ui-marked-fetch)
-    (elpaca-merge   :prefix "🤝" :face elpaca-ui-marked-merge :args (item prefix-arg)))
+    (elpaca-merge   :prefix "🤝" :face elpaca-ui-marked-merge :args (id prefix-arg)))
   "List of marks which can be applied to packages `elpaca-ui-mode' buffers.
 Each element is of the form (COMMAND :KEY VAL...).
 Accepted key val pairs are:
   - :prefix STRING inserted to indicate mark in UI
   - :face FACE for marked row in UI
   - :args (ARG...) arguments passed to COMMAND.
-      `item` is replaced with the package item.
+      `id` is replaced with the package ID.
       `prefix-arg` is replaced with `current-prefix-arg' at time of marking."
   :type '(list (function :tag "command") plist))
 
 (defvar-local elpaca-ui--marked-packages nil "Aist of buffer's marked packages.")
 
-(defun elpaca-ui--tag-dirty (items)
-  "Return ITEMS with dirty worktree."
-  (cl-remove-if-not #'elpaca-worktree-dirty-p items :key #'car))
+(defun elpaca-ui--tag-dirty (entries)
+  "Return ENTRIES for packages with a dirty worktree."
+  (cl-remove-if-not #'elpaca-worktree-dirty-p entries :key #'car))
 
-(defun elpaca-ui--tag-declared (items)
-  "Return ITEMS which are declared during init."
-  (cl-remove-if-not #'elpaca-declared-p items :key #'car))
+(defun elpaca-ui--tag-declared (entries)
+  "Return ENTRIES for packages declared during init."
+  (cl-remove-if-not #'elpaca-declared-p entries :key #'car))
 
 (defun elpaca-ui--tag-orphan (_)
-  "Return ITEMS which are not being tried or declared."
+  "Return entires for packages not temporarlily installed or declared."
   (mapcar (lambda (dir)
             (let ((name (file-name-nondirectory (directory-file-name dir))))
               (list (intern name) (vector (propertize name 'orphan-dir dir)
@@ -73,29 +73,28 @@ Accepted key val pairs are:
            (mapcar (lambda (q) (elpaca<-repo-dir (cdr q))) (elpaca--queued))
            :test #'equal)))
 
-(defun elpaca-ui--tag-random (items &optional limit)
-  "Return LIMIT random ITEMS."
-  (if (< (length items) (or limit 10))
-      items
+(defun elpaca-ui--tag-random (entries &optional limit)
+  "Return LIMIT random ENTRIES."
+  (if (< (length entries) (or limit 10))
+      entries
     (cl-loop with (results seen)
              until (= (length results) (or limit 10))
-             for n = (random (length items))
-             unless (memq n seen) do (push (nth n items) results)
+             for n = (random (length entries))
+             unless (memq n seen) do (push (nth n entries) results)
              (push n seen)
              finally return results)))
 
-(defun elpaca-ui--tag-installed (items)
-  "Return installed ITEMS."
-  (cl-remove-if-not #'elpaca-installed-p items :key #'car))
+(defun elpaca-ui--tag-installed (entries)
+  "Return ENTRIES for installed packages."
+  (cl-remove-if-not #'elpaca-installed-p entries :key #'car))
 
-(defun elpaca-ui--tag-marked (items)
-  "Return list of marked ITEMS."
-  (cl-loop for (item . _) in elpaca-ui--marked-packages
-           collect (assoc item items)))
+(defun elpaca-ui--tag-marked (entries)
+  "Return ENTRIES for marked packages."
+  (cl-loop for (id . _) in elpaca-ui--marked-packages collect (assoc id entries)))
 
-(defun elpaca-ui--tag-unique (items)
-  "Return last occurrence of each ITEMS."
-  (cl-remove-duplicates items :key #'car :from-end t))
+(defun elpaca-ui--tag-unique (entries)
+  "Return last occurrence of each entry in ENTRIES."
+  (cl-remove-duplicates entries :key #'car :from-end t))
 
 (defcustom elpaca-ui-search-tags '((dirty     . elpaca-ui--tag-dirty)
                                    (declared  . elpaca-ui--tag-declared)
@@ -106,8 +105,8 @@ Accepted key val pairs are:
                                    (marked    . elpaca-ui--tag-marked))
   "Alist of search tags.
 Each cell is of form (NAME FILTER).
-FILTER must be a function which takes a menu item list as its first argument.
-It optionally returns a list of menu items.
+FILTER function must take `tabulated-list-entries' as its first argument.
+It must return list of `tabulated-list-entries' or nil.
 
 Each tag can be inverted in the minibuffer by prepending an
 exclamation point to it. e.g. !#installed."
@@ -394,10 +393,10 @@ ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
   (tabulated-list-print-entry id cols))
 
 (defun elpaca-ui--apply-face ()
-  "Apply face to current entry item."
+  "Apply face to current entry id."
   (when-let ((entry (get-text-property (point) 'tabulated-list-entry))
              (name  (aref entry 0))
-             (item  (intern name))
+             (id    (intern name))
              (offset (save-excursion
                        (goto-char (point-min))
                        (let ((continue t)
@@ -410,11 +409,11 @@ ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
                          line)))
              (lines (cl-loop for i below (length tabulated-list-entries)
                              for entry = (nth i tabulated-list-entries)
-                             when (eq (car entry) item) collect i)))
+                             when (eq (car entry) id) collect i)))
     (save-excursion
       (with-silent-modifications
         (cl-loop
-         with marked = (cl-find item elpaca-ui--marked-packages :key #'car)
+         with marked = (cl-find id elpaca-ui--marked-packages :key #'car)
          with props  = (nthcdr 2 marked)
          with face   = (or (plist-get props :face) 'default)
          with prefix = (or (plist-get props :prefix) "*")
@@ -612,12 +611,12 @@ The current package is its sole argument."
   (interactive)
   (when (null elpaca-ui--marked-packages) (user-error "No marked packages"))
   (cl-loop initially do (deactivate-mark) (elpaca--maybe-log)
-           for (item command . props) in elpaca-ui--marked-packages
+           for (id command . props) in elpaca-ui--marked-packages
            for args = (cl-loop for arg in (plist-get props :args) collect
-                               (cond ((eq arg 'item) item)
+                               (cond ((eq arg 'id) id)
                                      ((eq arg 'prefix-arg) (plist-get props :prefix-arg))
                                      (t arg)))
-           do (apply command (or args (list item)))
+           do (apply command (or args (list id)))
            (pop elpaca-ui--marked-packages)
            finally (setq elpaca--post-queues-hook '(elpaca-ui--post-execute)))
   (elpaca-process-queues (lambda (qs) (cl-remove-if-not #'elpaca-q<-elpacas qs))))

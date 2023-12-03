@@ -378,10 +378,10 @@ A recipe provides Elpaca with the metadata necessary to build and install a pack
 It is a list of the form:
 
 @lisp
-(ITEM . PROPS)
+(ID . PROPS)
 @end lisp
 
-@emph{ITEM} is a symbol uniquely identifying the package.
+@emph{ID} is a symbol uniquely identifying the package.
 @emph{PROPS} is a plist with any of the following recipe keywords:
 
 @menu
@@ -708,10 +708,10 @@ This is useful if you want to guarantee the values of certain keywords despite a
 
 A menu is a function which returns an alist of the form:
 @lisp
-((ITEM . DATA)...)
+((ID . DATA)...)
 @end lisp
 
-@emph{ITEM} is a symbol uniquely identifying a package.
+@emph{ID} is a symbol uniquely identifying a package.
 @emph{DATA} is a plist of package metadata.
 @emph{DATA} must contain the following keywords:
 

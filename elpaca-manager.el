@@ -38,19 +38,19 @@
 If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
   (or (and (not recache) elpaca-manager--entry-cache)
       (prog1 (setq elpaca-manager--entry-cache
-                   (cl-loop for (item . data) in
+                   (cl-loop for (id . data) in
                             (append (apply #'append (mapcar #'cdr (elpaca--menu-items
                                                                    (or (and recache 'recache) t))))
                                     (elpaca--custom-candidates))
-                            collect (list item
-                                          (vector (symbol-name item)
+                            collect (list id
+                                          (vector (symbol-name id)
                                                   (or (plist-get data :description) "")
                                                   (or (ignore-errors (format-time-string
                                                                       "%Y-%m-%d"
                                                                       (plist-get data :date)))
                                                       "")
                                                   (or (plist-get data :source) "")))))
-        (message "Elpaca menu item cache refreshed."))))
+        (message "Elpaca manager cache refreshed."))))
 
 ;;;###autoload
 (defun elpaca-manager (&optional recache)

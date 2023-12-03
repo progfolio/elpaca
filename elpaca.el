@@ -207,7 +207,7 @@ Each function is passed a request, which may be any of the following symbols:
      svg ruby-mode verilog-mode xref
      ,@(unless (< emacs-major-version 28) '(transient))
      ,@(unless (< emacs-major-version 29) '(external-completion use-package bind-key eglot)))
-  "List of items which are not installed unless the user explicitly requests them."
+  "List of IDs which are not installed unless the user explicitly requests them."
   :type '(repeat symbol))
 
 (defvar elpaca-overriding-prompt nil "Overriding prompt for interactive functions.")
@@ -306,12 +306,12 @@ Simplified, faster version of `alist-get'."
   (and e (car (last elpaca--queues (1+ (elpaca<-queue-id e))))))
 
 ;;;###autoload
-(defun elpaca-menu-item (symbol &optional items interactive)
-  "Return menu item matching SYMBOL in ITEMS or `elpaca-menu-functions' cache.
-If INTERACTIVE is non-nil or SYMBOL is t, prompt for item."
+(defun elpaca-menu-item (id &optional items interactive)
+  "Return menu item matching ID in ITEMS or `elpaca-menu-functions' cache.
+If INTERACTIVE is non-nil or ID is t, prompt for item."
   (interactive (list t nil t))
   (let* ((items (or items (elpaca--flattened-menus)))
-         (item (if (or interactive (eq symbol t))
+         (item (if (or interactive (eq id t))
                    (let* ((candidates
                            (cl-loop for i in items
                                     for data = (cdr i)
@@ -323,7 +323,7 @@ If INTERACTIVE is non-nil or SYMBOL is t, prompt for item."
                                    (or elpaca-overriding-prompt "Menu Item: ")
                                    candidates)))
                      (alist-get choice candidates nil nil #'equal))
-                 (assoc symbol items))))
+                 (assoc id items))))
     (when interactive
       (message "menu-item copied to kill-ring:\n%S" item)
       (kill-new (format "%S" item)))
@@ -352,8 +352,8 @@ When called interactively with \\[universal-argument] update all menus."
   "Return recipe computed from ORDER.
 ORDER is any of the following values:
   - nil.  The order is prompted for.
-  - an item symbol, looked up in ITEMS or `elpaca-menu-functions' cache.
-  - an order list of the form: \\='(ITEM . PROPS).
+  - an ID symbol, looked up in ITEMS or `elpaca-menu-functions' cache.
+  - an order list of the form: \\='(ID . PROPS).
 When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
   (interactive (list (if-let ((elpaca-overriding-prompt "Recipe: ")
                               (item (elpaca-menu-item t (append (elpaca--custom-candidates t)
@@ -661,9 +661,9 @@ check (and possibly change) their statuses."
     (elpaca--signal e reason 'failed)
     (elpaca--finalize e)))
 
-(defun elpaca-get (item)
-  "Return queued E associated with ITEM."
-  (elpaca-alist-get item (elpaca--queued)))
+(defun elpaca-get (id)
+  "Return queued E associated with ID."
+  (elpaca-alist-get id (elpaca--queued)))
 
 (defun elpaca--run-build-commands (commands)
   "Run build COMMANDS."
@@ -710,12 +710,12 @@ Optional ARGS are passed to `elpaca--signal', which see."
 
 (defun elpaca--queue (order &optional queue)
   "ADD ORDER to QUEUE or current queue.  Return E."
-  (if-let ((item (elpaca--first order))
+  (if-let ((id (elpaca--first order))
            ((not after-init-time))
-           (e (elpaca-get item)))
+           (e (elpaca-get id)))
       (if-let ((dependents (elpaca<-dependents e)))
-          (warn "%S previously queued as dependency of: %S" item dependents)
-        (warn "Duplicate item queued: %S" item))
+          (warn "%S previously queued as dependency of: %S" id dependents)
+        (warn "Duplicate item ID queued: %S" id))
     (let* ((e (elpaca<-create order))
            (log (pop (elpaca<-log e)))
            (status (car log))
@@ -758,10 +758,10 @@ Optional ARGS are passed to `elpaca--signal', which see."
   (when-let ((forms (nreverse (elpaca-q<-forms q))))
     (with-current-buffer (get-buffer-create " *elpaca--finalize-queue*")
       (setq-local lexical-binding t)
-      (cl-loop for (item . body) in forms
+      (cl-loop for (id . body) in forms
                do (condition-case-unless-debug err
                       (eval `(progn ,@body) t)
-                    ((error) (warn "Config Error %s: %S" item err)))))
+                    ((error) (warn "Config Error %s: %S" id err)))))
     (setf (elpaca-q<-forms q) nil))
   (run-hooks 'elpaca-post-queue-hook)
   (let ((next (nth (1+ (elpaca-q<-id q)) (reverse elpaca--queues))))
@@ -1174,11 +1174,11 @@ If RECACHE is non-nil, do not use cached dependencies."
   (cl-loop named out
            initially (elpaca--signal e "Queueing Dependencies" 'blocked nil 1)
            with externals =
-           (cl-loop for (item version) in (elpaca--dependencies e)
-                    when (and (eq item 'emacs)
+           (cl-loop for (id version) in (elpaca--dependencies e)
+                    when (and (eq id 'emacs)
                               (< emacs-major-version (truncate (string-to-number version))))
                     do (cl-return-from out (elpaca--fail e (concat "Requires Emacs " version)))
-                    unless (memq item elpaca-ignored-dependencies) collect item)
+                    unless (memq id elpaca-ignored-dependencies) collect id)
            with q = (when externals (elpaca--q e))
            with qd = (when externals (elpaca--queued))
            with finished = 0
@@ -1436,9 +1436,9 @@ Loads or caches autoloads."
   (let* ((default-directory (elpaca<-build-dir e))
          (emacs             (elpaca--emacs-path))
          (dependency-dirs
-          (cl-loop for dep in (elpaca-dependencies (elpaca<-id e) '(emacs))
-                   for item = (elpaca-get dep)
-                   for build-dir = (and item (elpaca<-build-dir item))
+          (cl-loop for id in (elpaca-dependencies (elpaca<-id e) '(emacs))
+                   for dep = (elpaca-get id)
+                   for build-dir = (and dep (elpaca<-build-dir dep))
                    when build-dir collect build-dir))
          (program `(let ((gc-cons-percentage 1.0)) ;; trade memory for gc speed
                      (dolist (dir ',(cons default-directory dependency-dirs))
@@ -1454,37 +1454,37 @@ Loads or caches autoloads."
       :sentinel (apply-partially #'elpaca--process-sentinel "Byte compilation complete" nil))))
 
 ;;;###autoload
-(defun elpaca-dependencies (item &optional ignore interactive recurse)
-  "Return recursive list of ITEM's dependencies.
+(defun elpaca-dependencies (id &optional ignore interactive recurse)
+  "Return recursive list of dependencies queued E with ID.
 IGNORE may be a list of symbols which are not included in the resulting list.
 RECURSE is used to track recursive calls.
 When INTERACTIVE is non-nil, message the list of dependencies."
   (interactive (list (elpaca--read-queued "Dependencies of: ") nil t))
-  (if-let ((e (elpaca-get item))
+  (if-let ((e (elpaca-get id))
            (dependencies (elpaca--dependencies e))
            (transitives (cl-loop for (d . _) in dependencies
                                  unless (memq d ignore) collect
                                  (cons d (elpaca-dependencies d (cons d ignore) nil t))))
            (deps (delete-dups (flatten-tree transitives))))
       (if interactive (message "%s" deps) deps)
-    (when recurse item)))
+    (when recurse id)))
 
-(defun elpaca--dependents (item &optional noerror)
-  "Return list of packages which depend on ITEM.
+(defun elpaca--dependents (id &optional noerror)
+  "Return list of packages which depend on queued E with ID.
 If NOERROR is non-nil, ignore E's for which dependencies cannot be determined."
   (delete-dups (cl-loop for (i . _) in (elpaca--queued)
                         for deps = (if noerror (ignore-errors (elpaca-dependencies i))
                                      (elpaca-dependencies i))
-                        when (memq item deps) collect i)))
+                        when (memq id deps) collect i)))
 ;;;###autoload
-(defun elpaca-dependents (item &optional message)
-  "Return recursive list of packages which depend on ITEM.
+(defun elpaca-dependents (id &optional message)
+  "Return recursive list of packages which depend on queued E with ID.
 When MESSAGE is non-nil, message the list of dependents."
   (interactive (list (elpaca--read-queued
                       "Dependents of: "
                       (cl-remove-if-not #'elpaca--dependents (elpaca--queued) :key #'car))
                      t))
-  (if message (message "%S" (elpaca--dependents item)) (elpaca--dependents item)))
+  (if message (message "%S" (elpaca--dependents id)) (elpaca--dependents id)))
 
 (defcustom elpaca-interactive-interval 0.15
   "Time to wait before processing queues when multiple `elpaca' forms evaluated."
@@ -1498,18 +1498,18 @@ When MESSAGE is non-nil, message the list of dependents."
   "Queue ORDER for installation/activation, defer execution of BODY.
 If ORDER is `nil`, defer BODY until orders have been processed."
   (declare (indent 1) (debug t))
-  (let ((o (gensym "order-")) (item (gensym "item-")) (q (gensym "q-")))
+  (let ((o (gensym "order-")) (id (gensym "id-")) (q (gensym "q-")))
     `(let* ((,o ,@(if (memq (car-safe order) '(quote \`)) `(,order) `(',order)))
-            (,item (elpaca--first ,o))
-            (,q (or (and after-init-time (elpaca--q (elpaca-get ,item))) (car elpaca--queues))))
+            (,id (elpaca--first ,o))
+            (,q (or (and after-init-time (elpaca--q (elpaca-get ,id))) (car elpaca--queues))))
        ,@(when body
-           `((if ,item
-                 (setf (alist-get ,item (elpaca-q<-forms ,q)) ',body)
+           `((if ,id
+                 (setf (alist-get ,id (elpaca-q<-forms ,q)) ',body)
                ;;@FIX: nil semantics not good for multiple deferred...
-               (push (cons ,item ',body) (elpaca-q<-forms ,q)))))
+               (push (cons ,id ',body) (elpaca-q<-forms ,q)))))
        (when ,o (elpaca--queue ,o ,q))
        (when after-init-time
-         (when-let ((e (elpaca-get ,item)))
+         (when-let ((e (elpaca-get ,id)))
            (elpaca--maybe-log)
            (elpaca--unprocess e)
            (push 'queued (elpaca<-statuses e)))
@@ -1618,35 +1618,35 @@ FILTER must be a unary function which accepts and returns a queue list."
              (elpaca--process-queue incomplete))
     (run-hooks 'elpaca--post-queues-hook)))
 
-(defun elpaca--on-disk-p (item)
-  "Return t if ITEM has an associated E and a build or repo dir on disk."
-  (when-let ((e (elpaca-get item)))
+(defun elpaca--on-disk-p (id)
+  "Return t if ID has an associated E with a build or repo dir on disk."
+  (when-let ((e (elpaca-get id)))
     (or (file-exists-p (elpaca<-repo-dir e)) (file-exists-p (elpaca<-build-dir e)))))
 
 ;;@MAYBE: Should this delete user's declared package if it is a dependency?
 ;;@MAYBE: user option for deletion policy when repo is dirty.
 ;;;###autoload
-(defun elpaca-delete (item &optional force deps ignored)
-  "Remove a package associated with ITEM from cache and disk.
+(defun elpaca-delete (id &optional force deps ignored)
+  "Remove a package associated with ID from cache and disk.
 If DEPS is non-nil (interactively with \\[universal-argument]) delete dependencies.
 If FORCE is non-nil (interactively with \\[universal-argument] \\[universal-argument])
 do not confirm before deleting package and DEPS."
   (interactive (list (elpaca--read-queued "Delete Package: ")
                      (equal current-prefix-arg '(16))
                      (member current-prefix-arg '((4) (16)))))
-  (let* ((e (let ((e (or (elpaca-get item) (elpaca<-create item))))
+  (let* ((e (let ((e (or (elpaca-get id) (elpaca<-create id))))
               (if (equal (elpaca--status e) 'struct-failed) ;; Orphaned packages
-                  (setf (alist-get item (elpaca-q<-elpacas (elpaca--q e)))
-                        (elpaca<-create (list item :url (symbol-name item))))
+                  (setf (alist-get id (elpaca-q<-elpacas (elpaca--q e)))
+                        (elpaca<-create (list id :url (symbol-name id))))
                 e)))
          (repo-dir     (elpaca<-repo-dir e))
          (build-dir    (elpaca<-build-dir e))
-         (dependents   (elpaca-dependents item))
+         (dependents   (elpaca-dependents id))
          (dependencies (and deps (ignore-errors (elpaca-dependencies
-                                                 item elpaca-ignored-dependencies)))))
+                                                 id elpaca-ignored-dependencies)))))
     (when (cl-some #'elpaca--on-disk-p dependents)
-      (user-error "Cannot delete %S unless dependents %S are deleted" item dependents))
-    (when (or force (yes-or-no-p (format "Delete package %S? " item)))
+      (user-error "Cannot delete %S unless dependents %S are deleted" id dependents))
+    (when (or force (yes-or-no-p (format "Delete package %S? " id)))
       (cl-assert (not (member repo-dir (list user-emacs-directory elpaca-builds-directory
                                              elpaca-repos-directory))))
       (when (file-exists-p repo-dir) (delete-directory repo-dir 'recursive))
@@ -1655,14 +1655,14 @@ do not confirm before deleting package and DEPS."
         (delete-directory build-dir 'recursive))
       (dolist (queue elpaca--queues)
         (setf (elpaca-q<-elpacas queue)
-              (cl-remove item (elpaca-q<-elpacas queue) :key #'car)))
+              (cl-remove id (elpaca-q<-elpacas queue) :key #'car)))
       (setf (alist-get (car (cl-find (file-name-base (directory-file-name repo-dir))
                                      elpaca--repo-dirs :key #'cadr :test #'equal))
                        elpaca--repo-dirs nil t)
             nil)
-      (message "Deleted package %S" item)
+      (message "Deleted package %S" id)
       (dolist (dependency dependencies nil)
-        (elpaca-delete dependency 'force deps (push item ignored))))))
+        (elpaca-delete dependency 'force deps (push id ignored))))))
 
 (defun elpaca--file-package (&optional file)
   "Return queued E if current buffer's FILE is part of a repo, nil otherwise."
@@ -1671,8 +1671,7 @@ do not confirm before deleting package and DEPS."
                 (reverse (elpaca--queued)) :key #'cdr)))
 
 (defun elpaca--read-queued (&optional prompt queued)
-  "Return QUEUED item.
-If PROMPT is non-nil, it is used instead of the default."
+  "Read QUEUED ID with PROMPT."
   (intern (completing-read
            (or prompt "Queued item: ")
            (sort (cl-delete-duplicates (mapcar #'car (or queued (elpaca--queued)))) #'string<)
@@ -1688,16 +1687,16 @@ If PROMPT is non-nil, it is used instead of the default."
     (setf (elpaca-q<-status q) 'incomplete)))
 
 ;;;###autoload
-(defun elpaca-rebuild (item &optional interactive)
-  "Rebuild ITEM's associated package.
-When INTERACTIVE is non-nil, prompt for ITEM, immediately process.
+(defun elpaca-rebuild (id &optional interactive)
+  "Rebuild ID's associated package.
+When INTERACTIVE is non-nil, prompt for ID, immediately process.
 With a prefix argument, rebuild current file's package or prompt if none found."
   (interactive (list (or (and-let* ((current-prefix-arg)
                                     (queued (elpaca--file-package))
                                     ((car queued))))
                          (elpaca--read-queued "Rebuild package: "))
                      t))
-  (let ((e (or (elpaca-get item) (user-error "Package %S is not queued" item))))
+  (let ((e (or (elpaca-get id) (user-error "Package %S is not queued" id))))
     (when (eq (elpaca--status e) 'finished)
       ;;@MAYBE: remove Info/load-path entries?
       (setf (elpaca<-build-steps e)
@@ -1741,12 +1740,12 @@ With a prefix argument, rebuild current file's package or prompt if none found."
   (elpaca--continue-build e "Skipping pinned package" 'pinned))
 
 ;;;###autoload
-(defun elpaca-fetch (item &optional interactive)
-  "Fetch ITEM's associated package remote commits.
+(defun elpaca-fetch (id &optional interactive)
+  "Fetch ID's associated package remote commits.
 This does not merge changes or rebuild the packages.
 If INTERACTIVE is non-nil immediately process, otherwise queue."
   (interactive (list (elpaca--read-queued "Fetch Package Updates: ") t))
-  (let ((e (or (elpaca-get item) (user-error "Package %S is not queued" item))))
+  (let ((e (or (elpaca-get id) (user-error "Package %S is not queued" id))))
     (elpaca--unprocess e)
     (elpaca--signal e nil 'queued)
     (setf (elpaca<-build-steps e) (if (plist-get (elpaca<-recipe e) :pin)
@@ -1803,12 +1802,12 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
 
 (define-obsolete-function-alias 'elpaca-update 'elpaca-merge "0.0.0")
 ;;;###autoload
-(defun elpaca-merge (item &optional fetch interactive)
-  "Merge package commits associated with ITEM.
+(defun elpaca-merge (id &optional fetch interactive)
+  "Merge package commits associated with ID.
 If FETCH is non-nil, download package changes before merging.
 If INTERACTIVE is non-nil, the queued order is processed immediately."
   (interactive (list (elpaca--read-queued "Merge package: ") current-prefix-arg t))
-  (let* ((e (or (elpaca-get item) (user-error "Package %S is not queued" item)))
+  (let* ((e (or (elpaca-get id) (user-error "Package %S is not queued" id)))
          (recipe (elpaca<-recipe e)))
     (elpaca--unprocess e)
     (setf (elpaca<-build-steps e)
@@ -1857,21 +1856,21 @@ If INTERACTIVE is non-nil, process queues."
     (elpaca-process-queues)))
 
 ;;; Lockfiles
-(defun elpaca-declared-p (item)
-  "Return t if ITEM is declared in user's init file, nil otherwise."
-  (when-let ((e (elpaca-get item)))
-    (or (elpaca<-init e) (cl-loop for dependent in (elpaca-dependents item)
+(defun elpaca-declared-p (id)
+  "Return t if ID is declared in user's init file, nil otherwise."
+  (when-let ((e (elpaca-get id)))
+    (or (elpaca<-init e) (cl-loop for dependent in (elpaca-dependents id)
                                   when (elpaca-declared-p dependent) return t))))
 
-(defun elpaca-installed-p (item)
-  "Return t if ITEM's associated repo directory is on disk, nil otherwise."
-  (and-let* ((e (elpaca-get item))
+(defun elpaca-installed-p (id)
+  "Return t if ID's associated repo directory is on disk, nil otherwise."
+  (and-let* ((e (elpaca-get id))
              (repo-dir (elpaca<-repo-dir e))
              ((file-exists-p repo-dir)))))
 
-(defun elpaca-worktree-dirty-p (item)
-  "Return t if ITEM's associated repository has a dirty worktree, nil otherwise."
-  (when-let ((e (elpaca-get item))
+(defun elpaca-worktree-dirty-p (id)
+  "Return t if ID's associated repository has a dirty worktree, nil otherwise."
+  (when-let ((e (elpaca-get id))
              (recipe (elpaca<-recipe e))
              (repo-dir (elpaca<-repo-dir e))
              ((file-exists-p repo-dir))
@@ -1907,31 +1906,31 @@ If INTERACTIVE is non-nil, process queues."
                   do (push item seen))))))
 
 ;;;###autoload
-(defmacro elpaca-with-dir (item type &rest body)
-  "Set `default-directory' for duration of BODY.
-TYPE is either `repo' or `build' for ITEM's repo or build directory."
+(defmacro elpaca-with-dir (id type &rest body)
+  "Evaluate BODY with E matching ID's `default-directory' bound.
+TYPE is either `repo` or `build`, for repo or build directory."
   (declare (indent 2) (debug t))
-  `(let* ((e (elpaca-get ,item))
+  `(let* ((e (elpaca-get ,id))
           (default-directory (,(intern (format "elpaca<-%s-dir" (symbol-name type))) e)))
      ,@body))
 
 (declare-function elpaca-ui-current-package "elpaca-ui")
 ;;;###autoload
-(defun elpaca-visit (&optional item build)
-  "Open ITEM's local repository directory.
-When BUILD is non-nil visit ITEM's build directory."
+(defun elpaca-visit (&optional id build)
+  "Open local repository directory for E with ID.
+When BUILD is non-nil visit build directory."
   (interactive (list (elpaca--read-queued
                       (format "Visit %s dir: " (if current-prefix-arg "build" "repo")))
                      current-prefix-arg))
-  (when (eq item '##) (setq item nil)) ; Empty `elpaca--read-queued' response
-  (if (not item)
+  (when (eq id '##) (setq id nil)) ; Empty `elpaca--read-queued' response
+  (if (not id)
       (find-file (if build elpaca-builds-directory elpaca-repos-directory))
-    (if-let ((e (elpaca-get item))
+    (if-let ((e (elpaca-get id))
              (dir (if build (elpaca<-build-dir e) (elpaca<-repo-dir e))))
         (if (file-exists-p dir)
             (find-file dir)
           (user-error "Directory does not exist: %S" dir))
-      (user-error "%S is not a queued package" item))))
+      (user-error "%S is not a queued package" id))))
 
 (defun elpaca--fallback-date (e)
   "Return time of last modification for E's built elisp, otherwise nil."
@@ -1943,33 +1942,33 @@ When BUILD is non-nil visit ITEM's build directory."
   "Return declared candidate list with no recipe in `elpaca-menu-functions'.
 If NOTRY is non-nil do not include `elpaca-try' recipes."
   (cl-loop with seen
-           for (item . e) in (elpaca--queued)
-           for menu-item = (elpaca-menu-item item)
+           for (id . e) in (elpaca--queued)
+           for menu-item = (elpaca-menu-item id)
            for tried = (equal (plist-get (cdr menu-item) :source) "elpaca-try")
-           unless (or (member item seen) (and menu-item (or (not tried) notry)))
+           unless (or (member id seen) (and menu-item (or (not tried) notry)))
            collect (if tried menu-item
-                     (list item :source "Init file"
+                     (list id :source "Init file"
                            :date (ignore-errors (elpaca--fallback-date e))
                            :recipe (elpaca<-recipe e)
                            :description "Not available in menu functions"))
-           do (push item seen)))
+           do (push id seen)))
 
 ;;;###autoload
-(defun elpaca-browse (item)
-  "Browse ITEM's :url."
+(defun elpaca-browse (id)
+  "Browse menu item with ID's :url." ;;@Doc: we also fall back to recipe :url
   (interactive (list (let* ((elpaca-overriding-prompt "Browse package: ")
                             (recipe (elpaca-recipe nil (append (elpaca--custom-candidates)
                                                                (elpaca--flattened-menus)))))
                        (intern (plist-get recipe :package)))))
-  (if-let ((found (or (elpaca-get item)
-                      (alist-get item (elpaca--flattened-menus))
-                      (alist-get item (elpaca--custom-candidates))))
+  (if-let ((found (or (elpaca-get id)
+                      (alist-get id (elpaca--flattened-menus))
+                      (alist-get id (elpaca--custom-candidates))))
            (url (or (plist-get found :url)
                     (file-name-sans-extension
                      (elpaca--repo-uri (elpaca-merge-plists
                                         (or (plist-get found :recipe)
                                             (and (elpaca-p found) (elpaca<-recipe found))
-                                            (user-error "No URL associated with item %S" item))
+                                            (user-error "No URL associated with id %S" id))
                                         '(:protocol https)))))))
       (browse-url url)))
 

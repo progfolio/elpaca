@@ -72,11 +72,11 @@ If it is a function, it's return value is used."
       result
     (if elpaca--ibs-set "#unique | !finished" "#latest")))
 
-(defun elpaca-log--tag-latest (items)
-  "Log latest ITEMS."
+(defun elpaca-log--tag-latest (entries)
+  "Log ENTRIES since most recent `elpaca-process-queues'."
   (cl-remove-if (lambda (i) (time-less-p (get-text-property 0 'time (aref (cadr i) 3))
                                          elpaca--log-request-time))
-                items))
+                entries))
 
 (defun elpaca-log--visit-byte-comp-warning (file line col)
   "Visit warning location in FILE at LINE and COL."
@@ -179,7 +179,7 @@ If it is a function, it's return value is used."
   "Return log's `tabulated-list-entries'."
   (cl-loop
    with queue-time = (elpaca-q<-time (car (last elpaca--queues)))
-   for (item . e) in (elpaca--queued)
+   for (id . e) in (elpaca--queued)
    for log = (elpaca<-log e)
    for package = (elpaca<-package e)
    append
@@ -189,13 +189,13 @@ If it is a function, it's return value is used."
     (when-let
         (((<= verbosity elpaca-verbosity))
          (delta (format-time-string "%02s.%6N" (time-subtract time queue-time)))
-         (pkg (let ((found (alist-get item elpaca-ui--string-cache)))
+         (pkg (let ((found (alist-get id elpaca-ui--string-cache)))
                 (if-let ((cached (alist-get status found)))
                     cached
-                  (setf (alist-get status (alist-get item elpaca-ui--string-cache))
+                  (setf (alist-get status (alist-get id elpaca-ui--string-cache))
                         (propertize
                          package 'face (elpaca-alist-get status elpaca-status-faces 'default)))))))
-      (list item (vector pkg (symbol-name status) info (propertize delta 'time time))))
+      (list id (vector pkg (symbol-name status) info (propertize delta 'time time))))
     when entry collect entry)))
 
 (defun elpaca-log--sort-chronologically (a b)

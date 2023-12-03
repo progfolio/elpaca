@@ -260,10 +260,10 @@ Examples will use the following recipe menu. ([recipe menu](#menus)) It offers a
 A recipe provides Elpaca with the metadata necessary to build and install a package. It is a list of the form:
 
 ```emacs-lisp
-(ITEM . PROPS)
+(ID . PROPS)
 ```
 
-*ITEM* is a symbol uniquely identifying the package. *PROPS* is a plist with any of the following recipe keywords:
+*ID* is a symbol uniquely identifying the package. *PROPS* is a plist with any of the following recipe keywords:
 
 
 <a id="recipe-keyword-host"></a>
@@ -578,10 +578,10 @@ This is useful if you want to guarantee the values of certain keywords despite a
 A menu is a function which returns an alist of the form:
 
 ```emacs-lisp
-((ITEM . DATA)...)
+((ID . DATA)...)
 ```
 
-*ITEM* is a symbol uniquely identifying a package. *DATA* is a plist of package metadata. *DATA* must contain the following keywords:
+*ID* is a symbol uniquely identifying a package. *DATA* is a plist of package metadata. *DATA* must contain the following keywords:
 
 -   **:recipe:** A package recipe. ([recipe](#recipes))
 -   **:source:** A string naming the menu.
