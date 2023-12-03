@@ -329,6 +329,10 @@ If INTERACTIVE is non-nil or ID is t, prompt for item."
       (kill-new (format "%S" item)))
     item))
 
+(defun elpaca-item-menu (item &optional menus)
+  "Return menu symbol associated with menu ITEM in MENUS or cache."
+  (car (cl-find (cdr item) (or menus elpaca--menu-cache) :key #'cdr :test #'rassoc)))
+
 ;;;###autoload
 (defun elpaca-update-menus (&rest menus)
   "Update all menus in MENUS or `elpaca-menu-functions'.
