@@ -490,7 +490,7 @@ Each element of the list is either:
 @item
 The symbol @samp{:defaults}, which expands to @samp{elpaca-default-files-directive}.
 @item
-A string naming files or folders. Shell glob patterns may be used to match multiple files.
+A string naming files or folders. Shell glob patterns match multiple files.
 @item
 A list starting with the @samp{:exclude} keyword. The remaining elements are not linked.
 @end itemize
@@ -654,8 +654,7 @@ e.g. @samp{"org-loaddefs.el"}.
 @node Inheritance precedence
 @subsubsection Inheritance precedence
 
-The following list shows the order of precedence for inheritance.
-Each item takes precedence over the items which follow it.
+The following list shows the precedence of inheritance from highest to lowest:
 
 @itemize
 @item

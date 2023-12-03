@@ -1,4 +1,4 @@
-;;; elpaca-test.el --- Testing macro for Elpaca      -*- lexical-binding: t; -*-
+;;; elpaca-test.el --- Elpaca debugging/testing macro      -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2023  Nicholas Vollmer
 

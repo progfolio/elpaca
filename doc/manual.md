@@ -363,7 +363,7 @@ The files linked from the package&rsquo;s repository to its build directory.
 Each element of the list is either:
 
 -   The symbol `:defaults`, which expands to `elpaca-default-files-directive`.
--   A string naming files or folders. Shell glob patterns may be used to match multiple files.
+-   A string naming files or folders. Shell glob patterns match multiple files.
 -   A list starting with the `:exclude` keyword. The remaining elements are not linked.
 
 ```emacs-lisp
@@ -528,7 +528,7 @@ The name of the file the package&rsquo;s autoload file. When `nil`, autoload loa
 
 #### Inheritance precedence
 
-The following list shows the order of precedence for inheritance. Each item takes precedence over the items which follow it.
+The following list shows the precedence of inheritance from highest to lowest:
 
 -   elpaca-recipe-functions
 -   declared recipe
