@@ -72,12 +72,12 @@
 (ert-deftest elpaca-menu-item ()
   "Return menu item from MENUS."
   (let ((elpaca-menu-functions '(elpaca-test-menu))
-        elpaca--menu-items-cache)
+        elpaca--menu-cache)
     (should (elpaca-test--plist-equal-p '( :package "elpaca" :repo "progfolio/elpaca"
                                            :host github
                                            :pre-build ("./pre-build"))
                                         (elpaca-menu-item nil 'elpaca)))
-    (setq elpaca--menu-items-cache nil)
+    (setq elpaca--menu-cache nil)
     (should-not (elpaca-menu-item nil 'elpaca '(ignore)))))
 
 (defun elpaca-test--no-inheritance (order) '(:inherit nil))
@@ -96,7 +96,7 @@
     ;; basic menu lookup
     (let ((elpaca-order-functions '(elpaca-test--no-inheritance))
           (elpaca-menu-functions '(elpaca-test-menu))
-          elpaca--menu-items-cache)
+          elpaca--menu-cache)
       (should (elpaca-test--plist-equal-p
                '( :package "elpaca"
                   :host github

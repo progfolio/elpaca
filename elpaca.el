@@ -236,7 +236,7 @@ e.g. elisp forms may be printed via `prin1'."
          ,@body
          nil))))
 
-(defvar elpaca--menu-items-cache
+(defvar elpaca--menu-cache
   (elpaca--read-file (expand-file-name "menu-items.eld" elpaca-cache-directory))
   "Cache for menu candidates.")
 
@@ -270,7 +270,7 @@ Values for each key are that of the right-most plist containing that key."
   (unless (file-exists-p elpaca-cache-directory)
     (make-directory elpaca-cache-directory))
   (elpaca--write-file (expand-file-name "menu-items.eld" elpaca-cache-directory)
-    (prin1 elpaca--menu-items-cache)))
+    (prin1 elpaca--menu-cache)))
 
 (defsubst elpaca--flattened-menus ()
   "Return list cached menu items from all caches."
@@ -283,12 +283,12 @@ CACHE may be any of the following symbols:
   `nil` Recompute items, ignoring cache altogether.
   `recache` Invalidate and recompute cache considering MENUS.
 See `elpaca-menu-functions' for valid values of MENUS."
-  (or (and (eq cache t) elpaca--menu-items-cache)
+  (or (and (eq cache t) elpaca--menu-cache)
       (let ((items (cl-loop for fn in (or menus elpaca-menu-functions)
                             for index = (and (functionp fn) (funcall fn 'index))
                             when index collect (cons fn index))))
         (when cache
-          (setq elpaca--menu-items-cache items)
+          (setq elpaca--menu-cache items)
           (elpaca--write-menu-cache))
         items)))
 
@@ -377,7 +377,7 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
                    (setq items (cl-loop for source in (if (listp menus) menus (list menus))
                                         unless (memq source elpaca-menu-functions)
                                         do (error "Unrecognized menu: %S" source)
-                                        append (alist-get source elpaca--menu-items-cache))))
+                                        append (alist-get source elpaca--menu-cache))))
                  ;;@FIX: let-binding elpaca-menu-functions won't work here
                  (cdr (elpaca-menu-item (or id t) items))))
          (item-recipe (plist-put (plist-get item :recipe) :source (plist-get item :source)))
@@ -1574,7 +1574,7 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
                  ;;@TODO: implement as a proper menu function?
                  ;;What would the semantics of an update be here?
                  `(progn
-                    (setf (alist-get ',id (alist-get 'elpaca-try elpaca--menu-items-cache))
+                    (setf (alist-get ',id (alist-get 'elpaca-try elpaca--menu-cache))
                           (list :source "elpaca-try"
                                 :description "user-provided recipe"
                                 :recipe '(:package ,(symbol-name id) ,@order)))

@@ -232,7 +232,7 @@ The `elpaca-example` macro in the following examples reduces verbosity. It is no
   `(let (elpaca-cache-menu-items
          elpaca-order-functions
          elpaca-recipe-functions
-         elpaca--menu-items-cache
+         elpaca--menu-cache
          (elpaca-menu-functions '(elpaca-example-menu)))
      ;; Prevent cache corruption
      (cl-letf (((symbol-function 'elpaca--write-menu-cache) #'ignore))
