@@ -1535,7 +1535,7 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
                                           (or (elpaca-q<-elpacas q) (elpaca-q<-forms q))
                                           q))
                          elpaca--queues)))
-    (setq elpaca--waiting t)
+    (setq elpaca--waiting t mode-line-process "elpaca-wait...")
     (unless (or elpaca-after-init-time (not elpaca--ibs-set))
       (elpaca--maybe-log)
       (sit-for elpaca-wait-interval))
@@ -1548,7 +1548,7 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
                                                        (elpaca--fail e "User quit"))))
                     (elpaca-q<-elpacas q))))
     (elpaca-split-queue)
-    (setq elpaca--waiting nil)))
+    (setq elpaca--waiting nil mode-line-process nil)))
 
 (defvar elpaca--try-package-history nil "History for `elpaca-try'.")
 ;;;###autoload
