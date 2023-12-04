@@ -97,7 +97,7 @@
         'elpaca-recipe-functions (elpaca-merge-plists item-recipe order-mods declared))
        with recipe = (elpaca-merge-plists item-recipe order-mods declared recipe-mods
                                           `(:package ,(plist-get item-recipe :package)))
-       with lookup = `((nil ,(format "(:package %s " (plist-get recipe :package))))
+       with lookup = `((nil ,(format "(:package %S " (plist-get recipe :package))))
        with sources = `((elpaca-recipe-functions . ,recipe-mods)
                         (declaration . ,declared) (elpaca-menu-item . ,item-recipe)
                         (elpaca-order-functions .  ,order-mods))
