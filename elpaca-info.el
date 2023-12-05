@@ -137,14 +137,15 @@
                    (- (cl-loop for (source . _) in files maximize (length source))
                       (- (length elpaca-repos) (length repos))))
    with builds = (propertize "$BUILDS/" 'help-echo elpaca-builds-directory)
-   for (repo . build) in files collect
-   (concat
-    (format
-     (concat "%-" longest "s")
-     (concat repos (propertize (file-relative-name repo elpaca-repos)
-                               'face (if (file-exists-p repo) '(:weight bold) 'error))))
-    " → " builds (propertize (file-relative-name build elpaca-builds-directory)
-                             'face (if (file-exists-p build) '(:weight bold) 'error)))))
+   for (repo . build) in files
+   for repo-exists = (file-exists-p repo) for build-exists = (file-exists-p build)
+   collect (concat (format
+                    (concat "%-" longest "s")
+                    (concat repos (propertize (file-relative-name repo elpaca-repos)
+                                              'face (if repo-exists '(:weight bold) 'error))))
+                   (if (and repo-exists build-exists) " → " " ! ")
+                   builds (propertize (file-relative-name build elpaca-builds-directory)
+                                      'face (if build-exists '(:weight bold) 'error)))))
 
 (defun elpaca-info--section (spec heading data)
   "Return section for HEADING with DATA formatted according to SPEC."
