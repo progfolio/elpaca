@@ -57,20 +57,34 @@ If it is a function, it's return value is used."
 (defun elpaca-log--marked-query ()
   "Return query for marked packages."
   (when (= (length (delete-dups (mapcar #'cadr elpaca-ui--marked-packages))) 1)
-    (let ((this-command (cadar elpaca-ui--marked-packages))) (elpaca-log-defaults))))
+    (let ((this-command (cadar elpaca-ui--marked-packages))) (elpaca-log-command-query))))
 
 (defun elpaca-log--find-command (val key)
   "Return t if KEY VAL."
   (or (eq key val) (and (listp val) (member key val))))
 
 ;;;###autoload
-(defun elpaca-log-defaults ()
-  "Return contextual logging queries."
-  (if-let ((found (alist-get this-command elpaca-log-command-queries
-                             nil nil #'elpaca-log--find-command))
-           (result (if (functionp found) (funcall found) found)))
-      result
-    (if elpaca--ibs-set "#unique | !finished" "#latest")))
+(defun elpaca-log-command-query ()
+  "Return logging query matching `this-command' in `elpaca-log-command-queries'."
+  (when-let ((found (alist-get this-command elpaca-log-command-queries
+                               nil nil #'elpaca-log--find-command)))
+    (if (functionp found) (funcall found) found)))
+
+;;;###autoload
+(defun elpaca-log-initial-queues ()
+  "Return logging query if initial queues require building or order fails."
+  (unless elpaca-after-init-time
+    (cl-loop for (_ . e) in (elpaca--queued)
+             for query = (cond ((not (elpaca<-builtp e)) "#unique | !finished")
+                               ((eq (elpaca--status e) 'failed) "| failed"))
+             when query return
+             (prog1 query
+               (setq initial-buffer-choice
+                     (let ((ibc initial-buffer-choice))
+                       (lambda ()
+                         (add-hook 'elpaca-after-init-hook
+                                   (lambda () (setq initial-buffer-choice ibc)))
+                         (get-buffer-create "*elpaca-log*"))))))))
 
 (defun elpaca-log--tag-latest (entries)
   "Log ENTRIES since most recent `elpaca-process-queues'."

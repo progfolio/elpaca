@@ -187,16 +187,6 @@ Each function is passed a request, which may be any of the following symbols:
      Updates the menu's package candidate list."
   :type 'hook)
 
-;;@FIX: emacsclient doesn't show build when server needs to be started.
-(defcustom elpaca-hide-initial-build nil
-  "When non-nil, hide `elpaca-log' during init time builds." :type 'boolean)
-(defvar elpaca--ibc initial-buffer-choice "User's `initial-buffer-choice'.")
-(defun elpaca--set-ibc (_ new &rest _args)
-  "Update `elpaca--ibc' when `initial-buffer-choice' set to NEW."
-  (unless (eq new #'elpaca--ibs) (setq elpaca--ibc new)))
-(add-variable-watcher 'initial-buffer-choice #'elpaca--set-ibc)
-(defvar elpaca--ibs-set nil)
-
 (defcustom elpaca-verbosity 0 "Maximum event verbosity level shown in logs."
   :type 'integer)
 (defcustom elpaca-default-remote-name "origin" "Default remote name." :type 'string)
@@ -532,7 +522,8 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
       steps)))
 
 (declare-function elpaca-log-defaults "elpaca-log")
-(defcustom elpaca-log-functions #'elpaca-log-defaults
+(declare-function elpaca-log-initial-queues "elpaca-log")
+(defcustom elpaca-log-functions '(elpaca-log-initial-queues elpaca-log-command-query)
   "Hook run prior to logging.
 It's functions should return either:
   - t to log with the buffer's default filter.
@@ -553,15 +544,6 @@ The first function, if any, which returns a non-nil is used." :type 'hook)
       (elpaca-log (cond ((eq query t) nil)
                         ((stringp query) query)
                         (t (signal 'wrong-type-error `((stringp t) ,query))))))))
-
-(defvar elpaca-log-buffer)
-(defun elpaca--ibs ()
-  "Return initial status buffer if `elpaca-hide-initial-build' is nil."
-  (when (elpaca--maybe-log)
-    (with-current-buffer elpaca-log-buffer
-      (when (equal initial-buffer-choice #'elpaca--ibs) (setq initial-buffer-choice elpaca--ibc))
-      (setq-local elpaca-ui-want-tail nil)
-      (current-buffer))))
 
 (defun elpaca<-create (order)
   "Create a new elpaca struct from ORDER."
@@ -589,8 +571,6 @@ The first function, if any, which returns a non-nil is used." :type 'hook)
                         (cl-pushnew id (elpaca<-blocking e)))
                       e))
          (build-steps (elpaca--build-steps recipe builtp clonedp mono-repo)))
-    (unless (or builtp elpaca--ibs-set elpaca-hide-initial-build elpaca-after-init-time)
-      (setq initial-buffer-choice #'elpaca--ibs elpaca--ibs-set t))
     (when (memq id elpaca-ignored-dependencies)
       (setq elpaca-ignored-dependencies (delq id elpaca-ignored-dependencies)))
     (elpaca<--create
@@ -773,8 +753,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
                 (not (eq (elpaca-q<-type q) 'init)) ; Already run.
                 (and next (eq (elpaca-q<-type next) 'init))) ; More init queues.
       (elpaca-split-queue)
-      (remove-variable-watcher 'initial-buffer-choice #'elpaca--set-ibc)
-      (setq elpaca-after-init-time (current-time) elpaca--ibs-set nil)
+      (setq elpaca-after-init-time (current-time))
       (run-hooks 'elpaca-after-init-hook))
     (if (and next (or (elpaca-q<-elpacas next) (elpaca-q<-forms next)))
         (elpaca--process-queue next)
