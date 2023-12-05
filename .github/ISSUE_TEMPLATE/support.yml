@@ -41,4 +41,4 @@ body:
     id: description
     attributes:
       label: Description
-      description: Please be as specific as possible. Include examples if possible. Please do not share a screenshot where text will do.
+      description: Please be as specific as possible. Include examples if possible. If the issue concerns a single package, include the output of M-x elpaca-info for that package. Please do not share a screenshot where text will do.
