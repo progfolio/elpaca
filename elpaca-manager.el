@@ -53,7 +53,7 @@ If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
                                       (or (plist-get props :description) "")
                                       (or date "")
                                       (propertize (or (plist-get props :source) "") 'menu menu))))))
-        (message "Elpaca manager cache refreshed."))))
+        (when recache (message "Elpaca manager cache refreshed.")))))
 
 ;;;###autoload
 (defun elpaca-manager (&optional recache)
