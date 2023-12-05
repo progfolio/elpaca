@@ -98,9 +98,9 @@
        with recipe = (elpaca-merge-plists item-recipe order-mods declared recipe-mods
                                           `(:package ,(plist-get item-recipe :package)))
        with lookup = `((nil ,(format "(:package %S " (plist-get recipe :package))))
-       with sources = `((elpaca-recipe-functions . ,recipe-mods)
-                        (declaration . ,declared) (elpaca-menu-item . ,item-recipe)
-                        (elpaca-order-functions .  ,order-mods))
+       with sources = `((elpaca-recipe-functions . ,recipe-mods) (declaration . ,declared)
+                        (elpaca-order-functions .  ,order-mods)
+                        (elpaca-menu-item . ,item-recipe))
        for (prop val) on recipe by #'cddr
        unless (or (eq prop :package) (and (eq prop :source) (null val)))
        do (push (format " %s %S" prop
