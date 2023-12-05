@@ -63,7 +63,7 @@
   '(elpaca--queue-dependencies elpaca--add-info-path elpaca--activate-package)
   "List of steps for packages which are already built.")
 
-(defvar elpaca-after-init-time nil "Time after `elpaca-after-init-hook' is run.")
+(defvar elpaca-after-init-time nil "`current-time' after processing all queues.")
 (defcustom elpaca-after-init-hook nil
   "Elpaca's analogue to `after-init-hook'.
 This is run after all orders queued during init have finished processing.
