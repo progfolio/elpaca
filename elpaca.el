@@ -531,7 +531,7 @@ It's functions should return either:
   - `silent' to prevent logging altogether.
   - nil to skip the function.
 
-The first function, if any, which returns a non-nil is used." :type 'hook)
+The first function, if any, which returns non-nil is used." :type 'hook)
 
 (defvar elpaca--log-request-time nil "Time of most recent log event.")
 (declare-function elpaca-log "elpaca-log")
