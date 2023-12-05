@@ -149,6 +149,7 @@
 
 (defun elpaca-info--section (spec heading data)
   "Return section for HEADING with DATA formatted according to SPEC."
+  (declare (indent 2))
   (format spec (propertize heading 'face 'elpaca-info-section) data))
 
 (declare-function elpaca--flattened-menus "elpaca")
@@ -170,27 +171,23 @@
                (elpaca-info--section "%-7s %s" "url:" (elpaca-ui--buttonize url #'browse-url url)))
              (unless (equal (plist-get item :source) "Init file")
                (elpaca-info--section "%s\n%s" "menu item recipe:"
-                                     (elpaca-info--format-recipe
-                                      (format "%S" (plist-get item :recipe)))))
+                 (elpaca-info--format-recipe (format "%S" (plist-get item :recipe)))))
              (elpaca-info--section "%s\n%s" "full recipe:" (elpaca-info--recipe item))
-             (elpaca-info--section
-              "%s %s" "dependencies:"
-              (if-let ((ds (remq 'emacs (ignore-errors (elpaca-dependencies id)))))
-                  (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
-                (if on-disk-p "nil"
-                  (if (memq item (cl-set-difference elpaca-ignored-dependencies '(emacs elpaca)))
-                      "built-in" "?"))))
-             (elpaca-info--section
-              "%s %s" "dependents:"
-              (if-let ((ds (remq 'emacs (elpaca--dependents id 'noerror))))
-                  (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
-                (if on-disk-p "nil" "?")))
-             (when e (elpaca-info--section
-                      "%s %s" "commit: "
-                      (let ((default-directory (elpaca<-repo-dir e)))
-                        (string-trim (or (ignore-errors (elpaca-process-output
-                                                         "git" "rev-parse"  "--short" "HEAD"))
-                                         "")))))
+             (elpaca-info--section "%s %s" "dependencies:"
+               (if-let ((ds (remq 'emacs (ignore-errors (elpaca-dependencies id)))))
+                   (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
+                 (if on-disk-p "nil"
+                   (if (memq item (cl-set-difference elpaca-ignored-dependencies '(emacs elpaca)))
+                       "built-in" "?"))))
+             (elpaca-info--section "%s %s" "dependents:"
+               (if-let ((ds (remq 'emacs (elpaca--dependents id 'noerror))))
+                   (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
+                 (if on-disk-p "nil" "?")))
+             (when e (elpaca-info--section "%s %s" "commit: "
+                       (let ((default-directory (elpaca<-repo-dir e)))
+                         (string-trim (or (ignore-errors (elpaca-process-output
+                                                          "git" "rev-parse"  "--short" "HEAD"))
+                                          "")))))
              (when-let ((e) (statuses (elpaca<-statuses e)))
                (elpaca-info--section "%s\n  %S" "statuses:" statuses))
              (when-let ((e) (files (ignore-errors (elpaca--files e))))
