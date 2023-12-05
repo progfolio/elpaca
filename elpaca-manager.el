@@ -55,29 +55,31 @@ If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
                                       (propertize (or (plist-get props :source) "") 'menu menu))))))
         (when recache (message "Elpaca manager cache refreshed.")))))
 
+(define-derived-mode elpaca-manager-mode elpaca-ui-mode "elpaca-manager-mode"
+  "Major mode for displaying Elpaca packages."
+  (setq tabulated-list-format [("Package" 30 t)
+                               ("Description" 80 t)
+                               ("Date" 15 t)
+                               ("Source" 20 t)]
+        elpaca-ui-entries-function #'elpaca-manager--entries
+        elpaca-ui-header-line-prefix (propertize "Elpaca Manager" 'face '(:weight bold))
+        tabulated-list-use-header-line nil
+        elpaca-ui--history 'elpaca-manager--history
+        elpaca-ui-default-query elpaca-manager-default-search-query)
+  (elpaca-ui--update-search-query (current-buffer) elpaca-ui-search-query)
+  (tabulated-list-init-header))
+
 ;;;###autoload
 (defun elpaca-manager (&optional recache)
   "Display elpaca's package management UI.
 If RECACHE is non-nil, recompute menu items from `elpaca-menu-functions'."
   (interactive "P")
-  (when recache (elpaca-manager--entries recache))
   (with-current-buffer (get-buffer-create elpaca-manager-buffer)
-    (let ((initializedp (derived-mode-p 'elpaca-ui-mode)))
-      (unless initializedp
-        (elpaca-ui-mode)
-        (setq tabulated-list-format [("Package" 30 t)
-                                     ("Description" 80 t)
-                                     ("Date" 15 t)
-                                     ("Source" 20 t)]
-              elpaca-ui-entries-function #'elpaca-manager--entries
-              elpaca-ui-header-line-prefix (propertize "Elpaca Manager" 'face '(:weight bold))
-              tabulated-list-use-header-line nil
-              elpaca-ui--history 'elpaca-manager--history
-              elpaca-ui-default-query elpaca-manager-default-search-query)
-        (tabulated-list-init-header))
-      (when (or (not initializedp) recache)
-        (elpaca-ui--update-search-query (current-buffer) elpaca-ui-search-query))))
-  (pop-to-buffer elpaca-manager-buffer '((display-buffer-reuse-window display-buffer-same-window))))
+    (unless (derived-mode-p 'elpaca-manager-mode) (elpaca-manager-mode))
+    (when recache
+      (elpaca-manager--entries recache)
+      (elpaca-ui--update-search-query (current-buffer) elpaca-ui-search-query))
+    (pop-to-buffer elpaca-manager-buffer '((display-buffer-reuse-window display-buffer-same-window)))))
 
 (provide 'elpaca-manager)
 ;;; elpaca-manager.el ends here
