@@ -915,6 +915,7 @@ FILES and NOCONS are used recursively."
                 (copy-directory file link nil 'parents 'recursive)
               (copy-file file link 'overwrite))
           (make-symbolic-link file link 'overwrite)))))
+  (setf (elpaca<-builtp e) t)
   (elpaca--continue-build e "Build files linked"))
 
 (defun elpaca--add-info-path (e)
