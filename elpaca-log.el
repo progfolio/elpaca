@@ -250,7 +250,7 @@ If it is a function, it's return value is used."
   "Log most recent events for packages."
   (interactive)
   (with-current-buffer (elpaca-log)
-      (elpaca-log (alist-get 'elpaca-status elpaca-log-command-queries "#unique"))))
+    (elpaca-log (alist-get 'elpaca-status elpaca-log-command-queries "#unique"))))
 
 (provide 'elpaca-log)
 ;;; elpaca-log.el ends here
