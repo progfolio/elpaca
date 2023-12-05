@@ -965,8 +965,7 @@ FILES and NOCONS are used recursively."
   (if-let ((e (process-get process :elpaca))
            ((and (equal event "finished\n") (not (eq (elpaca--status e) 'failed)))))
       (elpaca--continue-build e info status)
-    (setf (car (car (elpaca<-log e))) 'failed)
-    (elpaca--update-log-buffer)))
+    (elpaca--fail e (format "Subprocess error (see previous log entries)"))))
 
 (defun elpaca--compile-info-process-sentinel (process event)
   "Sentinel for info compilation PROCESS EVENT."
