@@ -1535,9 +1535,6 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
                                           q))
                          elpaca--queues)))
     (setq elpaca--waiting t mode-line-process "elpaca-wait...")
-    (unless (or elpaca-after-init-time (not elpaca--ibs-set))
-      (elpaca--maybe-log)
-      (sit-for elpaca-wait-interval))
     (elpaca-process-queues)
     (condition-case nil
         (while (not (eq (elpaca-q<-status q) 'complete))
@@ -1618,6 +1615,7 @@ FILTER must be a unary function which accepts and returns a queue list."
            ((mapc #'elpaca--maybe-reset-queue queues))
            (incomplete (cl-find 'incomplete queues :key #'elpaca-q<-status)))
       (progn (setq elpaca--status-counts (elpaca--count-statuses))
+             (elpaca--maybe-log)
              (elpaca--process-queue incomplete))
     (run-hooks 'elpaca--post-queues-hook)))
 
@@ -1713,9 +1711,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
     (elpaca--unprocess e)
     (elpaca--signal e "Rebuilding" 'queued)
     (setf elpaca-cache-autoloads nil (elpaca<-files e) nil)
-    (when interactive
-      (elpaca--maybe-log)
-      (elpaca-process-queues))))
+    (when interactive (elpaca-process-queues))))
 
 (defun elpaca--log-updates (e)
   "Log E's fetched commits."
@@ -1762,7 +1758,6 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
 (defun elpaca-fetch-all (&optional interactive)
   "Fetch queued elpaca remotes.  If INTERACTIVE is non-nil, process queues."
   (interactive (list t))
-  (when interactive (elpaca--maybe-log))
   (cl-loop with repos
            for (id . e) in (reverse (elpaca--queued))
            for repo = (elpaca<-repo-dir e)
@@ -1774,9 +1769,7 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
                         (elpaca<-statuses e) (list 'queued))
                 (elpaca-fetch id))
            (unless mono-repo (push (cons (elpaca<-repo-dir e) id) repos)))
-  (when interactive
-    (elpaca--maybe-log)
-    (elpaca-process-queues)))
+  (when interactive (elpaca-process-queues)))
 
 (defun elpaca--merge-process-sentinel (process _event)
   "Handle PROCESS EVENT."
@@ -1837,7 +1830,6 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
 If FETCH is non-nil fetch updates first.
 If INTERACTIVE is non-nil, process queues."
   (interactive (list current-prefix-arg t))
-  (when interactive (elpaca--maybe-log))
   (cl-loop with (seen repos)
            with ignored = (remove 'elpaca elpaca-ignored-dependencies)
            for (id . e) in (reverse (elpaca--queued))
@@ -1854,9 +1846,7 @@ If INTERACTIVE is non-nil, process queues."
                (elpaca--signal e (format "Waiting for mono-repo %s" mono-repo) 'blocked))
              (push id seen)
              (unless mono-repo (push (cons repo id) repos))))
-  (when interactive
-    (elpaca--maybe-log)
-    (elpaca-process-queues)))
+  (when interactive (elpaca-process-queues)))
 
 ;;; Lockfiles
 (defun elpaca-declared-p (id)
