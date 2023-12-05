@@ -946,7 +946,7 @@ Note this will cause the declaration to be interpreted immediately (not deferred
 
 Elpaca has a UI mode available for managing packages.
 The main entry points to the UI are the @samp{elpaca-manager}, @samp{elpaca-log}, and @samp{elpaca-status} commands.
-Each of these commands utilize @samp{elpaca-ui-mode}.
+Each of these commands utilize modes derived from @samp{elpaca-ui-mode}.
 
 The following commands are available in the @samp{elpaca-ui-mode}:
 
