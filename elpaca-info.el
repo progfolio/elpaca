@@ -191,7 +191,13 @@
              (when-let ((e) (statuses (elpaca<-statuses e)))
                (elpaca-info--section "%s\n  %S" "statuses:" statuses))
              (when-let ((e) (files (ignore-errors (elpaca--files e))))
-               (elpaca-info--section "%s\n  %s" "files:" (string-join (elpaca-info--files files) i))))))
+               (elpaca-info--section "%s\n  %s" "files:" (string-join (elpaca-info--files files) i)))
+             (when-let ((e) (log (elpaca<-log e)))
+               (elpaca-info--section "%s\n%s" "log:"
+                 (cl-loop for (status time info _) in (reverse log) concat
+                          (format "%s %s\n" (propertize (format "[%s]" (format-time-string "%F %T" time))
+                                                        'face 'font-lock-comment-face)
+                                  (propertize info 'face (alist-get status elpaca-status-faces 'default)))))))))
       (when e (setq default-directory (elpaca<-repo-dir e)))
       (insert (propertize (plist-get recipe :package) 'face 'elpaca-info-package))
       (when (> (length menus) 1)
