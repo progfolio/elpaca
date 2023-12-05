@@ -217,6 +217,22 @@ If it is a function, it's return value is used."
   (< (string-to-number (aref (cadr a) 3))
      (string-to-number (aref (cadr b) 3))))
 
+(define-derived-mode elpaca-log-mode elpaca-ui-mode "elpaca-log-mode"
+  "Major mode for displaying Elpaca order log entries."
+  (setq tabulated-list-format [("Package" 30 t)
+                               ("Status" 20 t)
+                               ("Info" 80 t)
+                               ("Time" 20 elpaca-log--sort-chronologically)]
+        elpaca-ui--want-faces nil
+        elpaca-ui-entries-function #'elpaca-log--entries
+        elpaca-ui-header-line-prefix (propertize "Elpaca Log" 'face '(:weight bold))
+        elpaca-ui-default-query elpaca-log-default-search-query
+        elpaca-ui--history 'elpaca-log--history
+        tabulated-list-use-header-line nil
+        tabulated-list-sort-key '("Time"))
+  (setq-local elpaca-ui-search-tags (append elpaca-ui-search-tags elpaca-log-search-tags))
+  (tabulated-list-init-header))
+
 ;;;###autoload
 (defun elpaca-log (&optional query)
   "Display `elpaca-log-buffer' filtered by QUERY."
@@ -227,21 +243,7 @@ If it is a function, it's return value is used."
                            (replace-regexp-in-string quoted "" elpaca-ui-search-query)
                          (concat (string-trim elpaca-ui-search-query) " " query)))))
   (with-current-buffer (get-buffer-create elpaca-log-buffer)
-    (unless (derived-mode-p 'elpaca-ui-mode)
-      (elpaca-ui-mode)
-      (setq tabulated-list-format [("Package" 30 t)
-                                   ("Status" 20 t)
-                                   ("Info" 80 t)
-                                   ("Time" 20 elpaca-log--sort-chronologically)]
-            elpaca-ui--want-faces nil
-            elpaca-ui-entries-function #'elpaca-log--entries
-            elpaca-ui-header-line-prefix (propertize "Elpaca Log" 'face '(:weight bold))
-            elpaca-ui-default-query elpaca-log-default-search-query
-            elpaca-ui--history 'elpaca-log--history
-            tabulated-list-use-header-line nil
-            tabulated-list-sort-key '("Time"))
-      (setq-local elpaca-ui-search-tags (append elpaca-ui-search-tags elpaca-log-search-tags))
-      (tabulated-list-init-header))
+    (unless (derived-mode-p 'elpaca-log-mode) (elpaca-log-mode))
     (elpaca-ui--update-search-query (current-buffer) (or query elpaca-ui-search-query))
     (pop-to-buffer elpaca-log-buffer '((display-buffer-reuse-window display-buffer-same-window)))))
 
