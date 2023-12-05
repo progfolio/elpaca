@@ -220,7 +220,6 @@ If it is a function, it's return value is used."
                                    ("Info" 80 t)
                                    ("Time" 20 elpaca-log--sort-chronologically)]
             elpaca-ui--want-faces nil
-            elpaca-ui-want-tail t
             elpaca-ui-entries-function #'elpaca-log--entries
             elpaca-ui-header-line-prefix (propertize "Elpaca Log" 'face '(:weight bold))
             elpaca-ui-default-query elpaca-log-default-search-query
@@ -237,8 +236,7 @@ If it is a function, it's return value is used."
   "Log most recent events for packages."
   (interactive)
   (with-current-buffer (elpaca-log)
-    (let (elpaca-ui-want-tail)
-      (elpaca-log (alist-get 'elpaca-status elpaca-log-command-queries "#unique")))))
+      (elpaca-log (alist-get 'elpaca-status elpaca-log-command-queries "#unique"))))
 
 (provide 'elpaca-log)
 ;;; elpaca-log.el ends here

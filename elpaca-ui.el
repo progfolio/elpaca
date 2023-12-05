@@ -329,7 +329,8 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                            (setq ,@(cl-loop for fn in fns append `(entries ,fn)))))))))
 
 (defvar-local elpaca-ui--print-cache nil "Used when printing entries via `elpaca-ui--apply-faces'.")
-(defvar-local elpaca-ui-want-tail nil "If non-nil, point is moved to end of buffer as entries are printed.")
+(define-minor-mode elpaca-ui-tail-mode "Automatically follow tail of UI buffer when enabled."
+  :lighter " elpaca-ui-tail")
 
 (defun elpaca-ui--print-appender (&rest _)
   "Prints button to append more `elpaca-ui-entries' rows."
@@ -369,7 +370,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
   "Print table entries."
   (let ((elpaca-ui--print-cache (append elpaca-ui--marked-packages (elpaca--queued))))
     (tabulated-list-print 'remember-pos)
-    (when elpaca-ui-want-tail (goto-char (point-max)))))
+    (when elpaca-ui-tail-mode (goto-char (point-max)))))
 
 (defun elpaca-ui--apply-faces (id cols)
   "Propertize entries which are marked/installed.

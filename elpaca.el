@@ -555,7 +555,6 @@ The first function, if any, which returns a non-nil is used." :type 'hook)
                         (t (signal 'wrong-type-error `((stringp t) ,query))))))))
 
 (defvar elpaca-log-buffer)
-(defvar elpaca-ui-want-tail)
 (defun elpaca--ibs ()
   "Return initial status buffer if `elpaca-hide-initial-build' is nil."
   (when (elpaca--maybe-log)
