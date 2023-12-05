@@ -368,9 +368,10 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
 
 (defun elpaca-ui--print ()
   "Print table entries."
-  (let ((elpaca-ui--print-cache (append elpaca-ui--marked-packages (elpaca--queued))))
-    (tabulated-list-print 'remember-pos)
-    (when elpaca-ui-tail-mode (goto-char (point-max)))))
+  (let ((elpaca-ui--print-cache (append elpaca-ui--marked-packages (elpaca--queued)))
+        (p (point)))
+    (tabulated-list-print)
+    (goto-char (if elpaca-ui-tail-mode (point-max) p))))
 
 (defun elpaca-ui--apply-faces (id cols)
   "Propertize entries which are marked/installed.
