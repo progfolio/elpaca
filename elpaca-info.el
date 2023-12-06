@@ -166,9 +166,9 @@
            (i  "\n  ")
            (sections
             (list
-             (elpaca-info--section "%-7s %s" "source:" (plist-get item :source))
+             (elpaca-info--section "%s %s" "source:" (plist-get item :source))
              (when-let ((url (plist-get item :url)))
-               (elpaca-info--section "%-7s %s" "url:" (elpaca-ui--buttonize url #'browse-url url)))
+               (elpaca-info--section "%s %s" "url:" (elpaca-ui--buttonize url #'browse-url url)))
              (unless (equal (plist-get item :source) "Init file")
                (elpaca-info--section "%s\n%s" "menu item recipe:"
                  (elpaca-info--format-recipe (format "%S" (plist-get item :recipe)))))
