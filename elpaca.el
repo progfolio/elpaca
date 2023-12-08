@@ -1083,8 +1083,7 @@ The keyword's value is expected to be one of the following:
   (elpaca--dispatch-build-commands e :post-build))
 
 ;;@HACK: It seems like `directory-files-recursively' is a little slow because it
-;;covers all sorts of general edge cases. e.g. tramp remote files. We shouldn't
-;;need that here.
+;;covers all sorts of general edge cases. e.g. tramp remote files.
 (defun elpaca--directory-files-recursively (directory regexp)
   "Return DIRECTORY files matching REGEXP."
   (let ((default-directory (expand-file-name directory)))
