@@ -3121,7 +3121,7 @@ ten, but opening my org agenda files wipes that list out.
 #+begin_src emacs-lisp :lexical t
 (elpaca (straight.el :host github
                      :depth nil
-                     :repo "raxod502/straight.el"
+                     :repo "radian-software/straight.el"
                      :branch "develop"
                      :files ("straight*.el")
                      :protocol ssh
