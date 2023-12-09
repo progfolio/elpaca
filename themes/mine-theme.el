@@ -65,7 +65,7 @@
 
 (mine-add-faces nil
   (cursor  :background ,green :foreground ,dark-purple :weight bold)
-  (default :background ,purple :foreground ,yellow :weight normal :height 130)
+  (default :background ,purple :foreground ,yellow :weight normal :height 130 :distant-foreground ,dark-purple)
   (error :foreground ,red :weight bold)
   (warning :foreground "yellow" :weight bold)
   (fringe :inherit default)
