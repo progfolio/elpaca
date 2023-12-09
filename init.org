@@ -1821,7 +1821,7 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
                   (message-send-mail-function . smtpmail-send-it)
                   (smtpmail-smtp-user . ,secret-work-email-account)
                   (smtpmail-starttls-credentials . (("smtp.gmail.com" 587 nil nil)))
-                  (smtpmail-auth-credentials . ,secret-work-email-credential)
+                  (smtpmail-auth-credentials . (expand-file-name "~/.authinfo.gpg"))
                   (smtpmail-default-smtp-server . "smtp.gmail.com")
                   (smtpmail-smtp-server . "smtp.gmail.com")
                   (smtpmail-smtp-service . 587)
