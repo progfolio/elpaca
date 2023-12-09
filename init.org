@@ -1770,9 +1770,8 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
   :commands (mu4e mu4e-update-index)
   :custom
   (mu4e-update-interval 900 "Update every fifteen minutes")
-  (mail-user-agent 'mu4e-user-agent)
+  (mail-user-agent 'mu4e-user-agent "Use mu4e as default email program.")
   (mu4e-org-support t)
-  (message-mail-user-agent 'mu4e-user-agent "Use mu4e as default email program.")
   (mu4e-maildir (expand-file-name "~/Documents/emails/"))
   (mu4e-attachment-dir "~/Downloads")
   (mu4e-completing-read-function 'completing-read)
