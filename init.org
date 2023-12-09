@@ -586,10 +586,7 @@ And a macro to ease the creation of nested menu bindings:
   "k" 'windmove-up
   "l" 'windmove-right
   "o" 'other-window
-  "t" '((lambda () (interactive)
-          "toggle window dedication"
-          (set-window-dedicated-p (selected-window) (not (window-dedicated-p))))
-        :which-key "toggle window dedication")
+  "t" 'window-toggle-side-windows
   "."  '(:ingore :which-key "resize")
   ".h" '((lambda () (interactive)
            (call-interactively (if (window-prev-sibling) #'enlarge-window-horizontally
