@@ -1291,34 +1291,18 @@ https://www.flycheck.org/en/latest/
     "ff" '((lambda () (interactive) (flymake-mode 'toggle)) :which-key "toggle flymake-mode")
     "fn" 'flymake-goto-next-error
     "fp" 'flymake-goto-prev-error)
-  :hook (flymake-mode . +flymake-toggle-diagnostics-buffer)
+  :hook (flymake-mode . flymake-show-project-diagnostics)
   :config
   (add-to-list 'display-buffer-alist
                '("\\`\\*Flymake diagnostics.*?\\*\\'"
-                 display-buffer-below-selected (window-height . 0.25)))
+                 display-buffer-in-side-window  (window-parameters (window-height 0.25)) (side . bottom)))
 
   (defun +flymake-elpaca-bytecomp-load-path ()
     "Augment `elisp-flymake-byte-compile-load-path' to support Elpaca."
     (setq-local elisp-flymake-byte-compile-load-path
                 `("./" ,@(mapcar #'file-name-as-directory
                                  (nthcdr 2 (directory-files (expand-file-name "builds" elpaca-directory) 'full))))))
-  (add-hook 'flymake-mode-hook #'+flymake-elpaca-bytecomp-load-path)
-
-  (defun +flymake-toggle-diagnostics-buffer ()
-    "Toggle the diagnostics buffer when entering/exiting `flymake-mode'."
-    (let* ((root (vc-root-dir))
-           (command (if root
-                        #'flymake-show-project-diagnostics
-                      #'flymake-show-buffer-diagnostics))
-           (window (get-buffer-window
-                    (if root
-                        (flymake--project-diagnostics-buffer root)
-                      (flymake--diagnostics-buffer-name)))))
-      (if flymake-mode
-          (funcall command)
-        (when (window-live-p window)
-          (with-selected-window window
-            (kill-buffer-and-window)))))))
+  (add-hook 'flymake-mode-hook #'+flymake-elpaca-bytecomp-load-path))
 #+end_src
 ** flyspell
 #+begin_src emacs-lisp :lexical t
