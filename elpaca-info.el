@@ -195,7 +195,7 @@
              (when-let ((e) (log (elpaca<-log e)))
                (elpaca-info--section "%s\n%s" "log:"
                  (cl-loop for (status time info _) in (reverse log) concat
-                          (format "%s %s\n" (propertize (format "[%s]" (format-time-string "%F %T" time))
+                          (format "  %s %s\n" (propertize (format "[%s]" (format-time-string "%F %T" time))
                                                         'face 'font-lock-comment-face)
                                   (propertize info 'face (alist-get status elpaca-status-faces 'default)))))))))
       (when e (setq default-directory (elpaca<-repo-dir e)))
