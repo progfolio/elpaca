@@ -1152,48 +1152,47 @@ If RECACHE is non-nil, do not use cached dependencies."
 ;;@MAYBE: Package major version checks.
 (defun elpaca--queue-dependencies (e)
   "Queue E's dependencies."
-  (cl-loop named out
-           initially (elpaca--signal e "Queueing Dependencies" 'blocked nil 1)
-           with externals =
-           (cl-loop for (id version) in (elpaca--dependencies e)
-                    when (and (eq id 'emacs)
-                              (< emacs-major-version (truncate (string-to-number version))))
-                    do (cl-return-from out (elpaca--fail e (concat "Requires Emacs " version)))
-                    unless (memq id elpaca-ignored-dependencies) collect id)
-           with q = (and externals (elpaca--q e))
-           with qd = (and externals (elpaca--queued))
-           with finished = 0
-           with q-id = (elpaca<-queue-id e)
-           with e-id = (elpaca<-id e)
-           with pending
-           for dependency in externals
-           for queued = (elpaca-alist-get dependency qd)
-           for d = (or queued (elpaca--queue dependency q))
-           for d-id = (elpaca<-id d)
-           for d-status = (elpaca--status d)
-           do (and queued (> (elpaca<-queue-id d) q-id)
-                   (cl-return-from out
-                     (elpaca--fail d (format "dependent %S in past queue" e-id))))
-           (cl-pushnew e-id (elpaca<-dependents d))
-           (when (or (eq d-status 'queued)
-                     (and (elpaca--throttled-p d) (= elpaca-queue-limit 1) ;; Dependency must be continued.
-                          (progn (setf (elpaca<-statuses d) (delq 'continued-dep (elpaca<-statuses d)))
-                                 (elpaca--signal d nil 'unthrottled)
-                                 t))
-                     (and (memq e-id (elpaca<-blockers d)) ;; Mono-repo dep blocked.
-                          (equal (elpaca<-repo-dir e) (elpaca<-repo-dir d))
-                          (progn (setf (elpaca<-blockers d) (delq e-id (elpaca<-blockers d)))
-                                 t)))
-             (push d pending))
-           (if (eq d-status 'finished)
-               (cl-incf finished)
-             (cl-pushnew e-id (elpaca<-blocking d))
-             (cl-pushnew d-id (elpaca<-blockers e)))
-           finally do
-           (if (= (length externals) finished)
-               (elpaca--continue-build
-                e (when (zerop finished) "No external dependencies") 'unblocked)
-             (mapc #'elpaca--continue-dependency pending))))
+  (cl-loop
+   named out
+   initially (elpaca--signal e "Queueing Dependencies" 'blocked nil 1)
+   with externals =
+   (cl-loop for (id version) in (elpaca--dependencies e)
+            when (and (eq id 'emacs)
+                      (< emacs-major-version (truncate (string-to-number version))))
+            do (cl-return-from out (elpaca--fail e (concat "Requires Emacs " version)))
+            unless (memq id elpaca-ignored-dependencies) collect id)
+   with q = (and externals (elpaca--q e))
+   with qd = (and externals (elpaca--queued))
+   with finished = 0
+   with q-id = (elpaca<-queue-id e)
+   with e-id = (elpaca<-id e)
+   with pending
+   for dependency in externals
+   for queued = (elpaca-alist-get dependency qd)
+   for d = (or queued (elpaca--queue dependency q))
+   for d-id = (elpaca<-id d)
+   for d-status = (elpaca--status d)
+   do (and queued (> (elpaca<-queue-id d) q-id)
+           (cl-return-from out (elpaca--fail d (format "dependent %S in past queue" e-id))))
+   (cl-pushnew e-id (elpaca<-dependents d))
+   (when (or (eq d-status 'queued)
+             (and (elpaca--throttled-p d) (= elpaca-queue-limit 1) ;; Dependency must be continued.
+                  (progn (setf (elpaca<-statuses d) (delq 'continued-dep (elpaca<-statuses d)))
+                         (elpaca--signal d nil 'unthrottled)
+                         t))
+             (and (memq e-id (elpaca<-blockers d)) ;; Mono-repo dep blocked.
+                  (equal (elpaca<-repo-dir e) (elpaca<-repo-dir d))
+                  (progn (setf (elpaca<-blockers d) (delq e-id (elpaca<-blockers d)))
+                         t)))
+     (push d pending))
+   (if (eq d-status 'finished)
+       (cl-incf finished)
+     (cl-pushnew e-id (elpaca<-blocking d))
+     (cl-pushnew d-id (elpaca<-blockers e)))
+   finally do (if (= (length externals) finished)
+                  (elpaca--continue-build
+                   e (when (zerop finished) "No external dependencies") 'unblocked)
+                (mapc #'elpaca--continue-dependency pending))))
 
 (defun elpaca--remote-default-branch (remote)
   "Return REMOTE's \"default\" branch.
