@@ -1160,8 +1160,8 @@ If RECACHE is non-nil, do not use cached dependencies."
                               (< emacs-major-version (truncate (string-to-number version))))
                     do (cl-return-from out (elpaca--fail e (concat "Requires Emacs " version)))
                     unless (memq id elpaca-ignored-dependencies) collect id)
-           with q = (when externals (elpaca--q e))
-           with qd = (when externals (elpaca--queued))
+           with q = (and externals (elpaca--q e))
+           with qd = (and externals (elpaca--queued))
            with finished = 0
            with q-id = (elpaca<-queue-id e)
            with e-id = (elpaca<-id e)
@@ -1171,16 +1171,15 @@ If RECACHE is non-nil, do not use cached dependencies."
            for d = (or queued (elpaca--queue dependency q))
            for d-id = (elpaca<-id d)
            for d-status = (elpaca--status d)
-           do (when (and queued (> (elpaca<-queue-id d) q-id))
-                (cl-return-from out
-                  (elpaca--fail d (format "dependent %S in past queue" e-id))))
+           do (and queued (> (elpaca<-queue-id d) q-id)
+                   (cl-return-from out
+                     (elpaca--fail d (format "dependent %S in past queue" e-id))))
            (cl-pushnew e-id (elpaca<-dependents d))
            (when (or (eq d-status 'queued)
-                     (and (elpaca--throttled-p d)
-                          (when (= elpaca-queue-limit 1) ;; Dependency must be continued.
-                            (setf (elpaca<-statuses d)
-                                  (delq 'continued-dep (elpaca<-statuses d))))
-                          (progn (elpaca--signal d nil 'unthrottled) t))
+                     (and (elpaca--throttled-p d) (= elpaca-queue-limit 1) ;; Dependency must be continued.
+                          (progn (setf (elpaca<-statuses d) (delq 'continued-dep (elpaca<-statuses d)))
+                                 (elpaca--signal d nil 'unthrottled)
+                                 t))
                      (and (memq e-id (elpaca<-blockers d)) ;; Mono-repo dep blocked.
                           (equal (elpaca<-repo-dir e) (elpaca<-repo-dir d))
                           (eq d-status 'blocked)))
