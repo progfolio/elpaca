@@ -1182,7 +1182,8 @@ If RECACHE is non-nil, do not use cached dependencies."
                                  t))
                      (and (memq e-id (elpaca<-blockers d)) ;; Mono-repo dep blocked.
                           (equal (elpaca<-repo-dir e) (elpaca<-repo-dir d))
-                          (eq d-status 'blocked)))
+                          (progn (setf (elpaca<-blockers d) (delq e-id (elpaca<-blockers d)))
+                                 t)))
              (push d pending))
            (if (eq d-status 'finished)
                (cl-incf finished)
