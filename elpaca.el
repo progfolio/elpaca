@@ -1179,7 +1179,7 @@ If RECACHE is non-nil, do not use cached dependencies."
                      (and (elpaca--throttled-p d)
                           (when (= elpaca-queue-limit 1) ;; Dependency must be continued.
                             (setf (elpaca<-statuses d)
-                                  (remq 'continued-dep (elpaca<-statuses d))))
+                                  (delq 'continued-dep (elpaca<-statuses d))))
                           (progn (elpaca--signal d nil 'unthrottled) t))
                      (and (memq e-id (elpaca<-blockers d)) ;; Mono-repo dep blocked.
                           (equal (elpaca<-repo-dir e) (elpaca<-repo-dir d))
