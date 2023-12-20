@@ -118,6 +118,7 @@ Setting it too high causes prints fewer status updates."
                                 elpaca--checkout-ref
                                 elpaca--run-pre-build-commands
                                 elpaca--queue-dependencies
+                                elpaca--check-version
                                 elpaca--link-build-files
                                 elpaca--generate-autoloads-async
                                 elpaca--byte-compile
@@ -1090,6 +1091,67 @@ The keyword's value is expected to be one of the following:
                             (elpaca--directory-files-recursively file regexp))
                         (when (string-match-p regexp file) (expand-file-name file)))))))
 
+(defvar elpaca--tag-regexp "v\\(.*\\)")
+(defun elpaca--latest-tag (e)
+  "Return E's latest merged tag matching recipe tag regexp or `elpaca--tag-regexp'."
+  (when-let ((default-directory (elpaca<-repo-dir e))
+             (recipe (elpaca<-recipe e))
+             (regexp (or (plist-get recipe :version-regexp) elpaca--tag-regexp))
+             (tags (elpaca-with-process
+                       (elpaca-process-call "git" "tag" "--sort=-taggerdate" "--merged")
+                     (when (and success stdout) (split-string stdout "\n" 'omit-nulls)))))
+    (cl-loop for tag in tags when (string-match regexp tag) do
+             (cl-return (or (match-string 1 tag) (match-string 0 tag))))))
+
+(defun elpaca--date-version (e)
+  "Return date of E's checked out commit."
+  (let ((default-directory (elpaca<-repo-dir e)))
+    (elpaca-with-process
+        (elpaca-process-call "git" "log" "-n" "1" "--format=%cd" "--date=format:%Y%m%d.%s")
+      (if (not success) (elpaca--fail e stderr) (version-to-list (string-trim stdout))))))
+
+(defvar elpaca--core-date
+  (list (or (and emacs-build-time (string-to-number (format-time-string "%Y%m%d" emacs-build-time)))
+            (alist-get emacs-version '(("27.1" . 20200804) ("27.2" . 20210319) ("28.1" . 20220403)
+                                       ("28.2" . 20220912) ("29.1" . 20230730))
+                       nil nil #'equal)
+            (warn "Unable to determine elpaca--core-date"))))
+
+(defun elpaca--declared-version (e)
+  "Return E's version as listed in main file's metadata."
+  (when-let ((repo (elpaca<-repo-dir e))
+             (main (elpaca--main-file e)))
+    (with-current-buffer (get-buffer-create " *elpaca--dependencies*")
+      (setq default-directory repo)
+      (insert-file-contents-literally main nil nil nil 'replace)
+      (goto-char (point-min))
+      (if (string-suffix-p "-pkg.el" main)
+          (nth 2 (read (current-buffer)))
+        (when-let ((case-fold-search t)
+                   (regexp "^;+[ ]+\\(Package-\\)?\\(Version\\)[ ]*:[ ]*")
+                   ((re-search-forward regexp nil 'noerror)))
+          (buffer-substring-no-properties (point) (line-end-position)))))))
+
+(defun elpaca--check-version (e)
+  "Ensure E's dependency versions are met."
+  (cl-loop
+   initially (elpaca--signal e "Checking dependency versions")
+   with queued = (elpaca--queued)
+   for (id declared) in (elpaca--dependencies e)
+   for min = (version-to-list declared)
+   for datep = (> (car min) 10000) ;; Handle YYYYMMDD date version schema.
+   for dep = (elpaca-alist-get id queued)
+   for core = (unless dep (elpaca-alist-get id package--builtin-versions))
+   when (or (and core (version-list-< (if datep elpaca--core-date core) min))
+            (unless (memq id elpaca-ignored-dependencies)
+              (let ((version (if datep (elpaca--date-version dep)
+                               (version-to-list (or (elpaca--declared-version dep) "0")))))
+                (and (version-list-< version min)
+                     (let ((tag (elpaca--latest-tag dep)))
+                       (or (null tag) (version-list-< (version-to-list tag) min)))))))
+   do (cl-return (elpaca--fail e (format "Requires %s >= %s" id declared))))
+  (elpaca--continue-build e))
+
 (defun elpaca--main-file (e &optional recache)
   "Return E's main file name. Recompute when RECACHE non-nil."
   (or (and (not recache) (elpaca<-main e))
@@ -1152,20 +1214,15 @@ If RECACHE is non-nil, do not use cached dependencies."
   (unless (memq 'continued-dep (elpaca<-statuses e))
     (elpaca--continue-build e nil 'continued-dep)))
 
-;;@MAYBE: Package major version checks.
 (defun elpaca--queue-dependencies (e)
   "Queue E's dependencies."
   (cl-loop
-   named out
    initially (elpaca--signal e "Queueing Dependencies" 'blocked nil 1)
-   with externals =
-   (cl-loop for (id version) in (elpaca--dependencies e)
-            when (and (eq id 'emacs)
-                      (< emacs-major-version (truncate (string-to-number version))))
-            do (cl-return-from out (elpaca--fail e (concat "Requires Emacs " version)))
-            unless (memq id elpaca-ignored-dependencies) collect id)
-   with q = (and externals (elpaca--q e))
-   with qd = (and externals (elpaca--queued))
+   with externals = (or (cl-loop for (id . _) in (elpaca--dependencies e)
+                                 unless (memq id elpaca-ignored-dependencies) collect id)
+                        (cl-return (elpaca--continue-build e "No external dependencies" 'unblocked)))
+   with q = (elpaca--q e)
+   with qd = (elpaca--queued)
    with finished = 0
    with q-id = (elpaca<-queue-id e)
    with e-id = (elpaca<-id e)
@@ -1176,7 +1233,7 @@ If RECACHE is non-nil, do not use cached dependencies."
    for d-id = (elpaca<-id d)
    for d-status = (elpaca--status d)
    do (and queued (> (elpaca<-queue-id d) q-id)
-           (cl-return-from out (elpaca--fail d (format "dependent %S in past queue" e-id))))
+           (cl-return (elpaca--fail d (format "dependent %S in past queue" e-id))))
    (cl-pushnew e-id (elpaca<-dependents d))
    (when (or (eq d-status 'queued)
              (and (elpaca--throttled-p d) (= elpaca-queue-limit 1) ;; Dependency must be continued.
@@ -1193,8 +1250,7 @@ If RECACHE is non-nil, do not use cached dependencies."
      (cl-pushnew e-id (elpaca<-blocking d))
      (cl-pushnew d-id (elpaca<-blockers e)))
    finally do (if (= (length externals) finished)
-                  (elpaca--continue-build
-                   e (when (zerop finished) "No external dependencies") 'unblocked)
+                  (elpaca--continue-build e nil 'unblocked)
                 (mapc #'elpaca--continue-dependency pending))))
 
 (defun elpaca--remote-default-branch (remote)

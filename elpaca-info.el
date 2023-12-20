@@ -121,12 +121,9 @@
                          when vals concat (string-join vals "\n"))
                 ")"))))))
 
-(defun elpaca-info--buttons (ids)
-  "Return list of buttons from IDS."
-  (mapcar (lambda (id) (elpaca-ui--buttonize (symbol-name id)
-                                             (lambda (id) (elpaca-info--print id))
-                                             id))
-          ids))
+(defun elpaca-info--button (id)
+  "Return info button for package associated with ID."
+  (elpaca-ui--buttonize (symbol-name id) (lambda (id) (elpaca-info--print id)) id))
 
 (defun elpaca-info--files (files)
   "Return list of formatted FILES strings."
@@ -174,20 +171,31 @@
                  (elpaca-info--format-recipe (format "%S" (plist-get item :recipe)))))
              (elpaca-info--section "%s\n%s" "full recipe:" (elpaca-info--recipe item))
              (elpaca-info--section "%s %s" "dependencies:"
-               (if-let ((ds (remq 'emacs (ignore-errors (elpaca-dependencies id)))))
-                   (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
+               (if-let ((deps (ignore-errors (elpaca--dependencies (elpaca-get id) t))))
+                   (concat "\n"
+                           (substring
+                            (cl-loop
+                             with max = (cl-loop for (id . _) in deps maximize (length (symbol-name id)))
+                             for (id . min) in deps concat
+                             (format (concat "  %" (number-to-string (- max)) "s >= %s\n")
+                                     (if (eq id 'emacs) id (elpaca-info--button id))
+                                     (car min)))
+                            0 -1))
                  (if on-disk-p "nil"
                    (if (memq item (cl-set-difference elpaca-ignored-dependencies '(emacs elpaca)))
                        "built-in" "?"))))
              (elpaca-info--section "%s %s" "dependents:"
                (if-let ((ds (remq 'emacs (elpaca--dependents id 'noerror))))
-                   (concat i (string-join (elpaca-info--buttons (cl-sort ds #'string<)) i))
+                   (concat i (mapconcat #'elpaca-info--button (cl-sort ds #'string<) i))
                  (if on-disk-p "nil" "?")))
-             (when e (elpaca-info--section "%s %s" "commit: "
-                       (let ((default-directory (elpaca<-repo-dir e)))
-                         (string-trim (or (ignore-errors (elpaca-process-output
-                                                          "git" "rev-parse"  "--short" "HEAD"))
-                                          "")))))
+             (when e (elpaca-info--section "%s %s" "version:"
+                       (concat (when-let ((default-directory (elpaca<-repo-dir e))
+                                          (version (elpaca--declared-version e)))
+                                 (string-trim version))
+                               " "
+                               (when-let ((commit (ignore-errors (elpaca-process-output
+                                                                  "git" "rev-parse"  "--short" "HEAD"))))
+                                 (string-trim commit)))))
              (when-let ((e) (statuses (elpaca<-statuses e)))
                (elpaca-info--section "%s\n  %S" "statuses:" statuses))
              (when-let ((e) (files (ignore-errors (elpaca--files e))))
