@@ -1655,6 +1655,7 @@ do not confirm before deleting package and DEPS."
   (let ((q (elpaca--q e)))
     (setf (elpaca<-statuses e) nil
           (elpaca<-builtp e) nil
+          (elpaca<-dependencies e) nil
           (elpaca<-queue-time e) (current-time))
     (when (> (elpaca-q<-processed q) 0) (cl-decf (elpaca-q<-processed q)))
     (setf (elpaca-q<-status q) 'incomplete)))
