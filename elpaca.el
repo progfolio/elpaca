@@ -474,7 +474,7 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
                       (:conc-name elpaca<-))
   "Order for queued processing."
   id package order statuses
-  repo-dir build-dir mono-repo
+  repo-dir build-dir mono-repo main
   files build-steps recipe blocking blockers
   dependencies dependents
   (queue-id (1- (length elpaca--queues)))
@@ -1090,31 +1090,39 @@ The keyword's value is expected to be one of the following:
                             (elpaca--directory-files-recursively file regexp))
                         (when (string-match-p regexp file) (expand-file-name file)))))))
 
+(defun elpaca--main-file (e &optional recache)
+  "Return E's main file name. Recompute when RECACHE non-nil."
+  (or (and (not recache) (elpaca<-main e))
+      (setf (elpaca<-main e)
+            (if-let ((recipe (elpaca<-recipe e))
+                     (repo (elpaca<-repo-dir e))
+                     ((or (file-exists-p repo) (error "Repository not on disk")))
+                     (default-directory repo)
+                     (declared (plist-member recipe :main)))
+                (cadr declared)
+              (let* ((package (file-name-sans-extension (elpaca<-package e)))
+                     (filename (concat package ".el"))
+                     (regexp (concat "\\`" filename "//'")))
+                (or (cl-loop for name in (list (concat package "-pkg.el")
+                                               (concat "./lisp/" package "-pkg.el")
+                                               filename
+                                               (concat "./lisp/" filename)
+                                               (concat "./elisp/" filename))
+                             when (file-exists-p name) return name)
+                    (car (directory-files repo nil regexp))
+                    (car (elpaca--directory-files-recursively repo regexp))
+                    ;; Best guess if there is no file matching the package name...
+                    (car (directory-files repo nil "\\.el\\'" 'nosort))
+                    (error "Unable to find main elisp file for %S" package)))))))
+
 (defun elpaca--dependencies (e &optional recache)
   "Return a list of E's declared dependencies.
 If RECACHE is non-nil, do not use cached dependencies."
   (let ((cache (elpaca<-dependencies e)))
     (if-let (((or recache (not cache)))
-             (recipe (elpaca<-recipe e))
-             (declared (if-let ((declared (plist-member recipe :main)))
-                           (cadr declared) 'undeclared))
              (repo (elpaca<-repo-dir e))
-             (default-directory repo)
-             ((or (file-exists-p repo) (error "Repository not on disk")))
              (package (file-name-sans-extension (elpaca<-package e)))
-             (name (concat package ".el"))
-             (regexp (concat "^" name "$"))
-             (main (or (cl-some (lambda (name) (and (file-exists-p name) name))
-                                (or (and (stringp declared) (list declared))
-                                    (list (concat package "-pkg.el")
-                                          name
-                                          (concat "./lisp/" name)
-                                          (concat "./elisp/" name))))
-                       (car (directory-files repo nil regexp))
-                       (car (elpaca--directory-files-recursively repo regexp))
-                       ;; Best guess if there is no file matching the package name...
-                       (car (directory-files repo nil "\\.el\\'" 'nosort))
-                       (error "Unable to find main elisp file for %S" package))))
+             (main (elpaca--main-file e)))
         (let ((deps
                (condition-case err
                    (with-current-buffer (get-buffer-create " *elpaca--dependencies*")
