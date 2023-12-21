@@ -1536,7 +1536,7 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
              (user-error "No menu item")))
          t))
   (if (not interactive)
-      (elpaca--queue (elpaca--first order))
+      (elpaca--queue order)
     (elpaca--maybe-log)
     (elpaca-queue
      (eval `(elpaca ,order
