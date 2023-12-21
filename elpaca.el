@@ -1132,6 +1132,7 @@ The keyword's value is expected to be one of the following:
                    ((re-search-forward regexp nil 'noerror)))
           (buffer-substring-no-properties (point) (line-end-position)))))))
 
+(defconst elpaca--date-version-schema-min 10000000)
 (defun elpaca--check-version (e)
   "Ensure E's dependency versions are met."
   (cl-loop
@@ -1139,7 +1140,7 @@ The keyword's value is expected to be one of the following:
    with queued = (elpaca--queued)
    for (id declared) in (elpaca--dependencies e)
    for min = (version-to-list declared)
-   for datep = (> (car min) 10000) ;; Handle YYYYMMDD date version schema.
+   for datep = (> (car min) elpaca--date-version-schema-min) ;; YYYYMMDD version.
    for dep = (elpaca-alist-get id queued)
    for core = (unless dep (elpaca-alist-get id package--builtin-versions))
    when (or (and core (version-list-< (if datep elpaca--core-date core) min))
