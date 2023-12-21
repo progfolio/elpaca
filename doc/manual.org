@@ -348,7 +348,7 @@ This is a per-recipe way of setting =elpaca-menu-functions=.
 :PROPERTIES:
 :CUSTOM_ID: recipe-keyword-pre-build
 :END:
-Commands and/or elisp evaluated prior to =:build= steps.
+Commands and/or elisp evaluated prior to =:build= steps with the package repository as =default-directory=.
 Each command is either an elisp form or a list of strings executed in a shell context of the form:
 
 #+begin_src emacs-lisp :lexical t :eval never

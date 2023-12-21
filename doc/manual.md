@@ -493,7 +493,7 @@ The value may also be a menu symbol or list of menu symbols. This is a per-recip
 
 #### :pre-build
 
-Commands and/or elisp evaluated prior to `:build` steps. Each command is either an elisp form or a list of strings executed in a shell context of the form:
+Commands and/or elisp evaluated prior to `:build` steps with the package repository as `default-directory`. Each command is either an elisp form or a list of strings executed in a shell context of the form:
 
 ```emacs-lisp
 ("executable" "argument"...)
