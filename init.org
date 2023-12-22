@@ -952,7 +952,7 @@ https://github.com/progfolio/doct
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package doct
-  :elpaca (doct :branch "development" :protocol ssh :depth nil)
+  :elpaca (doct :branch "development" :protocol ssh :depth nil :autoloads nil)
   :commands (doct))
 #+end_src
 ** doom-modeline
