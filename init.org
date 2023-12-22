@@ -1468,6 +1468,7 @@ Helm integration for org headlines and keywords.
 Necessary for completion of multiple tags with Helm.
 #+begin_src emacs-lisp :lexical t
 (use-package helm-org
+  :elpaca (:pin t)
   :after (helm org)
   :config
   (add-to-list 'helm-completing-read-handlers-alist '(org-set-tags-command . helm-org-completing-read-tags))
