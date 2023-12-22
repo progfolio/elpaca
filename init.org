@@ -2700,7 +2700,7 @@ emacsclient --create-frame \
     "sr" 'org-clean-refile))
 #+end_src
 ** org-contrib
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :tangle no
 (use-package org-contrib)
 #+end_src
 ** org-fancy-priorities
