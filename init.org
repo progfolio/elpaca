@@ -1755,7 +1755,7 @@ An emacs-based e-mail client which uses mu as its back-end.
 
 https://www.djcbsoftware.nl/code/mu/mu4e.html
 #+end_quote
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp :lexical t :tangle yes
 (use-package mu4e
   :elpaca `(mu4e :host github :files ("mu4e/*.el" "build/mu4e/mu4e-meta.el" "build/mu4e/mu4e-config.el" "build/mu4e/mu4e.info") :repo "djcb/mu"
                  :main "mu4e/mu4e.el"
