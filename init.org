@@ -1291,7 +1291,8 @@ https://www.flycheck.org/en/latest/
     "ff" '((lambda () (interactive) (flymake-mode 'toggle)) :which-key "toggle flymake-mode")
     "fn" 'flymake-goto-next-error
     "fp" 'flymake-goto-prev-error)
-  :hook (flymake-mode . flymake-show-project-diagnostics)
+  :hook (flymake-mode . (lambda () (or (ignore-errors flymake-show-project-diagnostics)
+                                       (flymake-show-buffer-diagnostics))))
   :config
   (add-to-list 'display-buffer-alist
                '("\\`\\*Flymake diagnostics.*?\\*\\'"
