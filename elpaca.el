@@ -1555,7 +1555,6 @@ If ORDER is `nil`, defer BODY until orders have been processed."
 (defcustom elpaca-wait-interval 0.01 "Seconds between `elpaca-wait' status checks."
   :type 'number)
 
-(defun elpaca--dont-clear-message () "Block message clearing." 'dont-clear-message)
 ;;;###autoload
 (defun elpaca-wait ()
   "Block until currently queued orders are processed.
