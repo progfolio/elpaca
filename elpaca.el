@@ -1570,9 +1570,8 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
         (while (not (eq (elpaca-q<-status q) 'complete))
           (discard-input)
           (sit-for elpaca-wait-interval))
-      (quit (mapcar (lambda (it) (let ((e (cdr it))) (unless (eq (elpaca--status e) 'finished)
-                                                       (elpaca--fail e "User quit"))))
-                    (elpaca-q<-elpacas q))))
+      (quit (cl-loop for (_ . e) in (elpaca-q<-elpacas q) do
+                     (or (eq (elpaca--status e) 'finished) (elpaca--fail e "User quit")))))
     (elpaca-split-queue)
     (setq elpaca--waiting nil mode-line-process nil)))
 
