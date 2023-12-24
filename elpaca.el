@@ -1093,9 +1093,9 @@ The keyword's value is expected to be one of the following:
              (regexp (or (plist-get recipe :version-regexp) elpaca--tag-regexp))
              (tags (elpaca-with-process
                        (elpaca-process-call "git" "tag" "--sort=-taggerdate" "--merged")
-                     (when (and success stdout) (split-string stdout "\n" 'omit-nulls)))))
-    (cl-loop for tag in tags when (string-match regexp tag) do
-             (cl-return (or (match-string 1 tag) (match-string 0 tag))))))
+                     (and success stdout (split-string stdout "\n" 'omit-nulls)))))
+    (cl-loop for tag in tags when (string-match regexp tag)
+             return (or (match-string 1 tag) (match-string 0 tag)))))
 
 (defun elpaca--date-version (e)
   "Return date of E's checked out commit."
