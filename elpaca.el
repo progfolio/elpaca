@@ -489,14 +489,10 @@ If N is nil return a list of all queued elpacas."
   (if n (elpaca-q<-elpacas (nth n elpaca--queues))
     (cl-loop for queue in elpaca--queues append (elpaca-q<-elpacas queue))))
 
-(defsubst elpaca--mono-repo (id repo-dir)
-  "Return previously queued E with REPO-DIR other than ID."
-  (cl-some (lambda (queued)
-             (and-let* ((e (cdr queued))
-                        ((not (eq (elpaca<-id e) id)))
-                        ((equal repo-dir (elpaca<-repo-dir e)))
-                        e)))
-           (reverse (elpaca--queued))))
+(defsubst elpaca--mono-repo (id repo)
+  "Return previously queued E with REPO other than ID."
+  (cl-loop for (_ . e) in (reverse (elpaca--queued)) thereis
+           (and (not (eq (elpaca<-id e) id)) (equal repo (elpaca<-repo-dir e)) e)))
 
 (defun elpaca--build-steps (recipe &optional builtp clonedp mono-repo)
   "Return list of build functions for RECIPE.
@@ -769,9 +765,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
   (let* ((q (elpaca--q e))
          (es (elpaca-q<-elpacas q)))
     (when-let ((elpaca-queue-limit)
-               (next (cl-some (lambda (qd) (let ((e (cdr qd)))
-                                             (and (elpaca--throttled-p e) e)))
-                              es)))
+               (next (cl-loop for (_ . e) in es thereis (and (elpaca--throttled-p e) e))))
       (elpaca--signal next nil 'unthrottled)
       (elpaca--continue-build next))
     (when (= (cl-incf (elpaca-q<-processed q)) (length es)) (elpaca--finalize-queue q))))
@@ -1567,10 +1561,10 @@ If ORDER is `nil`, defer BODY until orders have been processed."
 (defun elpaca-wait ()
   "Block until currently queued orders are processed.
 When quit with \\[keyboard-quit], running sub-processes are not stopped."
-  (when-let ((q (cl-some (lambda (q) (and (eq (elpaca-q<-status q) 'incomplete)
-                                          (or (elpaca-q<-elpacas q) (elpaca-q<-forms q))
-                                          q))
-                         elpaca--queues)))
+  (when-let ((q (cl-loop for q in elpaca--queues thereis
+                         (and (eq (elpaca-q<-status q) 'incomplete)
+                              (or (elpaca-q<-elpacas q) (elpaca-q<-forms q))
+                              q))))
     (setq elpaca--waiting t mode-line-process "elpaca-wait...")
     (elpaca-process-queues)
     (condition-case nil

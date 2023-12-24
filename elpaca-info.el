@@ -105,11 +105,10 @@
        unless (or (eq prop :package) (and (eq prop :source) (null val)))
        do (push (format " %s %S" prop
                         (if (equal val elpaca-default-files-directive) '(:defaults) val))
-                (alist-get (cl-some (lambda (source)
-                                      (when-let ((member (plist-member (cdr source) prop))
-                                                 ((equal (cadr member) val)))
-                                        (car source)))
-                                    sources)
+                (alist-get (cl-loop for source in sources thereis
+                                    (when-let ((member (plist-member (cdr source) prop))
+                                               ((equal (cadr member) val)))
+                                      (car source)))
                            lookup))
        finally return
        (elpaca-info--format-recipe

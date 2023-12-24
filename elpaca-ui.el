@@ -378,7 +378,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
 ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
   (if-let ((name (propertize (aref cols 0) 'display nil))
            (namesym (intern name))
-           (found (cl-some (lambda (it) (and (eq namesym (car it)) it)) elpaca-ui--print-cache))
+           (found (cl-loop for it in elpaca-ui--print-cache thereis (and (eq namesym (car it)) it)))
            (target (cdr found))
            (result (if (elpaca-p target) ;;not marked
                        (if elpaca-ui--want-faces
