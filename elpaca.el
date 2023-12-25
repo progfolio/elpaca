@@ -1123,7 +1123,8 @@ The keyword's value is expected to be one of the following:
         (when-let ((case-fold-search t)
                    (regexp "^;+[ ]+\\(Package-\\)?\\(Version\\)[ ]*:[ ]*")
                    ((re-search-forward regexp nil 'noerror)))
-          (buffer-substring-no-properties (point) (line-end-position)))))))
+          ;; Remove Windows \r before newline. See: #218
+          (string-trim (buffer-substring-no-properties (point) (line-end-position))))))))
 
 (defconst elpaca--date-version-schema-min 10000000)
 (defun elpaca--check-version (e)
