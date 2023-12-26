@@ -620,7 +620,7 @@ This is a per-recipe way of setting @samp{elpaca-menu-functions}.
 @node pre-build
 @subsubsection :pre-build
 
-Commands and/or elisp evaluated prior to @samp{:build} steps.
+Commands and/or elisp evaluated prior to @samp{:build} steps with the package repository as @samp{default-directory}.
 Each command is either an elisp form or a list of strings executed in a shell context of the form:
 
 @lisp
