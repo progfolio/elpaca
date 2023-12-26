@@ -1146,7 +1146,7 @@ The keyword's value is expected to be one of the following:
                 (and (version-list-< version min)
                      (let ((tag (elpaca--latest-tag dep)))
                        (or (null tag) (version-list-< (version-to-list tag) min)))))))
-   do (cl-return (elpaca--fail e (format "Requires %s >= %s" id declared))))
+   do (cl-return (elpaca--fail e (format "Requires %s minimum version: %s" id declared))))
   (elpaca--continue-build e))
 
 (defun elpaca--main-file (e &optional recache)
