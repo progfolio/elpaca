@@ -1111,20 +1111,22 @@ The keyword's value is expected to be one of the following:
             (warn "Unable to determine elpaca--core-date"))))
 
 (defun elpaca--declared-version (e)
-  "Return E's version as listed in main file's metadata."
-  (when-let ((repo (elpaca<-repo-dir e))
-             (main (elpaca--main-file e)))
-    (with-current-buffer (get-buffer-create " *elpaca--dependencies*")
-      (setq default-directory repo)
-      (insert-file-contents-literally main nil nil nil 'replace)
-      (goto-char (point-min))
-      (if (string-suffix-p "-pkg.el" main)
-          (nth 2 (read (current-buffer)))
-        (when-let ((case-fold-search t)
-                   (regexp "^;+[ ]+\\(Package-\\)?\\(Version\\)[ ]*:[ ]*")
-                   ((re-search-forward regexp nil 'noerror)))
-          ;; Remove Windows \r before newline. See: #218
-          (string-trim (buffer-substring-no-properties (point) (line-end-position))))))))
+  "Return E's version as declared in recipe or main file's metadata."
+  (if-let ((declared (plist-get (elpaca<-recipe e) :version)))
+      (funcall declared e)
+    (when-let ((repo (elpaca<-repo-dir e))
+               (main (elpaca--main-file e)))
+      (with-current-buffer (get-buffer-create " *elpaca--dependencies*")
+        (setq default-directory repo)
+        (insert-file-contents-literally main nil nil nil 'replace)
+        (goto-char (point-min))
+        (if (string-suffix-p "-pkg.el" main)
+            (nth 2 (read (current-buffer)))
+          (when-let ((case-fold-search t)
+                     (regexp "^;+[ ]+\\(Package-\\)?\\(Version\\)[ ]*:[ ]*")
+                     ((re-search-forward regexp nil 'noerror)))
+            ;; Remove Windows \r before newline. See: #218
+            (string-trim (buffer-substring-no-properties (point) (line-end-position)))))))))
 
 (defconst elpaca--date-version-schema-min 10000000)
 (defun elpaca--check-version (e)

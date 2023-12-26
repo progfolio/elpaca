@@ -21,6 +21,7 @@
       - [:pre-build](#recipe-keyword-pre-build)
       - [:post-build](#recipe-keyword-post-build)
       - [:autoloads](#recipe-keyword-autoloads)
+      - [:version](#recipe-keyword-version)
       - [Inheritance precedence](#inheritance-precedence)
       - [elpaca-recipe-functions](#elpaca-recipe-functions)
     - [Menus](#menus)
@@ -522,6 +523,17 @@ The same as `:pre-build`, but run just before activating a package.
 #### :autoloads
 
 The name of the file the package&rsquo;s autoload file. When `nil`, autoload loading and generation are disabled for the package. When `t`, the default autoload file is generated/loaded (`PACKAGE-NAME-autoloads.el`). The value may also be a string which is expanded relative to the package&rsquo;s build directory. e.g. `"org-loaddefs.el"`.
+
+
+<a id="recipe-keyword-version"></a>
+
+#### :version
+
+A function which must accept an Elpaca struct as its sole argument. It must return a version string understood by `version-to-list`. e.g.
+
+```emacs-lisp
+(elpaca (auctex :version (lambda (_) (require 'tex-site) AUCTeX-version)))
+```
 
 
 <a id="inheritance-precedence"></a>

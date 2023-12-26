@@ -90,6 +90,7 @@ Recipes
 * pre-build::
 * post-build::
 * autoloads::
+* version::
 * Inheritance precedence::
 * elpaca-recipe-functions::
 
@@ -401,6 +402,7 @@ It is a list of the form:
 * pre-build::
 * post-build::
 * autoloads::
+* version::
 * Inheritance precedence::
 * elpaca-recipe-functions::
 @end menu
@@ -650,6 +652,17 @@ When @samp{nil}, autoload loading and generation are disabled for the package.
 When @samp{t}, the default autoload file is generated/loaded (@samp{PACKAGE-NAME-autoloads.el}).
 The value may also be a string which is expanded relative to the package's build directory.
 e.g. @samp{"org-loaddefs.el"}.
+
+@node version
+@subsubsection :version
+
+A function which must accept an Elpaca struct as its sole argument.
+It must return a version string understood by @samp{version-to-list}.
+e.g.
+
+@lisp
+(elpaca (auctex :version (lambda (_) (require 'tex-site) AUCTeX-version)))
+@end lisp
 
 @node Inheritance precedence
 @subsubsection Inheritance precedence

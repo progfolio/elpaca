@@ -381,6 +381,19 @@ When =t=, the default autoload file is generated/loaded (=PACKAGE-NAME-autoloads
 The value may also be a string which is expanded relative to the package's build directory.
 e.g. ="org-loaddefs.el"=.
 
+**** :version
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-version
+:END:
+
+A function which must accept an Elpaca struct as its sole argument.
+It must return a version string understood by =version-to-list=.
+e.g.
+
+#+begin_src emacs-lisp :lexical t :eval never
+(elpaca (auctex :version (lambda (_) (require 'tex-site) AUCTeX-version)))
+#+end_src
+
 **** Inheritance precedence
 :PROPERTIES:
 :CUSTOM_ID: inheritance-precedence
