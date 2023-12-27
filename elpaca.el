@@ -1078,7 +1078,7 @@ The keyword's value is expected to be one of the following:
   (let ((default-directory (expand-file-name directory)))
     (flatten-tree
      (cl-loop for file in (directory-files ".")
-              unless (member file '("." ".." ".git"))
+              unless (string-match-p "\\(?:\\`\\.\\)" file)
               collect (if (file-directory-p file)
                           (unless (file-symlink-p file)
                             (elpaca--directory-files-recursively file regexp))
