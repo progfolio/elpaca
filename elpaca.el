@@ -1925,13 +1925,20 @@ If INTERACTIVE is non-nil, process queues."
                   do (push item seen))))))
 
 ;;;###autoload
-(defmacro elpaca-with-dir (id type &rest body)
-  "Evaluate BODY with E matching ID's `default-directory' bound.
+(defmacro elpaca-with-dir (e-or-id type &rest body)
+  "Evaluate BODY with E-OR-ID's `default-directory' bound to TYPE.
 TYPE is either `repo` or `build`, for repo or build directory."
   (declare (indent 2) (debug t))
-  `(let* ((e (elpaca-get ,id))
-          (default-directory (,(intern (format "elpaca<-%s-dir" (symbol-name type))) e)))
-     ,@body))
+  (let ((idsym (make-symbol "e-or-id")))
+    `(let* ((,idsym ,e-or-id)
+            (e (if (elpaca-p ,idsym)
+                   ,idsym
+                 (or (elpaca-get ,idsym) (error "Elpaca with ID %s not queued" ,idsym))))
+            (default-directory (,(intern (format "elpaca<-%s-dir" (symbol-name type))) e)))
+       ,@body)))
+
+(defmacro elpaca-with-repo (id &rest body) `(elpaca-with-dir ,id repo ,@body))
+(defmacro elpaca-with-build (id &rest body) `(elpaca-with-dir ,id build ,@body))
 
 (declare-function elpaca-ui-current-package "elpaca-ui")
 ;;;###autoload
