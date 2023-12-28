@@ -1109,7 +1109,7 @@ The keyword's value is expected to be one of the following:
                                        ("28.2" . 20220912) ("29.1" . 20230730))
                        nil nil #'equal)
             (and (warn "Unable to determine elpaca-core-date") -1)))
-  "YYYYMMDD string representing build date of built-in elisp packages.")
+  "List of form (N) where N is a YYYYMMDD integer build date of built-in elisp packages.")
 
 (defun elpaca--declared-version (e)
   "Return E's version as declared in recipe or main file's metadata."
