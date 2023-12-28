@@ -39,7 +39,7 @@
 (defvar Info-directory-list)
 (defconst elpaca--inactive-states '(blocked finished failed))
 (defvar elpaca-installer-version -1)
-(or noninteractive (= elpaca-installer-version 0.6) (warn "Elpaca installer version mismatch"))
+(or noninteractive (= elpaca-installer-version 0.7) (warn "Elpaca installer version mismatch"))
 (or (executable-find "git") (error "Elpaca unable to find git executable"))
 (and (not after-init-time) load-file-name (featurep 'package) (warn "Package.el loaded before Elpaca"))
 
@@ -172,7 +172,7 @@ This hook is run via `run-hook-with-args-until-success'."
                                             :repo "https://github.com/progfolio/elpaca.git"
                                             :files '("extensions/elpaca-use-package.el")
                                             :main "extensions/elpaca-use-package.el"
-                                            :build '(:not elpaca--compile-info))))))))
+                                            :build '((remq 'elpaca--compile-info (elpaca-build-steps e))))))))))
 
 (defcustom elpaca-menu-functions
   '( elpaca-menu-extensions elpaca-menu-org elpaca-menu-melpa elpaca-menu-non-gnu-devel-elpa
@@ -493,24 +493,37 @@ If N is nil return a list of all queued elpacas."
   (cl-loop for (_ . e) in (reverse (elpaca--queued)) thereis
            (and (not (eq (elpaca<-id e) id)) (equal repo (elpaca<-repo-dir e)) e)))
 
-(defun elpaca--build-steps (recipe &optional builtp clonedp mono-repo)
-  "Return list of build functions for RECIPE.
-BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
-  (when-let ((defaults (if builtp elpaca--pre-built-steps elpaca-build-steps))
-             (steps (let* ((build (plist-member recipe :build))
-                           (steps (cadr build))
-                           (removep (and (eq (car-safe steps) :not) (pop steps))))
-                      (cond
-                       ((or (not build) (eq steps t)) defaults)
-                       (removep (cl-set-difference defaults steps))
-                       ((listp steps) steps)))))
-    (if builtp
-        steps
-      (when mono-repo
-        (setq steps
-              (cl-set-difference steps '(elpaca--clone elpaca--configure-remotes elpaca--checkout-ref))))
-      (when clonedp (setq steps (delq 'elpaca--clone steps)))
-      steps)))
+(defun elpaca-build-steps (e &optional recipep rebuildp)
+  "Return list of build functions for E.
+If RECIPEP is non-nil, consider recipe's :build keyword.
+If REBUILDP is non-nil, consider E unbuilt when determining steps."
+  (when-let ((e)
+             (recipe (elpaca<-recipe e)))
+    (if-let ((recipep)
+             (declared (plist-member recipe :build)))
+        (let ((val (cadr declared))) (cond ((functionp val) (funcall val e))
+                                           ((and (consp val) (consp (car val)))
+                                            (funcall `(lambda (e) ,(car val)) e))
+                                           (t val)))
+      (let* ((build-dir (elpaca<-build-dir e))
+             (repo-dir (elpaca<-repo-dir e))
+             (clonedp (and repo-dir (file-exists-p repo-dir)))
+             (builtp (and (not rebuildp) clonedp build-dir (file-exists-p build-dir)))
+             (mono-repo (when-let (((not builtp))
+                                   (id (elpaca<-id e))
+                                   (m (elpaca--mono-repo id repo-dir)))
+                          (when (and (eq (elpaca<-queue-id m) (elpaca-q<-id (car elpaca--queues)))
+                                     (not (memq 'ref-checked-out (elpaca<-statuses m))))
+                            (elpaca--signal e (concat "Waiting on monorepo " repo-dir) 'blocked)
+                            (push (elpaca<-id m) (elpaca<-blockers e))
+                            (cl-pushnew id (elpaca<-blocking m)))
+                          e))
+             (steps (if builtp elpaca--pre-built-steps elpaca-build-steps)))
+        (when mono-repo
+          (setq steps (cl-set-difference steps '( elpaca--clone elpaca--configure-remotes
+                                                  elpaca--checkout-ref))))
+        (when clonedp (setq steps (delq 'elpaca--clone steps)))
+        steps))))
 
 (declare-function elpaca-log-defaults "elpaca-log")
 (declare-function elpaca-log-initial-queues "elpaca-log")
@@ -538,37 +551,34 @@ The first function, if any, which returns non-nil is used." :type 'hook)
 
 (defun elpaca<-create (order)
   "Create a new elpaca struct from ORDER."
-  (let* ((status 'queued)
-         (info "Package queued")
-         (id (elpaca--first order))
-         (recipe (condition-case-unless-debug err (elpaca-recipe order)
-                   ((error) (setq status 'struct-failed
-                                  info (format "No recipe: %S" err))
-                    nil)))
-         (repo-dir (and recipe (condition-case-unless-debug err (elpaca-repo-dir recipe)
-                                 ((error) (setq status 'struct-failed
-                                                info (format "Unable to determine repo dir: %S" err))
-                                  nil))))
-         (build-dir (and recipe (elpaca-build-dir recipe)))
-         (clonedp (and repo-dir (file-exists-p repo-dir)))
-         (builtp (and clonedp build-dir (file-exists-p build-dir)))
-         (blockers nil)
-         (mono-repo (when-let (((not builtp))
-                               (e (elpaca--mono-repo id repo-dir)))
-                      (when (and (eq (elpaca<-queue-id e) (elpaca-q<-id (car elpaca--queues)))
-                                 (not (memq 'ref-checked-out (elpaca<-statuses e))))
-                        (setq status 'blocked info (concat "Waiting on monorepo " repo-dir))
-                        (push (elpaca<-id e) blockers)
-                        (cl-pushnew id (elpaca<-blocking e)))
-                      e))
-         (build-steps (elpaca--build-steps recipe builtp clonedp mono-repo)))
-    (when (memq id elpaca-ignored-dependencies)
-      (setq elpaca-ignored-dependencies (delq id elpaca-ignored-dependencies)))
-    (elpaca<--create
-     :id id :package (symbol-name id) :order order :statuses (list status)
-     :repo-dir repo-dir :build-dir build-dir :mono-repo mono-repo
-     :build-steps build-steps :recipe recipe :builtp builtp :blockers blockers
-     :log (list (list status nil info)))))
+  (let* ((id (elpaca--first order))
+         (package (symbol-name id)))
+    (condition-case-unless-debug err
+        (let* ((status 'queued)
+               (info "order queued")
+               (recipe (elpaca-recipe order))
+               (repo-dir (elpaca-repo-dir recipe))
+               (build-dir (and recipe (elpaca-build-dir recipe)))
+               (clonedp (and repo-dir (file-exists-p repo-dir)))
+               (builtp (and clonedp build-dir (file-exists-p build-dir)))
+               (blockers nil)
+               (mono-repo (when-let (((not builtp))
+                                     (e (elpaca--mono-repo id repo-dir)))
+                            (when (and (eq (elpaca<-queue-id e) (elpaca-q<-id (car elpaca--queues)))
+                                       (not (memq 'ref-checked-out (elpaca<-statuses e))))
+                              (setq status 'blocked info (concat "Waiting on monorepo " repo-dir))
+                              (push (elpaca<-id e) blockers)
+                              (cl-pushnew id (elpaca<-blocking e)))
+                            e))
+               (e (elpaca<--create
+                   :id id :package package :order order :statuses (list status)
+                   :repo-dir repo-dir :build-dir build-dir :mono-repo mono-repo
+                   :recipe recipe :builtp builtp :blockers blockers)))
+          (setf (elpaca<-build-steps e) (elpaca-build-steps e t))
+          (elpaca--signal e info status)
+          e)
+      ((error) (elpaca<--create :id id :package package :statuses '(struct-failed)
+                                :log (list `(struct-failed nil ,(format "%S" err))))))))
 
 (defsubst elpaca--status (e) "Return E's status." (car (elpaca<-statuses e)))
 
@@ -1727,13 +1737,12 @@ With a prefix argument, rebuild current file's package or prompt if none found."
     (when (eq (elpaca--status e) 'finished)
       ;;@MAYBE: remove Info/load-path entries?
       (setf (elpaca<-build-steps e)
-            (cl-set-difference (elpaca--build-steps (elpaca<-recipe e))
-                               '(elpaca--clone
-                                 elpaca--configure-remotes
-                                 elpaca--fetch
-                                 elpaca--checkout-ref
-                                 elpaca--queue-dependencies
-                                 elpaca--activate-package))))
+            (cl-set-difference (elpaca-build-steps e t t) '(elpaca--clone
+                                                            elpaca--configure-remotes
+                                                            elpaca--fetch
+                                                            elpaca--checkout-ref
+                                                            elpaca--queue-dependencies
+                                                            elpaca--activate-package))))
     (elpaca--unprocess e)
     (elpaca--signal e "Rebuilding" 'queued)
     (setf elpaca-cache-autoloads nil (elpaca<-files e) nil)
@@ -1837,13 +1846,11 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
               (list #'elpaca--announce-pin)
             `(,@(when fetch '(elpaca--fetch elpaca--log-updates))
               elpaca--merge
-              ,@(cl-set-difference
-                 (elpaca--build-steps recipe nil 'cloned (elpaca<-mono-repo e))
-                 '(elpaca--configure-remotes
-                   elpaca--fetch
-                   elpaca--checkout-ref
-                   elpaca--queue-dependencies
-                   elpaca--activate-package))))
+              ,@(cl-set-difference (elpaca-build-steps e t) '(elpaca--configure-remotes
+                                                              elpaca--fetch
+                                                              elpaca--checkout-ref
+                                                              elpaca--queue-dependencies
+                                                              elpaca--activate-package))))
           (elpaca<-statuses e) (list 'queued))
     (when interactive
       (elpaca--maybe-log)
