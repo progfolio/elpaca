@@ -1103,12 +1103,13 @@ The keyword's value is expected to be one of the following:
         (elpaca-process-call "git" "log" "-n" "1" "--format=%cd" "--date=format:%Y%m%d.%s")
       (if (not success) (elpaca--fail e stderr) (version-to-list (string-trim stdout))))))
 
-(defvar elpaca--core-date
+(defvar elpaca-core-date
   (list (or (and emacs-build-time (string-to-number (format-time-string "%Y%m%d" emacs-build-time)))
             (alist-get emacs-version '(("27.1" . 20200804) ("27.2" . 20210319) ("28.1" . 20220403)
                                        ("28.2" . 20220912) ("29.1" . 20230730))
                        nil nil #'equal)
-            (warn "Unable to determine elpaca--core-date"))))
+            (and (warn "Unable to determine elpaca-core-date") -1)))
+  "YYYYMMDD string representing build date of built-in elisp packages.")
 
 (defun elpaca--declared-version (e)
   "Return E's version as declared in recipe or main file's metadata."
@@ -1139,7 +1140,7 @@ The keyword's value is expected to be one of the following:
    for datep = (> (car min) elpaca--date-version-schema-min) ;; YYYYMMDD version.
    for dep = (elpaca-alist-get id queued)
    for core = (unless dep (elpaca-alist-get id package--builtin-versions))
-   when (or (and core (version-list-< (if datep elpaca--core-date core) min))
+   when (or (and core (version-list-< (if datep elpaca-core-date core) min))
             (unless (memq id elpaca-ignored-dependencies)
               (let ((version (if datep (elpaca--date-version dep)
                                (version-to-list (or (elpaca--declared-version dep) "0")))))
