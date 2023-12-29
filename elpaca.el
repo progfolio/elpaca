@@ -1161,12 +1161,11 @@ The keyword's value is expected to be one of the following:
                      (declared (plist-member recipe :main)))
                 (cadr declared)
               (let* ((package (file-name-sans-extension (elpaca<-package e)))
-                     (name  (concat "\\(?:" package "\\(?:-pkg\\)?\\.el\\)\\'"))
-                     (prefix "\\`[^.z-a]*")
-                     (regexp (concat prefix name)))
-                (or (car (directory-files repo nil regexp))
-                    (car (cl-remove-if-not (apply-partially #'string-match-p (concat "[/\\]" name))
-                                           (elpaca--directory-files-recursively repo regexp)))
+                     (name (concat "\\(?:" package "\\(?:-pkg\\)?\\.el\\)\\'")))
+                (or (car (directory-files repo nil (concat "\\`" name)))
+                    (car (cl-remove-if-not
+                          (apply-partially #'string-match-p (concat "[/\\]" name))
+                          (elpaca--directory-files-recursively repo (concat "\\`[^.z-a]*" name))))
                     (error "Unable to find main elisp file for %S" package)))))))
 
 (defun elpaca--dependencies (e &optional recache)
