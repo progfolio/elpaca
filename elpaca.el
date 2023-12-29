@@ -1084,6 +1084,24 @@ The keyword's value is expected to be one of the following:
                             (elpaca--directory-files-recursively file regexp))
                         (when (string-match-p regexp file) (expand-file-name file)))))))
 
+(defun elpaca--main-file (e &optional recache)
+  "Return E's main file name. Recompute when RECACHE non-nil."
+  (or (and (not recache) (elpaca<-main e))
+      (setf (elpaca<-main e)
+            (if-let ((recipe (elpaca<-recipe e))
+                     (repo (elpaca<-repo-dir e))
+                     ((or (file-exists-p repo) (error "Repository not on disk")))
+                     (default-directory repo)
+                     (declared (plist-member recipe :main)))
+                (cadr declared)
+              (let* ((package (file-name-sans-extension (elpaca<-package e)))
+                     (name (concat "\\(?:" package "\\(?:-pkg\\)?\\.el\\)\\'")))
+                (or (car (directory-files repo nil (concat "\\`" name)))
+                    (car (cl-remove-if-not
+                          (apply-partially #'string-match-p (concat "[/\\]" name))
+                          (elpaca--directory-files-recursively repo (concat "\\`[^.z-a]*" name))))
+                    (error "Unable to find main elisp file for %S" package)))))))
+
 (defvar elpaca--tag-regexp "v\\(.*\\)")
 (defun elpaca--latest-tag (e)
   "Return E's latest merged tag matching recipe tag regexp or `elpaca--tag-regexp'."
@@ -1103,14 +1121,6 @@ The keyword's value is expected to be one of the following:
         (elpaca-process-call "git" "log" "-n" "1" "--format=%cd" "--date=format:%Y%m%d.%s")
       (if (not success) (elpaca--fail e stderr) (version-to-list (string-trim stdout))))))
 
-(defvar elpaca-core-date
-  (list (or (and emacs-build-time (string-to-number (format-time-string "%Y%m%d" emacs-build-time)))
-            (alist-get emacs-version '(("27.1" . 20200804) ("27.2" . 20210319) ("28.1" . 20220403)
-                                       ("28.2" . 20220912) ("29.1" . 20230730))
-                       nil nil #'equal)
-            (and (warn "Unable to determine elpaca-core-date") -1)))
-  "List of form (N) where N is a YYYYMMDD integer build date of Emacs.")
-
 (defun elpaca--declared-version (e)
   "Return E's version as declared in recipe or main file's metadata."
   (if-let ((declared (plist-get (elpaca<-recipe e) :version)))
@@ -1129,7 +1139,15 @@ The keyword's value is expected to be one of the following:
             ;; Remove Windows \r before newline. See: #218
             (string-trim (buffer-substring-no-properties (point) (line-end-position)))))))))
 
+(defvar elpaca-core-date
+  (list (or (and emacs-build-time (string-to-number (format-time-string "%Y%m%d" emacs-build-time)))
+            (alist-get emacs-version '(("27.1" . 20200804) ("27.2" . 20210319) ("28.1" . 20220403)
+                                       ("28.2" . 20220912) ("29.1" . 20230730))
+                       nil nil #'equal)
+            (and (warn "Unable to determine elpaca-core-date") -1)))
+  "List of form (N) where N is a YYYYMMDD integer build date of Emacs.")
 (defconst elpaca--date-version-schema-min 10000000)
+
 (defun elpaca--check-version (e)
   "Ensure E's dependency versions are met."
   (cl-loop
@@ -1149,24 +1167,6 @@ The keyword's value is expected to be one of the following:
                        (or (null tag) (version-list-< (version-to-list tag) min)))))))
    do (cl-return (elpaca--fail e (format "Requires %s minimum version: %s" id declared))))
   (elpaca--continue-build e))
-
-(defun elpaca--main-file (e &optional recache)
-  "Return E's main file name. Recompute when RECACHE non-nil."
-  (or (and (not recache) (elpaca<-main e))
-      (setf (elpaca<-main e)
-            (if-let ((recipe (elpaca<-recipe e))
-                     (repo (elpaca<-repo-dir e))
-                     ((or (file-exists-p repo) (error "Repository not on disk")))
-                     (default-directory repo)
-                     (declared (plist-member recipe :main)))
-                (cadr declared)
-              (let* ((package (file-name-sans-extension (elpaca<-package e)))
-                     (name (concat "\\(?:" package "\\(?:-pkg\\)?\\.el\\)\\'")))
-                (or (car (directory-files repo nil (concat "\\`" name)))
-                    (car (cl-remove-if-not
-                          (apply-partially #'string-match-p (concat "[/\\]" name))
-                          (elpaca--directory-files-recursively repo (concat "\\`[^.z-a]*" name))))
-                    (error "Unable to find main elisp file for %S" package)))))))
 
 (defun elpaca--dependencies (e &optional recache)
   "Return a list of E's declared dependencies.
