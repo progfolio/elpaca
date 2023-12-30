@@ -1,6 +1,6 @@
 name: Bug and/or Support Request
 description: Use this if you need help using Elpaca or have found a bug (after reading the documentation)
-title: ""
+title: "[Bug/Support]:"
 body:
   - type: checkboxes
     id: confirmation
