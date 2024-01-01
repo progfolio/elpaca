@@ -189,7 +189,8 @@
                  (if on-disk-p "nil" "?")))
              (when e (elpaca-info--section "%s %s" "version:"
                        (concat (when-let ((default-directory (elpaca<-repo-dir e))
-                                          (version (elpaca--declared-version e)))
+                                          (version (or (elpaca--declared-version e)
+                                                       (elpaca--latest-tag e))))
                                  (string-trim version))
                                " "
                                (when-let ((commit (ignore-errors (elpaca-process-output
