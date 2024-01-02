@@ -1625,12 +1625,10 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
 
 (defun elpaca--maybe-reset-queue (q)
   "Reset Q containing incomplete orders."
-  (let* ((elpacas (elpaca-q<-elpacas q))
-         (processed (cl-count 'finished elpacas
-                              :key (lambda (qd) (elpaca--status (cdr qd))))))
-    (setf (elpaca-q<-processed q) processed
-          (elpaca-q<-status q) (if (and (> processed 0) (= processed (length elpacas)))
-                                   'complete 'incomplete))))
+  (let* ((es (elpaca-q<-elpacas q))
+         (ps (cl-loop for (_ . e) in es count (memq (elpaca--status e) '(finished failed)))))
+    (setf (elpaca-q<-processed q) ps
+          (elpaca-q<-status q) (if (and (> ps 0) (= ps (length es))) 'complete 'incomplete))))
 
 ;;;###autoload
 (defun elpaca-process-queues (&optional filter)
