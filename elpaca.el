@@ -1153,6 +1153,8 @@ The keyword's value is expected to be one of the following:
   (cl-loop
    initially (elpaca--signal e "Checking dependency versions")
    with queued = (elpaca--queued)
+   with version-regexp-alist = ;; Handle -dev, -DEV, etc. Why isn't this default?
+   (append version-regexp-alist '(("\\(?:-[[:alpha:]]+\\)" . -1)))
    for (id declared) in (elpaca--dependencies e)
    for min = (version-to-list declared)
    for datep = (> (car min) elpaca--date-version-schema-min) ;; YYYYMMDD version.
