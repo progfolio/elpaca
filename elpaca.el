@@ -221,8 +221,14 @@ e.g. elisp forms may be printed via `prin1'."
          ,@body
          nil))))
 
+(defvar elpaca--cache-version 0.1 "Internal cache scheme version.")
 (defvar elpaca--menu-cache
-  (elpaca--read-file (expand-file-name "menu-items.eld" elpaca-cache-directory))
+  (let* ((data (elpaca--read-file (expand-file-name "menu-items.eld" elpaca-cache-directory)))
+         (version (alist-get 'elpaca--cache-version data)))
+    (if (or (not version) (not (= version elpaca--cache-version)))
+        (and (message "Elpaca menu item cache discarded due to version change.") nil)
+      (setf (alist-get 'elpaca--cache-version data nil 'remove) nil)
+      data)) ;; Discard if cache version changed.
   "Cache for menu candidates.")
 
 (cl-defstruct (elpaca-q (:constructor elpaca-q<-create)
@@ -255,7 +261,9 @@ Values for each key are that of the right-most plist containing that key."
   (unless (file-exists-p elpaca-cache-directory)
     (make-directory elpaca-cache-directory))
   (elpaca--write-file (expand-file-name "menu-items.eld" elpaca-cache-directory)
-    (prin1 elpaca--menu-cache)))
+    (let ((data elpaca--menu-cache))
+      (setf (alist-get 'elpaca--cache-version data) elpaca--cache-version)
+      (prin1 data))))
 
 (defsubst elpaca--flattened-menus ()
   "Return list cached menu items from all caches."
