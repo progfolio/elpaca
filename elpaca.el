@@ -1149,9 +1149,11 @@ The keyword's value is expected to be one of the following:
 
 (defvar elpaca-core-date
   (list (or (and emacs-build-time (string-to-number (format-time-string "%Y%m%d" emacs-build-time)))
-            (alist-get emacs-version '(("27.1" . 20200804) ("27.2" . 20210319) ("28.1" . 20220403)
-                                       ("28.2" . 20220912) ("29.1" . 20230730))
-                       nil nil #'equal)
+            (alist-get (when (string-match "^\\([0-9]+\\.[0-9]+\\)" emacs-version)
+                         (match-string 1 emacs-version))
+                       '(("27.1" . 20200804) ("27.2" . 20210319) ("28.1" . 20220403)
+                         ("28.2" . 20220912) ("29.1" . 20230730))
+             nil nil #'equal)
             (and (warn "Unable to determine elpaca-core-date") -1)))
   "List of form (N) where N is a YYYYMMDD integer build date of Emacs.")
 (defconst elpaca--date-version-schema-min 10000000)
