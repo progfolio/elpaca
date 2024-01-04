@@ -1,6 +1,6 @@
 #+title: Elpaca User Manual
 #+language: en
-#+date: 2022-2023
+#+date: 2022-2024
 #+author: Nicholas Vollmer
 
 #+texinfo_filename: elpaca.texi
@@ -15,7 +15,7 @@
 #+include: "./common.org::introduction" :only-contents t
 
 #+begin_quote
-Copyright (C) 2022-2023 Nicholas Vollmer
+Copyright (C) 2022-2024 Nicholas Vollmer
 
 You can redistribute this document and/or modify it under the terms of the GNU
 General Public License as published by the Free Software Foundation, either

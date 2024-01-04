@@ -1,6 +1,6 @@
 ;;; elpaca-log.el --- Elpaca Logging facilities.  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2022-2023 Nicholas Vollmer
+;; Copyright (C) 2022-2024 Nicholas Vollmer
 
 ;; Author:  Nicholas Vollmer
 ;; Keywords:

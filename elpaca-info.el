@@ -1,6 +1,6 @@
 ;;; elpaca-info.el --- Display package info  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2023  Nicholas Vollmer
+;; Copyright (C) 2023-2024  Nicholas Vollmer
 
 ;; Author:  Nicholas Vollmer
 ;; Keywords: convenience
