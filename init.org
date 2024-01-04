@@ -377,9 +377,12 @@ The global definer allows me to use a leader key in most states.
 
 #+begin_src emacs-lisp :lexical t
 (global-definer
+  "SPC" 'execute-extended-command
+  "/"   'occur
   "!"   'shell-command
   ":"   'eval-expression
   "."   'repeat
+  "h"   (general-simulate-key "C-h" :which-key "help")
   "z"   '((lambda (local) (interactive "p")
             (unless repeat-mode (repeat-mode))
             (let ((local current-prefix-arg)
@@ -479,6 +482,7 @@ And a macro to ease the creation of nested menu bindings:
   "e"   '(:ignore t :which-key "edit")
   "ed"  '((lambda () (interactive) (find-file-existing literate-file) (widen))
           :which-key "dotfile")
+  "f"   'find-file
   "l"   '((lambda (&optional arg)
             (interactive "P")
             (call-interactively (if arg #'find-library-other-window #'find-library)))
@@ -511,18 +515,6 @@ And a macro to ease the creation of nested menu bindings:
 **** git version-control
 #+begin_src emacs-lisp :lexical t
 (+general-global-menu! "git/version-control" "g")
-#+end_src
-**** help
-#+begin_src emacs-lisp :lexical t
-(+general-global-menu! "help" "h"
-  "d"   '(:ignore t :which-key "describe")
-  "df"  'describe-function
-  "dF"  'describe-face
-  "dk"  'describe-key
-  "dt"  '((lambda () (interactive) (describe-text-properties (point)))
-          :which-key "describe-text-properties")
-  "dv"  'describe-variable
-  "h"   (general-simulate-key "C-h" :which-key "help"))
 #+end_src
 **** links
 #+begin_src emacs-lisp :lexical t
@@ -859,6 +851,26 @@ https://github.com/jorgenschaefer/emacs-buttercup
       (ansi-color-apply-on-region (point-min) (point-max))))
   (add-hook 'compilation-filter-hook #'+compilation-colorize))
 #+end_src
+** consult
+#+begin_quote
+Consulting completing-read
+#+end_quote
+
+#+begin_src emacs-lisp :lexical t
+(use-package consult
+  :demand t
+  :config
+  (consult-customize consult--source-recent-file
+                     consult--source-buffer
+                     :preview-key nil)
+  :general
+  (global-definer "/" 'consult-line)
+  (+general-global-buffer "b" 'consult-buffer)
+  (+general-global-file
+    ;;"f" 'consult-file
+    "r" (lambda () (interactive)
+          (let (consult-preview-key) (consult-buffer '(consult--source-recent-file))))))
+#+end_src
 ** corfu
 #+begin_quote
 Completion Overlay Region FUnction
@@ -917,7 +929,7 @@ https://github.com/gonewest818/dimmer.el
 #+begin_src emacs-lisp :lexical t
 (use-package dimmer
   :defer 5
-  :after (helm which-key)
+  :after (which-key)
   :custom
   (dimmer-exclusion-regexp-list '("^\\*[h|H]elm.*\\*"
                                   "^\\*Minibuf-.*\\*"
@@ -928,7 +940,6 @@ https://github.com/gonewest818/dimmer.el
   :config
   (dimmer-mode 1)
   (dimmer-configure-which-key)
-  (dimmer-configure-helm)
   (dimmer-configure-magit))
 #+end_src
 ** dired
@@ -1371,137 +1382,6 @@ https://github.com/magit/forge
               forge-add-pullreq-refspec nil))
 #+end_src
 
-** helm
-#+begin_quote
-Helm is an Emacs framework for incremental completions and narrowing selections.
-
-https://github.com/emacs-helm/helm
-#+end_quote
-#+begin_src emacs-lisp :lexical t
-(use-package helm
-  :defer 1
-  :custom
-  (helm-candidate-number-limit 300)
-  (helm-echo-input-in-header-line t)
-  (helm-split-window-inside-p t "split window inside current window")
-  (helm-move-to-line-cycle-in-source t "cycle to beggining or end afte reaching top/bottom of list")
-  (helm-show-completion-display-function nil "don't want to open a separate frame for this")
-  (helm-completion-style 'emacs "Necessary to have multiline candidates/text-properties show in completion buffer")
-  :config
-  (add-hook 'helm-after-initialize-hook (lambda () (with-helm-buffer (visual-line-mode))))
-  (helm-mode)
-
-  (add-to-list 'display-buffer-alist '("HELM" display-buffer-below-selected
-                                       (window-height . 0.3)))
-
-  :general
-  (:keymaps 'helm-map
-            "TAB"   #'helm-execute-persistent-action
-            "<tab>" #'helm-execute-persistent-action
-            "C-a"   #'helm-select-action
-            "C-h"   #'helm-find-files-up-one-level)
-  (global-definer
-    "SPC" '(helm-M-x :which-key "M-x")
-    "/"   'helm-occur)
-  (+general-global-buffer
-    "b" 'helm-mini)
-  (+general-global-file
-    "f" 'helm-find-files
-    "F" 'helm-find
-    "r" 'helm-recentf)
-  (+general-global-help
-    "a" 'helm-apropos)
-  (completion-def
-    :keymaps 'insert
-    "C-f" 'helm-complete-file-name-at-point)
-  (global-leader
-    :major-modes '(org-mode t)
-    :keymaps     '(org-mode-map)
-    "/"  'helm-org-in-buffer-headings))
-#+end_src
-*** helm-ag
-#+begin_quote
-helm-ag.el provides interfaces of The Silver Searcher with helm.
-
-https://github.com/emacsorphanage/helm-ag
-#+end_quote
-#+begin_src emacs-lisp :lexical t
-(use-package helm-ag
-  :commands (helm-ag))
-#+end_src
-*** helm-describe-modes
-#+begin_quote
-helm-describe-modes provides a Helm interface to Emacs’s describe-mode.
-
-https://github.com/emacs-helm/helm-describe-modes
-#+end_quote
-#+begin_src emacs-lisp :lexical t
-(use-package helm-describe-modes
-  :commands (helm-describe-modes)
-  :diminish helm-describe-mode
-  :after (helm)
-  :general
-  (+general-global-help
-    "dm"  'helm-describe-modes))
-#+end_src
-*** helm-descbinds
-#+begin_quote
-Helm Descbinds provides an interface to emacs’ describe-bindings making the currently active key bindings interactively searchable with helm.
-
-https://github.com/emacs-helm/helm-descbinds
-#+end_quote
-#+begin_src emacs-lisp :lexical t
-(use-package helm-descbinds
-  :after (helm)
-  :commands (helm-descbinds-mode)
-  :diminish helm-descbinds-mode
-  :custom
-  (helm-descbinds-window-style 'split)
-  :general
-  (global-definer
-    "?"   'helm-descbinds))
-#+end_src
-*** helm-org
-#+begin_quote
-Helm integration for org headlines and keywords.
-#+end_quote
-Necessary for completion of multiple tags with Helm.
-#+begin_src emacs-lisp :lexical t
-(use-package helm-org
-  :elpaca (:pin t)
-  :after (helm org)
-  :config
-  (add-to-list 'helm-completing-read-handlers-alist '(org-set-tags-command . helm-org-completing-read-tags))
-  (add-to-list 'helm-completing-read-handlers-alist '(org-capture . helm-org-completing-read-tags)))
-#+end_src
-*** helm-projectile
-#+begin_src emacs-lisp :lexical t
-(use-package helm-projectile
-  :after (helm)
-  :commands (helm-projectile-ag)
-  :general
-  (+general-global-project
-    "a" 'helm-projectile-ag
-    "bb" 'helm-projectile-switch-to-buffer
-    "d" 'helm-projectile-find-dir
-    "f" 'helm-projectile-find-file
-    "F" 'helm-projectile-find-file-dwim
-    "p" 'helm-projectile-switch-project
-    "r" 'helm-projectile-recentf))
-#+end_src
-*** helm-swoop
-#+begin_quote
-List match lines to another buffer, which is able to squeeze by any words you input.
-At the same time, the original buffer's cursor is jumping line to line according to moving up and down the line list.
-
-https://github.com/emacsorphanage/helm-swoop
-#+end_quote
-#+begin_src emacs-lisp :lexical t
-(use-package helm-swoop
-  :after (helm)
-  :commands
-  (helm-swoop))
-#+end_src
 ** help
 #+begin_src emacs-lisp :lexical t
 (use-feature help
@@ -1686,6 +1566,16 @@ https://magit.vc/
     "U"  'magit-unstage-file)
   :config
   (transient-bind-q-to-quit))
+#+end_src
+** marginalia
+#+begin_quote
+Enrich existing commands with completion annotations
+#+end_quote
+
+#+begin_src emacs-lisp :lexical t
+(use-package marginalia
+  :defer 2
+  :config (marginalia-mode))
 #+end_src
 ** markdown
 #+begin_quote
@@ -1892,6 +1782,16 @@ https://github.com/rnkn/olivetti
 #+begin_src emacs-lisp :lexical t
 (use-package olivetti
   :commands (olivetti-mode))
+#+end_src
+** orderless
+#+begin_quote
+Completion style for matching regexps in any order
+#+end_quote
+
+#+begin_src emacs-lisp :lexical t
+(use-package orderless
+  :defer 1
+  :custom (completion-styles '(orderless basic)))
 #+end_src
 ** org
 #+begin_src emacs-lisp :lexical t
@@ -3088,6 +2988,7 @@ ten, but opening my org agenda files wipes that list out.
 #+begin_src emacs-lisp :lexical t
 (use-feature recentf
   :defer 1
+  :config (recentf-mode)
   :custom
   (recentf-max-menu-items 1000 "Offer more recent files in menu")
   (recentf-max-saved-items 1000 "Save more recent files"))
@@ -3285,6 +3186,19 @@ You probably want this 99% of the time and it will skip an annoying prompt.
   :custom
   (vc-follow-symlinks t "Visit real file when editing a symlink without prompting."))
 #+end_src
+** vertico
+#+begin_quote
+VERTical Interactive COmpletion
+#+end_quote
+
+#+begin_src emacs-lisp :lexical t
+(use-package vertico
+  :demand t
+  :custom (vertico-cycle t)
+  :config
+  (setf (car vertico-multiline) "\n") ;; don't replace newlines
+  (vertico-mode))
+#+end_src
 ** vterm
 #+begin_quote
 Emacs-libvterm (vterm) is fully-fledged terminal emulator inside GNU Emacs based on libvterm, a C library.
@@ -3380,7 +3294,7 @@ https://github.com/justbur/emacs-which-key
   :custom
   (switch-to-buffer-obey-display-actions t)
   (switch-to-prev-buffer-skip-regexp
-   '("\\*Help\\*" "\\*Calendar\\*" "\\*helm.*" "\\*mu4e-last-update\\*"
+   '("\\*Help\\*" "\\*Calendar\\*" "\\*mu4e-last-update\\*"
      "\\*Messages\\*" "\\*scratch\\*" "\\magit-.*")))
 #+end_src
 ** wordel
