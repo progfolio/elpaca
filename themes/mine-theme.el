@@ -70,7 +70,7 @@
   (warning :foreground "yellow" :weight bold)
   (fringe :inherit default)
   (header-line :inherit default :underline t)
-  (highlight :inherit org-block)
+  (highlight :background ,purple :foreground ,green :extend t)
   (isearch :inherit hl-line :box t)
   (lazy-highlight :inherit hl-line :box t)
   (query-replace :background ,yellow :foreground ,purple :box t :weight bold)
@@ -204,7 +204,7 @@
   (hash :foreground ,gray))
 
 (mine-add-faces message
-  (header-name :inherit org-block)
+  (header-name :inherit higlight)
   (header-other :inherit default)
   (header-subject :inherit default :foreground ,red :weight bold :height ,(nth 1 mine-font-sizes))
   (header-to :inherit font-lock-comment-face :height ,(nth 0 mine-font-sizes)))
