@@ -1147,13 +1147,20 @@ The keyword's value is expected to be one of the following:
             ;; Remove Windows \r before newline. See: #218
             (string-trim (buffer-substring-no-properties (point) (line-end-position)))))))))
 
+(defconst elpaca--emacs-releases '(("27.1" . 20200804) ("27.2" . 20210319) ("28.1" . 20220403)
+                                   ("28.2" . 20220912) ("29.1" . 20230730)))
 (defvar elpaca-core-date
-  (list (or (alist-get emacs-version '(("27.1" . 20200804) ("27.2" . 20210319) ("28.1" . 20220403)
-                                       ("28.2" . 20220912) ("29.1" . 20230730))
-                       nil nil #'equal)
-            (and emacs-build-time (string-to-number (format-time-string "%Y%m%d" emacs-build-time)))
-            (and (warn "Unable to determine elpaca-core-date") -1)))
-  "List of form (N) where N is a YYYYMMDD integer build date of Emacs.")
+  (let* ((v (and (string-match "\\`[0-9]+\\.[0-9]+" emacs-version) (match-string 0 emacs-version)))
+         (release (assoc v elpaca--emacs-releases #'equal)))
+    (and release (> (length (version-to-list emacs-version)) 2) ;; Development version.
+         (lwarn `(elpaca core stale ,(intern emacs-version)) :warning
+                "Emacs %s assigned %s elpaca-core-date." emacs-version (car release)))
+    (list (or (cdr release)
+              (and emacs-build-time (string-to-number (format-time-string "%Y%m%d" emacs-build-time)))
+              (and (display-warning `(elpaca core ,(intern emacs-version))
+                                    "Unable to determine elpaca-core-date")
+                   -1))))
+  "List of form (N) where N is a YYYYMMDD integer release date of Emacs.")
 (defconst elpaca--date-version-schema-min 10000000)
 
 (defun elpaca--check-version (e)
