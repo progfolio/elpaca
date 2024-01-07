@@ -1595,6 +1595,20 @@ https://jblevins.org/projects/markdown-mode/
   :custom
   (markdown-command "/usr/bin/pandoc"))
 #+end_src
+** minibuffer
+#+begin_src emacs-lisp :lexical t
+(use-feature minibuffer
+  :custom (read-file-name-completion-ignore-case t)
+  :config
+  (defun +minibuffer-up-dir ()
+    "Trim rightmost directory component of `minibuffer-contents'."
+    (interactive)
+    (unless (minibufferp) (user-error "Minibuffer not selected"))
+    (let* ((f (directory-file-name (minibuffer-contents)))
+           (s (file-name-directory f)))
+      (delete-minibuffer-contents)
+      (when s (insert s)))))
+#+end_src
 ** miscellany
 A package for miscellaneous functions.
 #+begin_src emacs-lisp :lexical t
