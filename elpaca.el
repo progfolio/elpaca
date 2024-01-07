@@ -39,9 +39,11 @@
 (defvar Info-directory-list)
 (defconst elpaca--inactive-states '(blocked finished failed))
 (defvar elpaca-installer-version -1)
-(or noninteractive (= elpaca-installer-version 0.6) (warn "Elpaca installer version mismatch"))
+(or noninteractive (= elpaca-installer-version 0.6)
+    (display-warning '(elpaca installer) "Elpaca installer version mismatch"))
 (or (executable-find "git") (error "Elpaca unable to find git executable"))
-(and (not after-init-time) load-file-name (featurep 'package) (warn "Package.el loaded before Elpaca"))
+(and (not after-init-time) load-file-name (featurep 'package)
+     (display-warning '(elpaca package.el) "Package.el loaded before Elpaca"))
 
 (defgroup elpaca nil "An elisp package manager." :group 'applications :prefix "elpaca-")
 
@@ -207,7 +209,9 @@ Each function is passed a request, which may be any of the following symbols:
           (insert-file-contents path nil nil nil 'replace)
           (goto-char (point-min))
           (read (current-buffer)))
-      ((error) (warn "Error reading %S into memory: %S" path err) nil))))
+      ((error) (lwarn '(elpaca read-file) :error
+                      "Error reading %S into memory: %S" path err)
+       nil))))
 
 (defmacro elpaca--write-file (file &rest body)
   "Write FILE using BODY.
@@ -696,8 +700,9 @@ Optional ARGS are passed to `elpaca--signal', which see."
            ((not after-init-time))
            (e (elpaca-get id)))
       (if-let ((dependents (elpaca<-dependents e)))
-          (warn "%S previously queued as dependency of: %S" id dependents)
-        (warn "Duplicate item ID queued: %S" id))
+          (lwarn '(elpaca queue past-dep) :error
+                 "%S previously queued as dependency of: %S" id dependents)
+        (lwarn '(elpaca queue duplicate) :error "Duplicate item ID queued: %S" id))
     (let* ((e (elpaca<-create order))
            (log (pop (elpaca<-log e)))
            (status (car log))
@@ -735,7 +740,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
   (when-let ((autoloads (elpaca-q<-autoloads q)))
     (condition-case-unless-debug err
         (eval `(progn ,@(reverse autoloads)) t)
-      ((error) (warn "Autoload Error: %S" err))))
+      ((error) (lwarn '(elpaca autoload) :error "Autoload Error: %S" err))))
   (setf (elpaca-q<-status q) 'complete) ; Avoid loop when forms call elpaca-process-queue.
   (when-let ((forms (nreverse (elpaca-q<-forms q))))
     (with-current-buffer (get-buffer-create " *elpaca--finalize-queue*")
@@ -743,7 +748,8 @@ Optional ARGS are passed to `elpaca--signal', which see."
       (cl-loop for (id . body) in forms
                do (condition-case-unless-debug err
                       (eval `(progn ,@body) t)
-                    ((error) (warn "Config Error %s: %S" id err)))))
+                    ((error) (lwarn '(elpaca config) :error
+                                    "Config Error %s: %S" id err)))))
     (setf (elpaca-q<-forms q) nil))
   (run-hooks 'elpaca-post-queue-hook)
   (let ((next (nth (1+ (elpaca-q<-id q)) (reverse elpaca--queues))))
@@ -1154,7 +1160,7 @@ The keyword's value is expected to be one of the following:
          (release (assoc v elpaca--emacs-releases #'equal)))
     (and release (> (length (version-to-list emacs-version)) 2) ;; Development version.
          (lwarn `(elpaca core stale ,(intern emacs-version)) :warning
-                "Emacs %s assigned %s elpaca-core-date." emacs-version (car release)))
+                "Emacs %s assigned %s elpaca-core-date" emacs-version (car release)))
     (list (or (cdr release)
               (and emacs-build-time (string-to-number (format-time-string "%Y%m%d" emacs-build-time)))
               (and (display-warning `(elpaca core ,(intern emacs-version))
@@ -1211,7 +1217,8 @@ If RECACHE is non-nil, do not use cached dependencies."
                            (forward-line 1))
                          (mapcar (lambda (d) (if (cdr-safe d) d (list (elpaca--first d) "0")))
                                  (read (string-join (nreverse deps) " "))))))
-                 ((end-of-file) (warn "Malformed dependency metadata: %S" main) nil)
+                 ((end-of-file) (lwarn '(elpaca dep-metadata) :error
+                                       "Malformed dependency metadata: %S" nil))
                  ((error) (error "Dependency detection error: %S %S" main err)))))
           (setf (elpaca<-dependencies e) (or deps :nil))
           deps)
@@ -1441,7 +1448,7 @@ Loads or caches autoloads."
   (let ((default-directory (elpaca<-build-dir e)))
     (elpaca--signal e "Activating package" 'activation)
     (when (and (not elpaca-after-init-time) (featurep (elpaca<-id e)))
-      (warn "%S loaded before Elpaca activation" (elpaca<-id e)))
+      (lwarn '(elpaca preloaded) :warning "%S loaded before Elpaca activation" (elpaca<-id e)))
     (cl-pushnew default-directory load-path :test #'equal)
     (elpaca--signal e "Package build dir added to load-path")
     (if-let ((recipe (elpaca<-recipe e))
@@ -1464,7 +1471,8 @@ Loads or caches autoloads."
                              (load-in-progress t))
                          (condition-case err
                              (progn ,@(nreverse forms))
-                           ((error) (warn "Error loading %S autoloads: %S" ,pkg err))))
+                           ((error) (lwarn '(elpaca autoload) :error
+                                           "Error loading %S autoloads: %S" pkg err))))
                       (elpaca-q<-autoloads (elpaca--q e))))
               (elpaca--signal e "Autoloads cached"))
           (condition-case err
