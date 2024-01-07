@@ -3213,7 +3213,8 @@ VERTical Interactive COmpletion
   :custom (vertico-cycle t)
   :config
   (setf (car vertico-multiline) "\n") ;; don't replace newlines
-  (vertico-mode))
+  (vertico-mode)
+  (define-key vertico-map (kbd "C-h") #'+minibuffer-up-dir))
 #+end_src
 ** vterm
 #+begin_quote
