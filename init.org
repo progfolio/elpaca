@@ -866,6 +866,7 @@ Consulting completing-read
   :general
   (global-definer "/" 'consult-line)
   (+general-global-buffer "b" 'consult-buffer)
+  (+general-global-project "a" 'consult-grep)
   (+general-global-file
     ;;"f" 'consult-file
     "r" (lambda () (interactive)
