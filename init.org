@@ -1607,7 +1607,9 @@ https://jblevins.org/projects/markdown-mode/
     (let* ((f (directory-file-name (minibuffer-contents)))
            (s (file-name-directory f)))
       (delete-minibuffer-contents)
-      (when s (insert s)))))
+      (when s (insert s))))
+  (define-key minibuffer-local-filename-completion-map
+              (kbd "C-h") #'+minibuffer-up-dir))
 #+end_src
 ** miscellany
 A package for miscellaneous functions.
