@@ -1487,7 +1487,9 @@ Loads or caches autoloads."
                    for dep = (elpaca-get id)
                    for build-dir = (and dep (elpaca<-build-dir dep))
                    when build-dir collect build-dir))
-         (program `(let ((gc-cons-percentage 1.0)) ;; trade memory for gc speed
+         (program `(let ((gc-cons-percentage 1.0) ;; trade memory for gc speed
+                         ,@(when (boundp 'native-comp-eln-load-path)
+                             `((native-comp-eln-load-path ',native-comp-eln-load-path))))
                      (dolist (dir ',(cons default-directory dependency-dirs))
                        (let ((default-directory dir))
                          (add-to-list 'load-path dir)
