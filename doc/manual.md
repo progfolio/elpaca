@@ -678,13 +678,16 @@ This is useful for declaring default order properties. For example, the followin
 
 Elpaca installs packages asynchronously. Orders ([orders](#orders)) are automatically queued in a list. When all of a queues orders have either finished or failed Elpaca considers it &ldquo;processed&rdquo;.
 
-Queues ensure packages installation, activation, and configuration take place prior to packages in other queues. The `elpaca-queue` macro wraps calls to `elpaca`. It places orders in its *BODY* in their own queue. This is especially useful when one wants to install a package to use later on in their init file. For example, a package which implements an Elpaca menu ([menu](#menus)):
+Queues ensure packages installation, activation, and configuration take place prior to packages in other queues. The `elpaca-wait` function splits the current queue and immediately begins processing prior queues. This is useful when one wants to later on at the top-level of their init file. For example, a package which implements an Elpaca menu ([menu](#menus)):
 
 ```emacs-lisp
-(elpaca-queue
- (elpaca (melpulls :host github :repo "progfolio/melpulls")
-   (add-to-list 'elpaca-menu-functions #'melpulls)
-   (elpaca-update-menus #'melpulls)))
+(elpaca (melpulls :host github :repo "progfolio/melpulls")
+  (add-to-list 'elpaca-menu-functions #'melpulls)
+  (elpaca-update-menus #'melpulls)))
+
+;; Block until melpulls is installed/activated.
+(elpaca-wait)
+
 ;; Implicitly queued into a new queue.
 (elpaca menu-item-available-in-melpulls)
 ```
