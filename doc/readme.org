@@ -45,5 +45,5 @@ Elpaca:
 
 #+include: "./common.org::Quick Start"
 
-See the [[./doc/manual.md][manual]] for in-depth information on Elpaca usage, customization, and development.
-Users who wish to experiment with Elpaca may find the example [[./doc/init.el][init.el]] and [[./doc/early-init.el][early-init.el]] files useful.
+See the [[./manual.md][manual]] for in-depth information on Elpaca usage, customization, and development.
+Users who wish to experiment with Elpaca may find the example [[./init.el][init.el]] and [[./early-init.el][early-init.el]] files useful.
