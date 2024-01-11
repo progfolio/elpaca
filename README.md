@@ -14,6 +14,8 @@ Elpaca:
 -   Supports thousands of elisp packages out of the box (MELPA, NonGNU/GNU ELPA, Org/org-contrib).
 -   Makes it easy for users to create their own ELPAs.
 
+See the [manual](./doc/manual.md) for in-depth information on Elpaca usage, customization, and development. Users who wish to experiment with Elpaca may find the example [init.el](./doc/init.el) and [early-init.el](./doc/early-init.el) files useful.
+
 
 # Video Tour
 
@@ -176,8 +178,6 @@ Add any configuration which relies on `after-init-hook`, `emacs-startup-hook`, e
 (setq custom-file (expand-file-name "customs.el" user-emacs-directory))
 (add-hook 'elpaca-after-init-hook (lambda () (load custom-file 'noerror)))
 ```
-
-See the [manual](./doc/manual.md) for in-depth information on Elpaca usage, customization, and development. Users who wish to experiment with Elpaca may find the example [init.el](./doc/init.el) and [early-init.el](./doc/early-init.el) files useful.
 
 ## Footnotes
 

@@ -6,6 +6,7 @@
 * Preamble                                                         :noexport:
 This file generates the README.org file.
 The reason for keeping this separate is so we can include data common to both the manual and the readme.
+Relative links in this file will not lead to the correct destinations.
 
 To export:
 
@@ -34,6 +35,9 @@ Elpaca:
 - Supports thousands of elisp packages out of the box (MELPA, NonGNU/GNU ELPA, Org/org-contrib).
 - Makes it easy for users to create their own ELPAs.
 
+See the [[./doc/manual.md][manual]] for in-depth information on Elpaca usage, customization, and development.
+Users who wish to experiment with Elpaca may find the example [[./doc/init.el][init.el]] and [[./doc/early-init.el][early-init.el]] files useful.
+
 * Video Tour
 :PROPERTIES:
 :CUSTOM_ID: video-tour
@@ -44,6 +48,3 @@ Elpaca:
 #+include: "./common.org::installation"
 
 #+include: "./common.org::Quick Start"
-
-See the [[./doc/manual.md][manual]] for in-depth information on Elpaca usage, customization, and development.
-Users who wish to experiment with Elpaca may find the example [[./doc/init.el][init.el]] and [[./doc/early-init.el][early-init.el]] files useful.
