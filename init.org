@@ -899,19 +899,6 @@ https://github.com/minad/corfu
   :custom
   (custom-file null-device "Don't store customizations"))
 #+end_src
-** default-text-scale
-#+begin_quote
-Easily adjust the font size in all Emacs frames
-
-https://github.com/purcell/default-text-scale
-#+end_quote
-#+begin_src emacs-lisp :lexical t
-(use-package default-text-scale
-  :commands ( default-text-scale-increase
-              default-text-scale-decrease
-              default-text-scale-reset
-              default-text-scale-increment))
-#+end_src
 ** diminish
 #+begin_quote
 This package implements hiding or abbreviation of the mode line displays (lighters) of minor-modes.
