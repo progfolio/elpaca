@@ -686,9 +686,9 @@ https://github.com/emacs-evil/evil-collection
                      ("fork" :repo "progfolio/evil-collection")))
   :after (evil)
   :config (evil-collection-init)
+  :init (setq evil-collection-setup-minibuffer t)
   :custom
   (evil-collection-elpaca-want-g-filters nil)
-  (evil-collection-setup-minibuffer t "Add evil bindings to minibuffer")
   (evil-collection-ement-want-auto-retro t))
 #+end_src
 ** accord
