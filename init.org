@@ -1609,7 +1609,8 @@ https://jblevins.org/projects/markdown-mode/
       (delete-minibuffer-contents)
       (when s (insert s))))
   (define-key minibuffer-local-filename-completion-map
-              (kbd "C-h") #'+minibuffer-up-dir))
+              (kbd "C-h") #'+minibuffer-up-dir)
+  (minibuffer-depth-indicate-mode))
 #+end_src
 ** miscellany
 A package for miscellaneous functions.
