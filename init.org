@@ -1489,25 +1489,6 @@ Installing Lilypond puts these in =/usr/share/Emacs/site-lisp=, but I plan on ed
     "l"  'lilypond-compile-file
     "p"  'lilypond-play))
 #+end_src
-** link-hint
-#+begin_quote
-link-hint.el is inspired by the link hinting functionality in vim-like browsers and browser plugins such as pentadactyl.
-It provides commands for using avy to open, copy, or take a user-defined action on “links.”
-
-https://github.com/noctuid/link-hint.el
-#+end_quote
-#+begin_src emacs-lisp :lexical t
-(use-package link-hint
-  :general
-  (+general-global-link
-    "a" 'link-hint-open-all-links
-    "f" 'link-hint-open-link
-    "F" 'link-hint-open-link-at-point
-    "Y" 'link-hint-copy-link-at-point
-    "yy" 'link-hint-copy-link
-    "ym" 'link-hint-copy-multiple-links
-    "ya" 'link-hint-copy-multiple-links))
-#+end_src
 ** macrostep
 #+begin_quote
 macrostep is an Emacs minor mode for interactively stepping through the expansion of macros in Emacs Lisp source code.
