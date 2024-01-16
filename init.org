@@ -2266,18 +2266,6 @@ delete the =*.el(c)= files and restart
   :config (add-to-list 'org-babel-load-languages '(shell . t))
   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
 #+end_src
-** org-bullets
-Purely cosmetic. I may ditch this at some point.
-#+begin_src emacs-lisp :lexical t
-(use-package org-bullets
-  :after (org)
-  :config (add-hook 'org-mode-hook #'org-bullets-mode)
-  :custom (org-bullets-bullet-list
-           ;;"§" "◉" "○" "✸" "✿" "✚" "★" "►" "▶"
-           ;;use for multiple repeated symbols
-           ;;`("§",@(make-list 2 "◇") "★")
-           '("◇")))
-#+end_src
 ** org-capture
 #+begin_src emacs-lisp :lexical t
 (use-feature org-capture
@@ -2765,6 +2753,18 @@ Set clock report duration format to floating point hours
 *** 'TODO' Keywords
 #+begin_src emacs-lisp :lexical t
 #+end_src
+** org-make-toc
+#+begin_quote
+This package makes it easy to have one or more customizable tables of contents in Org files.
+They can be updated manually, or automatically when the file is saved.
+Links to headings are created compatible with GitHub’s Org renderer.
+
+https://github.com/alphapapa/org-make-toc
+#+end_quote
+#+begin_src emacs-lisp :lexical t
+(use-package org-make-toc
+  :commands (org-make-toc))
+#+end_src
 ** org-mime
 #+begin_quote
 org-mime can be used to send HTML email using Org-mode HTML export.
@@ -2783,17 +2783,17 @@ https://github.com/org-mime/org-mime
                                    :with-author nil
                                    :with-toc nil)))
 #+end_src
-** org-make-toc
+** org-modern
 #+begin_quote
-This package makes it easy to have one or more customizable tables of contents in Org files.
-They can be updated manually, or automatically when the file is saved.
-Links to headings are created compatible with GitHub’s Org renderer.
+"Modern looks for Org"
 
-https://github.com/alphapapa/org-make-toc
+https://github.com/minad/org-modern
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(use-package org-make-toc
-  :commands (org-make-toc))
+(use-package org-modern :after (org)
+  :config
+  (global-org-modern-mode)
+  (remove-hook 'org-agenda-finalize-hook 'org-modern-agenda))
 #+end_src
 ** org-region-link
 #+begin_src emacs-lisp :lexical t
