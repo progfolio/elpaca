@@ -1021,6 +1021,27 @@ I may move it from its default location (=~/.elfeed=), in =elfeed-db-directory=.
 (use-package elfeed
   :commands (elfeed)
   :config
+  (defvar +elfeed-feed-file (expand-file-name "~/Documents/rss-feeds.org"))
+
+  (setq elfeed-feeds
+        (with-current-buffer (find-file-noselect +elfeed-feed-file)
+          (save-excursion
+            (save-restriction
+              (org-fold-show-all)
+              (goto-char (point-min))
+              (let ((found nil))
+                (org-element-map (org-element-parse-buffer) 'link
+                  (lambda (node) (when-let ((props (cadr node))
+                                            (standards (plist-get props :standard-properties))
+                                            (tags (org-get-tags (aref standards 0)))
+                                            ((member "elfeed" tags))
+                                            ((not (member "ignore" tags))))
+                                   (push (cons (plist-get props :raw-link)
+                                               (delq 'elfeed (mapcar #'intern tags)))
+                                         found)))
+                  nil nil t)
+                (nreverse found))))))
+
   (defun +elfeed-play-in-mpv ()
     "Play selected videos in a shared mpv instance in chronological order."
     (interactive)
@@ -1058,15 +1079,6 @@ I may move it from its default location (=~/.elfeed=), in =elfeed-db-directory=.
    :keymaps 'elfeed-show-mode-map
    "J" 'elfeed-show-next
    "K" 'elfeed-show-prev))
-#+end_src
-*** elfeed-org
-#+begin_src emacs-lisp :lexical t
-(use-package elfeed-org
-  :after (elfeed org)
-  :config (elfeed-org)
-  :custom
-  (rmh-elfeed-org-files '("~/Documents/rss-feeds.org"))
-  (rmh-elfeed-org-auto-ignore-invalid-feeds nil))
 #+end_src
 ** elisp-mode
 #+begin_src emacs-lisp :lexical t
