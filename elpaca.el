@@ -2019,7 +2019,7 @@ OUTPUT may be any of the following:
   (let* ((default-directory (expand-file-name "elpaca/" elpaca-repos-directory))
          (git  (string-trim (elpaca-process-output "git" "--version")))
          (repo (string-trim (elpaca-process-output "git" "log" "--pretty=%h %D" "-1")))
-         (info (list (cons 'elpaca repo) (cons 'isntaller elpaca-installer-version)
+         (info (list (cons 'elpaca repo) (cons 'installer elpaca-installer-version)
                      (cons 'emacs (emacs-version)) (cons 'git git))))
     (when (member output '(message string))
       (setq info (format "Elpaca %s\ninstaller:      %S\nemacs-version:  %s\ngit --version:  %s"
