@@ -1499,7 +1499,7 @@ Loads or caches autoloads."
          (print-circle nil))
     (elpaca--make-process e
       :name "byte-compile"
-      :command  `(,emacs "-Q" "--batch" "--eval" ,(format "%S" program))
+      :command  `(,emacs "-q" "--batch" "--eval" ,(format "%S" program))
       :sentinel (apply-partially #'elpaca--process-sentinel "Byte compilation complete" nil))))
 
 ;;;###autoload
