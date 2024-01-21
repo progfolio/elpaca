@@ -1234,6 +1234,7 @@ If RECACHE is non-nil, do not use cached dependencies."
    with finished = 0
    with q-id = (elpaca<-queue-id e)
    with e-id = (elpaca<-id e)
+   with builtp = (elpaca<-builtp e)
    with pending
    for dependency in externals
    for queued = (elpaca-alist-get dependency qd)
@@ -1243,6 +1244,7 @@ If RECACHE is non-nil, do not use cached dependencies."
    do (and queued (> (elpaca<-queue-id d) q-id)
            (cl-return (elpaca--fail d (format "dependent %S in past queue" e-id))))
    (cl-pushnew e-id (elpaca<-dependents d))
+   (and builtp (not (elpaca<-builtp d)) (cl-pushnew #'elpaca--check-version (elpaca<-build-steps e)))
    (when (or (eq d-status 'queued)
              (and (elpaca--throttled-p d) (= elpaca-queue-limit 1) ;; Dependency must be continued.
                   (progn (setf (elpaca<-statuses d) (delq 'continued-dep (elpaca<-statuses d)))
