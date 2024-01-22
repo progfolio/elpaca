@@ -187,15 +187,15 @@
                (if-let ((ds (remq 'emacs (elpaca--dependents id 'noerror))))
                    (concat i (mapconcat #'elpaca-info--button (cl-sort ds #'string<) i))
                  (if on-disk-p "nil" "?")))
-             (when e (elpaca-info--section "%s %s" "version:"
-                       (concat (when-let ((default-directory (elpaca<-repo-dir e))
-                                          (version (or (elpaca--declared-version e)
-                                                       (elpaca--latest-tag e))))
-                                 (string-trim version))
-                               " "
-                               (when-let ((commit (ignore-errors (elpaca-process-output
-                                                                  "git" "rev-parse"  "--short" "HEAD"))))
-                                 (string-trim commit)))))
+             (when-let ((version (if-let ((e)
+                                          (default-directory (elpaca<-repo-dir e))
+                                          (v (or (elpaca--declared-version e) (elpaca--latest-tag e))))
+                                     (concat (string-trim v) " "
+                                             (ignore-errors
+                                               (string-trim (elpaca-process-output "git" "rev-parse"  "--short" "HEAD"))))
+                                   (when-let ((builtin (alist-get id package--builtin-versions)))
+                                     (concat (mapconcat #'number-to-string builtin ".") " (builtin)")))))
+               (elpaca-info--section "%s %s" "installed version:" version))
              (when-let ((e) (statuses (elpaca<-statuses e)))
                (elpaca-info--section "%s\n  %S" "statuses:" statuses))
              (when-let ((e) (files (ignore-errors (elpaca--files e))))
