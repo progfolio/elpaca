@@ -1103,7 +1103,7 @@ The keyword's value is expected to be one of the following:
                      (declared (plist-member recipe :main)))
                 (cadr declared)
               (let* ((package (file-name-sans-extension (elpaca<-package e)))
-                     (name (concat "\\(?:" package "\\(?:-pkg\\)?\\.el\\)\\'")))
+                     (name (concat "\\(?:" (regexp-quote package) "\\(?:-pkg\\)?\\.el\\)\\'")))
                 (or (car (directory-files repo nil (concat "\\`" name)))
                     (car (cl-remove-if-not
                           (apply-partially #'string-match-p (concat "[/\\]" name))
