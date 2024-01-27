@@ -48,10 +48,7 @@
     (make-directory path t)
     (make-directory (expand-file-name ".git/info/" path) t)
     (message "Downloading MELPA recipes...")
-    (let* ((process-environment ;; ignore user git config see: https://github.com/progfolio/elpaca/issues/129
-            (append '("GIT_CONFIG_SYSTEM=/dev/null" "GIT_CONFIG_GLOBAL=/dev/null")
-                                        process-environment))
-           (processes
+    (let* ((processes
             (list
              (elpaca-process-call "git" "init")
              (elpaca-process-call "git" "config" "core.sparseCheckout" "true")
