@@ -576,7 +576,7 @@ The first function, if any, which returns non-nil is used." :type 'hook)
      :id id :package (symbol-name id) :order order :statuses (list status)
      :repo-dir repo-dir :build-dir build-dir :mono-repo mono-repo
      :build-steps build-steps :recipe recipe :builtp builtp :blockers blockers
-     :log (list (list status nil info)))))
+     :log (list (list status nil info 0)))))
 
 (defsubst elpaca--status (e) "Return E's status." (car (elpaca<-statuses e)))
 
