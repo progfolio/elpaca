@@ -9,24 +9,16 @@
 ;;; Code:
 (defgroup elpaca-ui nil "Elpaca's UI options." :group 'elpaca)
 
-(defface elpaca-ui-marked-delete  '((t (:inherit error)))
+(defface elpaca-ui-marked-delete '((t (:inherit error :inverse-video t)))
   "Face for packages marked for deletion.")
-(defface elpaca-ui-marked-install
-  '((((class color) (background light)) :weight bold :foreground "blue")
-    (((class color) (background dark))  :weight bold :foreground "#89CFF0"))
+(defface elpaca-ui-marked-install '((t (:inherit highlight :weight bold)))
   "Face for packages marked for installation.")
-(defface elpaca-ui-marked-rebuild
-  '((((class color) (background light)) :weight bold :foreground "purple")
-    (((class color) (background dark))  :weight bold :foreground "purple"))
+(defface elpaca-ui-marked-rebuild '((t (:inherit match :weight bold)))
   "Face for packages marked for rebuild.")
-(defface elpaca-ui-marked-fetch
-  '((((class color) (background light)) :weight bold :foreground "brown")
-    (((class color) (background dark))  :weight bold :foreground "#EFC88B"))
+(defface elpaca-ui-marked-fetch '((t (:inherit secondary-selection :weight bold)))
   "Face for packages marked for fetch.")
-(defface elpaca-ui-marked-merge
-  '((((class color) (background light)) :weight bold :foreground "#F28500")
-    (((class color) (background dark))  :weight bold :foreground "orange"))
-  "Face for packages marked for update.")
+(defface elpaca-ui-marked-merge '((t (:inherit region :weight bold :inverse-video t)))
+  "Face for packages marked for merging.")
 
 (defcustom elpaca-ui-row-limit 1000 "Max rows to print at once." :type 'integer)
 (defcustom elpaca-ui-default-query ".*" "Initial `elpaca-ui-mode' search query."
