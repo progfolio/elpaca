@@ -19,6 +19,8 @@
   "Face for packages marked for fetch.")
 (defface elpaca-ui-marked-merge '((t (:inherit region :weight bold :inverse-video t)))
   "Face for packages marked for merging.")
+(defface elpaca-ui-marked-pull '((t (:inherit warning :inverse-video t)))
+  "Face for packages marked for pulling.")
 
 (defcustom elpaca-ui-row-limit 1000 "Max rows to print at once." :type 'integer)
 (defcustom elpaca-ui-default-query ".*" "Initial `elpaca-ui-mode' search query."
@@ -30,7 +32,9 @@
     (elpaca-try     :prefix "⚙️" :face elpaca-ui-marked-install)
     (elpaca-rebuild :prefix "♻️️" :face elpaca-ui-marked-rebuild)
     (elpaca-fetch   :prefix "‍🐕‍🦺" :face elpaca-ui-marked-fetch)
-    (elpaca-merge   :prefix "🤝" :face elpaca-ui-marked-merge :args (id prefix-arg)))
+    (elpaca-merge   :prefix "🤝" :face elpaca-ui-marked-merge :args (id prefix-arg))
+    (elpaca-pull    :prefix "⬆️" :face elpaca-ui-marked-pull :args (id prefix-arg)))
+
   "List of marks which can be applied to packages `elpaca-ui-mode' buffers.
 Each element is of the form (COMMAND :KEY VAL...).
 Accepted key val pairs are:
@@ -135,7 +139,6 @@ exclamation point to it. e.g. !#installed."
   :type (or 'string 'nil))
 
 (define-obsolete-function-alias 'elpaca-ui-mark-install 'elpaca-ui-mark-try "0.0.0")
-(define-obsolete-function-alias 'elpaca-ui-mark-update 'elpaca-ui-mark-merge "0.0.0")
 ;;;; Variables:
 (defvar-local elpaca-ui--search-timer nil "Timer to debounce search input.")
 (defvar-local elpaca-ui--prev-entry-count nil "Number of previously recorded entries.")
@@ -572,8 +575,9 @@ The current package is its sole argument."
   "Throw user error if package associted with ID is not installed."
   (unless (elpaca-installed-p id) (user-error "Package %S is not installed" id)))
 
-(elpaca-ui-defmark elpaca-fetch  #'elpaca-ui--ensure-installed)
-(elpaca-ui-defmark elpaca-merge  #'elpaca-ui--ensure-installed)
+(elpaca-ui-defmark elpaca-fetch #'elpaca-ui--ensure-installed)
+(elpaca-ui-defmark elpaca-merge #'elpaca-ui--ensure-installed)
+(elpaca-ui-defmark elpaca-pull  #'elpaca-ui--ensure-installed)
 
 (elpaca-ui-defmark elpaca-try
   (lambda (p) (when (elpaca-installed-p p) (user-error "Package %S already installed" p))))

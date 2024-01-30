@@ -1840,7 +1840,6 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
                  :elpaca-git-rev rev)
     (elpaca--signal e "Merging updates" 'merging)))
 
-(define-obsolete-function-alias 'elpaca-update 'elpaca-merge "0.0.0")
 ;;;###autoload
 (defun elpaca-merge (id &optional fetch interactive)
   "Merge package commits associated with ID.
@@ -1867,7 +1866,14 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
       (elpaca--maybe-log)
       (elpaca--process e))))
 
-(define-obsolete-function-alias 'elpaca-update-all 'elpaca-merge-all "0.0.0")
+;;;###autoload
+(defun elpaca-pull (id &optional interactive) ;;@MAYBE: optional REBUILD arg?
+  "Fetch, merge, and rebuild package associated with ID.
+If INTERACTIVE is non-nil, process queues."
+  (interactive (list (elpaca--read-queued "Update package: ") t))
+  (elpaca-merge id 'fetch interactive))
+(defalias 'elpaca-update #'elpaca-pull)
+
 ;;;###autoload
 (defun elpaca-merge-all (&optional fetch interactive)
   "Merge and rebuild queued packages.
@@ -1891,6 +1897,12 @@ If INTERACTIVE is non-nil, process queues."
              (push id seen)
              (unless mono-repo (push (cons repo id) repos))))
   (when interactive (elpaca-process-queues)))
+
+;;;###autoload
+(defun elpaca-pull-all (&optional interactive)
+  "Update all queued packages. If INTERACTIVE is non-nil, process queue."
+  (elpaca-merge-all 'fetch interactive))
+(defalias 'elpaca-update-all #'elpaca-pull-all)
 
 ;;; Lockfiles
 (defun elpaca-declared-p (id)

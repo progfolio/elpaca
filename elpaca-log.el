@@ -42,9 +42,11 @@
   :type '(alist :key-type symbol :value-type function) :group 'elpaca-ui)
 
 (defcustom elpaca-log-command-queries
-  '(((elpaca-fetch elpaca-fetch-all)   . "#latest #update-log")
-    ((elpaca-try elpaca-rebuild)       . "#latest #linked-errors")
-    ((elpaca-merge elpaca-merge-all) . "#unique | !finished")
+  '(((elpaca-fetch elpaca-fetch-all) . "#latest #update-log")
+    ((elpaca-try elpaca-rebuild) . "#latest #linked-errors")
+    (( elpaca-merge elpaca-merge-all elpaca-pull elpaca-pull-all
+       elpaca-update elpaca-update-all)
+     . "#latest #unique")
     ((eval-buffer eval-region eval-defun eval-last-sexp org-ctrl-c-ctrl-c) . silent)
     (elpaca-delete . (lambda () (if (equal (buffer-name) elpaca-log-buffer)
                                     elpaca-ui-search-query 'silent)))
