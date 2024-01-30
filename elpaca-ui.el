@@ -576,14 +576,15 @@ The current package is its sole argument."
   (lambda (p) (unless (or (elpaca-installed-p p) (alist-get p (elpaca--queued)))
                 (user-error "Package %S is not installed" p))))
 
+(defun elpaca-ui--ensure-installed (id)
+  "Throw user error if package associted with ID is not installed."
+  (unless (elpaca-installed-p id) (user-error "Package %S is not installed" id)))
+
+(elpaca-ui-defmark elpaca-fetch  #'elpaca-ui--ensure-installed)
+(elpaca-ui-defmark elpaca-merge  #'elpaca-ui--ensure-installed)
+
 (elpaca-ui-defmark elpaca-try
   (lambda (p) (when (elpaca-installed-p p) (user-error "Package %S already installed" p))))
-
-(elpaca-ui-defmark elpaca-fetch
-  (lambda (p) (unless (elpaca-installed-p p) (user-error "Package %S is not installed" p))))
-
-(elpaca-ui-defmark elpaca-merge
-  (lambda (p) (unless (elpaca-installed-p p) (user-error "Package %S is not installed" p))))
 
 (elpaca-ui-defmark elpaca-delete
   (lambda (p) (unless (or (elpaca-installed-p p)
