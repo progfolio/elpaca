@@ -910,28 +910,6 @@ https://github.com/emacsmirror/diminish
 (use-package diminish
   :defer 10)
 #+end_src
-** dimmer
-#+begin_quote
-Visually highlight the selected buffer.
-
-https://github.com/gonewest818/dimmer.el
-#+end_quote
-#+begin_src emacs-lisp :lexical t
-(use-package dimmer
-  :defer 5
-  :after (which-key)
-  :custom
-  (dimmer-exclusion-regexp-list '("^\\*[h|H]elm.*\\*"
-                                  "^\\*Minibuf-.*\\*"
-                                  "^\\*Echo.*"
-                                  "^.\\*which-key\\*$"))
-  (dimmer-fraction 0.10)
-  (dimmer-watch-frame-focus-events nil)
-  :config
-  (dimmer-mode 1)
-  (dimmer-configure-which-key)
-  (dimmer-configure-magit))
-#+end_src
 ** dired
 #+begin_quote
 Directory browsing commands
