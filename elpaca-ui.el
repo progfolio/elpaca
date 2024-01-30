@@ -166,6 +166,7 @@ exclamation point to it. e.g. !#installed."
     (define-key m (kbd "x") 'elpaca-ui-execute-marks)
     m)
   "Keymap for `elpaca-ui-mode'.")
+
 (defvar-local elpaca-ui--want-faces t "When non-nil, faces are applied to packages.")
 (defvar-local elpaca-ui-search-query nil "Package search query.")
 (defvar-local elpaca-ui-header-line-prefix nil "Header line prefix.")
