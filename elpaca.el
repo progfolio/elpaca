@@ -580,7 +580,6 @@ The first function, if any, which returns non-nil is used." :type 'hook)
 
 (defsubst elpaca--status (e) "Return E's status." (car (elpaca<-statuses e)))
 
-(declare-function elpaca-status "elpaca-status")
 (declare-function elpaca-ui--update-search-query "elpaca-ui")
 (defun elpaca--update-log-buffer ()
   "Update views in `elpaca-log-buffer'."

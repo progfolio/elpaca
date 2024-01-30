@@ -30,7 +30,7 @@
 (defface elpaca-log-error '((t (:inherit error))) "Highlight log errors." :group 'elpaca-ui)
 (defface elpaca-log-info '((t (:inherit shadow))) "Face for log info." :group 'elpaca-ui)
 
-(defcustom elpaca-log-default-search-query ".*" "Default query for `elpaca-log-buffer'."
+(defcustom elpaca-log-default-search-query "#unique" "Default query for `elpaca-log-buffer'."
   :type 'string :group 'elpaca-ui)
 
 (defcustom elpaca-log-search-tags
@@ -236,23 +236,11 @@ If it is a function, it's return value is used."
 ;;;###autoload
 (defun elpaca-log (&optional query)
   "Display `elpaca-log-buffer' filtered by QUERY."
-  (interactive (list (when-let ((pkg (ignore-errors (elpaca-ui-current-package)))
-                                (query (format "^%s$|" (symbol-name pkg)))
-                                (quoted (regexp-quote query)))
-                       (if (string-match-p quoted elpaca-ui-search-query)
-                           (replace-regexp-in-string quoted "" elpaca-ui-search-query)
-                         (concat (string-trim elpaca-ui-search-query) " " query)))))
+  (interactive)
   (with-current-buffer (get-buffer-create elpaca-log-buffer)
     (unless (derived-mode-p 'elpaca-log-mode) (elpaca-log-mode))
     (elpaca-ui--update-search-query (current-buffer) (or query elpaca-ui-search-query))
     (pop-to-buffer elpaca-log-buffer '((display-buffer-reuse-window display-buffer-same-window)))))
-
-;;;###autoload
-(defun elpaca-status ()
-  "Log most recent events for packages."
-  (interactive)
-  (with-current-buffer (elpaca-log)
-    (elpaca-log (alist-get 'elpaca-status elpaca-log-command-queries "#unique"))))
 
 (provide 'elpaca-log)
 ;;; elpaca-log.el ends here
