@@ -388,7 +388,7 @@ ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
 
 (defun elpaca-ui--apply-face ()
   "Apply face to current entry id."
-  (when-let ((entry (get-text-property (point) 'tabulated-list-entry))
+  (when-let ((entry (tabulated-list-get-entry))
              (name  (aref entry 0))
              (id    (intern name))
              (offset (save-excursion
