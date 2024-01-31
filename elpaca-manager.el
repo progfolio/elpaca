@@ -71,7 +71,7 @@ If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
 
 ;;;###autoload
 (defun elpaca-manager (&optional recache)
-  "Display elpaca's package management UI.
+  "Display Elpaca's package management UI.
 If RECACHE is non-nil, recompute menu items from `elpaca-menu-functions'."
   (interactive "P")
   (with-current-buffer (get-buffer-create elpaca-manager-buffer)

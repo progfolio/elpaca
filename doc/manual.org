@@ -64,45 +64,6 @@ To export:
 :CUSTOM_ID: basic-concepts
 :END:
 
-The =elpaca-example= macro in the following examples reduces verbosity.
-It is not part of Elpaca.
-
-#+begin_src emacs-lisp :lexical t :exports both :results silent
-(defun elpaca-example-sort-plist (plist)
-  "Return copy of PLIST with :package followed by lexically sorted key/val pairs."
-  `(:package ,(plist-get plist :package)
-             ,@(cl-loop for k in (cl-sort (cl-loop for key in plist by #'cddr
-                                                   unless (eq key :package) collect key)
-                                          #'string< :key #'symbol-name)
-                        append (list k (plist-get plist k)))))
-
-(defmacro elpaca-example (&rest body)
-  "Execute BODY with a clean elpaca environment."
-  `(let (elpaca-cache-menu-items
-         elpaca-order-functions
-         elpaca-recipe-functions
-         elpaca--menu-cache
-         (elpaca-menu-functions '(elpaca-example-menu)))
-     ;; Prevent cache corruption
-     (cl-letf (((symbol-function 'elpaca--write-menu-cache) #'ignore))
-       (elpaca-example-sort-plist ,@body))))
-#+end_src
-
-Examples will use the following recipe menu.
-([[#menus][recipe menu]])
-It offers a "burger" package recipe:
-
-#+begin_src emacs-lisp :lexical t :results silent :eval never-export
-(defun elpaca-example-menu (_)
-  '((burger . (:recipe ( :buns 2
-                         :lettuce t
-                         :tomato t
-                         :beef t
-                         :cheese t
-                         :cook well-done
-                         :from elpaca-example-menu)))))
-#+end_src
-
 *** Recipes
 :PROPERTIES:
 :CUSTOM_ID: recipes
@@ -123,7 +84,7 @@ It is a list of the form:
 :CUSTOM_ID: recipe-keyword-host
 :END:
 A symbol or string representing the hosting service of the repository.
-If a string is used, it is inserted in the URI verbatim.
+Strings are inserted in the URI verbatim.
 
 #+begin_src emacs-lisp :lexical t :eval never-export
 (example :host github)
@@ -305,43 +266,52 @@ For example, without inheritance:
 
 #+name: recipe-inheritance-nil
 #+begin_src emacs-lisp :lexical t :results raw code :exports both
-(elpaca-example (elpaca-recipe '(burger :inherit nil)))
+(elpaca-recipe '(doct :inherit nil))
 #+end_src
 
 returns the recipe as declared:
 
 #+results: recipe-inheritance-nil
 #+begin_src emacs-lisp
-(:package "burger" :inherit nil)
+(:source nil :inherit nil :package "doct")
 #+end_src
 
 With inheritance enabled:
 
 #+name: recipe-inheritance-t
 #+begin_src emacs-lisp :lexical t :results raw code :exports both
-(elpaca-example (elpaca-recipe '(burger :inherit t)))
+(elpaca-recipe '(dracula-theme :inherit t)))
 #+end_src
 
 #+RESULTS: recipe-inheritance-t
 #+begin_src emacs-lisp
-(:package "burger" :beef t :buns 2 :cheese t :cook well-done :from
-          elpaca-example-menu :inherit t :lettuce t :tomato t)
+(:package "dracula-theme" :fetcher github :repo "dracula/emacs" :files
+          ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
+           "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+           (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
+                     "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
+          :source "MELPA" :protocol https :inherit t :depth 1)
 #+end_src
 
-the elpaca-example-menu provides the rest of the "burger" recipe.
+the Elpaca's MELPA menu provides the rest of the recipe.
 
 The value may also be a menu symbol or list of menu symbols.
 This is a per-recipe way of setting =elpaca-menu-functions=.
 
 #+name: recipe-inheritance-menu
 #+begin_src emacs-lisp :lexical t :results raw code :exports both
-(elpaca-example (elpaca-recipe '(burger :inherit elpaca-example-menu)))
+(elpaca-recipe '(dracula-theme :inherit elpaca-menu-non-gnu-devel-elpa))
 #+end_src
 
 #+RESULTS: recipe-inheritance-menu
 #+begin_src emacs-lisp
-(:package "burger" :beef t :buns 2 :cheese t :cook well-done :from
-          elpaca-example-menu :inherit elpaca-example-menu :lettuce t :tomato t)
+(:package "dracula-theme" :repo "https://github.com/dracula/emacs" :local-repo
+          "dracula-theme" :files
+          ("*"
+           (:exclude ".git" "INSTALL.md" "screenshot.png" "start_emacs_test.sh"
+                     "test-profile.el"))
+          :source "NonGNU-devel ELPA" :protocol https :inherit
+          elpaca-menu-non-gnu-devel-elpa :depth 1)
 #+end_src
 
 **** :pre-build
@@ -405,17 +375,19 @@ The following list shows the precedence of inheritance from highest to lowest:
 - elpaca-order-functions
 - elpaca-menu-functions
 
-#+name: recipe-inheritance-precedence
-#+begin_src emacs-lisp :lexical t :results raw code :exports both
-(elpaca-example
- (let ((elpaca-recipe-functions (lambda (recipe) '(:from recipe-functions :cheese extra)))
-       (elpaca-order-functions (lambda (order) '(:from order-functions :tomato nil))))
-   (elpaca-recipe '(burger))))
-#+end_src
+The =elpaca-info= command shows inherited recipe properties:
 
-#+results: recipe-inheritance-precedence
-#+begin_src emacs-lisp
-(:package "burger" :beef t :buns 2 :cheese extra :cook well-done :from recipe-functions :lettuce t :tomato nil)
+#+begin_src emacs-lisp :lexical t :eval never
+( :package "evil"
+  ;; Inherited from elpaca-order-functions.
+  :depth 1
+  :inherit t
+  :protocol https
+  ;; Inherited from elpaca-menu-item.
+  :files ( :defaults "doc/build/texinfo/evil.texi"
+           (:exclude "evil-test-helpers.el"))
+  :fetcher github
+  :repo "emacs-evil/evil")
 #+end_src
 
 **** elpaca-recipe-functions
@@ -430,17 +402,14 @@ This is useful if you want to guarantee the values of certain keywords despite a
 
 #+name: recipe-functions-example
 #+begin_src emacs-lisp :lexical t :exports both :results raw code
-(elpaca-example
- (let ((elpaca-recipe-functions
-        '((lambda (recipe)
-            "If a recipe calls for cheese, I always want extra."
-            (when (plist-get recipe :cheese) (list :cheese 'extra))))))
-   (elpaca-recipe '(burger))))
+(let ((elpaca-recipe-functions '((lambda (_) "Add extra cheese to everything."
+                                   (list :cheese 'extra)))))
+  (elpaca-recipe 'burger))
 #+end_src
 
 #+results: recipe-functions-example
 #+begin_src emacs-lisp
-(:package "burger" :beef t :buns 2 :cheese extra :cook well-done :from elpaca-example-menu :lettuce t :tomato t)
+(:source nil :protocol https :inherit t :depth 1 :package "burger" :cheese extra)
 #+end_src
 
 *** Menus
@@ -528,14 +497,13 @@ This is useful for declaring default order properties.
 For example, the following function disables recipe inheritance by default:
 
 #+begin_src emacs-lisp :lexical t :results raw code :exports both
-(elpaca-example
- (let ((elpaca-order-functions '((lambda (_) '(:inherit nil)))))
-   (elpaca-recipe 'burger)))
+(let ((elpaca-order-functions '((lambda (_) "Disable inheritance." '(:inherit nil)))))
+  (elpaca-recipe 'burger))
 #+end_src
 
 #+RESULTS:
 #+begin_src emacs-lisp
-(:package "burger" :inherit nil)
+(:source nil :inherit nil :package "burger")
 #+end_src
 
 *** Queues
@@ -659,7 +627,7 @@ For example:
 #+end_src
 
 
-In order to turn off =elpaca-use-package-mode= for a given delcaration, specify =:elpaca nil=:
+In order to turn off =elpaca-use-package-mode= for a given declaration, specify =:elpaca nil=:
 
 #+begin_src emacs-lisp :lexical t
 ;; `emacs' is a pseudo-feature which can to configure built-in functionality.
@@ -714,23 +682,23 @@ The following commands are available in the =elpaca-ui-mode=:
 |----------------------------+---------+-----------------------------------------------------------------|
 | elpaca-ui-send-input       | !       | Send input string to current process.                           |
 | elpaca-ui-show-hidden-rows | +       | Append rows up to N times ‘elpaca-ui-row-limit’.                |
-| elpaca-ui-search-installed | I       | Search for "#unique #installed"                                 |
-| elpaca-ui-search-marked    | M       | Search for "#unique #marked"                                    |
-| elpaca-ui-search-orphaned  | O       | Search for "#unique #orphan"                                    |
-| elpaca-ui-search-refresh   | R       | Rerun the current search for BUFFER.                            |
 | elpaca-ui-info             | RET     | Show info for current package.                                  |
-| elpaca-ui-search-tried     | T       | Search for "#unique #installed !#declared"                      |
-| elpaca-ui-unmark           | U       | Unmark current package.                                         |
 | elpaca-ui-browse-package   | b       | Browse current package’s URL via ‘browse-url’.                  |
 | elpaca-ui-mark-delete      | d       | Mark package at point for ‘elpaca-delete’.                      |
 | elpaca-ui-mark-fetch       | f       | Mark package at point for ‘elpaca-fetch’.                       |
+| elpaca-ui-search-marked    | g a     | Search for "#unique #marked"                                    |
+| elpaca-ui-search-installed | g i     | Search for "#unique #installed"                                 |
+| elpaca-log                 | g l     | Display ‘elpaca-log-buffer’ filtered by QUERY.                  |
+| elpaca-manager             | g m     | Display Elpaca’s package management UI.                         |
+| elpaca-ui-search-orphaned  | g o     | Search for "#unique #orphan"                                    |
+| elpaca-ui-search-refresh   | g r     | Rerun the current search for BUFFER.                            |
+| elpaca-ui-search-tried     | g t     | Search for "#unique #installed !#declared"                      |
 | elpaca-ui-mark-try         | i       | Mark package at point for ‘elpaca-try’.                         |
-| elpaca-log                 | l       | Display ‘elpaca-log-buffer’ filtered by QUERY.                  |
-| elpaca-manager             | m       | Display elpaca’s package management UI.                         |
+| elpaca-ui-mark-merge       | m       | Mark package at point for ‘elpaca-merge’.                       |
+| elpaca-ui-mark-pull        | p       | Mark package at point for ‘elpaca-pull’.                        |
 | elpaca-ui-mark-rebuild     | r       | Mark package at point for ‘elpaca-rebuild’.                     |
 | elpaca-ui-search           | s       | Filter current buffer by QUERY. If QUERY is nil, prompt for it. |
-| elpaca-status              | t       | Log most recent events for packages.                            |
-| elpaca-ui-mark-merge       | u       | Mark package at point for ‘elpaca-merge’.                       |
+| elpaca-ui-unmark           | u       | Unmark current package.                                         |
 | elpaca-ui-visit            | v       | Visit current package’s repo or BUILD directory.                |
 | elpaca-ui-execute-marks    | x       | Execute each mark in ‘elpaca-ui-marked-packages’.               |
 
@@ -773,8 +741,8 @@ Considering the following table:
 |      3 | seven | eight | 9 |
 
 The query =o= will match rows 1 (on =one=) and 2 (on =four=).
-The query =3|= will only search for =3= in the first column and match row three.
-While =|||3= Will search for =3= in the 4th column of the table and match row 1.
+The query =3 |= will only search for =3= in the first column and match row three.
+While =||| 3= Will search for =3= in the fourth column of the table and match row 1.
 
 The pound (a.k.a. hash) character, =#=, followed by the name of a search tag filters table entries.
 For example =#random= will display 10 random entries.
@@ -812,3 +780,5 @@ e.g. =#(random 20)= will display 20 random entries.
 
 [fn:1] [[https://git-scm.com/book/en/v2/Git-Internals-Git-References][git ref]]
 [fn:2] [[https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes][remotes]]
+
+#  LocalWords:  Vollmer minibuffer MERCHANTABILITY README plist URI repo elisp Elpaca autoloads struct elpaca ui Elpaca's RET unmark LocalWords pre Unmark url ORDER's

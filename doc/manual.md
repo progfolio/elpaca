@@ -129,22 +129,21 @@ And remove anything related to package.el in your init file. e.g. calls to `(pac
 
 ## Quick Start
 
-| Operation                             | UI (keys apply in elpaca-ui-mode)  | completing-read interface commands                       |
-|------------------------------------- |---------------------------------- |-------------------------------------------------------- |
-| Finding Packages                      | `M-x elpaca-manager`               | `elpaca-try`                                             |
-| Trying Packages (for current session) | `i` `x`                            | `elpaca-try`                                             |
-| Fetching Package Updates              | `f` `x`                            | `elpaca-fetch` or `elpaca-fetch-all`                     |
-| Merging Updates                       | `u` `x`                            | `elpaca-merge` or `elpaca-merge-all`                     |
-| Pulling Updates<sup>\*</sup>          | `C-u u` `x`                        | `C-u M-x` `elpaca-merge` or `C-u M-x` `elpaca-merge-all` |
-| Rebuilding Packages                   | `r` `x`                            | `elpaca-rebuild`                                         |
-| Deleting Packages                     | `d` `x`                            | `elpaca-delete`                                          |
-| View Package Logs                     | `l` filters log to current package | `elpaca-log`                                             |
-| View Package Statuses                 | `t` show most recent log entries   | `elpaca-status`                                          |
-| Visit Package Repository Directory    | `v`                                | `elpaca-visit`                                           |
-| Visit Package Build Directory         | `C-u` `v`                          | `C-u M-x` `elpaca-visit`                                 |
-| Browse Package Website                | `b`                                | `elpaca-browse`                                          |
+| Operation                             | UI (keys apply in elpaca-ui-mode)   | completing-read interface commands     |
+|------------------------------------- |----------------------------------- |-------------------------------------- |
+| Finding Packages                      | `g` `m` (or `M-x` `elpaca-manager`) | `elpaca-try`                           |
+| Trying Packages (for current session) | `i` `x`                             | `elpaca-try`                           |
+| Fetching Package Updates              | `f` `x`                             | `elpaca-fetch` or `elpaca-fetch-all`   |
+| Merging Updates                       | `m` `x`                             | `elpaca-merge` or `elpaca-merge-all`   |
+| Updating Packages<sup>\*</sup>        | `p` `x`                             | `elpaca-update` or `elpaca-update-all` |
+| Rebuilding Packages                   | `r` `x`                             | `elpaca-rebuild`                       |
+| Deleting Packages                     | `d` `x`                             | `elpaca-delete`                        |
+| View Package Logs                     | `g` `l`                             | `elpaca-log`                           |
+| Visit Package Repository Directory    | `v`                                 | `elpaca-visit`                         |
+| Visit Package Build Directory         | `C-u` `v`                           | `C-u M-x` `elpaca-visit`               |
+| Browse Package Website                | `b`                                 | `elpaca-browse`                        |
 
-​\* It&rsquo;s encouraged to fetch, review, and **then** merge package updates rather than pulling.
+​\* Update is an alias for &ldquo;pull&rdquo;. It&rsquo;s encouraged to fetch, review, and **then** merge package updates rather than pulling.
 
 Packages installed via the above commands are not loaded on subsequent Emacs sessions (after restarting). To install and load packages persistently (across Emacs restarts), use the `elpaca` macro in your init file after the installer. ([installer](#installer))
 
@@ -217,42 +216,6 @@ Add any configuration which relies on `after-init-hook`, `emacs-startup-hook`, e
 
 ## Basic concepts
 
-The `elpaca-example` macro in the following examples reduces verbosity. It is not part of Elpaca.
-
-```emacs-lisp
-(defun elpaca-example-sort-plist (plist)
-  "Return copy of PLIST with :package followed by lexically sorted key/val pairs."
-  `(:package ,(plist-get plist :package)
-             ,@(cl-loop for k in (cl-sort (cl-loop for key in plist by #'cddr
-                                                   unless (eq key :package) collect key)
-                                          #'string< :key #'symbol-name)
-                        append (list k (plist-get plist k)))))
-
-(defmacro elpaca-example (&rest body)
-  "Execute BODY with a clean elpaca environment."
-  `(let (elpaca-cache-menu-items
-         elpaca-order-functions
-         elpaca-recipe-functions
-         elpaca--menu-cache
-         (elpaca-menu-functions '(elpaca-example-menu)))
-     ;; Prevent cache corruption
-     (cl-letf (((symbol-function 'elpaca--write-menu-cache) #'ignore))
-       (elpaca-example-sort-plist ,@body))))
-```
-
-Examples will use the following recipe menu. ([recipe menu](#menus)) It offers a &ldquo;burger&rdquo; package recipe:
-
-```emacs-lisp
-(defun elpaca-example-menu (_)
-  '((burger . (:recipe ( :buns 2
-                         :lettuce t
-                         :tomato t
-                         :beef t
-                         :cheese t
-                         :cook well-done
-                         :from elpaca-example-menu)))))
-```
-
 
 <a id="recipes"></a>
 
@@ -271,7 +234,7 @@ A recipe provides Elpaca with the metadata necessary to build and install a pack
 
 #### :host | :fetcher
 
-A symbol or string representing the hosting service of the repository. If a string is used, it is inserted in the URI verbatim.
+A symbol or string representing the hosting service of the repository. Strings are inserted in the URI verbatim.
 
 ```emacs-lisp
 (example :host github)
@@ -456,37 +419,46 @@ A list of build steps, nil or t. To remove steps from `elpaca-default-build-step
 When non-nil, inherit *PROPS* from `elpaca-order-functions` and possibly `elpaca-menu-functions`. For example, without inheritance:
 
 ```emacs-lisp
-(elpaca-example (elpaca-recipe '(burger :inherit nil)))
+(elpaca-recipe '(doct :inherit nil))
 ```
 
 returns the recipe as declared:
 
 ```emacs-lisp
-(:package "burger" :inherit nil)
+(:source nil :inherit nil :package "doct")
 ```
 
 With inheritance enabled:
 
 ```emacs-lisp
-(elpaca-example (elpaca-recipe '(burger :inherit t)))
+(elpaca-recipe '(dracula-theme :inherit t)))
 ```
 
 ```emacs-lisp
-(:package "burger" :beef t :buns 2 :cheese t :cook well-done :from
-          elpaca-example-menu :inherit t :lettuce t :tomato t)
+(:package "dracula-theme" :fetcher github :repo "dracula/emacs" :files
+          ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
+           "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+           (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
+                     "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
+          :source "MELPA" :protocol https :inherit t :depth 1)
 ```
 
-the elpaca-example-menu provides the rest of the &ldquo;burger&rdquo; recipe.
+the Elpaca&rsquo;s MELPA menu provides the rest of the recipe.
 
 The value may also be a menu symbol or list of menu symbols. This is a per-recipe way of setting `elpaca-menu-functions`.
 
 ```emacs-lisp
-(elpaca-example (elpaca-recipe '(burger :inherit elpaca-example-menu)))
+(elpaca-recipe '(dracula-theme :inherit elpaca-menu-non-gnu-devel-elpa))
 ```
 
 ```emacs-lisp
-(:package "burger" :beef t :buns 2 :cheese t :cook well-done :from
-          elpaca-example-menu :inherit elpaca-example-menu :lettuce t :tomato t)
+(:package "dracula-theme" :repo "https://github.com/dracula/emacs" :local-repo
+          "dracula-theme" :files
+          ("*"
+           (:exclude ".git" "INSTALL.md" "screenshot.png" "start_emacs_test.sh"
+                     "test-profile.el"))
+          :source "NonGNU-devel ELPA" :protocol https :inherit
+          elpaca-menu-non-gnu-devel-elpa :depth 1)
 ```
 
 
@@ -547,16 +519,19 @@ The following list shows the precedence of inheritance from highest to lowest:
 -   elpaca-order-functions
 -   elpaca-menu-functions
 
-```emacs-lisp
-(elpaca-example
- (let ((elpaca-recipe-functions (lambda (recipe) '(:from recipe-functions :cheese extra)))
-       (elpaca-order-functions (lambda (order) '(:from order-functions :tomato nil))))
-   (elpaca-recipe '(burger))))
-```
+The `elpaca-info` command shows inherited recipe properties:
 
 ```emacs-lisp
-(:package "burger" :beef t :buns 2 :cheese extra :cook well-done :from
-          recipe-functions :lettuce t :tomato nil)
+( :package "evil"
+  ;; Inherited from elpaca-order-functions.
+  :depth 1
+  :inherit t
+  :protocol https
+  ;; Inherited from elpaca-menu-item.
+  :files ( :defaults "doc/build/texinfo/evil.texi"
+           (:exclude "evil-test-helpers.el"))
+  :fetcher github
+  :repo "emacs-evil/evil")
 ```
 
 
@@ -569,17 +544,13 @@ The abnormal hook `elpaca-recipe-functions` runs via `run-hook-with-args-until-s
 This is useful if you want to guarantee the values of certain keywords despite allowing recipe inheritance.
 
 ```emacs-lisp
-(elpaca-example
- (let ((elpaca-recipe-functions
-        '((lambda (recipe)
-            "If a recipe calls for cheese, I always want extra."
-            (when (plist-get recipe :cheese) (list :cheese 'extra))))))
-   (elpaca-recipe '(burger))))
+(let ((elpaca-recipe-functions '((lambda (_) "Add extra cheese to everything."
+                                   (list :cheese 'extra)))))
+  (elpaca-recipe 'burger))
 ```
 
 ```emacs-lisp
-(:package "burger" :beef t :buns 2 :cheese extra :cook well-done :from
-          elpaca-example-menu :lettuce t :tomato t)
+(:source nil :protocol https :inherit t :depth 1 :package "burger" :cheese extra)
 ```
 
 
@@ -662,13 +633,12 @@ The abnormal hook `elpaca-order-functions` runs via `run-hook-with-args-until-su
 This is useful for declaring default order properties. For example, the following function disables recipe inheritance by default:
 
 ```emacs-lisp
-(elpaca-example
- (let ((elpaca-order-functions '((lambda (_) '(:inherit nil)))))
-   (elpaca-recipe 'burger)))
+(let ((elpaca-order-functions '((lambda (_) "Disable inheritance." '(:inherit nil)))))
+  (elpaca-recipe 'burger))
 ```
 
 ```emacs-lisp
-(:package "burger" :inherit nil)
+(:source nil :inherit nil :package "burger")
 ```
 
 
@@ -782,7 +752,7 @@ When installing a package which modifies a form used at the top-level (e.g. a pa
 ;; use-package declarations beyond this point may use the `:general' use-package keyword.
 ```
 
-In order to turn off `elpaca-use-package-mode` for a given delcaration, specify `:elpaca nil`:
+In order to turn off `elpaca-use-package-mode` for a given declaration, specify `:elpaca nil`:
 
 ```emacs-lisp
 ;; `emacs' is a pseudo-feature which can to configure built-in functionality.
@@ -804,23 +774,23 @@ The following commands are available in the `elpaca-ui-mode`:
 |-------------------------- |------- |--------------------------------------------------------------- |
 | elpaca-ui-send-input       | !       | Send input string to current process.                           |
 | elpaca-ui-show-hidden-rows | +       | Append rows up to N times ‘elpaca-ui-row-limit’.                |
-| elpaca-ui-search-installed | I       | Search for &ldquo;#unique #installed&rdquo;                     |
-| elpaca-ui-search-marked    | M       | Search for &ldquo;#unique #marked&rdquo;                        |
-| elpaca-ui-search-orphaned  | O       | Search for &ldquo;#unique #orphan&rdquo;                        |
-| elpaca-ui-search-refresh   | R       | Rerun the current search for BUFFER.                            |
 | elpaca-ui-info             | RET     | Show info for current package.                                  |
-| elpaca-ui-search-tried     | T       | Search for &ldquo;#unique #installed !#declared&rdquo;          |
-| elpaca-ui-unmark           | U       | Unmark current package.                                         |
 | elpaca-ui-browse-package   | b       | Browse current package’s URL via ‘browse-url’.                  |
 | elpaca-ui-mark-delete      | d       | Mark package at point for ‘elpaca-delete’.                      |
 | elpaca-ui-mark-fetch       | f       | Mark package at point for ‘elpaca-fetch’.                       |
+| elpaca-ui-search-marked    | g a     | Search for &ldquo;#unique #marked&rdquo;                        |
+| elpaca-ui-search-installed | g i     | Search for &ldquo;#unique #installed&rdquo;                     |
+| elpaca-log                 | g l     | Display ‘elpaca-log-buffer’ filtered by QUERY.                  |
+| elpaca-manager             | g m     | Display Elpaca’s package management UI.                         |
+| elpaca-ui-search-orphaned  | g o     | Search for &ldquo;#unique #orphan&rdquo;                        |
+| elpaca-ui-search-refresh   | g r     | Rerun the current search for BUFFER.                            |
+| elpaca-ui-search-tried     | g t     | Search for &ldquo;#unique #installed !#declared&rdquo;          |
 | elpaca-ui-mark-try         | i       | Mark package at point for ‘elpaca-try’.                         |
-| elpaca-log                 | l       | Display ‘elpaca-log-buffer’ filtered by QUERY.                  |
-| elpaca-manager             | m       | Display elpaca’s package management UI.                         |
+| elpaca-ui-mark-merge       | m       | Mark package at point for ‘elpaca-merge’.                       |
+| elpaca-ui-mark-pull        | p       | Mark package at point for ‘elpaca-pull’.                        |
 | elpaca-ui-mark-rebuild     | r       | Mark package at point for ‘elpaca-rebuild’.                     |
 | elpaca-ui-search           | s       | Filter current buffer by QUERY. If QUERY is nil, prompt for it. |
-| elpaca-status              | t       | Log most recent events for packages.                            |
-| elpaca-ui-mark-merge       | u       | Mark package at point for ‘elpaca-merge’.                       |
+| elpaca-ui-unmark           | u       | Unmark current package.                                         |
 | elpaca-ui-visit            | v       | Visit current package’s repo or BUILD directory.                |
 | elpaca-ui-execute-marks    | x       | Execute each mark in ‘elpaca-ui-marked-packages’.               |
 
@@ -847,7 +817,7 @@ The pipe character, `|`, will delimit text searches to specific columns of the t
 | 2      | four  | five  | 6 |
 | 3      | seven | eight | 9 |
 
-The query `o` will match rows 1 (on `one`) and 2 (on `four`). The query `3|` will only search for `3` in the first column and match row three. While `|||3` Will search for `3` in the 4th column of the table and match row 1.
+The query `o` will match rows 1 (on `one`) and 2 (on `four`). The query `3 |` will only search for `3` in the first column and match row three. While `||| 3` Will search for `3` in the fourth column of the table and match row 1.
 
 The pound (a.k.a. hash) character, `#`, followed by the name of a search tag filters table entries. For example `#random` will display 10 random entries. If the search tag accepts arguments they may passed by wrapping the tag name in parenthesis. e.g. `#(random 20)` will display 20 random entries.
 

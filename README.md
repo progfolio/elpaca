@@ -96,22 +96,21 @@ And remove anything related to package.el in your init file. e.g. calls to `(pac
 
 ## Quick Start
 
-| Operation                             | UI (keys apply in elpaca-ui-mode)  | completing-read interface commands                       |
-|------------------------------------- |---------------------------------- |-------------------------------------------------------- |
-| Finding Packages                      | `M-x elpaca-manager`               | `elpaca-try`                                             |
-| Trying Packages (for current session) | `i` `x`                            | `elpaca-try`                                             |
-| Fetching Package Updates              | `f` `x`                            | `elpaca-fetch` or `elpaca-fetch-all`                     |
-| Merging Updates                       | `u` `x`                            | `elpaca-merge` or `elpaca-merge-all`                     |
-| Pulling Updates<sup>\*</sup>          | `C-u u` `x`                        | `C-u M-x` `elpaca-merge` or `C-u M-x` `elpaca-merge-all` |
-| Rebuilding Packages                   | `r` `x`                            | `elpaca-rebuild`                                         |
-| Deleting Packages                     | `d` `x`                            | `elpaca-delete`                                          |
-| View Package Logs                     | `l` filters log to current package | `elpaca-log`                                             |
-| View Package Statuses                 | `t` show most recent log entries   | `elpaca-status`                                          |
-| Visit Package Repository Directory    | `v`                                | `elpaca-visit`                                           |
-| Visit Package Build Directory         | `C-u` `v`                          | `C-u M-x` `elpaca-visit`                                 |
-| Browse Package Website                | `b`                                | `elpaca-browse`                                          |
+| Operation                             | UI (keys apply in elpaca-ui-mode)   | completing-read interface commands     |
+|------------------------------------- |----------------------------------- |-------------------------------------- |
+| Finding Packages                      | `g` `m` (or `M-x` `elpaca-manager`) | `elpaca-try`                           |
+| Trying Packages (for current session) | `i` `x`                             | `elpaca-try`                           |
+| Fetching Package Updates              | `f` `x`                             | `elpaca-fetch` or `elpaca-fetch-all`   |
+| Merging Updates                       | `m` `x`                             | `elpaca-merge` or `elpaca-merge-all`   |
+| Updating Packages<sup>\*</sup>        | `p` `x`                             | `elpaca-update` or `elpaca-update-all` |
+| Rebuilding Packages                   | `r` `x`                             | `elpaca-rebuild`                       |
+| Deleting Packages                     | `d` `x`                             | `elpaca-delete`                        |
+| View Package Logs                     | `g` `l`                             | `elpaca-log`                           |
+| Visit Package Repository Directory    | `v`                                 | `elpaca-visit`                         |
+| Visit Package Build Directory         | `C-u` `v`                           | `C-u M-x` `elpaca-visit`               |
+| Browse Package Website                | `b`                                 | `elpaca-browse`                        |
 
-​\* It's encouraged to fetch, review, and **then** merge package updates rather than pulling.
+​\* Update is an alias for "pull". It's encouraged to fetch, review, and **then** merge package updates rather than pulling.
 
 Packages installed via the above commands are not loaded on subsequent Emacs sessions (after restarting). To install and load packages persistently (across Emacs restarts), use the `elpaca` macro in your init file after the installer. ([installer](#installer))
 
