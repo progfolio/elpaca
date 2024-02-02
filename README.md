@@ -98,7 +98,7 @@ And remove anything related to package.el in your init file. e.g. calls to `(pac
 
 | Operation                             | UI (keys apply in elpaca-ui-mode)   | completing-read interface commands     |
 |------------------------------------- |----------------------------------- |-------------------------------------- |
-| Finding Packages                      | `g` `m` (or `M-x` `elpaca-manager`) | `elpaca-try`                           |
+| Finding Packages                      | `g` `m` (or `M-x` `elpaca-manager`) | `elpaca-info`                          |
 | Trying Packages (for current session) | `i` `x`                             | `elpaca-try`                           |
 | Fetching Package Updates              | `f` `x`                             | `elpaca-fetch` or `elpaca-fetch-all`   |
 | Merging Updates                       | `m` `x`                             | `elpaca-merge` or `elpaca-merge-all`   |

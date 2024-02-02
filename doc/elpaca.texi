@@ -212,7 +212,7 @@ And remove anything related to package.el in your init file. e.g. calls to @code
 @tab completing-read interface commands
 @item Finding Packages
 @tab @code{g} @code{m} (or @code{M-x} @code{elpaca-manager})
-@tab @code{elpaca-try}
+@tab @code{elpaca-info}
 @item Trying Packages (for current session)
 @tab @code{i} @code{x}
 @tab @code{elpaca-try}
