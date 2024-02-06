@@ -1169,7 +1169,7 @@ The keyword's value is expected to be one of the following:
    with queued = (elpaca--queued)
    with version-regexp-alist = ;; Handle -dev, -DEV, etc. Why isn't this default?
    (append version-regexp-alist '(("\\(?:-[[:alpha:]]+\\)" . -1)))
-   for (id declared) in (elpaca--dependencies e)
+   for (id declared) in (elpaca--dependencies e nil t)
    for min = (version-to-list declared)
    for datep = (> (car min) elpaca--date-version-schema-min) ;; YYYYMMDD version.
    for dep = (elpaca-alist-get id queued)
@@ -1184,37 +1184,42 @@ The keyword's value is expected to be one of the following:
    do (cl-return (elpaca--fail e (format "Requires %s minimum version: %s" id declared))))
   (elpaca--continue-build e))
 
-(defun elpaca--dependencies (e &optional recache)
+(defun elpaca--dependencies (e &optional recache recipep)
   "Return a list of E's declared dependencies.
-If RECACHE is non-nil, do not use cached dependencies."
+If RECACHE is non-nil, do not use cached dependencies.
+If RECIPEP is non-nil, consider :dependencies recipe keyword."
   (let ((cache (elpaca<-dependencies e)))
-    (if-let (((or recache (not cache)))
-             (repo (elpaca<-repo-dir e))
-             (package (file-name-sans-extension (elpaca<-package e)))
-             (main (elpaca--main-file e)))
-        (let ((deps
-               (condition-case err
-                   (with-current-buffer (get-buffer-create " *elpaca--dependencies*")
-                     (setq default-directory repo) ;; Necessary due to recycled buffer.
-                     (insert-file-contents-literally main nil nil nil 'replace)
-                     (goto-char (point-min))
-                     (if (string-suffix-p "-pkg.el" main) (eval (nth 4 (read (current-buffer))))
-                       (when-let
-                           ((case-fold-search t)
-                            ((re-search-forward
-                              "^;+[ ]+\\(Package-Requires\\)[ ]*:[ ]*" nil 'noerror))
-                            (deps (list (buffer-substring-no-properties (point) (line-end-position)))))
-                         (forward-line 1)
-                         (while (looking-at "^;+\\(\t\\|[\t\s]\\{2,\\}\\)\\(.+\\)")
-                           (push (match-string-no-properties 2) deps)
-                           (forward-line 1))
-                         (mapcar (lambda (d) (if (cdr-safe d) d (list (elpaca--first d) "0")))
-                                 (read (string-join (nreverse deps) " "))))))
-                 ((end-of-file) (warn "Malformed dependency metadata: %S" main) nil)
-                 ((error) (error "Dependency detection error: %S %S" main err)))))
-          (setf (elpaca<-dependencies e) (or deps :nil))
-          deps)
-      (and (not (eq cache :nil)) cache))))
+    (if-let ((recipep)
+             (recipe (elpaca<-recipe e))
+             (declared (plist-get recipe :dependencies)))
+        (if (functionp declared) (funcall declared) declared)
+      (if-let (((or recache (not cache)))
+               (repo (elpaca<-repo-dir e))
+               (package (file-name-sans-extension (elpaca<-package e)))
+               (main (elpaca--main-file e)))
+          (let ((deps
+                 (condition-case err
+                     (with-current-buffer (get-buffer-create " *elpaca--dependencies*")
+                       (setq default-directory repo) ;; Necessary due to recycled buffer.
+                       (insert-file-contents-literally main nil nil nil 'replace)
+                       (goto-char (point-min))
+                       (if (string-suffix-p "-pkg.el" main) (eval (nth 4 (read (current-buffer))))
+                         (when-let
+                             ((case-fold-search t)
+                              ((re-search-forward
+                                "^;+[ ]+\\(Package-Requires\\)[ ]*:[ ]*" nil 'noerror))
+                              (deps (list (buffer-substring-no-properties (point) (line-end-position)))))
+                           (forward-line 1)
+                           (while (looking-at "^;+\\(\t\\|[\t\s]\\{2,\\}\\)\\(.+\\)")
+                             (push (match-string-no-properties 2) deps)
+                             (forward-line 1))
+                           (mapcar (lambda (d) (if (cdr-safe d) d (list (elpaca--first d) "0")))
+                                   (read (string-join (nreverse deps) " "))))))
+                   ((end-of-file) (warn "Malformed dependency metadata: %S" main) nil)
+                   ((error) (error "Dependency detection error: %S %S" main err)))))
+            (setf (elpaca<-dependencies e) (or deps :nil))
+            deps)
+        (and (not (eq cache :nil)) cache)))))
 
 (defun elpaca--continue-dependency (e)
   "Continue E unless it has already been continued."
@@ -1225,7 +1230,7 @@ If RECACHE is non-nil, do not use cached dependencies."
   "Queue E's dependencies."
   (cl-loop
    initially (elpaca--signal e "Queueing Dependencies" 'blocked nil 1)
-   with externals = (or (cl-loop for (id . _) in (elpaca--dependencies e)
+   with externals = (or (cl-loop for (id . _) in (elpaca--dependencies e nil t)
                                  unless (memq id elpaca-ignored-dependencies) collect id)
                         (cl-return (elpaca--continue-build e "No external dependencies" 'unblocked)))
    with q = (elpaca--q e)
@@ -1511,7 +1516,7 @@ RECURSE is used to track recursive calls.
 When INTERACTIVE is non-nil, message the list of dependencies."
   (interactive (list (elpaca--read-queued "Dependencies of: ") nil t))
   (if-let ((e (elpaca-get id))
-           (dependencies (elpaca--dependencies e))
+           (dependencies (elpaca--dependencies e nil t))
            (transitives (cl-loop for (d . _) in dependencies
                                  unless (memq d ignore) collect
                                  (cons d (elpaca-dependencies d (cons d ignore) nil t))))
