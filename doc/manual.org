@@ -585,17 +585,15 @@ Adding the following elisp to your init file will enable Elpaca's optional integ
 
 #+begin_src emacs-lisp :lexical t
 (elpaca elpaca-use-package
-  ;; Enable :elpaca use-package keyword.
-  (elpaca-use-package-mode)
-  ;; Assume :elpaca t unless otherwise specified.
-  (setq elpaca-use-package-by-default t))
+  ;; Enable Elpaca support for use-package's :ensure keyword.
+  (elpaca-use-package-mode))
 
-;; Necessary to use the `:elpaca' use-package keyword at the top-level.
+;; Necessary to use the Elpaca's `:ensure` support after this point
 (elpaca-wait)
 #+end_src
 
 #+begin_src emacs-lisp :lexical t
-(use-package example)
+(use-package example :ensure t)
 #+end_src
 
 Expands to:
@@ -604,10 +602,10 @@ Expands to:
 (elpaca example (use-package example))
 #+end_src
 
-The =:elpaca= use-package keyword can also accept a recipe
+With =elpaca-use-package-mode= enabled the =:ensure= use-package keyword can also accept a recipe.
 
 #+begin_src emacs-lisp :lexical t
-(use-package example :elpaca (:host host :repo "user/repo"))
+(use-package example :ensure (:host host :repo "user/repo"))
 #+end_src
 
 Expands to:
@@ -621,20 +619,20 @@ When installing a package which modifies a form used at the top-level (e.g. a pa
 For example:
 
 #+begin_src emacs-lisp :lexical t
-(use-package general :demand t)
+(use-package general :demand t :ensure t)
 (elpaca-wait)
 ;; use-package declarations beyond this point may use the `:general' use-package keyword.
 #+end_src
 
 
-In order to turn off =elpaca-use-package-mode= for a given declaration, specify =:elpaca nil=:
+In order to turn off =elpaca-use-package-mode= for a given declaration, specify =:ensure nil=:
 
 #+begin_src emacs-lisp :lexical t
 ;; `emacs' is a pseudo-feature which can to configure built-in functionality.
-(use-package emacs :elpaca nil :config (setq ring-bell-function #'ignore))
+(use-package emacs :ensure nil :config (setq ring-bell-function #'ignore))
 #+end_src
 
-Note this will cause the declaration to be interpreted immediately (not deferred).
+Note forms like this are not deferred by Elpaca's queue system.
 * UI
 :PROPERTIES:
 :DESCRIPTION: Elpaca's package management UI.

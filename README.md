@@ -124,10 +124,8 @@ For example:
 
 ;; Install use-package support
 (elpaca elpaca-use-package
-  ;; Enable :elpaca use-package keyword.
-  (elpaca-use-package-mode)
-  ;; Assume :elpaca t unless otherwise specified.
-  (setq elpaca-use-package-by-default t))
+  ;; Enable use-package :ensure support for Elpaca.
+  (elpaca-use-package-mode))
 
 ;; Block until current queue processed.
 (elpaca-wait)
@@ -145,7 +143,7 @@ For example:
 ;;Turns off elpaca-use-package-mode current declaration
 ;;Note this will cause the declaration to be interpreted immediately (not deferred).
 ;;Useful for configuring built-in emacs features.
-(use-package emacs :elpaca nil :config (setq ring-bell-function #'ignore))
+(use-package emacs :ensure nil :config (setq ring-bell-function #'ignore))
 
 ;; Don't install anything. Defer execution of BODY
 (elpaca nil (message "deferred"))

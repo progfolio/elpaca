@@ -157,10 +157,8 @@ For example:
 
 ;; Install use-package support
 (elpaca elpaca-use-package
-  ;; Enable :elpaca use-package keyword.
-  (elpaca-use-package-mode)
-  ;; Assume :elpaca t unless otherwise specified.
-  (setq elpaca-use-package-by-default t))
+  ;; Enable use-package :ensure support for Elpaca.
+  (elpaca-use-package-mode))
 
 ;; Block until current queue processed.
 (elpaca-wait)
@@ -178,7 +176,7 @@ For example:
 ;;Turns off elpaca-use-package-mode current declaration
 ;;Note this will cause the declaration to be interpreted immediately (not deferred).
 ;;Useful for configuring built-in emacs features.
-(use-package emacs :elpaca nil :config (setq ring-bell-function #'ignore))
+(use-package emacs :ensure nil :config (setq ring-bell-function #'ignore))
 
 ;; Don't install anything. Defer execution of BODY
 (elpaca nil (message "deferred"))
@@ -712,17 +710,15 @@ Adding the following elisp to your init file will enable Elpaca&rsquo;s optional
 
 ```emacs-lisp
 (elpaca elpaca-use-package
-  ;; Enable :elpaca use-package keyword.
-  (elpaca-use-package-mode)
-  ;; Assume :elpaca t unless otherwise specified.
-  (setq elpaca-use-package-by-default t))
+  ;; Enable Elpaca support for use-package's :ensure keyword.
+  (elpaca-use-package-mode))
 
-;; Necessary to use the `:elpaca' use-package keyword at the top-level.
+;; Necessary to use the Elpaca's `:ensure` support after this point
 (elpaca-wait)
 ```
 
 ```emacs-lisp
-(use-package example)
+(use-package example :ensure t)
 ```
 
 Expands to:
@@ -731,10 +727,10 @@ Expands to:
 (elpaca example (use-package example))
 ```
 
-The `:elpaca` use-package keyword can also accept a recipe
+With `elpaca-use-package-mode` enabled the `:ensure` use-package keyword can also accept a recipe.
 
 ```emacs-lisp
-(use-package example :elpaca (:host host :repo "user/repo"))
+(use-package example :ensure (:host host :repo "user/repo"))
 ```
 
 Expands to:
@@ -747,19 +743,19 @@ Expands to:
 When installing a package which modifies a form used at the top-level (e.g. a package which adds a use-package key word), use \`elpaca-wait&rsquo; to block until that package has been installed and configured. For example:
 
 ```emacs-lisp
-(use-package general :demand t)
+(use-package general :demand t :ensure t)
 (elpaca-wait)
 ;; use-package declarations beyond this point may use the `:general' use-package keyword.
 ```
 
-In order to turn off `elpaca-use-package-mode` for a given declaration, specify `:elpaca nil`:
+In order to turn off `elpaca-use-package-mode` for a given declaration, specify `:ensure nil`:
 
 ```emacs-lisp
 ;; `emacs' is a pseudo-feature which can to configure built-in functionality.
-(use-package emacs :elpaca nil :config (setq ring-bell-function #'ignore))
+(use-package emacs :ensure nil :config (setq ring-bell-function #'ignore))
 ```
 
-Note this will cause the declaration to be interpreted immediately (not deferred).
+Note forms like this are not deferred by Elpaca&rsquo;s queue system.
 
 
 <a id="ui"></a>
