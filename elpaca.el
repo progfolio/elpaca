@@ -1901,6 +1901,7 @@ If INTERACTIVE is non-nil, process queues."
 ;;;###autoload
 (defun elpaca-pull-all (&optional interactive)
   "Update all queued packages. If INTERACTIVE is non-nil, process queue."
+  (interactive (list t))
   (elpaca-merge-all 'fetch interactive))
 (defalias 'elpaca-update-all #'elpaca-pull-all)
 
