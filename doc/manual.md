@@ -167,11 +167,11 @@ For example:
 ;;(e.g. a package which adds a use-package key word),
 ;;use `elpaca-wait' to block until that package has been installed/configured.
 ;;For example:
-;;(use-package general :demand t)
+;;(use-package general :ensure t :demand t)
 ;;(elpaca-wait)
 
 ;; Expands to: (elpaca evil (use-package evil :demand t))
-(use-package evil :demand t)
+(use-package evil :ensure t :demand t)
 
 ;;Turns off elpaca-use-package-mode current declaration
 ;;Note this will cause the declaration to be interpreted immediately (not deferred).
