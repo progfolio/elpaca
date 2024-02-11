@@ -305,16 +305,19 @@ If INTERACTIVE is non-nil or ID is t, prompt for item."
   (interactive (list t nil t))
   (let* ((items (or items (elpaca--flattened-menus)))
          (item (if (or interactive (eq id t))
-                   (let* ((candidates
-                           (cl-loop for i in items
-                                    for data = (cdr i)
-                                    collect (cons (format "%-30s %s %s" (car i)
-                                                          (or (plist-get data :description) "")
-                                                          (or (plist-get data :source) ""))
-                                                  i)))
+                   (let* ((candidates (cl-loop for item in items collect
+                                               (cons (concat (symbol-name (car item))
+                                                             " "
+                                                             (plist-get (cdr item) :source))
+                                                     item)))
+                          (completion-extra-properties
+                           (list :annotation-function
+                                 (lambda (s)
+                                   (concat " " (plist-get (cdr (alist-get s candidates nil nil #'equal))
+                                                          :description)))))
                           (choice (completing-read
                                    (or elpaca-overriding-prompt "Menu Item: ")
-                                   candidates)))
+                                   candidates nil t)))
                      (alist-get choice candidates nil nil #'equal))
                  (assoc id items))))
     (when interactive
