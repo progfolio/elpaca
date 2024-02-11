@@ -160,22 +160,8 @@ The function may return nil or a plist to be merged with the recipe.
 This hook is run via `run-hook-with-args-until-success'."
   :type 'hook)
 
-(defvar elpaca-menu-extensions--cache nil "Cache for `elpaca-menu-extenions' items.")
-(defun elpaca-menu-extensions (request)
-  "Return menu item REQUEST."
-  (or (and (eq request 'index) elpaca-menu-extensions--cache)
-      (setq elpaca-menu-extensions--cache
-            (list (cons 'elpaca-use-package
-                        (list :source "Elpaca extensions"
-                              :description "Elpaca use-package support."
-                              :recipe (list :package "elpaca-use-package"
-                                            :repo "https://github.com/progfolio/elpaca.git"
-                                            :files '("extensions/elpaca-use-package.el")
-                                            :main "extensions/elpaca-use-package.el"
-                                            :build '(:not elpaca--compile-info))))))))
-
 (defcustom elpaca-menu-functions
-  '( elpaca-menu-extensions elpaca-menu-org elpaca-menu-melpa elpaca-menu-non-gnu-devel-elpa
+  '( elpaca-menu elpaca-menu-melpa elpaca-menu-non-gnu-devel-elpa
      elpaca-menu-gnu-devel-elpa elpaca-menu-non-gnu-elpa elpaca-menu-gnu-elpa )
   "Abnormal hook to lookup packages in menus.
 Each function is passed a request, which may be any of the following symbols:
