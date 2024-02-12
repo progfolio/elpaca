@@ -628,7 +628,7 @@ For example:
 In order to turn off =elpaca-use-package-mode= for a given declaration, specify =:ensure nil=:
 
 #+begin_src emacs-lisp :lexical t
-;; `emacs' is a pseudo-feature which can to configure built-in functionality.
+;; `emacs' is a pseudo-feature which can be used to configure built-in functionality.
 (use-package emacs :ensure nil :config (setq ring-bell-function #'ignore))
 #+end_src
 

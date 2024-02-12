@@ -751,7 +751,7 @@ When installing a package which modifies a form used at the top-level (e.g. a pa
 In order to turn off `elpaca-use-package-mode` for a given declaration, specify `:ensure nil`:
 
 ```emacs-lisp
-;; `emacs' is a pseudo-feature which can to configure built-in functionality.
+;; `emacs' is a pseudo-feature which can be used to configure built-in functionality.
 (use-package emacs :ensure nil :config (setq ring-bell-function #'ignore))
 ```
 
