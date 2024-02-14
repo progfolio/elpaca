@@ -1127,9 +1127,10 @@ The keyword's value is expected to be one of the following:
 (defun elpaca--date-version (e)
   "Return date of E's checked out commit."
   (let ((default-directory (elpaca<-repo-dir e)))
-    (elpaca-with-process
-        (elpaca-process-call "git" "log" "-n" "1" "--format=%cd" "--date=format:%Y%m%d.%s")
-      (if (not success) (elpaca--fail e stderr) (version-to-list (string-trim stdout))))))
+    (elpaca--with-no-git-config
+      (elpaca-with-process
+          (elpaca-process-call "git" "log" "-n" "1" "--format=%cd" "--date=format:%Y%m%d.%s")
+        (if (not success) (elpaca--fail e stderr) (version-to-list (string-trim stdout)))))))
 
 (defun elpaca--declared-version (e)
   "Return E's version as declared in recipe or main file's metadata."

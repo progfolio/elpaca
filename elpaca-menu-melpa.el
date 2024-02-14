@@ -48,24 +48,22 @@
     (make-directory path t)
     (make-directory (expand-file-name ".git/info/" path) t)
     (message "Downloading MELPA recipes...")
-    (let* ((process-environment ;; ignore user git config see: https://github.com/progfolio/elpaca/issues/129
-            (append '("GIT_CONFIG_SYSTEM=/dev/null" "GIT_CONFIG_GLOBAL=/dev/null")
-                                        process-environment))
-           (processes
-            (list
-             (elpaca-process-call "git" "init")
-             (elpaca-process-call "git" "config" "core.sparseCheckout" "true")
-             (with-temp-buffer
-               (insert "recipes")
-               (append-to-file (point-min) (point-max)
-                               (expand-file-name ".git/info/sparse-checkout" path)))
-             (elpaca-process-call "git" "remote" "add" "origin" "https://github.com/melpa/melpa.git")
-             (elpaca-process-call "git" "pull" "--depth=1" "origin" "master")
-             (elpaca-process-call "git" "checkout" "master")
-             (elpaca-process-call "git" "branch" "--set-upstream-to" "origin/master" "master")))
-           (err (car (cl-remove-if #'zerop (delq nil processes) :key #'car))))
-      (when err (error "Unable to clone MELPA: %S" err))
-      (message "Downloading MELPA recipes...100%%"))))
+    (elpaca--with-no-git-config
+      (let* ((processes
+              (list
+               (elpaca-process-call "git" "init")
+               (elpaca-process-call "git" "config" "core.sparseCheckout" "true")
+               (with-temp-buffer
+                 (insert "recipes")
+                 (append-to-file (point-min) (point-max)
+                                 (expand-file-name ".git/info/sparse-checkout" path)))
+               (elpaca-process-call "git" "remote" "add" "origin" "https://github.com/melpa/melpa.git")
+               (elpaca-process-call "git" "pull" "--depth=1" "origin" "master")
+               (elpaca-process-call "git" "checkout" "master")
+               (elpaca-process-call "git" "branch" "--set-upstream-to" "origin/master" "master")))
+             (err (car (cl-remove-if #'zerop (delq nil processes) :key #'car))))
+        (when err (error "Unable to clone MELPA: %S" err))
+        (message "Downloading MELPA recipes...100%%")))))
 
 (defun elpaca-menu-melpa--update ()
   "Update recipes in MELPA menu."
