@@ -160,8 +160,7 @@ For example:
 ;; (elpaca example-package)
 
 ;; Install use-package support
-(elpaca elpaca-use-package
-  ;; Enable use-package :ensure support for Elpaca.
+(elpaca elpaca-use-package  ; Enable use-package :ensure support for Elpaca.
   (elpaca-use-package-mode))
 
 ;; Block until current queue processed.
@@ -178,7 +177,7 @@ For example:
 (use-package evil :ensure t :demand t)
 
 ;;Turns off elpaca-use-package-mode current declaration
-;;Note this will cause the declaration to be interpreted immediately (not deferred).
+;;NOTE: this will cause the declaration to be interpreted immediately (not deferred).
 ;;Useful for configuring built-in emacs features.
 (use-package emacs :ensure nil :config (setq ring-bell-function #'ignore))
 
@@ -202,7 +201,7 @@ Consider the following example:
 
 #+begin_src emacs-lisp :lexical t :eval never-export
 (elpaca nil (message "First")) ; Queue First
-(message "Second") ; Second messaged
+(message "Second")             ; Second messaged
 (elpaca nil (message "Third")) ; Queue Third
 (elpaca-process-queues) ; Process queue: First messaged, Third messaged.
 #+end_src
