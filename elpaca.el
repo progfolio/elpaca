@@ -39,7 +39,7 @@
 (defvar Info-directory-list)
 (defconst elpaca--inactive-states '(blocked finished failed))
 (defvar elpaca-installer-version -1)
-(or noninteractive (= elpaca-installer-version 0.6) (warn "Elpaca installer version mismatch"))
+(or noninteractive (= elpaca-installer-version 0.7) (warn "Elpaca installer version mismatch"))
 (or (executable-find "git") (error "Elpaca unable to find git executable"))
 (and (not after-init-time) load-file-name (featurep 'package) (warn "Package.el loaded before Elpaca"))
 
@@ -1578,14 +1578,17 @@ If ORDER is `nil`, defer BODY until orders have been processed."
 (defcustom elpaca-wait-interval 0.01 "Seconds between `elpaca-wait' status checks."
   :type 'number)
 
+(defun elpaca--nonempty-queue (&optional queues)
+  "Return first incomplete queue in QUEUES with orders or forms."
+  (cl-loop for q in (or queues elpaca--queues) thereis
+           (and (eq (elpaca-q<-status q) 'incomplete)
+                (or (elpaca-q<-elpacas q) (elpaca-q<-forms q))
+                q)))
 ;;;###autoload
 (defun elpaca-wait ()
   "Block until currently queued orders are processed.
 When quit with \\[keyboard-quit], running sub-processes are not stopped."
-  (when-let ((q (cl-loop for q in elpaca--queues thereis
-                         (and (eq (elpaca-q<-status q) 'incomplete)
-                              (or (elpaca-q<-elpacas q) (elpaca-q<-forms q))
-                              q))))
+  (when-let ((q (elpaca--nonempty-queue)))
     (setq elpaca--waiting t mode-line-process "elpaca-wait...")
     (elpaca-process-queues)
     (condition-case nil
@@ -1655,17 +1658,18 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
           (elpaca-q<-status q) (if (and (> ps 0) (= ps (length es))) 'complete 'incomplete))))
 
 ;;;###autoload
-(defun elpaca-process-queues (&optional filter)
+(defun elpaca-process-queues (&optional filter &rest queues)
   "Process the incomplete queues.
 FILTER must be a unary function which accepts and returns a queue list."
   (when (and after-init-time elpaca--debug-init) (setq debug-on-error t elpaca--debug-init nil))
   (if-let ((queues (if filter (funcall filter (reverse elpaca--queues))
                      (reverse elpaca--queues)))
            ((mapc #'elpaca--maybe-reset-queue queues))
-           (incomplete (cl-find 'incomplete queues :key #'elpaca-q<-status)))
+           (incomplete (elpaca--nonempty-queue)))
       (progn (setq elpaca--status-counts (elpaca--count-statuses))
              (elpaca--maybe-log)
              (elpaca--process-queue incomplete))
+    (setq elpaca--waiting nil)
     (run-hooks 'elpaca--post-queues-hook)))
 
 (defun elpaca--on-disk-p (id)
@@ -2045,6 +2049,13 @@ OUTPUT may be any of the following:
       (setq info (format "Elpaca %s\ninstaller:      %S\nemacs-version:  %s\ngit --version:  %s"
                          repo elpaca-installer-version (emacs-version) git)))
     (if (eq output 'message) (message "%s" info) info)))
+
+;;;###autoload
+(defun elpaca-process-init ()
+  "Process init queues. Ensures `elpaca-after-init-time' set.
+Do not use this outside `after-init-hook'."
+  (unless elpaca-after-init-time (setq elpaca-after-init-time (current-time)))
+  (elpaca-process-queues))
 
 (provide 'elpaca)
 ;;; elpaca.el ends here

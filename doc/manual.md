@@ -66,7 +66,7 @@ Elpaca requires:
 To install Elpaca, add the following elisp to your init.el. It must come before any calls to other Elpaca functions/macros. This will clone Elpaca into your `user-emacs-directory` under the `elpaca` subdirectory. It then builds and activates Elpaca.
 
 ```emacs-lisp
-(defvar elpaca-installer-version 0.6)
+(defvar elpaca-installer-version 0.7)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
@@ -100,7 +100,7 @@ To install Elpaca, add the following elisp to your init.el. It must come before 
     (require 'elpaca)
     (elpaca-generate-autoloads "elpaca" repo)
     (load "./elpaca-autoloads")))
-(add-hook 'after-init-hook #'elpaca-process-queues)
+(add-hook 'after-init-hook #'elpaca-process-init)
 (elpaca `(,@elpaca-order))
 ```
 
