@@ -7,7 +7,7 @@
 ;; Created: Jan 1, 2022
 ;; Keywords: tools, convenience, lisp
 ;; Package-Requires: ((emacs "27.1"))
-;; Version: 0.0.0
+;; Version: 0.0.1
 
 ;; This file is not part of GNU Emacs.
 
@@ -168,7 +168,7 @@ This hook is run via `run-hook-with-args-until-success'."
             (list (cons 'elpaca-use-package
                         (list :source "Elpaca extensions"
                               :description "Elpaca use-package support."
-                              :recipe (list :package "elpaca-use-package"
+                              :recipe (list :package "elpaca-use-package" :wait t
                                             :repo "https://github.com/progfolio/elpaca.git"
                                             :files '("extensions/elpaca-use-package.el")
                                             :main "extensions/elpaca-use-package.el"
@@ -1598,39 +1598,12 @@ When MESSAGE is non-nil, message the list of dependents."
 (defcustom elpaca-interactive-interval 0.15
   "Time to wait before processing queues when multiple `elpaca' forms evaluated."
   :type 'number)
+(defcustom elpaca-wait-interval 0.01 "Seconds between `elpaca-wait' status checks."
+  :type 'number)
 (defvar elpaca--interactive-timer nil
   "Debounces interactive evaluation of multiple `elpaca' forms.")
 
 ;;;; COMMANDS/MACROS
-;;;###autoload
-(defmacro elpaca (order &rest body)
-  "Queue ORDER for installation/activation, defer execution of BODY.
-If ORDER is `nil`, defer BODY until orders have been processed."
-  (declare (indent 1) (debug t))
-  (let ((o (gensym "order-")) (id (gensym "id-")) (q (gensym "q-")))
-    `(let* ((,o ,@(if (memq (car-safe order) '(quote \`)) `(,order) `(',order)))
-            (,id (elpaca--first ,o))
-            (,q (or (and after-init-time (elpaca--q (elpaca-get ,id))) (car elpaca--queues))))
-       ,@(when body
-           `((if ,id
-                 (setf (alist-get ,id (elpaca-q<-forms ,q)) ',body)
-               ;;@FIX: nil semantics not good for multiple deferred...
-               (push (cons ,id ',body) (elpaca-q<-forms ,q)))))
-       (when ,o (elpaca--queue ,o ,q))
-       (when after-init-time
-         (when-let ((e (elpaca-get ,id)))
-           (elpaca--maybe-log)
-           (elpaca--unprocess e)
-           (push 'queued (elpaca<-statuses e)))
-         (when (member this-command '(eval-last-sexp eval-defun)) (elpaca-process-queues))
-         (when (member this-command '(eval-region eval-buffer org-ctrl-c-ctrl-c))
-           (when elpaca--interactive-timer (cancel-timer elpaca--interactive-timer))
-           (run-at-time elpaca-interactive-interval nil #'elpaca-process-queues)))
-       nil)))
-
-(defcustom elpaca-wait-interval 0.01 "Seconds between `elpaca-wait' status checks."
-  :type 'number)
-
 ;;;###autoload
 (defun elpaca-wait ()
   "Block until currently queued orders are processed.
@@ -1649,6 +1622,37 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
                      (or (eq (elpaca--status e) 'finished) (elpaca--fail e "User quit")))))
     (elpaca-split-queue)
     (setq elpaca--waiting nil mode-line-process nil)))
+
+;;;###autoload
+(defmacro elpaca (order &rest body)
+  "Queue ORDER for installation/activation, defer execution of BODY.
+If ORDER is `nil`, defer BODY until orders have been processed."
+  (declare (indent 1) (debug t))
+  (let ((o (gensym "order-")) (id (gensym "id-")) (q (gensym "q-")) (e (gensym "e-")))
+    `(let* ((,o ,@(if (memq (car-safe order) '(quote \`)) `(,order) `(',order)))
+            (,id (elpaca--first ,o))
+            (,q (or (and after-init-time (elpaca--q (elpaca-get ,id))) (car elpaca--queues))))
+       ,@(when body
+           `((if ,id
+                 (setf (alist-get ,id (elpaca-q<-forms ,q)) ',body)
+               ;;@FIX: nil semantics not good for multiple deferred...
+               (push (cons ,id ',body) (elpaca-q<-forms ,q)))))
+       (when ,o (setq ,e (elpaca--queue ,o ,q)))
+       (if (and ,e (plist-get (elpaca<-recipe ,e) :wait))
+           (progn (when after-init-time
+                    (elpaca--unprocess ,e)
+                    (push 'queued (elpaca<-statuses ,e)))
+                  (elpaca-wait))
+         (when after-init-time
+           (when-let ((e (elpaca-get ,id)))
+             (elpaca--maybe-log)
+             (elpaca--unprocess e)
+             (push 'queued (elpaca<-statuses e)))
+           (when (member this-command '(eval-last-sexp eval-defun)) (elpaca-process-queues))
+           (when (member this-command '(eval-region eval-buffer org-ctrl-c-ctrl-c))
+             (when elpaca--interactive-timer (cancel-timer elpaca--interactive-timer))
+             (run-at-time elpaca-interactive-interval nil #'elpaca-process-queues)))
+         nil))))
 
 (defvar elpaca--try-package-history nil "History for `elpaca-try'.")
 ;;;###autoload

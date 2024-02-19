@@ -22,6 +22,7 @@
       - [:post-build](#recipe-keyword-post-build)
       - [:autoloads](#recipe-keyword-autoloads)
       - [:version](#recipe-keyword-version)
+      - [:wait](#recipe-keyword-wait)
       - [Inheritance precedence](#inheritance-precedence)
       - [elpaca-recipe-functions](#elpaca-recipe-functions)
     - [Menus](#menus)
@@ -162,15 +163,11 @@ For example:
   ;; Enable use-package :ensure support for Elpaca.
   (elpaca-use-package-mode))
 
-;; Block until current queue processed.
-(elpaca-wait)
-
 ;;When installing a package which modifies a form used at the top-level
 ;;(e.g. a package which adds a use-package key word),
-;;use `elpaca-wait' to block until that package has been installed/configured.
+;;use the :wait recipe keyword to block until that package has been installed/configured.
 ;;For example:
-;;(use-package general :ensure t :demand t)
-;;(elpaca-wait)
+;;(use-package general :ensure (:wait t) :demand t)
 
 ;; Expands to: (elpaca evil (use-package evil :demand t))
 (use-package evil :ensure t :demand t)
@@ -508,6 +505,17 @@ A function which must accept an Elpaca struct as its sole argument. It must retu
 ```
 
 
+<a id="recipe-keyword-wait"></a>
+
+#### :wait
+
+When non-nil, process all queued orders immediately before continuing. e.g.
+
+```emacs-lisp
+(elpaca (general :wait t))
+```
+
+
 <a id="inheritance-precedence"></a>
 
 #### Inheritance precedence
@@ -648,15 +656,12 @@ This is useful for declaring default order properties. For example, the followin
 
 Elpaca installs packages asynchronously. Orders ([orders](#orders)) are automatically queued in a list. When all of a queues orders have either finished or failed Elpaca considers it &ldquo;processed&rdquo;.
 
-Queues ensure packages installation, activation, and configuration take place prior to packages in other queues. The `elpaca-wait` function splits the current queue and immediately begins processing prior queues. This is useful when one wants to later on at the top-level of their init file. For example, a package which implements an Elpaca menu ([menu](#menus)):
+Queues ensure packages installation, activation, and configuration take place prior to packages in other queues. The `:wait` recipe keyword splits the current queue and immediately begins processing prior queues. This is useful when one wants to later on at the top-level of their init file. For example, a package which implements an Elpaca menu ([menu](#menus)):
 
 ```emacs-lisp
-(elpaca (melpulls :host github :repo "progfolio/melpulls")
+(elpaca (melpulls :host github :repo "progfolio/melpulls" :wait t)
   (add-to-list 'elpaca-menu-functions #'melpulls)
   (elpaca-update-menus #'melpulls)))
-
-;; Block until melpulls is installed/activated.
-(elpaca-wait)
 
 ;; Implicitly queued into a new queue.
 (elpaca menu-item-available-in-melpulls)
@@ -714,9 +719,6 @@ Adding the following elisp to your init file will enable Elpaca&rsquo;s optional
 (elpaca elpaca-use-package
   ;; Enable Elpaca support for use-package's :ensure keyword.
   (elpaca-use-package-mode))
-
-;; Necessary to use the Elpaca's `:ensure` support after this point
-(elpaca-wait)
 ```
 
 ```emacs-lisp
@@ -742,11 +744,10 @@ Expands to:
   (use-package example))
 ```
 
-When installing a package which modifies a form used at the top-level (e.g. a package which adds a use-package key word), use \`elpaca-wait&rsquo; to block until that package has been installed and configured. For example:
+Use the `:wait` recipe keyword to block until a package has been installed and configured. For example:
 
 ```emacs-lisp
-(use-package general :demand t :ensure t)
-(elpaca-wait)
+(use-package general :ensure (:wait t) :demand t :ensure t)
 ;; use-package declarations beyond this point may use the `:general' use-package keyword.
 ```
 

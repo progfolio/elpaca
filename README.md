@@ -129,15 +129,11 @@ For example:
   ;; Enable use-package :ensure support for Elpaca.
   (elpaca-use-package-mode))
 
-;; Block until current queue processed.
-(elpaca-wait)
-
 ;;When installing a package which modifies a form used at the top-level
 ;;(e.g. a package which adds a use-package key word),
-;;use `elpaca-wait' to block until that package has been installed/configured.
+;;use the :wait recipe keyword to block until that package has been installed/configured.
 ;;For example:
-;;(use-package general :ensure t :demand t)
-;;(elpaca-wait)
+;;(use-package general :ensure (:wait t) :demand t)
 
 ;; Expands to: (elpaca evil (use-package evil :demand t))
 (use-package evil :ensure t :demand t)

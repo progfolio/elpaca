@@ -364,6 +364,19 @@ e.g.
 (elpaca (auctex :version (lambda (_) (require 'tex-site) AUCTeX-version)))
 #+end_src
 
+**** :wait
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-wait
+:END:
+
+When non-nil, process all queued orders immediately before continuing.
+e.g.
+
+#+begin_src emacs-lisp :lexical t :eval never
+(elpaca (general :wait t))
+#+end_src
+
+
 **** Inheritance precedence
 :PROPERTIES:
 :CUSTOM_ID: inheritance-precedence
@@ -516,17 +529,14 @@ Orders ([[#orders][orders]]) are automatically queued in a list.
 When all of a queues orders have either finished or failed Elpaca considers it "processed".
 
 Queues ensure packages installation, activation, and configuration take place prior to packages in other queues.
-The =elpaca-wait= function splits the current queue and immediately begins processing prior queues.
+The =:wait= recipe keyword splits the current queue and immediately begins processing prior queues.
 This is useful when one wants to later on at the top-level of their init file.
 For example, a package which implements an Elpaca menu ([[#menus][menu]]):
 
 #+begin_src emacs-lisp :lexical t
-(elpaca (melpulls :host github :repo "progfolio/melpulls")
+(elpaca (melpulls :host github :repo "progfolio/melpulls" :wait t)
   (add-to-list 'elpaca-menu-functions #'melpulls)
   (elpaca-update-menus #'melpulls)))
-
-;; Block until melpulls is installed/activated.
-(elpaca-wait)
 
 ;; Implicitly queued into a new queue.
 (elpaca menu-item-available-in-melpulls)
@@ -587,9 +597,6 @@ Adding the following elisp to your init file will enable Elpaca's optional integ
 (elpaca elpaca-use-package
   ;; Enable Elpaca support for use-package's :ensure keyword.
   (elpaca-use-package-mode))
-
-;; Necessary to use the Elpaca's `:ensure` support after this point
-(elpaca-wait)
 #+end_src
 
 #+begin_src emacs-lisp :lexical t
@@ -615,15 +622,13 @@ Expands to:
   (use-package example))
 #+end_src
 
-When installing a package which modifies a form used at the top-level (e.g. a package which adds a use-package key word), use `elpaca-wait' to block until that package has been installed and configured.
+Use the =:wait= recipe keyword to block until a package has been installed and configured.
 For example:
 
 #+begin_src emacs-lisp :lexical t
-(use-package general :demand t :ensure t)
-(elpaca-wait)
+(use-package general :ensure (:wait t) :demand t :ensure t)
 ;; use-package declarations beyond this point may use the `:general' use-package keyword.
 #+end_src
-
 
 In order to turn off =elpaca-use-package-mode= for a given declaration, specify =:ensure nil=:
 
