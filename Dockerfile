@@ -1,3 +1,5 @@
+# Build with: docker build --build-arg VERSION=NN.N -t elpaca-NN.N .
+# Add --nocache arg to force init regeneration.
 ARG VERSION
 FROM silex/emacs:$VERSION-ci
 ARG REF=nil
