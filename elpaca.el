@@ -1129,7 +1129,7 @@ The keyword's value is expected to be one of the following:
   (let ((default-directory (elpaca<-repo-dir e)))
     (elpaca--with-no-git-config
       (elpaca-with-process
-          (elpaca-process-call "git" "log" "-n" "1" "--format=%cd" "--date=format:%Y%m%d.%s")
+          (elpaca-process-call "git" "log" "-n" "1" "--format=%cd" "--date=format:%Y%m%d")
         (if (not success) (elpaca--fail e stderr) (version-to-list (string-trim stdout)))))))
 
 (defun elpaca--declared-version (e)
