@@ -57,17 +57,17 @@ Accepted key val pairs are:
 
 (defun elpaca-ui--tag-orphan (_)
   "Return entires for packages not temporarlily installed or declared."
-  (mapcar (lambda (dir)
-            (let ((name (file-name-nondirectory (directory-file-name dir))))
-              (list (intern name) (vector (propertize name 'orphan-dir dir)
-                                          "orphan package" "n/a" "n/a" "n/a"))))
-          (cl-set-difference
-           (cl-remove-if-not
-            #'file-directory-p
-            (nthcdr 2 (mapcar #'file-name-as-directory
-                              (directory-files elpaca-repos-directory t))))
-           (mapcar (lambda (q) (elpaca<-repo-dir (cdr q))) (elpaca--queued))
-           :test #'equal)))
+  (let ((repos (nthcdr 2 ; Discard "." ".."
+                       (mapcar #'file-name-as-directory
+                               (directory-files elpaca-repos-directory t)))))
+    (mapcar (lambda (dir)
+              (let ((name (file-name-nondirectory (directory-file-name dir))))
+                (list (intern name) (vector (propertize name 'orphan-dir dir)
+                                            "orphan package" "n/a" "n/a" "n/a"))))
+            (cl-set-difference (cl-remove-if-not #'file-directory-p repos)
+                               (mapcar (lambda (q) (elpaca<-repo-dir (cdr q)))
+                                       (elpaca--queued))
+                               :test #'equal))))
 
 (defun elpaca-ui--tag-random (entries &optional limit)
   "Return LIMIT random ENTRIES."
