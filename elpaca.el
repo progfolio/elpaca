@@ -194,6 +194,8 @@ Each function is passed a request, which may be any of the following symbols:
 (defcustom elpaca-ignored-dependencies (mapcar #'car package--builtin-versions)
   "List of IDs which are not installed unless the user explicitly requests them."
   :type '(repeat symbol))
+;;@COMPAT: Transient not in `package--builtin-versions' from addition in 28.1 until 29.2.
+(when (< 27 emacs-major-version 30) (cl-pushnew 'transient elpaca-ignored-dependencies))
 
 (defvar elpaca-overriding-prompt nil "Overriding prompt for interactive functions.")
 
