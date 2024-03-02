@@ -574,6 +574,7 @@ The current package is its sole argument."
                  ((error) (forward-line))))
              (deactivate-mark))))))
 
+;;@TODO: Most of these commands should not be allowed while building is in process
 (elpaca-ui-defmark elpaca-rebuild
   (lambda (p) (unless (or (elpaca-installed-p p) (alist-get p (elpaca--queued)))
                 (user-error "Package %S is not installed" p))))

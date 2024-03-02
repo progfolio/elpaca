@@ -636,6 +636,7 @@ check (and possibly change) their statuses."
   nil)
 
 ;;@TODO: Should this cause a non-local exit? Signal custom error type or just `throw'?
+;;@MAYBE: UI command to manually fail an order?
 (defun elpaca--fail (e &optional reason)
   "Fail E for REASON."
   (unless (eq (elpaca--status e) 'failed)
