@@ -1776,13 +1776,14 @@ With a prefix argument, rebuild current file's package or prompt if none found."
                      "--pretty=%h %s (%ch)" "..@{u}")
       :sentinel (apply-partially #'elpaca--process-sentinel nil nil))))
 
-(defun elpaca--fetch (e)
-  "Fetch E's remotes' commits."
+(defun elpaca--fetch (e &rest command)
+  "Fetch E's remotes' commits.
+COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
   (elpaca--signal e "Fetching remotes" 'fetching-remotes)
   (let ((default-directory (elpaca<-repo-dir e)))
     (elpaca--make-process e
       :name "fetch"
-      :command  '("git" "fetch" "--all" "-v") ;;@TODO: make --all optional
+      :command  (or command '("git" "fetch" "--all" "-v"))
       :sentinel (apply-partially #'elpaca--process-sentinel "Remotes fetched" nil))))
 
 (defun elpaca--announce-pin (e)
