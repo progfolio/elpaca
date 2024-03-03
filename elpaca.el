@@ -1161,8 +1161,7 @@ The keyword's value is expected to be one of the following:
 (defconst elpaca--emacs-releases '(("27.1" . 20200804) ("27.2" . 20210319) ("28.1" . 20220403)
                                    ("28.2" . 20220912) ("29.1" . 20230730) ("29.2" . 20240118)))
 (defvar elpaca-core-date
-  (let* ((v (and (string-match "\\`[0-9]+\\.[0-9]+" emacs-version) (match-string 0 emacs-version)))
-         (release (assoc v elpaca--emacs-releases #'equal)))
+  (let ((release (assoc emacs-version elpaca--emacs-releases #'string-prefix-p)))
     (and release (> (length (version-to-list emacs-version)) 2) ;; Development version.
          (lwarn `(elpaca core stale ,(intern emacs-version)) :warning
                 "Emacs %s assigned %s elpaca-core-date." emacs-version (car release)))
