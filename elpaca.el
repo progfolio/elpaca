@@ -1135,23 +1135,28 @@ The keyword's value is expected to be one of the following:
          (elpaca-process-call "git" "log" "-n" "1" "--format=%cd" "--date=format:%Y%m%d")
        (if (not success) (elpaca--fail e stderr) (version-to-list (string-trim stdout)))))))
 
+(defun elpaca--parse-version (file)
+  "Parse FILE's version via package header or pkg file data."
+  (setq file (expand-file-name file))
+  (with-current-buffer (get-buffer-create " *elpaca--dependencies*")
+    (setq default-directory (file-name-directory file))
+    (insert-file-contents-literally file nil nil nil 'replace)
+    (goto-char (point-min))
+    (if (string-suffix-p "-pkg.el" file)
+        (nth 2 (read (current-buffer)))
+      (when-let ((case-fold-search t)
+                 (regexp "^;+[ ]+\\(Package-\\)?\\(Version\\)[ ]*:[ ]*")
+                 ((re-search-forward regexp nil 'noerror)))
+        ;; Remove Windows \r before newline. See: #218
+        (string-trim (buffer-substring-no-properties (point) (line-end-position)))))))
+
 (defun elpaca--declared-version (e)
   "Return E's version as declared in recipe or main file's metadata."
   (if-let ((declared (plist-get (elpaca<-recipe e) :version)))
       (funcall declared e)
-    (when-let ((repo (elpaca<-repo-dir e))
-               (main (elpaca--main-file e)))
-      (with-current-buffer (get-buffer-create " *elpaca--dependencies*")
-        (setq default-directory repo)
-        (insert-file-contents-literally main nil nil nil 'replace)
-        (goto-char (point-min))
-        (if (string-suffix-p "-pkg.el" main)
-            (nth 2 (read (current-buffer)))
-          (when-let ((case-fold-search t)
-                     (regexp "^;+[ ]+\\(Package-\\)?\\(Version\\)[ ]*:[ ]*")
-                     ((re-search-forward regexp nil 'noerror)))
-            ;; Remove Windows \r before newline. See: #218
-            (string-trim (buffer-substring-no-properties (point) (line-end-position)))))))))
+    (when-let ((main (elpaca--main-file e))
+               (default-directory (elpaca<-repo-dir e)))
+      (elpaca--parse-version main))))
 
 (defconst elpaca--emacs-releases '(("27.1" . 20200804) ("27.2" . 20210319) ("28.1" . 20220403)
                                    ("28.2" . 20220912) ("29.1" . 20230730) ("29.2" . 20240118)))
