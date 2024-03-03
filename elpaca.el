@@ -191,11 +191,17 @@ Each function is passed a request, which may be any of the following symbols:
   :type 'integer)
 (defcustom elpaca-default-remote-name "origin" "Default remote name." :type 'string)
 
+;;@COMPAT @HACK:
+;;Transient not in `package--builtin-versions' from addition in 28.1 until 29.2.
+(when-let  (((< 27 emacs-major-version 30))
+            (transient-versions '(("28.1" . (0 3 7)) ("28.2" . (0 3 7))
+                                  ("29.1" . (0 4 1)) ("29.2" . (0 4 3)))))
+  (add-to-list 'package--builtin-versions
+               (cons 'transient (alist-get emacs-version transient-versions
+                                           nil nil #'string-prefix-p))))
 (defcustom elpaca-ignored-dependencies (mapcar #'car package--builtin-versions)
   "List of IDs which are not installed unless the user explicitly requests them."
   :type '(repeat symbol))
-;;@COMPAT: Transient not in `package--builtin-versions' from addition in 28.1 until 29.2.
-(when (< 27 emacs-major-version 30) (cl-pushnew 'transient elpaca-ignored-dependencies))
 
 (defvar elpaca-overriding-prompt nil "Overriding prompt for interactive functions.")
 
