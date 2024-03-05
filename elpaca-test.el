@@ -134,7 +134,7 @@ If FILE is nil, use upstream demo init file determined by REF."
   (elpaca--write-file (expand-file-name "./early-init.el")
     (if file (insert-file-contents (expand-file-name file))
       (emacs-lisp-mode)
-      (dolist (form forms) (prin1 form))
+      (mapc #'print forms)
       (elisp-enable-lexical-binding))))
 
 (defun elpaca-test--copy-dir (dir dest)
