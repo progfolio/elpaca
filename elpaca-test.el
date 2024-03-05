@@ -38,7 +38,8 @@
 ;;; Code:
 (require 'elpaca)
 (require 'url)
-(defvar elpaca-test--keywords '(:args :before :dir :early-init :init :keep :name :ref :interactive :timeout))
+(defvar elpaca-test--keywords
+  '(:args :before :dir :early-init :init :keep :name :ref :depth :interactive :timeout))
 (defvar elpaca-test--dirs nil "List of directories created by `elpaca-test'.")
 
 (defun elpaca-test--args (body)
@@ -91,43 +92,43 @@ Creates a temporary dir if NAME is nil."
   "https://raw.githubusercontent.com/progfolio/elpaca/%s/doc/init.el"
   "Format string for upstream URL. @TODO: don't hardcode this.")
 
-(defun elpaca-test--replace-init-forms (forms)
-  "Replace demo init forms with FORMS."
-  (goto-char (point-max))
-  (forward-line -1)
-  (if (not (re-search-backward "^;; Install" nil 'noerror))
-      (user-error "Unable to find form marker in init file")
-    (delete-region (point) (point-max))
-    (dolist (form forms) (insert (pp-to-string form)))))
-
-(defun elpaca-test--replace-init-ref (ref)
-  "Replace elpaca-order's :ref with REF."
-  (save-excursion (goto-char (point-min))
-                  (or (re-search-forward "elpaca-order" nil t)
-                      (user-error "Unable to locate elpaca-order in init file"))
-                  (or (re-search-forward ":ref nil" nil t)
-                      (user-error "Unable to replace :ref in init file"))
-                  (replace-match (format ":ref %S" ref))))
+(defun elpaca-test--init (string order &optional installerp)
+  "Return modified init.el STRING according to ORDER.
+If INSTALLERP is non-nil, stop after Elpaca installer."
+  (let (sexp form body)
+    (condition-case err
+        (while (setq sexp (read-from-string string (or (cdr sexp) 0))
+                     form (car (push (car sexp) body)))
+          (cond ((and (eq (car-safe form) 'defvar)
+                      (eq (car (cdr-safe form)) 'elpaca-order))
+                 (setf (nth 2 form)
+                       `'(elpaca ,@(elpaca-merge-plists (cdr (eval (nth 2 form) t)) order))))
+                ((and installerp (eq (car-safe form) 'elpaca))
+                 (signal 'end-of-file nil))))
+      ((end-of-file) nil)
+      ((error) (error (car err) (cdr err))))
+    (mapconcat #'pp-to-string (nreverse body))))
 
 (defun elpaca-test--upstream-init (&optional ref)
-  "Create and return upstream REF's init.el file."
+  "Return upstream init.el file for REF."
   (let ((url (format elpaca-test--upstream-format (or ref "master"))))
     (with-current-buffer (url-retrieve-synchronously url 'silent 'inhibit-cookies)
       (unless (equal url-http-response-status 200)
         (error "Unable to download %S %S" url url-http-response-status))
       (delete-region (point-min) url-http-end-of-headers)
-      (when ref (elpaca-test--replace-init-ref ref))
       (string-trim (buffer-substring-no-properties (point-min) (point-max))))))
 
-(defun elpaca--test-write-init (file ref forms)
+(defun elpaca--test-write-init (file ref depth forms)
   "Write init.el FILE with FORMS in test environment.
-If FILE is nil, use upstream demo init file determined by REF."
-  (elpaca--write-file (expand-file-name "./init.el")
-    (if file
-        (insert-file-contents (expand-file-name file))
-      (insert (elpaca-test--upstream-init ref)))
-    (when forms (elpaca-test--replace-init-forms forms))
-    (elisp-enable-lexical-binding)))
+If FILE is nil, use upstream demo init file determined by REF.
+For DEPTH and FORMS see `elpaca-test' :depth and :init."
+  (let ((contents (if file (with-temp-buffer (insert-file-contents (expand-file-name file))
+                                             (buffer-string))
+                    (elpaca-test--upstream-init ref))))
+    (elpaca--write-file (expand-file-name "./init.el")
+      (insert (elpaca-test--init contents `(:ref ,ref :depth ,depth) forms))
+      (mapc #'print forms)
+      (elisp-enable-lexical-binding))))
 
 (defun elpaca-test--write-early-init (file forms)
   "Write test environment early-init.el FILE with FORMS."
@@ -252,6 +253,8 @@ The following keys are recognized:
 
   :ref git ref to check out or `local' to use local copy in current repo state
 
+  :depth number of Elpaca repository commits to clone
+
   :dir `user-emacs-directory' name.
     Expanded in temporary filedirectory if it is a relative path or nil.
     Otherwise, the absolute file path is used.
@@ -278,6 +281,7 @@ The following keys are recognized:
          (test (and batchp (elpaca-test--form args)))
          (init (plist-get args :init))
          (ref (car (plist-get args :ref)))
+         (depth (if-let ((declared (plist-member args :depth))) (caadr declared) 1))
          (localp (eq ref 'local))
          (init-file (cond ((eq (car-safe (car-safe init)) :file)
                            (when localp (user-error "Cannot use :ref local with :init (:file ...)"))
@@ -298,8 +302,9 @@ The following keys are recognized:
        (unless (file-exists-p default-directory) (make-directory default-directory 'parents))
        ,@(when localp '((elpaca-test--copy-local-store)))
        ,@(when early `((elpaca-test--write-early-init ,early-file ',(unless early-file early))))
-       (elpaca--test-write-init ,init-file ',ref ',(when (or localp (null init-file))
-                                                     (unless (equal init '(user)) init)))
+       (elpaca--test-write-init
+        ,init-file ',ref ',depth ',(when (or localp (null init-file))
+                                     (unless (equal init '(user)) init)))
        ,@(when-let ((before (plist-get args :before)))
            `((let ((default-directory default-directory)) ,@before)))
        (when buffer (elpaca-test--format-output-buffer buffer ,test))
