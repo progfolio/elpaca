@@ -1018,6 +1018,16 @@ style backtrace.
     "dbu"  'edebug-unset-breakpoint
     "dw" 'edebug-where))
 #+end_src
+** ediff
+#+begin_src emacs-lisp :lexical t
+(use-feature ediff
+  :defer t
+  :custom
+  (ediff-window-setup-function #'ediff-setup-windows-plain)
+  (ediff-split-window-function #'split-window-horizontally)
+  :config
+  (add-hook 'ediff-quit-hook #'winner-undo))
+#+end_src
 ** elfeed
 #+begin_quote
 Elfeed is an extensible web feed reader for Emacs, supporting both Atom and RSS.
