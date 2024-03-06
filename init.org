@@ -1645,7 +1645,7 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
 (use-package mu4e
   :elpaca `(mu4e :host github :files ("mu4e/*.el" "build/mu4e/mu4e-meta.el" "build/mu4e/mu4e-config.el" "build/mu4e/mu4e.info") :repo "djcb/mu"
                  :main "mu4e/mu4e.el"
-                 :pre-build (("./autogen.sh")
+                 :pre-build (("./autogen.sh" "-Dtests=disabled")
                              ("ninja" "-C" "build")
                              (make-symbolic-link (expand-file-name "./build/mu/mu")
                                                  (expand-file-name "~/bin/mu") 'ok-if-exists))
