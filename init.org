@@ -1332,7 +1332,7 @@ https://www.flycheck.org/en/latest/
   :config
   (add-to-list 'display-buffer-alist
                '("\\`\\*Flymake diagnostics.*?\\*\\'"
-                 display-buffer-in-side-window  (window-parameters (window-height 0.25)) (side . bottom)))
+                 display-buffer-in-side-window  (window-parameters (window-height 0.10)) (side . bottom)))
 
   (defun +flymake-elpaca-bytecomp-load-path ()
     "Augment `elisp-flymake-byte-compile-load-path' to support Elpaca."
