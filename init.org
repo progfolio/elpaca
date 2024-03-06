@@ -3390,9 +3390,32 @@ https://github.com/NicolasPetton/zerodark-theme
                 :depth nil :protocol ssh
                 :files (:defaults "assets" "objects")))
 #+end_src
+** redact
+#+begin_src emacs-lisp :lexical t
+(use-package redact
+  :defer t
+  :ensure (:host github :repo "progfolio/redact" :depth nil :protocol ssh))
+#+end_src
+
 ** subp
 #+begin_src emacs-lisp :lexical t
 (use-package subp
   :defer t
   :ensure (:host github :repo "progfolio/subp"))
+#+end_src
+** HELPA
+#+begin_src emacs-lisp :lexical t
+(use-package helpa
+  :defer t
+  :ensure (:host github :main nil :build (:not elpaca--generate-autoloads-async) :repo "progfolio/HELPA" :depth nil :protocol ssh))
+#+end_src
+
+** tunic
+#+begin_src emacs-lisp :lexical t
+(use-package tunic
+  :ensure (:repo "~/elisp/tunic/")
+  :defer t
+  :config
+  (evil-make-intercept-map tunic-mode-map)
+  (evil-make-intercept-map tunic-decoder-mode-map))
 #+end_src
