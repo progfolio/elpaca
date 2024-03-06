@@ -879,6 +879,7 @@ Consulting completing-read
    consult-recent-file
    consult--source-recent-file
    consult--source-buffer
+   consult--source-bookmark
    :preview-key nil)
   (global-leader
     :major-modes '(org-mode)
