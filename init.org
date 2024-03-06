@@ -283,7 +283,7 @@ An Elpaca menu for MELPA submissions.
   NAME and ARGS are in `use-package'."
   (declare (indent defun))
   `(use-package ,name
-     :elpaca nil
+     :ensure nil
      ,@args))
 #+end_src
 
@@ -291,7 +291,7 @@ An Elpaca menu for MELPA submissions.
 (elpaca elpaca-use-package
   (require 'elpaca-use-package)
   (elpaca-use-package-mode)
-  (setq elpaca-use-package-by-default t))
+  (setq use-package-always-ensure t))
 #+end_src
 
 Allow Elpaca to process queues up to this point
@@ -695,7 +695,7 @@ https://github.com/emacs-evil/evil-collection
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package evil-collection
-  :elpaca (:remotes ("origin"
+  :ensure (:remotes ("origin"
                      ("fork" :repo "progfolio/evil-collection")))
   :after (evil)
   :config
@@ -709,7 +709,7 @@ https://github.com/emacs-evil/evil-collection
 ** accord
 #+begin_src emacs-lisp :lexical t
 (use-package accord
-  :elpaca (accord :host github :repo "progfolio/accord" :protocol ssh)
+  :ensure (accord :host github :repo "progfolio/accord" :protocol ssh)
   :general
   (+general-global-application
     "a" '(:ignore t :which-key "accord")
@@ -821,7 +821,7 @@ It also helps if multiple instances of Emacs are editing the same file.
 ** auto-tangle-mode
 #+begin_src emacs-lisp :lexical t
 (use-package auto-tangle-mode
-  :elpaca (auto-tangle-mode
+  :ensure (auto-tangle-mode
            :host github
            :repo "progfolio/auto-tangle-mode.el"
            :local-repo "auto-tangle-mode")
@@ -850,7 +850,7 @@ https://github.com/jorgenschaefer/emacs-buttercup
 ** cleanroom
 #+begin_src emacs-lisp :lexical t :tangle no
 (use-package cleanroom
-  :elpaca (cleanroom :host github :repo "progfolio/cleanroom" :protocol ssh)
+  :ensure (cleanroom :host github :repo "progfolio/cleanroom" :protocol ssh)
   :defer t)
 #+end_src
 ** compile
@@ -898,7 +898,7 @@ https://github.com/minad/corfu
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package corfu
-  :elpaca (corfu :host github :repo "minad/corfu" :files (:defaults "extensions/*"))
+  :ensure (corfu :host github :repo "minad/corfu" :files (:defaults "extensions/*"))
   :defer 5
   :custom
   (corfu-cycle t)
@@ -948,7 +948,7 @@ https://github.com/progfolio/doct
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package doct
-  :elpaca (doct :branch "development" :protocol ssh :depth nil :autoloads nil)
+  :ensure (doct :branch "development" :protocol ssh :depth nil :autoloads nil)
   :commands (doct))
 #+end_src
 ** doom-modeline
@@ -973,7 +973,7 @@ DOOM Themes is an opinionated UI plugin and pack of themes extracted from [hliss
 https://github.com/hlissner/emacs-doom-themes
 #+end_quote
 #+begin_src emacs-lisp :lexical t
-(use-package doom-themes :elpaca (:local-repo "doom-themes") :defer t)
+(use-package doom-themes :ensure (:local-repo "doom-themes") :defer t)
 #+end_src
 ** edebug
 #+begin_quote
@@ -1123,7 +1123,7 @@ Ement.el is a new Matrix client for Emacs. It aims to be simple, fast, featurefu
 
 #+begin_src emacs-lisp :lexical t
 (use-package ement
-  :elpaca (ement :host github :repo "alphapapa/ement.el" :branch nil)
+  :ensure (ement :host github :repo "alphapapa/ement.el" :branch nil)
   :commands (ement-connect)
   :custom
   (ement-room-avatars t)
@@ -1164,7 +1164,7 @@ MPV integration
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package emp
-  :elpaca (emp :host github :repo "progfolio/emp")
+  :ensure (emp :host github :repo "progfolio/emp")
   :config
   :general
   (+general-global-application
@@ -1200,7 +1200,7 @@ MPV integration
 ** epoch
 #+begin_src emacs-lisp :lexical t
 (use-package epoch
-  :elpaca (epoch :host github :repo "progfolio/epoch")
+  :ensure (epoch :host github :repo "progfolio/epoch")
   :after (org)
   :commands (epoch-todo epoch-agenda-todo))
 #+end_src
@@ -1372,7 +1372,7 @@ https://github.com/magit/forge
 
 #+begin_src emacs-lisp :lexical t
 (use-package forge
-  :elpaca (:files (:defaults "docs/*"))
+  :ensure (:files (:defaults "docs/*"))
   :after magit
   :init (setq forge-add-default-bindings nil
               forge-display-in-status-buffer nil
@@ -1455,7 +1455,7 @@ An expansion of conf-mode to bring proper syntax highlighting to your i3wm confi
 
 #+begin_src emacs-lisp :lexical t
 (use-package i3wm-config-mode
-  :elpaca (i3wm-config-mode
+  :ensure (i3wm-config-mode
            :host github :repo "Alexander-Miller/i3wm-Config-Mode")
   :commands (i3wm-config-mode))
 #+end_src
@@ -1592,7 +1592,7 @@ https://jblevins.org/projects/markdown-mode/
 A package for miscellaneous functions.
 #+begin_src emacs-lisp :lexical t
 (use-package miscellany
-  :elpaca (miscellany
+  :ensure (miscellany
            :host github
            :repo "progfolio/miscellany.el"
            :local-repo "miscellany"
@@ -1643,7 +1643,7 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
 #+end_quote
 #+begin_src emacs-lisp :lexical t :tangle yes
 (use-package mu4e
-  :elpaca `(mu4e :host github :files ("mu4e/*.el" "build/mu4e/mu4e-meta.el" "build/mu4e/mu4e-config.el" "build/mu4e/mu4e.info") :repo "djcb/mu"
+  :ensure `(mu4e :host github :files ("mu4e/*.el" "build/mu4e/mu4e-meta.el" "build/mu4e/mu4e-config.el" "build/mu4e/mu4e.info") :repo "djcb/mu"
                  :main "mu4e/mu4e.el"
                  :pre-build (("./autogen.sh" "-Dtests=disabled")
                              ("ninja" "-C" "build")
@@ -1752,7 +1752,7 @@ https://depp.brause.cc/nov.el/
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package nov
-  :elpaca (nov :depth nil)
+  :ensure (nov :depth nil)
   :custom
   (nov-text-width 80)
   :mode
@@ -1791,7 +1791,7 @@ Completion style for matching regexps in any order
 ** org
 #+begin_src emacs-lisp :lexical t
 (use-package org
-  :elpaca (:autoloads "org-loaddefs.el")
+  :ensure (:autoloads "org-loaddefs.el")
   :defer t
   :general
   (general-define-key :states '(normal) :keymaps 'org-mode-map
@@ -2224,7 +2224,6 @@ Align tags to column 80 in the agenda view:
 #+begin_src emacs-lisp :lexical t
 (use-feature ob-tangle
   :after (org)
-  :elpaca nil
   :custom
   (org-src-window-setup 'current-window)
   (org-src-preserve-indentation t)
@@ -2260,11 +2259,11 @@ If =C-c-c= refuses to run code blocks and you get an error message:
 #+end_quote
 delete the =*.el(c)= files and restart
 #+begin_src emacs-lisp :lexical t
-(use-package ob-js
+(use-feature ob-js
   :commands (org-babel-execute:js))
-(use-package ob-python
+(use-feature ob-python
   :commands (org-babel-execute:python))
-(use-package ob-shell
+(use-feature ob-shell
   :commands (org-babel-execute:bash
              org-babel-execute:shell
              org-babel-expand-body:generic)
@@ -2567,7 +2566,7 @@ emacsclient --create-frame \
 ** org-chronicle
 #+begin_src emacs-lisp :lexical t :tangle no
 (use-package org-chronicle
-  :elpaca (:host github :repo "progfolio/org-chronicle")
+  :ensure (:host github :repo "progfolio/org-chronicle")
   :commands (org-chronicle)
   :custom (org-chronicle-directory "~/Documents/journal/")
   (org-chronicle-file-format-string "%Y.%m.%d"))
@@ -2575,7 +2574,7 @@ emacsclient --create-frame \
 ** org-clean-refile
 #+begin_src emacs-lisp :lexical t
 (use-package org-clean-refile
-  :elpaca (org-clean-refile :host github :repo "progfolio/org-clean-refile" :protocol ssh)
+  :ensure (org-clean-refile :host github :repo "progfolio/org-clean-refile" :protocol ssh)
   :commands (org-clean-refile)
   :after (org)
   :general
@@ -2803,13 +2802,13 @@ https://github.com/minad/org-modern
 ** org-region-link
 #+begin_src emacs-lisp :lexical t
 (use-package org-region-link
-  :elpaca (org-region-link :host github :repo "progfolio/org-region-link" :protocol ssh)
+  :ensure (org-region-link :host github :repo "progfolio/org-region-link" :protocol ssh)
   :after (org))
 #+end_src
 ** org-roam
 #+begin_src emacs-lisp :lexical t
 (use-package org-roam
-  :elpaca (org-roam :host github :repo "org-roam/org-roam")
+  :ensure (org-roam :host github :repo "org-roam/org-roam")
   :disabled t
   :general
   (+general-global-application
@@ -2820,7 +2819,7 @@ https://github.com/minad/org-modern
 #+begin_src emacs-lisp :lexical t :tangle no
 (use-package org-relativity
   :after (org)
-  :elpaca (:host github :repo "progfolio/org-relativity"))
+  :ensure (:host github :repo "progfolio/org-relativity"))
 #+end_src
 ** org-superstar
 #+begin_quote
@@ -2830,7 +2829,7 @@ https://github.com/integral-dw/org-superstar-mode
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package org-superstar
-  :elpaca (org-superstar :host github :repo "integral-dw/org-superstar-mode")
+  :ensure (org-superstar :host github :repo "integral-dw/org-superstar-mode")
   :after (org))
 #+end_src
 
@@ -2941,7 +2940,7 @@ https://github.com/politza/pdf-tools#about-this-package
 This  allows me to customize the color of the generated pdf.
 #+begin_src emacs-lisp :lexical t
 (use-package pdf-tools
-  :elpaca (pdf-tools :pre-build ("./server/autobuild") :files (:defaults "server/epdfinfo"))
+  :ensure (pdf-tools :pre-build ("./server/autobuild") :files (:defaults "server/epdfinfo"))
   :functions (pdf-isearch-batch-mode)
   :commands (pdf-tools-install pdf-view-mode)
   :custom (pdf-view-midnight-colors '("#AFA27C" . "#0F0E16"))
@@ -3076,7 +3075,7 @@ https://github.com/ternjs/tern
 ** joymacs
 #+begin_src emacs-lisp :lexical t
 (use-package joymacs
-  :elpaca (joymacs :host github :repo "skeeto/joymacs"
+  :ensure (joymacs :host github :repo "skeeto/joymacs"
                    :main "joydemo.el"
                    :pre-build ("make")
                    :files (:defaults "joymacs.c" "joymacs.so")
@@ -3087,7 +3086,7 @@ https://github.com/ternjs/tern
 ** padscape
 #+begin_src emacs-lisp :lexical t
 (use-package padscape
-  :elpaca (padscape :host github :repo "progfolio/padscape" :protocol ssh)
+  :ensure (padscape :host github :repo "progfolio/padscape" :protocol ssh)
   :commands (padscape)
   :config
   (add-to-list 'display-buffer-alist '("\\*padscape\\*" display-buffer-below-selected
@@ -3096,7 +3095,7 @@ https://github.com/ternjs/tern
 ** speedo
 #+begin_src emacs-lisp :lexical t
 (use-package speedo
-  :elpaca (speedo :host github :repo "progfolio/speedo"
+  :ensure (speedo :host github :repo "progfolio/speedo"
                   :depth nil :protocol ssh
                   :files (:defaults "test"))
   :commands (speedo speedo-load-file akogare)
@@ -3203,7 +3202,7 @@ https://github.com/akermu/emacs-libvterm
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package vterm
-  :elpaca (vterm :post-build
+  :ensure (vterm :post-build
                  (progn
                    (setq vterm-always-compile-module t)
                    (require 'vterm)
@@ -3253,13 +3252,13 @@ https://github.com/justbur/emacs-which-key
 ** wikinforg
 #+begin_src emacs-lisp :lexical t
 (use-package wikinfo
-  :elpaca (wikinfo :host github :repo "progfolio/wikinfo"
+  :ensure (wikinfo :host github :repo "progfolio/wikinfo"
                    :branch "develop" :protocol ssh :depth nil)
   :defer t)
 #+end_src
 #+begin_src emacs-lisp :lexical t
 (use-package wikinforg
-  :elpaca (wikinforg :host github :repo "progfolio/wikinforg"
+  :ensure (wikinforg :host github :repo "progfolio/wikinforg"
                      :protocol ssh :depth nil)
   :commands (wikinforg wikinforg-capture)
   :custom
@@ -3296,7 +3295,7 @@ https://github.com/justbur/emacs-which-key
 ** wordel
 #+begin_src emacs-lisp :lexical t
 (use-package wordel
-  :elpaca (wordel :host github :repo "progfolio/wordel"
+  :ensure (wordel :host github :repo "progfolio/wordel"
                   :files (:defaults "words") :depth nil :protocol ssh)
   :defer t
   :config
@@ -3341,13 +3340,13 @@ https://github.com/NicolasPetton/zerodark-theme
 ** yodel
 #+begin_src emacs-lisp :lexical t
 (use-package yodel
-  :elpaca (yodel :host github :repo "progfolio/yodel" :depth nil :protocol ssh)
+  :ensure (yodel :host github :repo "progfolio/yodel" :depth nil :protocol ssh)
   :defer t)
 #+end_src
 ** spiel
 #+begin_src emacs-lisp :lexical t
 (use-package spiel
-  :elpaca (spiel :host github :repo "progfolio/spiel" :depth nil :protocol ssh)
+  :ensure (spiel :host github :repo "progfolio/spiel" :depth nil :protocol ssh)
   :defer t
   :hook (spiel-mode . (lambda () (olivetti-mode 1)))
   :config
@@ -3360,7 +3359,7 @@ https://github.com/NicolasPetton/zerodark-theme
 #+begin_src emacs-lisp :lexical t :tangle yes
 (use-package greg
   :defer t
-  :elpaca (greg :host github :repo "progfolio/greg"
+  :ensure (greg :host github :repo "progfolio/greg"
                 :depth nil :protocol ssh
                 :files (:defaults "assets" "objects")))
 #+end_src
@@ -3368,5 +3367,5 @@ https://github.com/NicolasPetton/zerodark-theme
 #+begin_src emacs-lisp :lexical t
 (use-package subp
   :defer t
-  :elpaca (:host github :repo "progfolio/subp"))
+  :ensure (:host github :repo "progfolio/subp"))
 #+end_src
