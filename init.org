@@ -618,16 +618,6 @@ https://github.com/emacs-evil/evil
 (use-package evil
   :demand t
   :preface (setq evil-want-keybinding nil)
-  :general
-  (+general-global-window
-    "H" 'evil-window-move-far-left
-    "J" 'evil-window-move-very-bottom
-    "K" 'evil-window-move-very-top
-    "L" 'evil-window-move-far-right)
-  (+general-global-menu! "quit" "q"
-    ":" 'evil-command-window-ex
-    "/" 'evil-command-window-search-forward
-    "?" 'evil-command-window-search-backward)
   :custom
   (evil-symbol-word-search t "search by symbol with * and #.")
   (evil-shift-width 2 "Same behavior for vim's '<' and '>' commands")
@@ -646,6 +636,15 @@ https://github.com/emacs-evil/evil
     (if-let ((symbol (thing-at-point 'symbol)))
         (describe-symbol (intern symbol))
       (user-error "No symbol at point")))
+  (+general-global-window
+    "H" 'evil-window-move-far-left
+    "J" 'evil-window-move-very-bottom
+    "K" 'evil-window-move-very-top
+    "L" 'evil-window-move-far-right)
+  (+general-global-menu! "quit" "q"
+    ":" 'evil-command-window-ex
+    "/" 'evil-command-window-search-forward
+    "?" 'evil-command-window-search-backward)
   ;;I want Emacs regular mouse click behavior
   (define-key evil-motion-state-map [down-mouse-1] nil)
   <<+evil-kill-minibuffer>>
@@ -713,22 +712,8 @@ https://github.com/emacs-evil/evil-collection
   :general
   (+general-global-application
     "a" '(:ignore t :which-key "accord")
-    "aa" 'accord
-    "a/" 'accord-channel-search
-    "a;" 'accord-channel-last
-    "ac" '(:ignore t :which-key "channel")
-    "ac/" 'accord-channel-search
-    "ac;" 'accord-channel-last
-    "acj" 'accord-channel-scroll-down
-    "ack" 'accord-channel-scroll-up
-    "acn" 'accord-channel-next
-    "acp" 'accord-channel-prev
-    "acr" 'accord-channel-mark-read
-    "acu" 'accord-channel-goto-unread
-    "acu" 'accord-channel-scroll-up
-    "ad" 'accord-delete-message
-    "ae" 'accord-edit-message
-    "as" 'accord-send-message)
+    "aa" 'accord)
+  :config
   (global-leader
     :major-modes '(accord-mode)
     :keymaps     '(accord-mode-map)
@@ -753,7 +738,22 @@ https://github.com/emacs-evil/evil-collection
     "d" '(accord-delete-message :which-key "accord-delete-message")
     "e" '(accord-edit-message   :which-key "accord-edit-message")
     "s" '(accord-send-message   :which-key "accord-send-message"))
-  :config
+  (+general-global-application
+    "a/" 'accord-channel-search
+    "a;" 'accord-channel-last
+    "ac" '(:ignore t :which-key "channel")
+    "ac/" 'accord-channel-search
+    "ac;" 'accord-channel-last
+    "acj" 'accord-channel-scroll-down
+    "ack" 'accord-channel-scroll-up
+    "acn" 'accord-channel-next
+    "acp" 'accord-channel-prev
+    "acr" 'accord-channel-mark-read
+    "acu" 'accord-channel-goto-unread
+    "acu" 'accord-channel-scroll-up
+    "ad" 'accord-delete-message
+    "ae" 'accord-edit-message
+    "as" 'accord-send-message)
   (add-to-list 'display-buffer-alist
                '("\\*accord\\*" display-buffer-below-selected (window-height . 0.20)))
   (defun accord-setup ()
@@ -880,7 +880,10 @@ Consulting completing-read
    consult--source-recent-file
    consult--source-buffer
    :preview-key nil)
-  :general
+  (global-leader
+    :major-modes '(org-mode)
+    :keymaps     '(org-mode-map)
+    "/" 'consult-org-heading)
   (global-definer "/" 'consult-line)
   (+general-global-buffer "b" 'consult-buffer)
   (+general-global-project "a" 'consult-grep)
@@ -986,7 +989,7 @@ style backtrace.
 
 #+begin_src emacs-lisp :lexical t
 (use-feature edebug
-  :general
+  :config
   (global-leader
     :major-modes '(emacs-lisp-mode lisp-interaction-mode t)
     :keymaps     '(emacs-lisp-mode-map lisp-interaction-mode-map)
@@ -1059,9 +1062,6 @@ I may move it from its default location (=~/.elfeed=), in =elfeed-db-directory=.
                        (when (= 0 (process-exit-status process))
                          (message "Successfully downloaded %S" title))))))
       (elfeed-search-untag-all-unread)))
-  :general
-  (+general-global-application
-    "e"    'elfeed)
   (general-define-key
    :states '(normal)
    :keymaps 'elfeed-search-mode-map
@@ -1071,12 +1071,13 @@ I may move it from its default location (=~/.elfeed=), in =elfeed-db-directory=.
    :states '(normal)
    :keymaps 'elfeed-show-mode-map
    "J" 'elfeed-show-next
-   "K" 'elfeed-show-prev))
+   "K" 'elfeed-show-prev)
+  :general (+general-global-application "e" 'elfeed))
 #+end_src
 ** elisp-mode
 #+begin_src emacs-lisp :lexical t
 (use-feature elisp-mode
-  :general
+  :config
   (global-leader
     :major-modes '(emacs-lisp-mode lisp-interaction-mode t)
     :keymaps     '(emacs-lisp-mode-map lisp-interaction-mode-map)
@@ -1148,15 +1149,15 @@ Ement.el is a new Matrix client for Emacs. It aims to be simple, fast, featurefu
     (let ((epa-file-select-keys 'symmetric)) (apply fn args)))
   (define-advice ement--kill-emacs-hook (:around (fn &rest args) "no-epa-key-prompt")
     (let ((epa-file-select-keys 'symmetric)) (apply fn args)))
-
-  :general
   (+general-global-application ;; "c" for chat
-    "c" '(:ignore t :which-key "Matrix")
-    "ce" '(lambda () (interactive) (call-interactively (if (bound-and-true-p ement-sessions) #'ement-room-list #'ement-connect)))
     "cl" 'ement-room-list
     "cn" 'ement-notify-switch-to-notifications-buffer
     "cm" 'ement-notify-switch-to-mentions-buffer
-    "cs" 'ement-directory-search))
+    "cs" 'ement-directory-search)
+  :general
+  (+general-global-application ;; "c" for chat
+    "c" '(:ignore t :which-key "Matrix")
+    "ce" '(lambda () (interactive) (call-interactively (if (bound-and-true-p ement-sessions) #'ement-room-list #'ement-connect)))))
 #+end_src
 ** emp
 #+begin_quote
@@ -1426,7 +1427,7 @@ ielm.el commentary
 
 #+begin_src emacs-lisp :lexical t
 (use-feature ielm
-  :general
+  :config
   (global-leader
     :major-modes '(inferior-emacs-lisp-mode)
     :keymaps     '(inferior-emacs-lisp-mode-map)
@@ -1437,6 +1438,7 @@ ielm.el commentary
     "c"  'comint-clear-buffer)
   ;;@TODO: fix this command.
   ;;This should be easier
+  :general
   (+general-global-application "i"
     '("ielm" . (lambda ()
                  (interactive)
@@ -1478,7 +1480,7 @@ Major mode for Lilypond music engraver.
 Installing Lilypond puts these in =/usr/share/Emacs/site-lisp=, but I plan on editing these.
 #+begin_src emacs-lisp :lexical t :tangle no
 (use-package lilypond-mode
-  :elpaca (lilypond-mode :host gitlab :repo "lilypond/lilypond"
+  :ensure (lilypond-mode :host gitlab :repo "lilypond/lilypond"
                          :remotes (("fork" :host github :repo "progfolio/lilypond" :branch "fix/lilypond-mode" :protocol ssh)
                                    "origin")
                          :files ("elisp/*.el" "elisp/out/lilypond-words.el")
@@ -1505,7 +1507,7 @@ https://github.com/joddie/macrostep
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package macrostep
-  :general
+  :config
   (global-leader
     :major-modes '(emacs-lisp-mode lisp-interaction-mode t)
     :keymaps     '(emacs-lisp-mode-map lisp-interaction-mode-map)
@@ -1737,12 +1739,9 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
 
   ;;Fold all threads by default.
   ;;(add-hook 'mu4e-thread-mode-hook #'mu4e-thread-fold-all)
-
+  (global-leader :keymaps '(mu4e-compose-mode-map) "a" 'mml-attach-file)
   :general
-  (+general-global-application "m" 'mu4e :which-key "mail")
-  (global-leader
-    :keymaps '(mu4e-compose-mode-map)
-    "a" 'mml-attach-file))
+  (+general-global-application "m" 'mu4e :which-key "mail"))
 #+end_src
 ** nov (epub)
 #+begin_quote
@@ -1794,20 +1793,6 @@ Completion style for matching regexps in any order
   :ensure (:autoloads "org-loaddefs.el")
   :defer t
   :general
-  (general-define-key :states '(normal) :keymaps 'org-mode-map
-                      (kbd "<tab>") 'org-cycle
-                      (kbd "<backtab>") 'org-shifttab)
-  (general-define-key :states '(normal insert) :keymaps 'org-mode-map
-                      (kbd "M-l") 'org-metaright
-                      (kbd "M-h") 'org-metaleft
-                      (kbd "M-k") 'org-metaup
-                      (kbd "M-j") 'org-metadown
-                      (kbd "M-L") 'org-shiftmetaright
-                      (kbd "M-H") 'org-shiftmetaleft
-                      (kbd "M-K") 'org-shiftmetaup
-                      (kbd "M-J") 'org-shiftmetadown)
-  (general-define-key :states  '(motion) :keymaps 'org-mode-map
-                      (kbd "RET") 'org-open-at-point)
   ;;<tab> is for GUI only. TAB maps to C-i on terminals.
   (+general-global-application
     "o"   '(:ignore t :which-key "org")
@@ -1834,7 +1819,21 @@ Completion style for matching regexps in any order
     "oti" 'org-timer-item
     "otp" 'org-timer-pause-or-continue
     "otr" 'org-timer-show-remaining-time)
-
+  :config
+  (general-define-key :states '(normal) :keymaps 'org-mode-map
+                      (kbd "<tab>") 'org-cycle
+                      (kbd "<backtab>") 'org-shifttab)
+  (general-define-key :states '(normal insert) :keymaps 'org-mode-map
+                      (kbd "M-l") 'org-metaright
+                      (kbd "M-h") 'org-metaleft
+                      (kbd "M-k") 'org-metaup
+                      (kbd "M-j") 'org-metadown
+                      (kbd "M-L") 'org-shiftmetaright
+                      (kbd "M-H") 'org-shiftmetaleft
+                      (kbd "M-K") 'org-shiftmetaup
+                      (kbd "M-J") 'org-shiftmetadown)
+  (general-define-key :states  '(motion) :keymaps 'org-mode-map
+                      (kbd "RET") 'org-open-at-point)
   (global-leader
     ;;for terminals
     :keymaps '(org-mode-map)
@@ -1957,8 +1956,6 @@ Completion style for matching regexps in any order
     "*"   'org-ctrl-c-star
     "-"   'org-ctrl-c-minus
     "A"   'org-attach)
-  :config
-
   (defun +org-sparse-tree (&optional arg type)
     (interactive)
     (funcall #'org-sparse-tree arg type)
@@ -2025,6 +2022,7 @@ Completion style for matching regexps in any order
     (org-agenda-find-same-or-today-or-agenda))
 
   (add-hook 'org-agenda-finalize-hook #'+org-agenda-place-point 90)
+  (global-leader :keymaps 'org-mode-map "a" 'org-agenda)
   :general
   <<org-agenda-keybindings>>
   :custom
@@ -2044,8 +2042,6 @@ Completion style for matching regexps in any order
 #+end_src
 
 #+begin_src emacs-lisp :lexical t
-(global-leader :keymaps 'org-mode-map
-  "a"   'org-agenda)
 #+end_src
 
 Consider cribbing =evilified-state= from Spacemacs?
@@ -3277,11 +3273,11 @@ https://github.com/justbur/emacs-which-key
 #+begin_src emacs-lisp :lexical t
 (use-feature winner
   :defer 5
-  :general
+  :config
   (+general-global-window
     "u" 'winner-undo
     "r" 'winner-redo)
-  :config (winner-mode))
+  (winner-mode))
 #+end_src
 ** window
 #+begin_src emacs-lisp :lexical t
