@@ -1127,26 +1127,21 @@ These settings defined in C code, so we use the ~emacs~ pseudo-package to set th
 (use-feature emacs
   :demand t
   :custom
-  <<emacs-custom>>)
-#+end_src
-*** :custom
-:PROPERTIES:
-:header-args: :noweb-ref emacs-custom
-:END:
-#+begin_src emacs-lisp :lexical t
-(scroll-conservatively 101 "Scroll just enough to bring text into view")
-(enable-recursive-minibuffers t "Allow minibuffer commands in minibuffer")
-(frame-title-format '(buffer-file-name "%f" ("%b"))
-                    "Make frame title current file's name.")
-(find-library-include-other-files nil)
-(indent-tabs-mode nil "Use spaces, not tabs")
-(inhibit-startup-screen t)
-(history-delete-duplicates t "Don't clutter history")
-(pgtk-use-im-context-on-new-connection nil "Prevent GTK from stealing Shift + Space")
-(sentence-end-double-space nil "Double space sentence demarcation breaks sentence navigation in Evil")
-(tab-stop-list (number-sequence 2 120 2))
-(tab-width 2 "Shorter tab widths")
-(completion-styles '(flex basic partial-completion emacs22))
+  (scroll-conservatively 101 "Scroll just enough to bring text into view")
+  (enable-recursive-minibuffers t "Allow minibuffer commands in minibuffer")
+  (frame-title-format '(buffer-file-name "%f" ("%b"))
+                      "Make frame title current file's name.")
+  (find-library-include-other-files nil)
+  (indent-tabs-mode nil "Use spaces, not tabs")
+  (inhibit-startup-screen t)
+  (history-delete-duplicates t "Don't clutter history")
+  (pgtk-use-im-context-on-new-connection nil "Prevent GTK from stealing Shift + Space")
+  (sentence-end-double-space nil "Double space sentence demarcation breaks sentence navigation in Evil")
+  (tab-stop-list (number-sequence 2 120 2))
+  (tab-width 2 "Shorter tab widths")
+  (completion-styles '(flex basic partial-completion emacs22))
+  (report-emacs-bug-no-explanations t)
+  (report-emacs-bug-no-confirmation t))
 #+end_src
 ** ement.el
 #+begin_quote
