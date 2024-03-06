@@ -637,7 +637,15 @@ https://github.com/emacs-evil/evil
   (evil-want-C-i-jump t)
   (evil-search-module 'evil-search "use vim-like search instead of 'isearch")
   (evil-undo-system 'undo-redo)
+  :hook
+  (lisp-interaction-mode . (lambda () (setq-local evil-lookup-func #'+evil-lookup-elisp-symbol)))
+  (emacs-lisp-mode . (lambda () (setq-local evil-lookup-func #'+evil-lookup-elisp-symbol)))
   :config
+  (defun +evil-lookup-elisp-symbol ()
+  "Lookup elisp symbol at point."
+    (if-let ((symbol (thing-at-point 'symbol)))
+        (describe-symbol (intern symbol))
+      (user-error "No symbol at point")))
   ;;I want Emacs regular mouse click behavior
   (define-key evil-motion-state-map [down-mouse-1] nil)
   <<+evil-kill-minibuffer>>
