@@ -1399,6 +1399,7 @@ Work with Git forges from the comfort of Magit
 https://github.com/magit/forge
 
 #+begin_src emacs-lisp :lexical t
+(use-package transient :defer t) ;; Use MELPA until built-in version updated.
 (use-package forge
   :ensure (:files (:defaults "docs/*"))
   :after magit
