@@ -1407,6 +1407,32 @@ https://github.com/magit/forge
               forge-add-pullreq-refspec nil))
 #+end_src
 
+** gnus
+#+begin_src emacs-lisp :lexical t
+(use-feature gnus
+  :defer t
+  :config
+  (setq user-mail-address (+email-address +email-dev)
+        gnus-select-method '(nntp "news.gmane.io")
+        gnus-use-dribble-file nil
+        gnus-thread-sort-functions
+        '(gnus-thread-sort-by-most-recent-date
+          (not gnus-thread-sort-by-number))
+        gnus-use-cache t
+        gnus-interactive-exit nil
+        gnus-ignored-newsgroups "^to\\.\\|^[0-9. ]+\\( \\|$\\)\\|^[\"]\"[#'()]")
+  (require 'nnimap)
+  (add-to-list 'gnus-secondary-select-methods '(nntp "news.gmane.io"))
+  (add-to-list 'gnus-secondary-select-methods
+               '(nnimap "gmail"
+                        (nnimap-address "imap.gmail.com")
+                        (nnimap-server-port "imaps")
+                        (nnimap-stream ssl)
+                        (nnir-search-engine imap)
+                        (gnus-topic-set-parameters "gmail" '((display . 200)))
+                        (nnmail-expiry-target "nnimap+gmail:[Gmail]/Trash")
+                        (nnmail-expiry-wait 90))))
+#+end_src
 ** help
 #+begin_src emacs-lisp :lexical t
 (use-feature help
