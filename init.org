@@ -1817,7 +1817,9 @@ Completion style for matching regexps in any order
 #+begin_src emacs-lisp :lexical t
 (use-package orderless
   :defer 1
-  :custom (completion-styles '(orderless basic)))
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-overrides '((file (styles partial-completion)))))
 #+end_src
 ** org
 #+begin_src emacs-lisp :lexical t
