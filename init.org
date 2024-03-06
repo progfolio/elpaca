@@ -919,6 +919,18 @@ https://github.com/minad/corfu
   :custom
   (custom-file null-device "Don't store customizations"))
 #+end_src
+
+** dictionary
+#+begin_src emacs-lisp :lexical t
+(use-feature dictionary
+  :defer t
+  :custom
+  (dictionary-create-buttons nil)
+  (dicitonary-use-single-buffer t)
+  (global-definer "W" 'dictionary-lookup-definition)
+  (+general-global-application "D" 'dictionary-search)
+  (+general-global-text "d" 'dictionary-search))
+#+end_src
 ** diminish
 #+begin_quote
 This package implements hiding or abbreviation of the mode line displays (lighters) of minor-modes.
@@ -3002,14 +3014,6 @@ ten, but opening my org agenda files wipes that list out.
 (use-feature smtpmail
   :custom
   (smtpmail-queue-mail nil))
-#+end_src
-** dictionary
-#+begin_src emacs-lisp :lexical t
-(use-feature dictionary
-  :general
-  (global-definer "W" 'dictionary-lookup-definition)
-  (+general-global-application "D" 'dictionary-search)
-  (+general-global-text "d" 'dictionary-search))
 #+end_src
 ** straight.el
 #+begin_src emacs-lisp :lexical t
