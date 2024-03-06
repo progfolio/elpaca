@@ -253,6 +253,11 @@ https://github.com/progfolio/elpaca
 (setq elpaca-queue-limit 30)
 #+end_src
 
+#+begin_src emacs-lisp :lexical t
+(with-eval-after-load 'evil
+  (evil-make-intercept-map elpaca-ui-mode-map))
+#+end_src
+
 ** packaging
 *** keychain
 [[https://www.funtoo.org/Keychain][Keychain]] is a gpg/ssh agent that allows me to cache my credentials.
@@ -685,7 +690,9 @@ https://github.com/emacs-evil/evil-collection
   :elpaca (:remotes ("origin"
                      ("fork" :repo "progfolio/evil-collection")))
   :after (evil)
-  :config (evil-collection-init)
+  :config
+  (setq evil-collection-mode-list (remq 'elpaca evil-collection-mode-list))
+  (evil-collection-init)
   :init (setq evil-collection-setup-minibuffer t)
   :custom
   (evil-collection-elpaca-want-g-filters nil)
