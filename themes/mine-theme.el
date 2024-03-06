@@ -14,7 +14,8 @@
 (defvar mine-palette
   ;;                 COLOR          TTY-COLOR
   '((blue            "#6698A7"      "#6098A7")
-    (gray            "#A2A2A4"      "#A2A2A4")
+    (gray            "#515152"      "#515152")
+    (dark-gray       "#101020"      "#101020")
     (green           "#34B53F"      "#6EBF5B")
     (lavender        "#744A89"      "#905CAA")
     (orange          "#DD845A"      "#FF9868")
@@ -70,11 +71,10 @@
   (warning :foreground "yellow" :weight bold)
   (fringe :inherit default)
   (header-line :inherit default :underline t)
-  (highlight :background ,purple :foreground ,green :extend t)
+  (highlight :background ,dark-gray :extend t)
   (isearch :inherit hl-line :box t)
-  (lazy-highlight :inherit hl-line :box t)
   (query-replace :background ,yellow :foreground ,purple :box t :weight bold)
-  (region  :background ,dark-purple :foreground ,lavender :weight bold :extend t)
+  (region  :background ,dark-gray :weight bold :extend t)
   (secondary-selection  :background ,dark-purple :foreground ,yellow :weight bold :extend t)
   (tooltip :foreground ,yellow :background ,dark-purple))
 
