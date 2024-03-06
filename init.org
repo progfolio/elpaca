@@ -847,6 +847,15 @@ https://github.com/jorgenschaefer/emacs-buttercup
 (use-package buttercup
   :commands (buttercup-run-at-point))
 #+end_src
+** cape
+#+begin_quote
+Completion At Point Extensions
+#+end_quote
+
+#+begin_src emacs-lisp :lexical t
+(use-package cape
+  :commands (cape-file))
+#+end_src
 ** cleanroom
 #+begin_src emacs-lisp :lexical t :tangle no
 (use-package cleanroom
