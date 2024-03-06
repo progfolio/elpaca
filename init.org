@@ -1341,6 +1341,12 @@ https://www.flycheck.org/en/latest/
                                  (nthcdr 2 (directory-files (expand-file-name "builds" elpaca-directory) 'full))))))
   (add-hook 'flymake-mode-hook #'+flymake-elpaca-bytecomp-load-path))
 #+end_src
+** flymake-guile
+#+begin_src emacs-lisp :lexical t
+(use-package flymake-guile
+  :defer t
+  :hook (scheme-mode . flymake-guile))
+#+end_src
 ** flyspell
 #+begin_src emacs-lisp :lexical t
 (use-feature flyspell
@@ -1407,7 +1413,25 @@ https://github.com/magit/forge
               forge-display-in-status-buffer nil
               forge-add-pullreq-refspec nil))
 #+end_src
-
+** geiser
+#+begin_src emacs-lisp :lexical t
+(use-package geiser
+  :defer t
+  :config
+  (global-leader
+    :major-modes '(scheme-mode)
+    :keymaps     '(scheme-mode-map)
+    "e" '(:ignore t :which-key "eval")
+    "eb" 'geiser-eval-buffer
+    "es" 'geiser-eval-last-sexp
+    "es" 'geiser-eval-region
+    "i" 'geiser-doc-module
+    "]" 'geiser-squarify))
+#+end_src
+** geiser-guile
+#+begin_src emacs-lisp :lexical t
+(use-package geiser-guile :defer t)
+#+end_src
 ** gnus
 #+begin_src emacs-lisp :lexical t
 (use-feature gnus
