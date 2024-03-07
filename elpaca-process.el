@@ -82,6 +82,7 @@ This allows for output to be passed back to the parent Emacs process."
   (let* ((program (if (string-match-p "/" program) (expand-file-name program) program))
          (subprocess
           `(with-temp-buffer
+             (when (< emacs-major-version 28) (require 'subr-x)) ;;@COMPAT: Emacs 27
              (setq load-prefer-newer t)
              (let ((p (make-process
                        :name   ,(concat "elpaca-process-poll-" program)
