@@ -632,7 +632,7 @@ https://github.com/emacs-evil/evil
   (emacs-lisp-mode . (lambda () (setq-local evil-lookup-func #'+evil-lookup-elisp-symbol)))
   :config
   (defun +evil-lookup-elisp-symbol ()
-  "Lookup elisp symbol at point."
+    "Lookup elisp symbol at point."
     (if-let ((symbol (thing-at-point 'symbol)))
         (describe-symbol (intern symbol))
       (user-error "No symbol at point")))
