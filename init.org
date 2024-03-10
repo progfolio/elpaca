@@ -1156,6 +1156,8 @@ Ement.el is a new Matrix client for Emacs. It aims to be simple, fast, featurefu
   :custom
   (ement-room-avatars t)
   (ement-room-images t)
+  (ement-room-compose-method 'compose-buffer)
+  (ement-room-compose-buffer-window-auto-height-min 10)
   (ement-save-sessions t)
   (ement-sessions-file "~/.cache/ement.eld.gpg")
 
