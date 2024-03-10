@@ -933,12 +933,13 @@ https://github.com/minad/corfu
 #+begin_src emacs-lisp :lexical t
 (use-feature dictionary
   :defer t
-  :custom
-  (dictionary-create-buttons nil)
-  (dicitonary-use-single-buffer t)
+  :general
   (global-definer "W" 'dictionary-lookup-definition)
   (+general-global-application "D" 'dictionary-search)
-  (+general-global-text "d" 'dictionary-search))
+  (+general-global-text "d" 'dictionary-search)
+  :custom
+  (dictionary-create-buttons nil)
+  (dicitonary-use-single-buffer t))
 #+end_src
 ** diminish
 #+begin_quote
