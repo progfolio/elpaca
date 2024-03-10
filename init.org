@@ -1164,7 +1164,6 @@ Ement.el is a new Matrix client for Emacs. It aims to be simple, fast, featurefu
 
   :config
   (require 'ement-tabulated-room-list)
-  (add-hook 'ement-room-compose-hook #'ement-room-compose-org)
   (add-to-list 'display-buffer-alist
                (cons "^\\*Ement compose: "
                      (cons 'display-buffer-below-selected
