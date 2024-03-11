@@ -77,8 +77,8 @@
                   (mapcar (lambda (row)
                             (let* ((s (split-string (dom-texts row) " " 'omit-nulls))
                                    (item (intern (pop s))))
-                              (pop s) ;discard version info
-                              (cons item (string-join s " "))))
+                              (pop s) ; Discard version info here and "Rank" column below
+                              (cons item (string-join (butlast s) " "))))
                           rows)))))))
 
 (defcustom elpaca-menu-elpa-ignored-url-regexp "\\(?:bzr::\\|hg::\\|dr-qubit\\)"
