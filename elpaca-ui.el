@@ -474,17 +474,34 @@ If QUERY is nil, the contents of the minibuffer are used instead."
   "Ensure current buffer is derived from `elpaca-ui-mode'."
   (or (derived-mode-p 'elpaca-ui-mode) (user-error "Buffer not in `elpaca-ui-mode'")))
 
+(defun elpaca-ui--tag-annotator (tag)
+  "Annotate TAG."
+  (when-let ((fn (alist-get tag elpaca-ui-search-tags nil nil #'string=))
+             (doc (documentation fn)))
+    (concat " " (substring doc 0 (string-search "\n" doc)))))
+
 (defvar elpaca-ui-search-prompt "Search (empty to clear): ")
+
+(defun elpaca-ui--complete-tag ()
+  "Return `elpaca-ui-search-tags' as completion candidates."
+  (and (looking-back "\\(?:#[[:alpha:]]*\\)" 0)
+       (list (save-excursion (re-search-backward "#") (1+ (point)))
+             (point)
+             elpaca-ui-search-tags
+             :annotation-function #'elpaca-ui--tag-annotator)))
+
 (defun elpaca-ui-search (&optional query)
   "Filter current buffer by QUERY. If QUERY is nil, prompt for it."
   (interactive
-   (progn (elpaca-ui--ensure-mode)
-          (list (string-trim
-                 (condition-case nil
-                     (read-from-minibuffer elpaca-ui-search-prompt
-                                           (and current-prefix-arg elpaca-ui-search-query)
-                                           nil nil elpaca-ui--history)
-                   (quit elpaca-ui-search-query))))))
+   (let ((completion-at-point-functions
+          (cons  #'elpaca-ui--complete-tag completion-at-point-functions)))
+     (elpaca-ui--ensure-mode)
+     (list (string-trim
+            (condition-case nil
+                (read-from-minibuffer elpaca-ui-search-prompt
+                                      (and current-prefix-arg elpaca-ui-search-query)
+                                      nil nil elpaca-ui--history)
+              (quit elpaca-ui-search-query))))))
   (elpaca-ui--ensure-mode)
   (when (string-empty-p query) (setq query elpaca-ui-default-query))
   (unless (string= query elpaca-ui-search-query)
