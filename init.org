@@ -621,7 +621,6 @@ https://github.com/emacs-evil/evil
   :custom
   (evil-symbol-word-search t "search by symbol with * and #.")
   (evil-shift-width 2 "Same behavior for vim's '<' and '>' commands")
-  (evil-want-C-i-jump t)
   (evil-complete-all-buffers nil)
   (evil-want-integration t)
   (evil-want-C-i-jump t)
