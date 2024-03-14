@@ -1122,7 +1122,7 @@ The keyword's value is expected to be one of the following:
                     (error "Unable to find main elisp file for %S" package)))))))
 
 (defvar elpaca--tag-regexp "\\(?:v?\\([[:digit:]]\\.[[:digit:]]\\.[[:digit:]]\\)\\)")
-(defun elpaca--latest-tag (e)
+(defun elpaca-latest-tag (e)
   "Return E's latest merged tag matching recipe tag regexp or `elpaca--tag-regexp'."
   (when-let ((default-directory (elpaca<-repo-dir e))
              (recipe (elpaca<-recipe e))
@@ -1197,7 +1197,7 @@ The keyword's value is expected to be one of the following:
    when (or (and core (version-list-< version min))
             (and (not (memq id elpaca-ignored-dependencies))
                  (version-list-< version min)
-                 (let ((tag (elpaca--latest-tag dep)))
+                 (let ((tag (elpaca-latest-tag dep)))
                    (or (null tag) (version-list-< (version-to-list tag) min)))))
    do (cl-return (elpaca--fail e (format "%s installed version %s lower than min required %s"
                                          id version need))))

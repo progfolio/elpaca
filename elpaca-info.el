@@ -189,7 +189,7 @@
                  (if on-disk-p "nil" "?")))
              (when-let ((version (if-let ((e)
                                           (default-directory (elpaca<-repo-dir e))
-                                          (v (or (elpaca--declared-version e) (elpaca--latest-tag e))))
+                                          (v (or (elpaca--declared-version e) (elpaca-latest-tag e))))
                                      (concat (string-trim v) " "
                                              (ignore-errors
                                                (string-trim (elpaca-process-output "git" "rev-parse"  "--short" "HEAD"))))
