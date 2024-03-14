@@ -126,6 +126,7 @@ For DEPTH and FORMS see `elpaca-test' :depth and :init."
                                              (buffer-string))
                     (elpaca-test--upstream-init ref))))
     (elpaca--write-file (expand-file-name "./init.el")
+      (emacs-lisp-mode)
       (insert (elpaca-test--init contents `(:ref ,ref :depth ,depth) forms))
       (mapc #'print forms)
       (elisp-enable-lexical-binding))))
