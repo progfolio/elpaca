@@ -646,30 +646,8 @@ https://github.com/emacs-evil/evil
     "?" 'evil-command-window-search-backward)
   ;;I want Emacs regular mouse click behavior
   (define-key evil-motion-state-map [down-mouse-1] nil)
-  <<+evil-kill-minibuffer>>
   (evil-mode))
 #+end_src
-*** Evil mini-buffer bug
-:PROPERTIES:
-:header-args: :noweb-ref +evil-kill-minibuffer
-:END:
-Sometimes evil gets stuck and doubles the 'd' and 'c' keys among others.
-This has something to do with the mini-buffer according to this Spacemacs issue:
-
-https://github.com/syl20bnr/spacemacs/issues/10410
-
-Apparently this is a workaround:
-
-#+begin_src emacs-lisp :lexical t
-(defun +evil-kill-minibuffer ()
-  (interactive)
-  (when (windowp (active-minibuffer-window))
-    (evil-ex-search-exit)))
-
-(add-hook 'mouse-leave-buffer-hook #'+evil-kill-minibuffer)
-#+end_src
-
-Not sure why that hook is appropriate, but calling =evil-ex-search-exit= manually solves the issue as well.
 *** evil-anzu-mode
 #+begin_quote
 anzu for evil-mode
