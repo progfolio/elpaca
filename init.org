@@ -918,16 +918,6 @@ https://github.com/minad/corfu
   (dictionary-create-buttons nil)
   (dicitonary-use-single-buffer t))
 #+end_src
-** diminish
-#+begin_quote
-This package implements hiding or abbreviation of the mode line displays (lighters) of minor-modes.
-
-https://github.com/emacsmirror/diminish
-#+end_quote
-#+begin_src emacs-lisp :lexical t
-(use-package diminish
-  :defer 10)
-#+end_src
 ** dired
 #+begin_quote
 Directory browsing commands
@@ -2651,7 +2641,6 @@ https://github.com/harrybournis/org-fancy-priorities
 (use-package org-fancy-priorities
   :commands (org-fancy-priorities-mode)
   :hook (org-mode . org-fancy-priorities-mode)
-  :diminish ""
   :config
   ;;"Eisenhower Matrix of Importance and Urgency"
   (defvar +org-fancy-priorities-eisenhower-matrix
@@ -2750,7 +2739,6 @@ to override the default placement.
 ** org-indent
 #+begin_src emacs-lisp :lexical t
 (use-feature org-indent
-  :diminish ""
   :after (org)
   :hook (org-mode . org-indent-mode)
   :config
@@ -3303,8 +3291,7 @@ https://github.com/justbur/emacs-which-key
   (which-key-side-window-location 'bottom)
   (which-key-sort-order 'which-key-key-order-alpha)
   (which-key-side-window-max-width 0.33)
-  (which-key-idle-delay 0.2)
-  :diminish which-key-mode)
+  (which-key-idle-delay 0.2))
 #+end_src
 ** wikinforg
 #+begin_src emacs-lisp :lexical t
