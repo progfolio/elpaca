@@ -1121,7 +1121,7 @@ The keyword's value is expected to be one of the following:
                           (elpaca--directory-files-recursively repo (concat "\\`[^.z-a]*" name))))
                     (error "Unable to find main elisp file for %S" package)))))))
 
-(defvar elpaca--tag-regexp "\\(?:v?\\([[:digit:]]\\.[[:digit:]]\\.[[:digit:]]\\)\\)")
+(defvar elpaca--tag-regexp "\\(?:v?\\([[:digit:]]+\\.[[:digit:]]+\\.[[:digit:]]+\\)\\)")
 (defun elpaca-latest-tag (e)
   "Return E's latest merged tag matching recipe tag regexp or `elpaca--tag-regexp'."
   (when-let ((default-directory (elpaca<-repo-dir e))
