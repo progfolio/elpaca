@@ -805,7 +805,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
                (recipe            (elpaca<-recipe   e))
                (remotes           (plist-get recipe :remotes)))
       (elpaca--signal e "Configuring Remotes" 'adding-remotes)
-      (unless (ignore-errors (mapcar #'length remotes)) (setq remotes (list remotes)))
+      (unless (ignore-errors (mapc #'length remotes)) (setq remotes (list remotes)))
       (cl-loop with renamed for spec in remotes do
                (if (stringp spec)
                    (if renamed
