@@ -86,7 +86,9 @@
                     elpaca--menu-cache)
                 (elpaca-menu-item 'elpaca))))
 
-(defun elpaca-tests--no-inheritance (order) '(:inherit nil))
+(defun elpaca-tests--no-inheritance (order)
+  "Turn off ORDER inheritance."
+  '(:inherit nil))
 
 (ert-deftest elpaca-recipe ()
   "Compute recipe from ORDER."
