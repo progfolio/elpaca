@@ -933,9 +933,6 @@ FILES and NOCONS are used recursively."
          (lines   (split-string chunk "\n"))
          (returnp (string-match-p "\r" chunk))
          (linep   (string-empty-p (car (last lines)))))
-    (unless (process-get process :messaged)
-      (elpaca--signal e (elpaca--command-string (process-command process)) nil nil 1)
-      (process-put process :messaged t))
     (when timer (cancel-timer timer))
     (unless (eq (elpaca--status e) 'failed)
       (process-put process :timer (run-at-time elpaca-busy-interval nil
@@ -967,13 +964,16 @@ FILES and NOCONS are used recursively."
 (defun elpaca--make-process (e &rest spec)
   "Attach process to E from `make-process' SPEC plist."
   (declare (indent 1))
-  (let ((process (make-process ;;@MAYBE: wrap in stop-process, continue at end?
-                  :name (concat "elpaca-" (plist-get spec :name) "-" (elpaca<-package e))
-                  :connection-type (or (plist-get spec :connection-type) 'pipe)
-                  :command (plist-get spec :command)
-                  :filter (or (plist-get spec :filter) #'elpaca--process-filter)
-                  :sentinel (plist-get spec :sentinel))))
+  (let* ((command (plist-get spec :command))
+         (process (make-process ;;@MAYBE: wrap in stop-process, continue at end?
+                   :name (concat "elpaca-" (plist-get spec :name) "-" (elpaca<-package e))
+                   :connection-type (or (plist-get spec :connection-type) 'pipe)
+                   :command command
+                   :filter (or (plist-get spec :filter) #'elpaca--process-filter)
+                   :sentinel (plist-get spec :sentinel))))
     (process-put process :elpaca e)
+    (elpaca--signal e (propertize (elpaca--command-string command) 'face 'elpaca-blocked))
+    (process-put process :loglen (length (elpaca<-log e)))
     (setf (elpaca<-process e) process)))
 
 (defun elpaca--compile-info (e)
