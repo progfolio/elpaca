@@ -789,6 +789,14 @@ Optional ARGS are passed to `elpaca--signal', which see."
       (elpaca--continue-build next))
     (when (= (cl-incf (elpaca-q<-processed q)) (length es)) (elpaca--finalize-queue q))))
 
+(defun elpaca--propertize-subprocess (process)
+  "Propertize PROCESS according to exit status in associated E."
+  (when-let ((e (process-get process :elpaca))
+             (entry (car (last (elpaca<-log e) (process-get process :loglen)))))
+    (setf (nth 2 entry) (propertize (nth 2 entry) 'face
+                                    (if (zerop (process-exit-status process))
+                                        'elpaca-finished 'elpaca-failed)))))
+
 (defun elpaca--command-string (strings &optional prefix)
   "Return string of form PREFIX STRINGS."
   (concat (or prefix "$") (string-join strings " ")))
@@ -954,7 +962,8 @@ FILES and NOCONS are used recursively."
   "Update E's INFO and STATUS when PROCESS EVENT is finished."
   (if-let ((e (process-get process :elpaca))
            ((and (equal event "finished\n") (not (eq (elpaca--status e) 'failed)))))
-      (elpaca--continue-build e info status)
+      (progn (elpaca--propertize-subprocess process)
+             (elpaca--continue-build e info status))
     (elpaca--fail e (format "Subprocess error (see previous log entries)"))))
 
 (defun elpaca--compile-info-process-sentinel (process event)
@@ -964,6 +973,7 @@ FILES and NOCONS are used recursively."
     (unless finished
       (setf (elpaca<-build-steps e)
             (cl-set-difference (elpaca<-build-steps e) '(elpaca--install-info elpaca--add-info-path))))
+    (elpaca--propertize-subprocess process)
     (elpaca--continue-build
      e (if finished "Info compiled" (concat "Compilation failure: " (string-trim event))))))
 
@@ -1009,6 +1019,7 @@ FILES and NOCONS are used recursively."
 (defun elpaca--install-info-process-sentinel (process event)
   "Sentinel for info installation PROCESS EVENT."
   (let ((e (process-get process :elpaca)))
+    (elpaca--propertize-subprocess process)
     (elpaca--continue-build e (if (equal event "finished\n")
                                   "Info installed"
                                 (concat "Failed to install Info: " (string-trim event))))))
@@ -1045,6 +1056,7 @@ FILES and NOCONS are used recursively."
   "PROCESS EVENT."
   (let ((e    (process-get process :elpaca))
         (type (process-get process :build-type)))
+    (elpaca--propertize-subprocess process)
     (cond
      ((equal event "finished\n") (elpaca--continue-build e (concat type " steps finished")))
      ((string-match-p "abnormally" event) (elpaca--fail e (concat type " command failed"))))))
@@ -1371,7 +1383,8 @@ This is the branch that would be checked out upon cloning."
   "Sentinel for clone PROCESS."
   (if-let ((e (process-get process :elpaca))
            (success (= (process-exit-status process) 0)))
-      (elpaca--continue-build e)
+      (progn (elpaca--propertize-subprocess process)
+             (elpaca--continue-build e))
     (if (or (memq 'reclone (elpaca<-statuses e))
             (not (plist-get (elpaca<-recipe e) :depth)))
         (elpaca--fail e (nth 2 (car (elpaca<-log e))))
@@ -1854,6 +1867,7 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
                (cl-loop for (_ . d) in (elpaca--queued)
                         when (equal (elpaca<-repo-dir d) repo) do
                         (setf (elpaca<-build-steps d) nil)))
+             (elpaca--propertize-subprocess process)
              (elpaca--continue-build e))
     (elpaca--fail e "Merge failed")))
 
