@@ -815,6 +815,22 @@ Optional ARGS are passed to `elpaca--signal', which see."
       (elpaca--signal e output nil nil verbosity))
     result))
 
+(defun elpaca--initial-fetch (e)
+  "Perform initial fetch for E, respecting :remotes recipe inheritance."
+  (let* ((recipe (copy-tree (elpaca<-recipe e)))
+         (remotes (plist-get recipe :remotes)))
+    (unless (ignore-errors (mapc #'length remotes)) remotes (setq remotes (list remotes)))
+    (setf recipe (elpaca-merge-plists recipe '(:remotes nil)))
+    (cl-loop for remote in remotes
+             for opts = (elpaca-merge-plists recipe (cdr-safe remote))
+             for command = `("git" "fetch" ,@(when-let ((depth (plist-get opts :depth)))
+                                               (list "--depth" (format "%s" depth)))
+                             ,(or (car-safe remote) remote))
+             for fn = (apply-partially (lambda (command e) (apply #'elpaca--fetch e command))
+                                       command)
+             do (push fn (elpaca<-build-steps e))
+             finally (elpaca--continue-build e))))
+
 (defun elpaca--configure-remotes (e)
   "Add and/or rename E's repo remotes."
   (let ((fetchp nil))
@@ -839,7 +855,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
                    (elpaca-with-process
                        (elpaca--call-with-log e 1 "git" "remote" "add" remote URI)
                      (unless success (elpaca--fail e stderr)))))))
-    (when fetchp (push #'elpaca--fetch (elpaca<-build-steps e))))
+    (when fetchp (push #'elpaca--initial-fetch (elpaca<-build-steps e))))
   (elpaca--continue-build e))
 
 (defun elpaca--remove-build-steps (e spec)
