@@ -794,9 +794,15 @@ Optional ARGS are passed to `elpaca--signal', which see."
   (concat (or prefix "$") (string-join strings " ")))
 
 (defun elpaca--call-with-log (e verbosity &rest command)
-  "Call and Log E's COMMAND with VERBOSITY."
-  (elpaca--signal e (elpaca--command-string command) nil nil verbosity)
-  (apply #'elpaca-process-call command))
+  "Call and Log E's COMMAND and output with VERBOSITY."
+  (elpaca-with-process (apply #'elpaca-process-call command)
+    (elpaca--signal e (propertize (elpaca--command-string command)
+                                  'face (if success 'elpaca-finished 'elpaca-failed))
+                    nil nil verbosity)
+    (when-let ((output (string-trim (concat stdout stderr)))
+               ((not (string-empty-p output))))
+      (elpaca--signal e output nil nil verbosity))
+    result))
 
 (defun elpaca--configure-remotes (e)
   "Add and/or rename E's repo remotes."
