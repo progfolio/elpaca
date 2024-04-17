@@ -1485,13 +1485,13 @@ This is the branch that would be checked out upon cloning."
                                            (elpaca-generate-autoloads
                                             ,package ,default-directory))))))
       (progn
+        (elpaca--signal e (concat "Generating autoloads: " default-directory) 'autoloads)
         (elpaca--make-process e
           :name "autoloads"
           :command (list (elpaca--emacs-path) "-Q" "-L" elpaca
                          "-l" (expand-file-name "elpaca.el" elpaca)
                          "--batch" "--eval" program)
-          :sentinel (apply-partially #'elpaca--process-sentinel "Autoloads Generated" nil))
-        (elpaca--signal e (concat "Generating autoloads: " default-directory) 'autoloads))
+          :sentinel (apply-partially #'elpaca--process-sentinel "Autoloads Generated" nil)))
     (elpaca--continue-build e)))
 
 (defun elpaca--activate-package (e)
