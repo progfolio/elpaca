@@ -2020,7 +2020,7 @@ If INTERACTIVE is non-nil, process queues."
 (defmacro elpaca-with-dir (id type &rest body)
   "Evaluate BODY with E matching ID's `default-directory' bound.
 TYPE is either `repo` or `build`, for repo or build directory."
-  (declare (indent 2) (debug t))
+  (declare (indent 2) (debug (symbolp symbolp &rest form)))
   `(let* ((e (elpaca-get ,id))
           (default-directory (,(intern (format "elpaca<-%s-dir" (symbol-name type))) e)))
      ,@body))
