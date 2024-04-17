@@ -139,26 +139,51 @@ It must accept a package ID symbol and REF string as its first two arguments."
          entry))
      entries)))
 
+(defvar elpaca-log--follow-line nil)
+(defun elpaca-log--follow ()
+  "Display update diff if line has changed."
+  (let ((line (line-number-at-pos)))
+    (unless (equal elpaca-log--follow-line line)
+      (setq elpaca-log--follow-line line)
+      (ignore-errors (call-interactively #'elpaca-log-view-diff)))))
+
+(define-minor-mode elpaca-log-update-mode "Auto display update diffs."
+  :lighter " elum"
+  (unless (derived-mode-p 'elpaca-log-mode) (user-error "Not in `elpaca-log-mode' buffer"))
+  (if elpaca-log-update-mode
+      (progn
+        (add-hook 'post-command-hook #'elpaca-log--follow nil t)
+        (elpaca-log--follow))
+    (remove-hook 'post-command-hook #'elpaca-log--follow t)))
+
 (declare-function magit-show-commit "magit")
 (defun elpaca-log-magit-diff (id ref)
   "Show diff for ID at REF."
   (if-let ((fboundp 'magit-show-commit)
            (e (elpaca-get id))
            (default-directory (elpaca<-repo-dir e)))
-      (magit-show-commit ref)
+      (let ((magit-display-buffer-noselect elpaca-log-update-mode)
+            (magit-uniquify-buffer-names (not elpaca-log-update-mode))
+            (magit-buffer-name-format "*elpaca-diff*"))
+        (ignore magit-display-buffer-noselect magit-uniquify-buffer-names
+                magit-buffer-name-format)
+        (magit-show-commit ref))
     (user-error "Unable to show %s ref %s" id ref)))
 
 (defun elpaca-log-diff (item ref)
   "Display diff buffer for ITEM at REF."
-  (elpaca-with-dir item repo
-    (elpaca-with-process-call ("git" "show" ref)
-      (with-current-buffer (get-buffer-create "*elpaca-diff*")
-        (if failure (progn (kill-this-buffer)
-                           (user-error "Unable to show diff for current revision"))
-          (erase-buffer)
-          (insert stdout)
-          (diff-mode)
-          (pop-to-buffer (current-buffer) '((display-buffer-reuse-window))))))))
+  (let ((displayp elpaca-log-update-mode ))
+    (elpaca-with-dir item repo
+      (elpaca-with-process-call ("git" "show" ref)
+        (with-current-buffer (get-buffer-create "*elpaca-diff*")
+          (if failure (progn (kill-this-buffer)
+                             (user-error "Unable to show diff for current revision"))
+            (erase-buffer)
+            (insert stdout)
+            (diff-mode)
+            (setq header-line-format (format "%s" item))
+            (funcall (if displayp #'display-buffer #'pop-to-buffer)
+                     (current-buffer) '((display-buffer-reuse-window display-buffer-below-selected)))))))))
 
 (defun elpaca-log-view-diff (data)
   "View commit diff for current log line's DATA."
