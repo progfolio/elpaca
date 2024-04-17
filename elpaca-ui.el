@@ -494,7 +494,7 @@ If QUERY is nil, the contents of the minibuffer are used instead."
   "Filter current buffer by QUERY. If QUERY is nil, prompt for it."
   (interactive
    (let ((completion-at-point-functions
-          (cons  #'elpaca-ui--complete-tag completion-at-point-functions)))
+          (cons #'elpaca-ui--complete-tag completion-at-point-functions)))
      (elpaca-ui--ensure-mode)
      (list (string-trim
             (condition-case nil
