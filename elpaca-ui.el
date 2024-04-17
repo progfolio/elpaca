@@ -487,7 +487,7 @@ If QUERY is nil, the contents of the minibuffer are used instead."
   (and (looking-back "\\(?:#[[:alpha:]]*\\)" 0)
        (list (save-excursion (re-search-backward "#") (1+ (point)))
              (point)
-             elpaca-ui-search-tags
+             (with-minibuffer-selected-window elpaca-ui-search-tags)
              :annotation-function #'elpaca-ui--tag-annotator)))
 
 (defun elpaca-ui-search (&optional query)
