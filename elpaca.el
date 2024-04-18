@@ -1719,10 +1719,14 @@ FILTER must be a unary function which accepts and returns a queue list."
   (if-let ((queues (if filter (funcall filter (reverse elpaca--queues))
                      (reverse elpaca--queues)))
            ((mapc #'elpaca--maybe-reset-queue queues))
-           (incomplete (cl-find 'incomplete queues :key #'elpaca-q<-status)))
+           (incomplete (cl-find 'incomplete queues :key #'elpaca-q<-status))
+           ((elpaca-q<-elpacas incomplete)))
       (progn (setq elpaca--status-counts (elpaca--count-statuses))
              (elpaca--maybe-log)
              (elpaca--process-queue incomplete))
+    (unless elpaca-after-init-time
+      (setf elpaca-after-init-time (current-time))
+      (run-hooks 'elpaca-after-init-hook))
     (run-hooks 'elpaca--post-queues-hook)))
 
 (defun elpaca--on-disk-p (id)
