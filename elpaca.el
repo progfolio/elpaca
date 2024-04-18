@@ -1171,13 +1171,14 @@ The keyword's value is expected to be one of the following:
     (cl-loop for tag in tags when (string-match regexp tag)
              return (or (match-string 1 tag) (match-string 0 tag)))))
 
-(defun elpaca--date-version (e)
-  "Return date of E's checked out commit."
+(defun elpaca--commit-date (e &optional format)
+  "Return date of E's checked out commit with FORMAT spec."
   (let ((default-directory (elpaca<-repo-dir e)))
     (elpaca--with-no-git-config
-     (elpaca-with-process
-         (elpaca-process-call "git" "log" "-n" "1" "--format=%cd" "--date=format:%Y%m%d")
-       (if (not success) (elpaca--fail e stderr) (version-to-list (string-trim stdout)))))))
+     (elpaca-with-process (apply #'elpaca-process-call
+                                 `("git" "log" "-n" "1" "--format=%cd"
+                                   ,(concat "--date=format:" (or format "%Y%m%d"))))
+       (if (not success) (elpaca--fail e stderr) (string-trim stdout))))))
 
 (defun elpaca--parse-version (file)
   "Parse FILE's version via package header or pkg file data."
@@ -1231,7 +1232,7 @@ The keyword's value is expected to be one of the following:
    for dep = (elpaca-alist-get id queued)
    for core = (unless dep (elpaca-alist-get id package--builtin-versions))
    for version = (cond (core (if datep elpaca-core-date core))
-                       (datep (elpaca--date-version dep))
+                       (datep (version-to-list (elpaca--commit-date dep)))
                        (t (version-to-list (or (elpaca--declared-version dep) "0"))))
    when (or (and core (version-list-< version min))
             (and (not (memq id elpaca-ignored-dependencies))
@@ -2055,7 +2056,7 @@ When BUILD is non-nil visit build directory."
   "Return time of last modification for E's built elisp, otherwise nil."
   (file-attribute-modification-time
    (file-attributes (expand-file-name (concat (elpaca<-package e) ".el")
-                                      (elpaca<-build-dir e)))))
+                                      (elpaca<-repo-dir e)))))
 
 (defun elpaca--custom-candidates (&optional notry)
   "Return declared candidate list with no recipe in `elpaca-menu-functions'.

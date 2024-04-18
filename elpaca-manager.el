@@ -39,6 +39,7 @@ If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
   (or (and (not recache) elpaca-manager--entry-cache)
       (prog1 (setq elpaca-manager--entry-cache
                    (cl-loop
+                    with queued = (elpaca--queued)
                     with init = (elpaca--custom-candidates t)
                     with try = (cl-set-difference (elpaca--custom-candidates) init :test #'equal)
                     with menus = (append (list (cons 'init-file init))
@@ -47,7 +48,10 @@ If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
                     for (menu . items) in menus append
                     (cl-loop
                      for (id . props) in items
-                     for date = (ignore-errors (format-time-string "%F" (plist-get props :date)))
+                     for date = (or (when-let ((e (elpaca-alist-get id queued)))
+                                      (elpaca--commit-date e "%Y-%m-%d"))
+                                    (when-let ((declared (plist-get props :date)))
+                                      (format-time-string "%F" declared)))
                      collect
                      (list id (vector (symbol-name id)
                                       (or (plist-get props :description) "")
