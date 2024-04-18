@@ -7,7 +7,7 @@
 ;; Created: Jan 1, 2022
 ;; Keywords: tools, convenience, lisp
 ;; Package-Requires: ((emacs "27.1"))
-;; Version: 0.0.1
+;; Version: 0.0.2
 
 ;; This file is not part of GNU Emacs.
 
@@ -707,7 +707,8 @@ Optional ARGS are passed to `elpaca--signal', which see."
 
 (defun elpaca--queue (order &optional queue)
   "ADD ORDER to QUEUE or current queue.  Return E."
-  (if-let ((id (elpaca--first order))
+  (if-let ((id (elpaca--first (or order (signal 'wrong-type-argument
+                                                '((or symbolp listp) nil)))))
            ((not after-init-time))
            (e (elpaca-get id)))
       (if-let ((dependents (elpaca<-dependents e)))
@@ -720,7 +721,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
            (q (or queue (car elpaca--queues))))
       (when queue (setf (elpaca<-queue-id e) (elpaca-q<-id q)
                         (elpaca<-init e) (elpaca-q<-type q)))
-      (setf (alist-get (elpaca<-id e) (elpaca-q<-elpacas q)) e)
+      (setf (alist-get id (elpaca-q<-elpacas q)) e)
       (if (eq status 'struct-failed)
           (elpaca--fail e info)
         (elpaca--signal e info status nil 1))
@@ -729,9 +730,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
 ;;;###autoload
 (defun elpaca-split-queue (&rest args)
   "Split remaining elpacas into new queue with ARGS."
-  (let ((current (car elpaca--queues)))
-    (unless (or (elpaca-q<-elpacas current) (elpaca-q<-forms current))
-      (pop elpaca--queues)))
+  (unless (elpaca-q<-elpacas (car elpaca--queues)) (pop elpaca--queues))
   (push (apply #'elpaca-q<-create args) elpaca--queues)
   nil)
 
@@ -769,7 +768,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
       (elpaca-split-queue)
       (setq elpaca-after-init-time (current-time))
       (run-hooks 'elpaca-after-init-hook))
-    (if (and next (or (elpaca-q<-elpacas next) (elpaca-q<-forms next)))
+    (if (and next (elpaca-q<-elpacas next))
         (elpaca--process-queue next)
       (run-hooks 'elpaca--post-queues-hook))))
 
@@ -1611,8 +1610,7 @@ When MESSAGE is non-nil, message the list of dependents."
 When quit with \\[keyboard-quit], running sub-processes are not stopped."
   (when-let ((q (cl-loop for q in elpaca--queues thereis
                          (and (eq (elpaca-q<-status q) 'incomplete)
-                              (or (elpaca-q<-elpacas q) (elpaca-q<-forms q))
-                              q))))
+                              (elpaca-q<-elpacas q) q))))
     (setq elpaca--waiting t mode-line-process "elpaca-wait...")
     (elpaca-process-queues)
     (condition-case nil
@@ -1624,36 +1622,41 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
     (elpaca-split-queue)
     (setq elpaca--waiting nil mode-line-process nil)))
 
-;;;###autoload
-(defmacro elpaca (order &rest body)
-  "Queue ORDER for installation/activation, defer execution of BODY.
-If ORDER is `nil`, defer BODY until orders have been processed."
-  (declare (indent 1) (debug t))
-  (let ((o (gensym "order-")) (id (gensym "id-")) (q (gensym "q-")) (e (gensym "e-")))
-    `(let* ((,o ,@(if (memq (car-safe order) '(quote \`)) `(,order) `(',order)))
-            (,id (elpaca--first ,o))
-            (,q (or (and after-init-time (elpaca--q (elpaca-get ,id))) (car elpaca--queues))))
-       ,@(when body
-           `((if ,id
-                 (setf (alist-get ,id (elpaca-q<-forms ,q)) ',body)
-               ;;@FIX: nil semantics not good for multiple deferred...
-               (push (cons ,id ',body) (elpaca-q<-forms ,q)))))
-       (when ,o (setq ,e (elpaca--queue ,o ,q)))
-       (if (and ,e (plist-get (elpaca<-recipe ,e) :wait))
-           (progn (when after-init-time
-                    (elpaca--unprocess ,e)
-                    (push 'queued (elpaca<-statuses ,e)))
-                  (elpaca-wait))
-         (when after-init-time
-           (when-let ((e (elpaca-get ,id)))
-             (elpaca--maybe-log)
-             (elpaca--unprocess e)
-             (push 'queued (elpaca<-statuses e)))
+(defun elpaca--unprocess (e)
+  "Mark E as unprocessed in its queue."
+  (let ((q (elpaca--q e)))
+    (setf (elpaca<-statuses e) nil
+          (elpaca<-builtp e) nil
+          (elpaca<-dependencies e) nil
+          (elpaca<-queue-time e) (current-time))
+    (when (> (elpaca-q<-processed q) 0) (cl-decf (elpaca-q<-processed q)))
+    (setf (elpaca-q<-status q) 'incomplete)))
+
+(defun elpaca--expand-declaration (order body)
+  "Expand ORDER declaration, deferring BODY."
+  (unless order (signal 'wrong-type-argument '((or symbolp consp) nil)))
+  (when (memq (car-safe order) '(quote \`)) (setq order (eval order t)))
+  (let* ((id (elpaca--first order))
+         (q (or (and after-init-time (elpaca--q (elpaca-get id))) (car elpaca--queues)))
+         (e (elpaca--queue order q)))
+    (when body (setf (alist-get id (elpaca-q<-forms q)) body))
+    (when after-init-time
+      (elpaca--maybe-log)
+      (unless (eq (elpaca--status e) 'failed)
+        (elpaca--unprocess e)
+        (push 'queued (elpaca<-statuses e))))
+    (cond ((plist-get (elpaca<-recipe e) :wait) (elpaca-wait))
+          (after-init-time
            (when (member this-command '(eval-last-sexp eval-defun)) (elpaca-process-queues))
            (when (member this-command '(eval-region eval-buffer org-ctrl-c-ctrl-c))
              (when elpaca--interactive-timer (cancel-timer elpaca--interactive-timer))
-             (run-at-time elpaca-interactive-interval nil #'elpaca-process-queues)))
-         nil))))
+             (run-at-time elpaca-interactive-interval nil #'elpaca-process-queues))))))
+
+;;;###autoload
+(defmacro elpaca (order &rest body)
+  "Queue ORDER for installation/activation, defer execution of BODY."
+  (declare (indent 1) (debug form))
+  `(elpaca--expand-declaration ',order ',body))
 
 (defvar elpaca--try-package-history nil "History for `elpaca-try'.")
 ;;;###autoload
@@ -1702,7 +1705,6 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
    ((eq (elpaca-q<-status q) 'complete)
     (when-let ((next (nth (1+ (elpaca-q<-id q)) (reverse elpaca--queues))))
       (elpaca--process-queue next)))
-   ((and (not (elpaca-q<-elpacas q)) (elpaca-q<-forms q)) (elpaca--finalize-queue q))
    (t (mapc #'elpaca--process (reverse (mapcar #'cdr (elpaca-q<-elpacas q)))))))
 
 (defun elpaca--maybe-reset-queue (q)
@@ -1788,16 +1790,6 @@ do not confirm before deleting package and DEPS."
            (or prompt "Queued item: ")
            (sort (cl-delete-duplicates (mapcar #'car (or queued (elpaca--queued)))) #'string<)
            nil t)))
-
-(defun elpaca--unprocess (e)
-  "Mark E as unprocessed in its queue."
-  (let ((q (elpaca--q e)))
-    (setf (elpaca<-statuses e) nil
-          (elpaca<-builtp e) nil
-          (elpaca<-dependencies e) nil
-          (elpaca<-queue-time e) (current-time))
-    (when (> (elpaca-q<-processed q) 0) (cl-decf (elpaca-q<-processed q)))
-    (setf (elpaca-q<-status q) 'incomplete)))
 
 ;;;###autoload
 (defun elpaca-rebuild (id &optional interactive)

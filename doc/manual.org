@@ -571,16 +571,6 @@ Any of the following will install the "example" package:
                       (list :pre-build ((message "Mac specific pre-build"))))))
 #+end_src
 
-If /ORDER/ is nil, /BODY/ is still executed after processing the current queue.
-
-#+begin_src emacs-lisp :lexical t
-(elpaca first (message "First configured"))
-;; If this weren't wrapped in an `elpaca' call, it would execute FIRST
-;; Due to the "first" and "third" package installing asynchronously.
-(elpaca nil (message "Second"))
-(elpaca third (message "Third configured"))
-#+end_src
-
 Interactively evaluating an =elpaca= declaration will re-process the order.
 This can be used to change a package's recipe prior to rebuilding it.
 Note that rebuilding a package does not *reload* a package.

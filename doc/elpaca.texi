@@ -279,9 +279,6 @@ For example:
 ;;Note this will cause the declaration to be interpreted immediately (not deferred).
 ;;Useful for configuring built-in emacs features.
 (use-package emacs :ensure nil :config (setq ring-bell-function #'ignore))
-
-;; Don't install anything. Defer execution of BODY
-(elpaca nil (message "deferred"))
 @end lisp
 
 @strong{IMPORTANT}:
@@ -291,24 +288,23 @@ Elpaca processes its package queues @emph{after} Emacs reads the init file.@foot
 Consider the following example:
 
 @lisp
-(elpaca nil (message "First")) ; Queue First
+(elpaca package-a (message "First")) ; Queue First
 (message "Second") ; Second messaged
-(elpaca nil (message "Third")) ; Queue Third
+(elpaca package-b (message "Third")) ; Queue Third
 (elpaca-process-queues) ; Process queue: First messaged, Third messaged.
 @end lisp
 
 ``Second'' will be message @emph{before} ``First'' and ``Third''.
 Defer forms which are dependent on deferred forms.
-Wrapping the ``Second'' message in an @samp{elpaca} declaration will fix the above example:
-
+If the top-level form should be executed after a specific package is installed/activated, put it in that declaration's @emph{BODY}.
+e.g.
 @lisp
-(elpaca nil (message "First"))  ; Queue First
-(elpaca nil (message "Second")) ; Queue Second
-(elpaca nil (message "Third"))  ; Queue Third
+(elpaca package-a (message "First") (message "Second"))  ; Queue First, Second
+(elpaca package-b (message "Third"))  ; Queue Third
 (elpaca-process-queues) ; Process queue: First, Second, Third messaged.
 @end lisp
 
-Add any configuration which relies on @samp{after-init-hook}, @samp{emacs-startup-hook}, etc to @samp{elpaca-after-init-hook} so it runs after Elpaca has activated all queued packages.
+Add configuration which relies on @samp{after-init-hook}, @samp{emacs-startup-hook}, etc to @samp{elpaca-after-init-hook} so it runs after Elpaca has activated all queued packages.
 This includes loading of saved customizations. e.g.
 
 @lisp
@@ -852,16 +848,6 @@ Any of the following will install the ``example'' package:
 (elpaca `(example :host github :repo "user/example"
                   ,@@(when (eq system-type 'darwin) ;; backqouting supported
                       (list :pre-build ((message "Mac specific pre-build"))))))
-@end lisp
-
-If @emph{ORDER} is nil, @emph{BODY} is still executed after processing the current queue.
-
-@lisp
-(elpaca first (message "First configured"))
-;; If this weren't wrapped in an `elpaca' call, it would execute FIRST
-;; Due to the "first" and "third" package installing asynchronously.
-(elpaca nil (message "Second"))
-(elpaca third (message "Third configured"))
 @end lisp
 
 Interactively evaluating an @samp{elpaca} declaration will re-process the order.

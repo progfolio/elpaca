@@ -642,8 +642,7 @@ The current package is its sole argument."
            do (apply command (or args (list id)))
            (pop elpaca-ui--marked-packages)
            finally (setq elpaca--post-queues-hook '(elpaca-ui--post-execute)))
-  (let (elpaca-log-functions)
-    (elpaca-process-queues (lambda (qs) (cl-remove-if-not #'elpaca-q<-elpacas qs)))))
+  (let (elpaca-log-functions) (elpaca-process-queues)))
 
 (defun elpaca-ui-send-input ()
   "Send input string to current process."

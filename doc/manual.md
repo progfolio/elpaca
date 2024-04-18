@@ -176,9 +176,6 @@ For example:
 ;;Note this will cause the declaration to be interpreted immediately (not deferred).
 ;;Useful for configuring built-in emacs features.
 (use-package emacs :ensure nil :config (setq ring-bell-function #'ignore))
-
-;; Don't install anything. Defer execution of BODY
-(elpaca nil (message "deferred"))
 ```
 
 **IMPORTANT**:
@@ -186,22 +183,21 @@ For example:
 Elpaca installs and activates packages asynchronously. Elpaca processes its package queues *after* Emacs reads the init file.<sup><a id="fnr.3" class="footref" href="#fn.3" role="doc-backlink">3</a></sup> Consider the following example:
 
 ```emacs-lisp
-(elpaca nil (message "First")) ; Queue First
+(elpaca package-a (message "First")) ; Queue First
 (message "Second") ; Second messaged
-(elpaca nil (message "Third")) ; Queue Third
+(elpaca package-b (message "Third")) ; Queue Third
 (elpaca-process-queues) ; Process queue: First messaged, Third messaged.
 ```
 
-&ldquo;Second&rdquo; will be message *before* &ldquo;First&rdquo; and &ldquo;Third&rdquo;. Defer forms which are dependent on deferred forms. Wrapping the &ldquo;Second&rdquo; message in an `elpaca` declaration will fix the above example:
+&ldquo;Second&rdquo; will be message *before* &ldquo;First&rdquo; and &ldquo;Third&rdquo;. Defer forms which are dependent on deferred forms. If the top-level form should be executed after a specific package is installed/activated, put it in that declaration&rsquo;s *BODY*. e.g.
 
 ```emacs-lisp
-(elpaca nil (message "First"))  ; Queue First
-(elpaca nil (message "Second")) ; Queue Second
-(elpaca nil (message "Third"))  ; Queue Third
+(elpaca package-a (message "First") (message "Second"))  ; Queue First, Second
+(elpaca package-b (message "Third"))  ; Queue Third
 (elpaca-process-queues) ; Process queue: First, Second, Third messaged.
 ```
 
-Add any configuration which relies on `after-init-hook`, `emacs-startup-hook`, etc to `elpaca-after-init-hook` so it runs after Elpaca has activated all queued packages. This includes loading of saved customizations. e.g.
+Add configuration which relies on `after-init-hook`, `emacs-startup-hook`, etc to `elpaca-after-init-hook` so it runs after Elpaca has activated all queued packages. This includes loading of saved customizations. e.g.
 
 ```emacs-lisp
 (setq custom-file (expand-file-name "customs.el" user-emacs-directory))
@@ -694,16 +690,6 @@ This macro is for programmatic use in one&rsquo;s init file. Any of the followin
 (elpaca `(example :host github :repo "user/example"
                   ,@(when (eq system-type 'darwin) ;; backqouting supported
                       (list :pre-build ((message "Mac specific pre-build"))))))
-```
-
-If *ORDER* is nil, *BODY* is still executed after processing the current queue.
-
-```emacs-lisp
-(elpaca first (message "First configured"))
-;; If this weren't wrapped in an `elpaca' call, it would execute FIRST
-;; Due to the "first" and "third" package installing asynchronously.
-(elpaca nil (message "Second"))
-(elpaca third (message "Third configured"))
 ```
 
 Interactively evaluating an `elpaca` declaration will re-process the order. This can be used to change a package&rsquo;s recipe prior to rebuilding it. Note that rebuilding a package does not **reload** a package. It&rsquo;s best to restart Emacs after a successful rebuild if you wish to have the changes loaded.
