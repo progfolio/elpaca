@@ -153,7 +153,7 @@ For DEPTH and FORMS see `elpaca-test' :depth and :init."
 (defun elpaca-test--copy-local-store ()
   "Copy host `elpaca-directory' store to test env."
   (cl-loop with env = (expand-file-name "./elpaca/")
-           for path in '("./repos/elpaca" "./builds/elpaca" "./cache/")
+           for path in '("./repos/elpaca" "./cache/")
            do (when-let ((local (expand-file-name path elpaca-directory))
                          ((file-exists-p local)))
                 (elpaca-test--copy-dir local (expand-file-name path env)))))
