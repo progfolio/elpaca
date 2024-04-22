@@ -507,41 +507,40 @@ If SILENT is non-nil, suppress update message."
   "Return t if PACKAGE is marked."
   (and (memq package (mapcar #'car elpaca-ui--marked-packages)) t))
 
-(defun elpaca-ui--unmark (package)
-  "Unmark PACKAGE."
-  (setq elpaca-ui--marked-packages
-        (cl-remove-if (lambda (cell) (string= (car cell) package)) elpaca-ui--marked-packages))
-  (elpaca-ui--apply-face))
+(defun elpaca-ui-mark (target &optional command test advancep)
+  "Mark current TARGET with optional COMMAND.
+If TARGET is an ID or a list of IDs, mark those packages.
+If TARGET is the keyword `:region', act on all marked packages in active region.
+If non-nil, call TEST with each ID.
+If COMMAND is nil remove marks, otherwise mark for `elpaca-ui-marks' COMMAND.
+If ADVANCEP is non-nil, move `forward-line'."
+  (if-let (((and (eq target :region) (use-region-p)))
+           (end (region-end)))
+      (let (targets)
+        (save-excursion
+          (goto-char (region-beginning))
+          (while (< (point) end)
+            (when-let ((id (ignore-errors (elpaca-ui-current-package)))) (push id targets))
+            (forward-line)))
+        (elpaca-ui-mark targets command test)
+        (deactivate-mark)
+        (apply #'jit-lock-refontify (unless (derived-mode-p 'elpaca-log-mode)
+                                      (list (1- (region-beginning)) (region-end)))))
+    (when (eq target :region) (setq target (elpaca-ui-current-package)))
+    (cl-loop for id in (if (consp target) target (list target)) do
+             (when test (funcall test id))
+             (setf (alist-get id elpaca-ui--marked-packages nil t)
+                   (when-let ((found (assoc command elpaca-ui-marks))
+                              ((not (eq (car (alist-get id elpaca-ui--marked-packages))
+                                        command))))
+                     (append found (list :prefix-arg current-prefix-arg)))))
+    (jit-lock-refontify (window-start) (window-end))
+    (when advancep (forward-line))))
 
 (defun elpaca-ui-unmark ()
-  "Unmark current package.
-If region is active unmark all packages in region."
+  "Unmark current package or packages in active region."
   (interactive)
-  (elpaca-ui--unmark (elpaca-ui-current-package))
-  (jit-lock-refontify (window-start) (window-end))
-  (forward-line))
-
-(defun elpaca-ui--mark (package command)
-  "Internally mark PACKAGE for COMMAND."
-  (setf (alist-get package elpaca-ui--marked-packages)
-        (append (assoc command elpaca-ui-marks) (list :prefix-arg current-prefix-arg)))
-  (elpaca-ui--apply-face))
-
-(defun elpaca-ui-mark (package command)
-  "Mark PACKAGE for COMMAND."
-  (interactive)
-  (elpaca-ui--mark package command)
-  (forward-line))
-
-(defun elpaca-ui--toggle-mark (&optional test command)
-  "Toggle COMMAND mark for current package.
-TEST is a unary function evaluated prior to toggling the mark.
-The current package is its sole argument."
-  (let ((package (elpaca-ui-current-package)))
-    (when test (funcall test package))
-    (if (eq (car (alist-get package elpaca-ui--marked-packages)) command)
-        (elpaca-ui-unmark)
-      (elpaca-ui-mark package command))))
+  (elpaca-ui-mark :region nil nil 'advance))
 
 (defmacro elpaca-ui-defmark (name test)
   "Define a marking command with NAME and TEST."
@@ -550,20 +549,8 @@ The current package is its sole argument."
                            (replace-regexp-in-string "^elpaca-" "" (symbol-name name))))
        () ,(format "Mark package at point for `%s'." name)
        (interactive)
-       (if (not (use-region-p))
-           (elpaca-ui--toggle-mark ,test ',name)
-         (let ((end (region-end))
-               (beg (region-beginning)))
-           (save-restriction
-             (goto-char beg)
-             (while (not (>= (point) end))
-               (condition-case _
-                   (elpaca-ui--toggle-mark ,test ',name)
-                 ((error) (forward-line))))
-             (deactivate-mark))))
-       (jit-lock-refontify (window-start) (window-end))))
+       (elpaca-ui-mark :region ',name ,test 'advance)))
 
-;;@TODO: Most of these commands should not be allowed while building is in process
 (elpaca-ui-defmark elpaca-rebuild
   (lambda (p) (unless (or (elpaca-installed-p p) (alist-get p (elpaca--queued)))
                 (user-error "Package %S is not installed" p))))
