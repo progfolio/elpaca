@@ -254,16 +254,10 @@ It must accept a package ID symbol and REF string as its first two arguments."
    (cl-loop
     for (status time info verbosity) in log
     for entry =
-    (when-let
-        (((<= verbosity elpaca-verbosity))
-         (delta (format-time-string "%02s.%6N" (time-subtract time queue-time)))
-         (pkg (let ((found (alist-get id elpaca-ui--string-cache)))
-                (if-let ((cached (alist-get status found)))
-                    cached
-                  (setf (alist-get status (alist-get id elpaca-ui--string-cache))
-                        (propertize
-                         package 'face (elpaca-alist-get status elpaca-status-faces 'default)))))))
-      (list id (vector pkg (symbol-name status) info (propertize delta 'time time))))
+    (when-let (((<= verbosity elpaca-verbosity))
+               (delta (format-time-string "%02s.%6N" (time-subtract time queue-time))))
+      (list id (vector (propertize package 'elpaca-status status)
+                       (symbol-name status) info (propertize delta 'time time))))
     when entry collect entry)))
 
 (defun elpaca-log--sort-chronologically (a b)

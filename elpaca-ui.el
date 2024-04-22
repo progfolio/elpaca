@@ -184,7 +184,6 @@ It receives one argument, the parsed search query list.")
   "Function responsible for returning the UI buffer's `tabulated-list-entries'.")
 (defvar-local elpaca-ui-entries nil "List of table entries.")
 (defvar-local elpaca-ui--history nil "History for `elpaca-ui' minibuffer.")
-(defvar elpaca-ui--string-cache nil "Cache for propertized strings.")
 (defvar url-http-end-of-headers)
 (defvar elpaca-ui--pbh-cache nil "Progress bar help echo cache.")
 (defvar elpaca-ui--pbh-timer nil "Progress bar help echo timer.")
@@ -245,11 +244,48 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                              hidden elpaca-ui--header-line-matching elpaca-ui-search-query)
                        " "))))
 
+(defun elpaca-ui--apply-face ()
+  "Apply face to current entry id."
+  (when-let ((entry (tabulated-list-get-entry))
+             (name  (aref entry 0))
+             (namelen (length name))
+             (id    (intern name))
+             (beg (line-beginning-position))
+             (inhibit-read-only t))
+    (when-let ((e (elpaca-get id)))
+      (put-text-property
+       beg (+ beg namelen) 'face
+       (or (elpaca-alist-get (get-text-property (point) 'elpaca-status) elpaca-status-faces)
+           (elpaca-alist-get (elpaca--status e) elpaca-status-faces)
+           '(:weight bold))))
+    (if-let ((marked (cl-find id elpaca-ui--marked-packages :key #'car)))
+        (let* ((props  (nthcdr 2 marked))
+               (face   (or (plist-get props :face) 'default))
+               (prefix (or (plist-get props :prefix) "*"))
+               (parg   (plist-get props :prefix-arg))
+               (mark   (propertize (concat prefix (when parg "+") " " name) 'face face))
+               (offset (+ beg (length mark))))
+          (add-text-properties beg (+ beg namelen) (list 'display mark 'offset offset)))
+      (when-let ((offset (get-text-property (point) 'offset)))
+        (remove-text-properties beg offset '(display))))))
+
+(defun elpaca-ui--jit-apply-faces (beg end)
+  "Apply faces to entries between BEG and END.
+Called in `jit-lock-functions', which see."
+  (save-excursion
+    (with-silent-modifications
+      (setq end (progn (goto-char end) (line-end-position)))
+      (setq beg (progn (goto-char beg) (line-beginning-position)))
+      (while (< (point) end)
+        (elpaca-ui--apply-face)
+        (forward-line 1))
+      `(jit-lock-bounds ,beg . ,end))))
+
 (define-derived-mode elpaca-ui-mode tabulated-list-mode "elpaca-ui"
   "Major mode to manage packages."
-  (setq tabulated-list-printer #'elpaca-ui--apply-faces)
   (add-hook 'minibuffer-setup-hook 'elpaca-ui--minibuffer-setup)
   (elpaca-ui-live-update-mode 1)
+  (jit-lock-register #'elpaca-ui--jit-apply-faces)
   (advice-add #'tabulated-list-print :after #'elpaca-ui--print-appender)
   (hl-line-mode))
 
@@ -329,7 +365,6 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                          (let ((entries (funcall elpaca-ui-entries-function)))
                            (setq ,@(cl-loop for fn in fns append `(entries ,fn)))))))))
 
-(defvar-local elpaca-ui--print-cache nil "Used when printing entries via `elpaca-ui--apply-faces'.")
 (define-minor-mode elpaca-ui-tail-mode "Automatically follow tail of UI buffer when enabled."
   :lighter " elpaca-ui-tail")
 
@@ -346,92 +381,28 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
       (with-silent-modifications
         (insert (elpaca-ui--buttonize s (lambda (&rest _) (elpaca-ui-show-hidden-rows))))))))
 
+(defun elpaca-ui--print ()
+  "Print table entries."
+  (when-let (derived-mode-p 'elpaca-ui-mode)
+    (let ((p (point)))
+      (tabulated-list-print)
+      (goto-char (if elpaca-ui-tail-mode (point-max) p)))))
+
 (defun elpaca-ui-show-hidden-rows (&optional n)
   "Append rows up to N times `elpaca-ui-row-limit'."
   (interactive "p")
   (if-let ((tlen (length tabulated-list-entries))
            (elen (length elpaca-ui-entries))
            ((< tlen elen)))
-      (let ((elpaca-ui--print-cache (append elpaca-ui--marked-packages (elpaca--queued)))
-            (inhibit-read-only t)
-            (limit (or elpaca-ui-row-limit most-positive-fixnum)))
-        (goto-char (point-max))
-        (delete-region (line-beginning-position) (line-end-position))
+      (let ((limit (or elpaca-ui-row-limit most-positive-fixnum)))
         (when-let ((sorter (tabulated-list--get-sorter)))
           (setq tabulated-list-entries (sort tabulated-list-entries sorter)))
         (dotimes (i (min (* limit (or n 1)) (- elen tlen)))
           (when-let ((entry (nth (+ i tlen) elpaca-ui-entries)))
-            (setcdr (last tabulated-list-entries) (cons entry nil))
-            (elpaca-ui--apply-faces (car entry) (cadr entry))))
-        (elpaca-ui--print-appender)
+            (setcdr (last tabulated-list-entries) (cons entry nil))))
+        (elpaca-ui--print)
         (elpaca-ui--header-line elpaca-ui-header-line-prefix))
     (user-error "End of table")))
-
-(defun elpaca-ui--print ()
-  "Print table entries."
-  (let ((elpaca-ui--print-cache (append elpaca-ui--marked-packages (elpaca--queued)))
-        (p (point)))
-    (tabulated-list-print)
-    (goto-char (if elpaca-ui-tail-mode (point-max) p))))
-
-(defun elpaca-ui--apply-faces (id cols)
-  "Propertize entries which are marked/installed.
-ID and COLS mandatory args to fulfill `tabulated-list-printer' API."
-  (if-let ((name (propertize (aref cols 0) 'display nil))
-           (namesym (intern name))
-           (found (cl-loop for it in elpaca-ui--print-cache thereis (and (eq namesym (car it)) it)))
-           (target (cdr found))
-           (result (if (elpaca-p target) ;;not marked
-                       (if elpaca-ui--want-faces
-                           (propertize name 'face (elpaca-alist-get (elpaca--status target) elpaca-status-faces 'default))
-                         name)
-                     (let* ((props  (cdr target))
-                            (face   (or (plist-get props :face) 'default))
-                            (prefix (or (plist-get props :prefix) "*")))
-                       (propertize name 'display (propertize (concat prefix " " name) 'face face))))))
-      (progn
-        (setq cols (copy-tree cols t))
-        (setf (aref cols 0) result))
-    (remove-text-properties 0 (length (aref cols 0)) '(display) (aref cols 0)))
-  (tabulated-list-print-entry id cols))
-
-(defun elpaca-ui--apply-face ()
-  "Apply face to current entry id."
-  (when-let ((entry (tabulated-list-get-entry))
-             (name  (aref entry 0))
-             (id    (intern name))
-             (offset (save-excursion
-                       (goto-char (point-min))
-                       (let ((continue t)
-                             (line 0))
-                         (while (and continue (not (eobp)))
-                           (if (get-text-property (point) 'tabulated-list-entry)
-                               (setq continue nil)
-                             (cl-incf line))
-                           (forward-line))
-                         line)))
-             (lines (cl-loop for i below (length tabulated-list-entries)
-                             for entry = (nth i tabulated-list-entries)
-                             when (eq (car entry) id) collect i)))
-    (save-excursion
-      (with-silent-modifications
-        (cl-loop
-         with marked = (cl-find id elpaca-ui--marked-packages :key #'car)
-         with props  = (nthcdr 2 marked)
-         with face   = (or (plist-get props :face) 'default)
-         with prefix = (or (plist-get props :prefix) "*")
-         with parg   = (plist-get props :prefix-arg)
-         with mark   = (propertize (concat prefix (when parg "+") " " name) 'face face)
-         with len    = (length name)
-         for line in lines
-         do (progn
-              (goto-char (point-min))
-              (forward-line (+ line offset))
-              (let* ((start (line-beginning-position))
-                     (end (+ start len)))
-                (if marked
-                    (put-text-property start (+ start (length name)) 'display mark)
-                  (remove-text-properties start end '(display))))))))))
 
 (defun elpaca-ui--update-search-query (&optional buffer query)
   "Update the BUFFER to reflect search QUERY.
@@ -547,6 +518,7 @@ If SILENT is non-nil, suppress update message."
 If region is active unmark all packages in region."
   (interactive)
   (elpaca-ui--unmark (elpaca-ui-current-package))
+  (jit-lock-refontify (window-start) (window-end))
   (forward-line))
 
 (defun elpaca-ui--mark (package command)
@@ -588,7 +560,8 @@ The current package is its sole argument."
                (condition-case _
                    (elpaca-ui--toggle-mark ,test ',name)
                  ((error) (forward-line))))
-             (deactivate-mark))))))
+             (deactivate-mark))))
+       (jit-lock-refontify (window-start) (window-end))))
 
 ;;@TODO: Most of these commands should not be allowed while building is in process
 (elpaca-ui-defmark elpaca-rebuild
