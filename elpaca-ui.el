@@ -186,7 +186,6 @@ It receives one argument, the parsed search query list.")
 (defvar-local elpaca-ui--history nil "History for `elpaca-ui' minibuffer.")
 (defvar elpaca-ui--string-cache nil "Cache for propertized strings.")
 (defvar url-http-end-of-headers)
-(defvar elpaca-ui--progress-bar-e (propertize "E:" 'face '(:weight bold)))
 (defvar elpaca-ui--pbh-cache nil "Progress bar help echo cache.")
 (defvar elpaca-ui--pbh-timer nil "Progress bar help echo timer.")
 
