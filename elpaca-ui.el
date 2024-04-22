@@ -503,9 +503,9 @@ If SILENT is non-nil, suppress update message."
   (interactive (list current-prefix-arg))
   (elpaca-visit (elpaca-ui-current-package) build))
 
-(defun elpaca-ui-package-marked-p (package)
-  "Return t if PACKAGE is marked."
-  (and (memq package (mapcar #'car elpaca-ui--marked-packages)) t))
+(defun elpaca-ui-package-marked-p (id)
+  "Return t if package with ID is marked."
+  (and (memq id (mapcar #'car elpaca-ui--marked-packages)) t))
 
 (defun elpaca-ui-mark (target &optional command test advancep)
   "Mark current TARGET with optional COMMAND.
@@ -552,8 +552,8 @@ If ADVANCEP is non-nil, move `forward-line'."
        (elpaca-ui-mark :region ',name ,test 'advance)))
 
 (elpaca-ui-defmark elpaca-rebuild
-  (lambda (p) (unless (or (elpaca-installed-p p) (alist-get p (elpaca--queued)))
-                (user-error "Package %S is not installed" p))))
+  (lambda (id) (unless (or (elpaca-installed-p id) (alist-get id (elpaca--queued)))
+                 (user-error "Package %S is not installed" id))))
 
 (defun elpaca-ui--ensure-installed (id)
   "Throw user error if package associted with ID is not installed."
