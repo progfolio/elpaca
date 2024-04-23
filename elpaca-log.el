@@ -122,9 +122,9 @@ It must accept a package ID symbol and REF string as its first two arguments."
              (when (string-match-p "\\(?:Error\\|Warning\\):" info)
                (setf (aref (cadr copy) 2) (propertize info 'face 'elpaca-log-error)))
              (when (string-match "\\(?:\\([^z-a]*?\\):\\([[:digit:]]+?\\):\\([[:digit:]]*?\\)\\):" info)
-               (let ((file (match-string 1 (aref (cadr copy) 2)))
-                     (line  (match-string 2 (aref (cadr copy) 2)))
-                     (col (match-string 3 (aref (cadr copy) 2))))
+               (let ((file (match-string 1 info))
+                     (line (match-string 2 info))
+                     (col (match-string 3 info)))
                  (setf (aref (cadr copy) 2)
                        (replace-match
                         (elpaca-ui--buttonize
