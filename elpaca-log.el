@@ -115,7 +115,7 @@ It must accept a package ID symbol and REF string as its first two arguments."
        (if-let ((cols (cadr entry))
                 ((equal (aref cols 1) "byte-compilation"))
                 (copy (copy-tree entry))
-                (info (aref (cadr copy) 2))
+                (info (string-trim (aref (cadr copy) 2)))
                 (name (aref (cadr copy) 0))
                 (e (elpaca-alist-get (intern name) queued)))
            (progn
