@@ -42,7 +42,7 @@
   :type '(alist :key-type symbol :value-type function) :group 'elpaca-ui)
 
 (defcustom elpaca-log-command-queries
-  '(((elpaca-fetch elpaca-fetch-all) . "#latest #update-log")
+  '(((elpaca-fetch elpaca-fetch-all elpaca-log-updates) . "#latest #update-log")
     ((elpaca-try elpaca-rebuild) . "#latest #linked-errors")
     (( elpaca-merge elpaca-merge-all elpaca-pull elpaca-pull-all
        elpaca-update elpaca-update-all)
@@ -269,6 +269,7 @@ It must accept a package ID symbol and REF string as its first two arguments."
   (let ((m (make-sparse-keymap)))
     (set-keymap-parent m elpaca-ui-mode-map)
     (define-key m (kbd "gd") 'elpaca-log-view-diff)
+    (define-key m (kbd "gu") 'elpaca-log-updates)
     m))
 
 (define-derived-mode elpaca-log-mode elpaca-ui-mode "elpaca-log-mode"
@@ -295,6 +296,13 @@ It must accept a package ID symbol and REF string as its first two arguments."
     (unless (derived-mode-p 'elpaca-log-mode) (elpaca-log-mode))
     (elpaca-ui--update-search-query (current-buffer) (or query elpaca-ui-search-query))
     (pop-to-buffer elpaca-log-buffer '((display-buffer-reuse-window display-buffer-same-window)))))
+
+;;;###autoload
+(defun elpaca-log-updates ()
+  "Log each available update without fetching."
+  (interactive)
+  (cl-loop for (_ . e) in (elpaca--queued) do (elpaca--log-updates e))
+  (elpaca--maybe-log))
 
 (provide 'elpaca-log)
 ;;; elpaca-log.el ends here
