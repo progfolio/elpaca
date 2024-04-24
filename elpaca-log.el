@@ -257,7 +257,7 @@ It must accept a package ID symbol and REF string as its first two arguments."
     (when-let (((<= verbosity elpaca-verbosity))
                (delta (format-time-string "%02s.%6N" (time-subtract time queue-time))))
       (list (list id) (vector (propertize package 'elpaca-status status)
-                       (symbol-name status) info (propertize delta 'time time))))
+                              (symbol-name status) info (propertize delta 'time time))))
     when entry collect entry)))
 
 (defun elpaca-log--sort-chronologically (a b)
