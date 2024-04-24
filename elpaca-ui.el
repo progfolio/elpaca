@@ -49,11 +49,11 @@ Accepted key val pairs are:
 
 (defun elpaca-ui--tag-dirty (entries)
   "Return ENTRIES for packages with a dirty worktree."
-  (cl-remove-if-not #'elpaca-worktree-dirty-p entries :key #'car))
+  (cl-remove-if-not #'elpaca-worktree-dirty-p entries :key #'caar))
 
 (defun elpaca-ui--tag-declared (entries)
   "Return ENTRIES for packages declared during init."
-  (cl-remove-if-not #'elpaca-declared-p entries :key #'car))
+  (cl-remove-if-not #'elpaca-declared-p entries :key #'caar))
 
 (defun elpaca-ui--tag-orphan (_)
   "Return entires for packages not temporarlily installed or declared."
@@ -82,7 +82,7 @@ Accepted key val pairs are:
 
 (defun elpaca-ui--tag-installed (entries)
   "Return ENTRIES for installed packages."
-  (cl-remove-if-not #'elpaca-installed-p entries :key #'car))
+  (cl-remove-if-not #'elpaca-installed-p entries :key #'caar))
 
 (defun elpaca-ui--tag-marked (entries)
   "Return ENTRIES for marked packages."
@@ -90,7 +90,7 @@ Accepted key val pairs are:
 
 (defun elpaca-ui--tag-unique (entries)
   "Return last occurrence of each entry in ENTRIES."
-  (cl-remove-duplicates entries :key #'car :from-end t))
+  (cl-remove-duplicates entries :key #'caar :from-end t))
 
 (defcustom elpaca-ui-search-tags '((dirty     . elpaca-ui--tag-dirty)
                                    (declared  . elpaca-ui--tag-declared)
@@ -491,7 +491,17 @@ If SILENT is non-nil, suppress update message."
 
 (defun elpaca-ui-current-package ()
   "Return current package of UI line."
-  (or (tabulated-list-get-id) (user-error "No package at point")))
+  (or (car (tabulated-list-get-id)) (user-error "No package at point")))
+
+(defun elpaca-ui--sort-package (a b)
+  "Sort entries A, B according to name, then menu-function position."
+  (let ((p1 (caar a))
+        (p2 (caar b)))
+    (if (eq p1 p2)
+        (when-let ((m1 (cl-position (cdar a) elpaca-menu-functions))
+                   (m2 (cl-position (cdar b) elpaca-menu-functions)))
+          (< m1 m2))
+      (string<  p1 p2))))
 
 (defun elpaca-ui-browse-package ()
   "Browse current package's URL via `browse-url'."
@@ -520,7 +530,7 @@ If ADVANCEP is non-nil, move `forward-line'."
         (save-excursion
           (goto-char (region-beginning))
           (while (< (point) end)
-            (when-let ((id (ignore-errors (elpaca-ui-current-package)))) (push id targets))
+            (when-let ((id (tabulated-list-get-id))) (push (car id) targets))
             (forward-line)))
         (elpaca-ui-mark targets command test)
         (deactivate-mark)

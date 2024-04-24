@@ -220,7 +220,7 @@ It must accept a package ID symbol and REF string as its first two arguments."
                         "^.*: " (lambda (s) (propertize s 'face 'elpaca-log-highlight))
                         i nil t)))
                (button (elpaca-ui--buttonize commit #'elpaca-log-view-diff
-                                             (cons (car entry) commit)))
+                                             (cons (caar entry) commit)))
                (copy (copy-tree entry)))
           (progn
             (setf (aref (cadr copy) 2) (concat button " " info " " date))
@@ -256,7 +256,7 @@ It must accept a package ID symbol and REF string as its first two arguments."
     for entry =
     (when-let (((<= verbosity elpaca-verbosity))
                (delta (format-time-string "%02s.%6N" (time-subtract time queue-time))))
-      (list id (vector (propertize package 'elpaca-status status)
+      (list (list id) (vector (propertize package 'elpaca-status status)
                        (symbol-name status) info (propertize delta 'time time))))
     when entry collect entry)))
 

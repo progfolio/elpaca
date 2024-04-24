@@ -53,15 +53,16 @@ If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
                                     (when-let ((declared (plist-get props :date)))
                                       (format-time-string "%F" declared)))
                      collect
-                     (list id (vector (symbol-name id)
-                                      (or (plist-get props :description) "")
-                                      (or date "")
-                                      (propertize (or (plist-get props :source) "") 'menu menu))))))
+                     (list (cons id menu)
+                           (vector (symbol-name id)
+                                   (or (plist-get props :description) "")
+                                   (or date "")
+                                   (propertize (or (plist-get props :source) "") 'menu menu))))))
         (when recache (message "Elpaca manager cache refreshed.")))))
 
 (define-derived-mode elpaca-manager-mode elpaca-ui-mode "elpaca-manager-mode"
   "Major mode for displaying Elpaca packages."
-  (setq tabulated-list-format [("Package" 30 t)
+  (setq tabulated-list-format [("Package" 30 elpaca-ui--sort-package)
                                ("Description" 80 t)
                                ("Date" 15 t)
                                ("Source" 20 t)]
