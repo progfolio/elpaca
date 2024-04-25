@@ -261,7 +261,8 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
        beg (+ beg namelen) 'face
        (or (elpaca-alist-get (get-text-property (point) 'elpaca-status) elpaca-status-faces)
            (if (or (derived-mode-p 'elpaca-log-mode)
-                   (equal (plist-get (elpaca<-recipe e) :source) source))
+                   (equal (plist-get (elpaca<-recipe e) :source)
+                          (unless (equal source "Init file") source)))
                (elpaca-alist-get (elpaca--status e) elpaca-status-faces)
              (progn (setq noconflict nil) 'elpaca-ui-conflicting))
            '(:weight bold))))
