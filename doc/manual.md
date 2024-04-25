@@ -775,7 +775,7 @@ The following commands are available in the `elpaca-ui-mode`:
 | elpaca-ui-mark-pull        | p       | Mark package at point for ‘elpaca-pull’.                        |
 | elpaca-ui-mark-rebuild     | r       | Mark package at point for ‘elpaca-rebuild’.                     |
 | elpaca-ui-search           | s       | Filter current buffer by QUERY. If QUERY is nil, prompt for it. |
-| elpaca-ui-unmark           | u       | Unmark current package.                                         |
+| elpaca-ui-unmark           | u       | Unmark current package or packages in active region.            |
 | elpaca-ui-visit            | v       | Visit current package’s repo or BUILD directory.                |
 | elpaca-ui-execute-marks    | x       | Execute each mark in ‘elpaca-ui-marked-packages’.               |
 

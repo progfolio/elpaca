@@ -975,7 +975,7 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @tab Filter current buffer by QUERY@. If QUERY is nil, prompt for it.
 @item elpaca-ui-unmark
 @tab u
-@tab Unmark current package.
+@tab Unmark current package or packages in active region.
 @item elpaca-ui-visit
 @tab v
 @tab Visit current package’s repo or BUILD directory.
