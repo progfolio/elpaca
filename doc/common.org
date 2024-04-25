@@ -56,11 +56,8 @@ It must come before any calls to other Elpaca functions/macros.
 This will clone Elpaca into your =user-emacs-directory= under the =elpaca= subdirectory.
 It then builds and activates Elpaca.
 
-#+begin_src emacs-lisp :lexical t :eval never-export :tangle "./init.el" :exports none
-;; Example Elpaca configuration -*- lexical-binding: t; -*-
-#+end_src
-
-#+begin_src emacs-lisp :lexical t :eval never-export :tangle "./init.el"
+#+name: installation-script
+#+begin_src emacs-lisp :lexical t :eval never-export
 (defvar elpaca-installer-version 0.7)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
@@ -99,6 +96,17 @@ It then builds and activates Elpaca.
     (load "./elpaca-autoloads")))
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
+#+end_src
+
+#+begin_src emacs-lisp :lexical t :eval never-export :tangle "./init.el" :exports none :noweb tangle
+;; Example Elpaca configuration -*- lexical-binding: t; -*-
+<<installation-script>>
+#+end_src
+
+#+begin_src emacs-lisp :lexical t :eval never-export :tangle "./installer.el" :exports none :noweb tangle
+;; Elpaca Installer -*- lexical-binding: t; -*-
+;; Copy below this line into your init.el
+<<installation-script>>
 #+end_src
 
 - Windows users must be able to create symlinks[fn:1], or enable =elpaca-no-symlink-mode=

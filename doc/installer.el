@@ -1,4 +1,5 @@
-;; Example Elpaca configuration -*- lexical-binding: t; -*-
+;; Elpaca Installer -*- lexical-binding: t; -*-
+;; Copy below this line into your init.el
 (defvar elpaca-installer-version 0.7)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
@@ -37,36 +38,3 @@
     (load "./elpaca-autoloads")))
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
-
-;; Uncomment for systems which cannot create symlinks:
-;; (elpaca-no-symlink-mode)
-
-;; Install a package via the elpaca macro
-;; See the "recipes" section of the manual for more details.
-
-;; (elpaca example-package)
-
-;; Install use-package support
-(elpaca elpaca-use-package
-  ;; Enable use-package :ensure support for Elpaca.
-  (elpaca-use-package-mode))
-
-;;When installing a package which modifies a form used at the top-level
-;;(e.g. a package which adds a use-package key word),
-;;use the :wait recipe keyword to block until that package has been installed/configured.
-;;For example:
-;;(use-package general :ensure (:wait t) :demand t)
-
-;; Expands to: (elpaca evil (use-package evil :demand t))
-(use-package evil :ensure t :demand t)
-
-;;Turns off elpaca-use-package-mode current declaration
-;;Note this will cause the declaration to be interpreted immediately (not deferred).
-;;Useful for configuring built-in emacs features.
-(use-package emacs :ensure nil :config (setq ring-bell-function #'ignore))
-
-;; Local Variables:
-;; no-byte-compile: t
-;; no-native-compile: t
-;; no-update-autoloads: t
-;; End:
