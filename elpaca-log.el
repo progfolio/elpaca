@@ -170,20 +170,21 @@ It must accept a package ID symbol and REF string as its first two arguments."
         (magit-show-commit ref))
     (user-error "Unable to show %s ref %s" id ref)))
 
-(defun elpaca-log-diff (item ref)
-  "Display diff buffer for ITEM at REF."
-  (let ((displayp elpaca-log-update-mode ))
-    (elpaca-with-dir item repo
-      (elpaca-with-process-call ("git" "show" ref)
+(defun elpaca-log-diff (id ref)
+  "Display diff buffer for package ID at REF."
+  (if-let ((e (elpaca-get id))
+           (repo (elpaca<-repo-dir e))
+           (diff (let ((default-directory repo)) (elpaca-process-output "git" "show" ref))))
+      (let ((displayp elpaca-log-update-mode))
         (with-current-buffer (get-buffer-create "*elpaca-diff*")
-          (if failure (progn (kill-this-buffer)
-                             (user-error "Unable to show diff for current revision"))
-            (erase-buffer)
-            (insert stdout)
-            (diff-mode)
-            (setq header-line-format (format "%s" item))
-            (funcall (if displayp #'display-buffer #'pop-to-buffer)
-                     (current-buffer) '((display-buffer-reuse-window display-buffer-below-selected)))))))))
+          (with-silent-modifications (erase-buffer) (insert diff))
+          (diff-mode)
+          (setq-local header-line-format (format "%s" id)
+                      default-directory repo
+                      diff-jump-to-old-file t)
+          (funcall (if displayp #'display-buffer #'pop-to-buffer)
+                   (current-buffer) '((display-buffer-reuse-window display-buffer-below-selected)))))
+    (user-error "Unable to show diff for current revision")))
 
 (defun elpaca-log-view-diff (data)
   "View commit diff for current log line's DATA."
