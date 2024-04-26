@@ -294,11 +294,6 @@ An Elpaca menu for MELPA submissions.
   (setq use-package-always-ensure t))
 #+end_src
 
-Allow Elpaca to process queues up to this point
-#+begin_src emacs-lisp :lexical t
-(elpaca-wait)
-#+end_src
-
 #+begin_src emacs-lisp :lexical t
 (if debug-on-error
     (setq use-package-verbose t
@@ -354,12 +349,12 @@ Load general before the remaining packages so they can make use of the ~:general
 
 #+begin_src emacs-lisp :lexical t
 (use-package general
+  :ensure (:wait t)
   :demand t
   :config
   (general-override-mode)
   (general-auto-unbind-keys)
   <<general-config>>)
-(elpaca-wait)
 #+end_src
 *** config
 :PROPERTIES:
