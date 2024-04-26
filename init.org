@@ -3431,3 +3431,9 @@ https://github.com/NicolasPetton/zerodark-theme
   (evil-make-intercept-map tunic-mode-map)
   (evil-make-intercept-map tunic-decoder-mode-map))
 #+end_src
+
+** mel
+#+begin_src emacs-lisp :lexical t
+(use-package mel
+  :ensure (:host github :repo "progfolio/mel" :protocol ssh))
+#+end_src
