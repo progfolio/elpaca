@@ -71,8 +71,8 @@ If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
         tabulated-list-use-header-line nil
         elpaca-ui--history 'elpaca-manager--history
         elpaca-ui-default-query elpaca-manager-default-search-query)
-  (elpaca-ui--update-search-query (current-buffer) elpaca-ui-search-query)
-  (tabulated-list-init-header))
+  (tabulated-list-init-header)
+  (elpaca-ui--update-search-query (current-buffer) elpaca-ui-search-query))
 
 ;;;###autoload
 (defun elpaca-manager (&optional recache)
