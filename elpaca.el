@@ -958,6 +958,7 @@ FILES and NOCONS are used recursively."
              (e (process-get process :elpaca)))
     (elpaca--signal e (process-get process :parsed) 'busy)))
 
+(defvar elpaca--eol (if (memq system-type '(ms-dos windows-nt cygwin)) "\r\n" "\n"))
 (defun elpaca--process-filter (process output)
   "Filter PROCESS OUTPUT."
   (process-put process :raw-output (concat (process-get process :raw-output) output))
@@ -965,8 +966,7 @@ FILES and NOCONS are used recursively."
          (parsed  (process-get process :parsed))
          (timer   (process-get process :timer))
          (chunk   (concat parsed output))
-         (lines   (split-string chunk "\n"))
-         (returnp (string-match-p "\r" chunk))
+         (lines   (split-string chunk elpaca--eol))
          (linep   (string-empty-p (car (last lines)))))
     (when timer (cancel-timer timer))
     (unless (eq (elpaca--status e) 'failed)
@@ -977,7 +977,7 @@ FILES and NOCONS are used recursively."
       (setq lines (butlast lines)))
     (dolist (line lines)
       (unless (string-empty-p line)
-        (elpaca--signal e (concat "  " (car (last (split-string line "\r" t)))) nil returnp)))))
+        (elpaca--signal e (concat "  " (car (last (split-string line "\r" t)))))))))
 
 (defun elpaca--process-sentinel (&optional info status process event)
   "Update E's INFO and STATUS when PROCESS EVENT is finished."
