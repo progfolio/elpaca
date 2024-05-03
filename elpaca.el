@@ -970,8 +970,8 @@ FILES and NOCONS are used recursively."
          (linep   (string-empty-p (car (last lines)))))
     (when timer (cancel-timer timer))
     (unless (eq (elpaca--status e) 'failed)
-      (process-put process :timer (run-at-time elpaca-busy-interval nil
-                                               #'elpaca--process-busy process)))
+      (process-put
+       process :timer (run-at-time elpaca-busy-interval nil #'elpaca--process-busy process)))
     (unless linep
       (process-put process :parsed (car (last lines)))
       (setq lines (butlast lines)))
@@ -1004,7 +1004,7 @@ FILES and NOCONS are used recursively."
   (let* ((command (plist-get spec :command))
          (_ (elpaca--signal ;;@HACK Signal before process started. SIGSTP/SIGSTOP failed orders.
              e (propertize (elpaca--command-string command) 'face 'elpaca-blocked)))
-         (process (make-process ;;@FIX: Find way to stop process and continue after bookkeeping 
+         (process (make-process ;;@FIX: Find way to stop process and continue after bookkeeping
                    :name (concat "elpaca-" (plist-get spec :name) "-" (elpaca<-package e))
                    :connection-type (or (plist-get spec :connection-type) 'pipe)
                    :command command
