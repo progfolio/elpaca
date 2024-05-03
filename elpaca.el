@@ -1002,14 +1002,15 @@ FILES and NOCONS are used recursively."
   "Attach process to E from `make-process' SPEC plist."
   (declare (indent 1))
   (let* ((command (plist-get spec :command))
-         (process (make-process ;;@MAYBE: wrap in stop-process, continue at end?
+         (_ (elpaca--signal ;;@HACK Signal before process started. SIGSTP/SIGSTOP failed orders.
+             e (propertize (elpaca--command-string command) 'face 'elpaca-blocked)))
+         (process (make-process ;;@FIX: Find way to stop process and continue after bookkeeping 
                    :name (concat "elpaca-" (plist-get spec :name) "-" (elpaca<-package e))
                    :connection-type (or (plist-get spec :connection-type) 'pipe)
                    :command command
                    :filter (or (plist-get spec :filter) #'elpaca--process-filter)
                    :sentinel (plist-get spec :sentinel))))
     (process-put process :elpaca e)
-    (elpaca--signal e (propertize (elpaca--command-string command) 'face 'elpaca-blocked))
     (process-put process :loglen (length (elpaca<-log e)))
     (setf (elpaca<-process e) process)))
 
