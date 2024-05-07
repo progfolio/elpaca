@@ -143,68 +143,63 @@
                    builds (propertize (file-relative-name build elpaca-builds-directory)
                                       'face (if build-exists '(:weight bold) 'error)))))
 
-(defun elpaca-info--section (spec heading data)
-  "Return section for HEADING with DATA formatted according to SPEC."
-  (declare (indent 2))
-  (format spec (propertize heading 'face 'elpaca-info-section) data))
-
 (declare-function elpaca--flattened-menus "elpaca")
 (defun elpaca--info (id &optional menu)
   "Return info string for item with ID in MENU."
-  (let* ((menus (elpaca-info--menus id))
-         (menu (or menu (caar menus)))
-         (item (cdr (alist-get menu menus)))
-         (on-disk-p (elpaca--on-disk-p id))
-         (e (elpaca-get id))
-         (i  "\n  "))
-    (string-join
-     (delq
-      nil
-      (list
-       (if (> (length menus) 1) (format  " [%s]" (string-join (elpaca-info--source-buttons menus) "|")) "")
-       (format "%s\n" (or (plist-get item :description) "n/a"))
-       (elpaca-info--section "%s %s" "source:" (plist-get item :source))
-       (when-let ((url (plist-get item :url)))
-         (elpaca-info--section "%s %s" "url:" (elpaca-ui--buttonize url #'browse-url url)))
-       (unless (equal (plist-get item :source) "Init file")
-         (elpaca-info--section "%s\n%s" "menu item recipe:"
-           (elpaca-info--format-recipe (format "%S" (plist-get item :recipe)))))
-       (elpaca-info--section "%s\n%s" "full recipe:" (elpaca-info--recipe item))
-       (elpaca-info--section "%s %s" "dependencies:"
-         (if-let ((deps (ignore-errors (elpaca--dependencies (elpaca-get id) t))))
-             (concat "\n" (substring
-                           (cl-loop
-                            with max = (cl-loop for (id . _) in deps maximize (length (symbol-name id)))
-                            for (id . min) in deps concat
-                            (format (concat "  %" (number-to-string (- max)) "s >= %s\n")
-                                    (if (eq id 'emacs) id (elpaca-info--button id))
-                                    (car min)))
-                           0 -1)) ; Drop last newline
-           (if on-disk-p "nil" (if (memq item (cl-set-difference elpaca-ignored-dependencies '(emacs elpaca)))
-                                   "built-in" "?"))))
-       (elpaca-info--section "%s %s" "dependents:"
-         (if-let ((ds (remq 'emacs (elpaca--dependents id 'noerror))))
-             (concat i (mapconcat #'elpaca-info--button (cl-sort ds #'string<) i))
-           (if on-disk-p "nil" "?")))
-       (when-let ((version (if-let ((e)
-                                    (default-directory (elpaca<-repo-dir e))
-                                    (v (ignore-errors (or (elpaca--declared-version e) (elpaca-latest-tag e)))))
-                               (concat (string-trim v) " "
-                                       (ignore-errors
-                                         (string-trim (elpaca-process-output "git" "rev-parse"  "--short" "HEAD"))))
-                             (when-let ((builtin (alist-get id package--builtin-versions)))
-                               (concat (mapconcat #'number-to-string builtin ".") " (builtin)")))))
-         (elpaca-info--section "%s %s" "installed version:" version))
-       (when-let ((e) (statuses (elpaca<-statuses e))) (elpaca-info--section "%s\n  %S" "statuses:" statuses))
-       (when-let ((e) (files (ignore-errors (elpaca--files e))))
-         (elpaca-info--section "%s\n  %s" "files:" (string-join (elpaca-info--files files) i)))
-       (when-let ((e) (log (elpaca<-log e)))
-         (elpaca-info--section "%s\n%s" "log:"
-           (cl-loop for (_ time info _) in (reverse log) concat
-                    (format "  %s %s\n" (propertize (format "[%s]" (format-time-string "%F %T" time))
-                                                    'face 'font-lock-comment-face)
-                            info))))))
-     "\n")))
+  (cl-loop
+   with menus = (elpaca-info--menus id)
+   with menu = (or menu (caar menus))
+   with item = (cdr (alist-get menu menus))
+   with on-disk-p = (elpaca--on-disk-p id)
+   with e = (elpaca-get id)
+   with i =  "\n  "
+   with sections =
+   (list
+    (list nil (propertize (symbol-name id) 'face 'elpaca-info-package))
+    (list nil (concat (and (cdr menus) (format  " [%s]" (string-join (elpaca-info--source-buttons menus) "|"))) "\n"))
+    (list nil (concat (plist-get item :description) "\n"))
+    (list "%s %s" "source:" (plist-get item :source))
+    (when-let ((url (plist-get item :url)))
+      (list "%s %s" "url:" (elpaca-ui--buttonize url #'browse-url url)))
+    (unless (equal (plist-get item :source) "Init file")
+      (list "%s\n%s" "menu item recipe:"
+            (elpaca-info--format-recipe (format "%S" (plist-get item :recipe)))))
+    (list "%s\n%s" "full recipe:" (elpaca-info--recipe item))
+    (list "%s\n%s" "dependencies:"
+          (if-let ((deps (ignore-errors (elpaca--dependencies (elpaca-get id) t))))
+              (cl-loop
+               with max = (cl-loop for (id . _) in deps maximize (length (symbol-name id)))
+               with last = (caar (last deps))
+               for (id . min) in deps concat
+               (format (concat "  %" (number-to-string (- max)) "s >= %s" (unless (eq id last) "\n"))
+                       (if (eq id 'emacs) id (elpaca-info--button id))
+                       (car min)))
+            (if on-disk-p "nil" (if (memq item (cl-set-difference elpaca-ignored-dependencies '(emacs elpaca)))
+                                    "built-in" "?"))))
+    (list "%s %s" "dependents:"
+          (if-let ((ds (remq 'emacs (elpaca--dependents id 'noerror))))
+              (concat i (mapconcat #'elpaca-info--button (cl-sort ds #'string<) i))
+            (if on-disk-p "nil" "?")))
+    (when-let ((version (if-let ((e)
+                                 (default-directory (elpaca<-repo-dir e))
+                                 (v (ignore-errors (or (elpaca--declared-version e) (elpaca-latest-tag e)))))
+                            (concat (string-trim v) " "
+                                    (ignore-errors
+                                      (string-trim (elpaca-process-output "git" "rev-parse"  "--short" "HEAD"))))
+                          (when-let ((builtin (alist-get id package--builtin-versions)))
+                            (concat (mapconcat #'number-to-string builtin ".") " (builtin)")))))
+      (list "%s %s" "installed version:" version))
+    (when-let ((e) (statuses (elpaca<-statuses e))) (list "%s\n  %S" "statuses:" statuses))
+    (when-let ((e) (files (ignore-errors (elpaca--files e))))
+      (list "%s\n  %s" "files:" (string-join (elpaca-info--files files) i)))
+    (when-let ((e) (log (elpaca<-log e)))
+      (list "%s\n%s" "log:"
+            (cl-loop for (_ time info _) in (reverse log) concat
+                     (format "  %s %s\n" (propertize (format "[%s]" (format-time-string "%F %T" time))
+                                                     'face 'font-lock-comment-face)
+                             info)))))
+   for (spec heading data) in sections concat
+   (if spec (format (concat "\n" spec) (propertize heading 'face 'elpaca-info-section) data) heading)))
 
 ;;;###autoload
 (defun elpaca-info (id &optional menu interactive)
@@ -217,13 +212,11 @@ If INTERACTIVE is non-nil, display info in a dedicated buffer."
   (let ((info (elpaca--info id menu)))
     (if (not interactive)
         (substring-no-properties info)
-      (let* ((e (elpaca-get id))
-             (recipe (elpaca<-recipe e)))
+      (let* ((e (elpaca-get id)))
         (with-current-buffer (get-buffer-create "*elpaca-info*")
           (unless (derived-mode-p 'elpaca-info-mode) (elpaca-info-mode))
           (with-silent-modifications
             (erase-buffer)
-            (insert (propertize (symbol-name id) 'face 'elpaca-info-package))
             (when e (setq default-directory (elpaca<-repo-dir e)))
             (insert info)
             (goto-char (point-min))
