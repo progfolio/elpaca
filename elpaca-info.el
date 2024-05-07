@@ -76,7 +76,7 @@
           (fill-region (line-beginning-position) (line-end-position))))
       (forward-line))
     (font-lock-ensure)
-    (indent-region (point-min) (point-max))
+    (let ((inhibit-message t)) (indent-region (point-min) (point-max)))
     (string-trim (buffer-string))))
 
 (defun elpaca-info--recipe (item)
