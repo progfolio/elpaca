@@ -290,13 +290,15 @@ It must accept a package ID symbol and REF string as its first two arguments."
   (tabulated-list-init-header))
 
 ;;;###autoload
-(defun elpaca-log (&optional query)
-  "Display `elpaca-log-buffer' filtered by QUERY."
-  (interactive)
+(defun elpaca-log (&optional query interactive)
+  "When INTERACTIVE is non-nil, Display `elpaca-log-buffer' filtered by QUERY.
+Otherwise return log buffer string."
+  (interactive (list nil t))
   (with-current-buffer (get-buffer-create elpaca-log-buffer)
     (unless (derived-mode-p 'elpaca-log-mode) (elpaca-log-mode))
     (elpaca-ui--update-search-query (current-buffer) (or query elpaca-ui-search-query))
-    (pop-to-buffer elpaca-log-buffer '((display-buffer-reuse-window display-buffer-same-window)))))
+    (if interactive (pop-to-buffer elpaca-log-buffer '((display-buffer-reuse-window display-buffer-same-window)))
+      (buffer-substring-no-properties (save-excursion (goto-char (point-min)) (line-end-position)) (point-max)))))
 
 ;;;###autoload
 (defun elpaca-log-updates ()

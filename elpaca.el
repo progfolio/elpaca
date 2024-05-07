@@ -557,7 +557,8 @@ The first function, if any, which returns non-nil is used." :type 'hook)
       (setq elpaca--log-request-time (current-time)) ;;@MAYBE: move into elpaca-log?
       (elpaca-log (cond ((eq query t) nil)
                         ((stringp query) query)
-                        (t (signal 'wrong-type-error `((stringp t) ,query))))))))
+                        (t (signal 'wrong-type-error `((stringp t) ,query))))
+                  t))))
 
 (defun elpaca<-create (order)
   "Create a new elpaca struct from ORDER."
