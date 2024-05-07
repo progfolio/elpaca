@@ -91,6 +91,7 @@ Recipes
 * post-build::
 * autoloads::
 * version::
+* vars::
 * wait::
 * Inheritance precedence::
 * elpaca-recipe-functions::
@@ -354,6 +355,7 @@ It is a list of the form:
 * post-build::
 * autoloads::
 * version::
+* vars::
 * wait::
 * Inheritance precedence::
 * elpaca-recipe-functions::
@@ -624,6 +626,22 @@ e.g.
 @lisp
 (elpaca (auctex :version (lambda (_) (require 'tex-site) AUCTeX-version)))
 @end lisp
+
+@node vars
+@subsubsection :vars
+
+A list of values to bind via @samp{let*} when executing a package's build steps.
+e.g.
+
+@lisp
+(elpaca (example :vars ((some-dynamic-var t))))
+@end lisp
+
+The current elpaca data structure and current build step are bound to the @samp{elpaca} and @samp{elpaca-build-step}
+variables within the form.
+
+Wrapping a declaration in a @samp{let*} form will not suffice because the steps are run asynchronously.
+The bindings will not be in scope by the time each build step is run.
 
 @node wait
 @subsubsection :wait
@@ -915,7 +933,7 @@ Each of these commands utilize modes derived from @samp{elpaca-ui-mode}.
 
 The following commands are available in the @samp{elpaca-ui-mode}:
 
-@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @headitem Command
 @tab Binding
 @tab Description
@@ -945,7 +963,7 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @tab Search for ``#unique #installed''
 @item elpaca-log
 @tab g l
-@tab Display ‘elpaca-log-buffer’ filtered by QUERY@.
+@tab When INTERACTIVE is non-nil, Display ‘elpaca-log-buffer’ filtered by QUERY@.
 @item elpaca-manager
 @tab g m
 @tab Display Elpaca’s package management UI@.

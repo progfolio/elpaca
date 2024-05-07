@@ -22,6 +22,7 @@
       - [:post-build](#recipe-keyword-post-build)
       - [:autoloads](#recipe-keyword-autoloads)
       - [:version](#recipe-keyword-version)
+      - [:vars](#recipe-keyword-vars)
       - [:wait](#recipe-keyword-wait)
       - [Inheritance precedence](#inheritance-precedence)
       - [elpaca-recipe-functions](#elpaca-recipe-functions)
@@ -107,14 +108,14 @@ To install Elpaca, add the following elisp to your init.el. It must come before 
 (elpaca `(,@elpaca-order))
 ```
 
--   Windows users must be able to create symlinks<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>, or enable `elpaca-no-symlink-mode`
+-   Windows users must be able to create symlinks<sup><a id="fnr.-0-1" class="footref" href="#fn.-0-1" role="doc-backlink">1</a></sup>, or enable `elpaca-no-symlink-mode`
 
 ```emacs-lisp
 ;; Uncomment for systems which cannot create symlinks:
 ;; (elpaca-no-symlink-mode)
 ```
 
-You&rsquo;ll also want to disable package.el in your early-init file<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup>:
+You&rsquo;ll also want to disable package.el in your early-init file<sup><a id="fnr.-0-2" class="footref" href="#fn.-0-2" role="doc-backlink">2</a></sup>:
 
 ```emacs-lisp
 (setq package-enable-at-startup nil)
@@ -180,7 +181,7 @@ For example:
 
 **IMPORTANT**:
 
-Elpaca installs and activates packages asynchronously. Elpaca processes its package queues *after* Emacs reads the init file.<sup><a id="fnr.3" class="footref" href="#fn.3" role="doc-backlink">3</a></sup> Consider the following example:
+Elpaca installs and activates packages asynchronously. Elpaca processes its package queues *after* Emacs reads the init file.<sup><a id="fnr.-0-3" class="footref" href="#fn.-0-3" role="doc-backlink">3</a></sup> Consider the following example:
 
 ```emacs-lisp
 (elpaca package-a (message "First")) ; Queue First
@@ -501,6 +502,21 @@ A function which must accept an Elpaca struct as its sole argument. It must retu
 ```
 
 
+<a id="recipe-keyword-vars"></a>
+
+#### :vars
+
+A list of values to bind via `let*` when executing a package&rsquo;s build steps. e.g.
+
+```emacs-lisp
+(elpaca (example :vars ((some-dynamic-var t))))
+```
+
+The current elpaca data structure and current build step are bound to the `elpaca` and `elpaca-build-step` variables within the form.
+
+Wrapping a declaration in a `let*` form will not suffice because the steps are run asynchronously. The bindings will not be in scope by the time each build step is run.
+
+
 <a id="recipe-keyword-wait"></a>
 
 #### :wait
@@ -755,29 +771,29 @@ Elpaca has a UI mode available for managing packages. The main entry points to t
 
 The following commands are available in the `elpaca-ui-mode`:
 
-| Command                    | Binding | Description                                                     |
-|-------------------------- |------- |--------------------------------------------------------------- |
-| elpaca-ui-send-input       | !       | Send input string to current process.                           |
-| elpaca-ui-show-hidden-rows | +       | Append rows up to N times ‘elpaca-ui-row-limit’.                |
-| elpaca-ui-info             | RET     | Show info for current package.                                  |
-| elpaca-ui-browse-package   | b       | Browse current package’s URL via ‘browse-url’.                  |
-| elpaca-ui-mark-delete      | d       | Mark package at point for ‘elpaca-delete’.                      |
-| elpaca-ui-mark-fetch       | f       | Mark package at point for ‘elpaca-fetch’.                       |
-| elpaca-ui-search-marked    | g a     | Search for &ldquo;#unique #marked&rdquo;                        |
-| elpaca-ui-search-installed | g i     | Search for &ldquo;#unique #installed&rdquo;                     |
-| elpaca-log                 | g l     | Display ‘elpaca-log-buffer’ filtered by QUERY.                  |
-| elpaca-manager             | g m     | Display Elpaca’s package management UI.                         |
-| elpaca-ui-search-orphaned  | g o     | Search for &ldquo;#unique #orphan&rdquo;                        |
-| elpaca-ui-search-refresh   | g r     | Rerun the current search for BUFFER.                            |
-| elpaca-ui-search-tried     | g t     | Search for &ldquo;#unique #installed !#declared&rdquo;          |
-| elpaca-ui-mark-try         | i       | Mark package at point for ‘elpaca-try’.                         |
-| elpaca-ui-mark-merge       | m       | Mark package at point for ‘elpaca-merge’.                       |
-| elpaca-ui-mark-pull        | p       | Mark package at point for ‘elpaca-pull’.                        |
-| elpaca-ui-mark-rebuild     | r       | Mark package at point for ‘elpaca-rebuild’.                     |
-| elpaca-ui-search           | s       | Filter current buffer by QUERY. If QUERY is nil, prompt for it. |
-| elpaca-ui-unmark           | u       | Unmark current package or packages in active region.            |
-| elpaca-ui-visit            | v       | Visit current package’s repo or BUILD directory.                |
-| elpaca-ui-execute-marks    | x       | Execute each mark in ‘elpaca-ui-marked-packages’.               |
+| Command                    | Binding | Description                                                                 |
+|-------------------------- |------- |--------------------------------------------------------------------------- |
+| elpaca-ui-send-input       | !       | Send input string to current process.                                       |
+| elpaca-ui-show-hidden-rows | +       | Append rows up to N times ‘elpaca-ui-row-limit’.                            |
+| elpaca-ui-info             | RET     | Show info for current package.                                              |
+| elpaca-ui-browse-package   | b       | Browse current package’s URL via ‘browse-url’.                              |
+| elpaca-ui-mark-delete      | d       | Mark package at point for ‘elpaca-delete’.                                  |
+| elpaca-ui-mark-fetch       | f       | Mark package at point for ‘elpaca-fetch’.                                   |
+| elpaca-ui-search-marked    | g a     | Search for &ldquo;#unique #marked&rdquo;                                    |
+| elpaca-ui-search-installed | g i     | Search for &ldquo;#unique #installed&rdquo;                                 |
+| elpaca-log                 | g l     | When INTERACTIVE is non-nil, Display ‘elpaca-log-buffer’ filtered by QUERY. |
+| elpaca-manager             | g m     | Display Elpaca’s package management UI.                                     |
+| elpaca-ui-search-orphaned  | g o     | Search for &ldquo;#unique #orphan&rdquo;                                    |
+| elpaca-ui-search-refresh   | g r     | Rerun the current search for BUFFER.                                        |
+| elpaca-ui-search-tried     | g t     | Search for &ldquo;#unique #installed !#declared&rdquo;                      |
+| elpaca-ui-mark-try         | i       | Mark package at point for ‘elpaca-try’.                                     |
+| elpaca-ui-mark-merge       | m       | Mark package at point for ‘elpaca-merge’.                                   |
+| elpaca-ui-mark-pull        | p       | Mark package at point for ‘elpaca-pull’.                                    |
+| elpaca-ui-mark-rebuild     | r       | Mark package at point for ‘elpaca-rebuild’.                                 |
+| elpaca-ui-search           | s       | Filter current buffer by QUERY. If QUERY is nil, prompt for it.             |
+| elpaca-ui-unmark           | u       | Unmark current package or packages in active region.                        |
+| elpaca-ui-visit            | v       | Visit current package’s repo or BUILD directory.                            |
+| elpaca-ui-execute-marks    | x       | Execute each mark in ‘elpaca-ui-marked-packages’.                           |
 
 -   **Function: elpaca-manager `&optional recache`:** Display packages registered with Elpaca. Packages can searched for, installed, updated, rebuilt, and deleted from this interface. When `RECACHE` is non-nil, via lisp or interactively via the `universal-argument`, recompute Elpaca&rsquo;s menu item cache before display.
 

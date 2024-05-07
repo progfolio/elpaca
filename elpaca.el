@@ -701,10 +701,14 @@ Optional ARGS are passed to `elpaca--signal', which see."
         (unless (eq (elpaca--status e) 'blocked) ;;@MAYBE: check for queue-throttled, too?
           (push 'queue-throttled (elpaca<-statuses e))
           (elpaca--signal e "elpaca-queue-limit exceeded" 'blocked nil 1))
-      (let ((fn (or (pop (elpaca<-build-steps e)) #'elpaca--finalize)))
+      (let ((step (or (pop (elpaca<-build-steps e)) #'elpaca--finalize)))
         (condition-case-unless-debug err ;;@TODO: signal/catch custom error types
-            (funcall fn e)
-          ((error) (elpaca--fail e (format "%s: %S" fn err))))))))
+            (if-let ((vars (plist-get (elpaca<-recipe e) :vars))
+                     (fn `(lambda (elpaca elpaca-build-step)
+                            (let* (,@vars) (funcall elpaca-build-step elpaca)))))
+                (funcall fn e step)
+              (funcall step e))
+          ((error) (elpaca--fail e (format "%s: %S" step err))))))))
 
 (defun elpaca--log-duration (e)
   "Return E's log duration."

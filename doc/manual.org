@@ -364,6 +364,24 @@ e.g.
 (elpaca (auctex :version (lambda (_) (require 'tex-site) AUCTeX-version)))
 #+end_src
 
+**** :vars
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-vars
+:END:
+
+A list of values to bind via =let*= when executing a package's build steps.
+e.g.
+
+#+begin_src emacs-lisp :lexical t :eval never
+(elpaca (example :vars ((some-dynamic-var t))))
+#+end_src
+
+The current elpaca data structure and current build step are bound to the =elpaca= and =elpaca-build-step=
+variables within the form.
+
+Wrapping a declaration in a =let*= form will not suffice because the steps are run asynchronously.
+The bindings will not be in scope by the time each build step is run.
+
 **** :wait
 :PROPERTIES:
 :CUSTOM_ID: recipe-keyword-wait
