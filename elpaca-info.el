@@ -134,7 +134,7 @@
                       (- (length elpaca-repos) (length repos))))
    with builds = (propertize "$BUILDS/" 'help-echo elpaca-builds-directory)
    for (repo . build) in files
-   for repo-exists = (file-exists-p repo) for build-exists = (file-exists-p build)
+   for repo-exists = (and repo (file-exists-p repo)) for build-exists = (and builds (file-exists-p build))
    collect (concat (format
                     (concat "%-" longest "s")
                     (concat repos (propertize (file-relative-name repo elpaca-repos)

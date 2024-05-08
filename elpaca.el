@@ -1740,7 +1740,8 @@ FILTER must be a unary function which accepts and returns a queue list."
 (defun elpaca--on-disk-p (id)
   "Return t if ID has an associated E with a build or repo dir on disk."
   (when-let ((e (elpaca-get id)))
-    (or (file-exists-p (elpaca<-repo-dir e)) (file-exists-p (elpaca<-build-dir e)))))
+    (or (when-let ((repo (elpaca<-repo-dir e))) (file-exists-p repo))
+        (when-let ((build (elpaca<-repo-dir e))) (file-exists-p build)))))
 
 ;;@MAYBE: Should this delete user's declared package if it is a dependency?
 ;;@MAYBE: user option for deletion policy when repo is dirty.
