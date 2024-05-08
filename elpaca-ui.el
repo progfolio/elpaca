@@ -645,7 +645,7 @@ If ADVANCEP is non-nil, move `forward-line'."
   "Show info for current package."
   (interactive)
   (elpaca-info (elpaca-ui-current-package)
-               (get-text-property 0 'menu (aref (tabulated-list-get-entry) 3))))
+               (get-text-property 0 'menu (aref (tabulated-list-get-entry) 3)) t))
 
 (provide 'elpaca-ui)
 ;;; elpaca-ui.el ends here
