@@ -174,6 +174,15 @@ For DEPTH and FORMS see `elpaca-test' :depth and :init."
                                (string-trim (replace-regexp-in-string "\n" "" (format "%s" info))))))
     (princ "</table>\n</details>\n\n<details><summary>Output</summary>\n\n```emacs-lisp\n")))
 
+(defun elpaca-test--display (buffer)
+  "Display test BUFFER when test finished and Emacs idle."
+  (run-with-idle-timer 1 nil (lambda () (pop-to-buffer buffer) (goto-char (point-min)))))
+
+(defcustom elpaca-test-finish-functions (list #'elpaca-test--display)
+  "Abnormal hook run when test sentinel is finished.
+Each function is called with the test process buffer as its arg."
+  :type 'hook :group 'elpaca)
+
 (defun elpaca-test--sentinel (process _)
   "Prepare post-test PROCESS buffer output, display, test environment.
 If DELETE is non-nil, delete test environment."
@@ -187,7 +196,7 @@ If DELETE is non-nil, delete test environment."
                ((buffer-live-p buffer)))
       (with-current-buffer buffer (insert "```\n</details>")
                            (when (fboundp 'markdown-mode) (markdown-mode)))
-      (run-with-idle-timer 1 nil (lambda () (pop-to-buffer buffer) (goto-char (point-min)))))))
+      (run-hook-with-args 'elpaca-test-finish-functions buffer))))
 
 ;;;###autoload
 (defun elpaca-test-timeout ()
