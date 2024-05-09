@@ -659,6 +659,7 @@ check (and possibly change) their statuses."
       (when-let ((entry (car (last (elpaca<-log e) (process-get p :loglen)))))
         (setf (nth 2 entry) (propertize (nth 2 entry) 'face 'elpaca-failed)))
       (when (process-live-p p) (kill-process p)))
+    (push 'reclone (elpaca<-statuses e)) ;;@HACK: Prevent reclone when legitimate failure during clone.
     (elpaca--signal e reason 'failed)
     (elpaca--finalize e)))
 
