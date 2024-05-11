@@ -59,7 +59,7 @@
 
 (defun elpaca-test--form (args)
   "Return test form string from ARGS."
-  (let ((form `(elpaca-test ,@(cl-loop for (k v) on args by #'cddr append `(,k ,@v)))))
+  (let ((form `(elpaca-test ,@args)))
     (with-temp-buffer
       (if (fboundp 'pp-emacs-lisp-code)
           (pp-emacs-lisp-code form)
@@ -158,45 +158,52 @@ For DEPTH and FORMS see `elpaca-test' :depth and :init."
                          ((file-exists-p local)))
                 (elpaca-test--copy-dir local (expand-file-name path env)))))
 
-(defun elpaca-test--format-output-buffer (buffer test)
-  "Format TEST output BUFFER ."
-  (let ((standard-output (get-buffer-create buffer))
-        print-circle print-length)
-    (princ "<!-- copy buffer contents to issue comment or new issue -->\n")
-    (princ "<details open><summary>Test Case</summary>\n\n")
-    (princ "[How to run this test?]\
+(defun elpaca-test--display (vars)
+  "Display test with VARS when test finished and Emacs idle."
+  (unless (plist-get vars :interactive)
+    (run-with-idle-timer 1 nil (lambda (b) (pop-to-buffer b) (goto-char (point-min)))
+                         (current-buffer))))
+
+(defun elpaca-test--format (vars)
+  "Finish formatting test with VARS."
+  (unless (plist-get vars :interactive)
+    (insert "```\n</details>")
+    (goto-char (point-min))
+    (let ((standard-output (current-buffer))
+          print-circle print-length)
+      (princ "<!-- copy buffer contents to issue comment or new issue -->\n")
+      (princ "<details open><summary>Test Case</summary>\n\n")
+      (princ "[How to run this test?]\
 (https://github.com/progfolio/elpaca/wiki/Troubleshooting#the-elpaca-test-macro)\n")
-    (princ "\n```emacs-lisp\n")
-    (princ test)
-    (princ "```\n\n</details>\n<details><summary>Host Env</summary>\n\n<table>\n")
-    (cl-loop for (cat . info) in (elpaca-version)
-             do (princ (format "<tr><td>%s</td><td>%s</td>\n" cat
-                               (string-trim (replace-regexp-in-string "\n" "" (format "%s" info))))))
-    (princ "</table>\n</details>\n\n<details><summary>Output</summary>\n\n```emacs-lisp\n")))
+      (princ "\n```emacs-lisp\n")
+      (princ (elpaca-test--form (nthcdr 2 vars)))
+      (princ "```\n\n</details>\n<details><summary>Host Env</summary>\n\n<table>\n")
+      (cl-loop for (cat . info) in (elpaca-version)
+               do (princ (format "<tr><td>%s</td><td>%s</td>\n" cat
+                                 (string-trim (replace-regexp-in-string "\n" "" (format "%s" info))))))
+      (princ "</table>\n</details>\n\n<details><summary>Output</summary>\n\n```emacs-lisp\n"))
+    (when (fboundp 'markdown-mode) (markdown-mode))))
 
-(defun elpaca-test--display (buffer)
-  "Display test BUFFER when test finished and Emacs idle."
-  (run-with-idle-timer 1 nil (lambda () (pop-to-buffer buffer) (goto-char (point-min)))))
-
-(defcustom elpaca-test-finish-functions (list #'elpaca-test--display)
+(defcustom elpaca-test-finish-functions (list #'elpaca-test--format #'elpaca-test--display)
   "Abnormal hook run when test sentinel is finished.
-Each function is called with the test process buffer as its arg."
+Each function is called with the test declaration's arguments list.
+When the test is non-interactive, its process buffer is initially current."
   :type 'hook :group 'elpaca)
 
 (defun elpaca-test--sentinel (process _)
   "Prepare post-test PROCESS buffer output, display, test environment.
 If DELETE is non-nil, delete test environment."
-  (when (member (process-status process) '(exit signal failed))
-    (when-let ((vars (process-get process :vars))
-               ((not (car-safe (plist-get vars :keep))))
+  (when-let (((member (process-status process) '(exit signal failed)))
+             (vars (process-get process :vars)))
+    (when-let (((not (car-safe (plist-get vars :keep))))
                (dir (plist-get vars :computed-dir)))
       (message "Removing Elpaca test env: %S" dir)
       (delete-directory dir 'recursive))
-    (when-let ((buffer (process-buffer process))
-               ((buffer-live-p buffer)))
-      (with-current-buffer buffer (insert "```\n</details>")
-                           (when (fboundp 'markdown-mode) (markdown-mode)))
-      (run-hook-with-args 'elpaca-test-finish-functions buffer))))
+    (with-current-buffer (if-let ((buffer (process-buffer process))
+                                  ((buffer-live-p buffer)))
+                             buffer
+                           (current-buffer))
+      (run-hook-with-args 'elpaca-test-finish-functions vars))))
 
 ;;;###autoload
 (defun elpaca-test-timeout ()
@@ -277,7 +284,6 @@ The following keys are recognized:
   (let* ((args (elpaca-test--args body))
          (batchp (not (car (plist-get args :interactive))))
          (timeout (car (plist-get args :timeout)))
-         (test (and batchp (elpaca-test--form args)))
          (init (plist-get args :init))
          (ref (car (plist-get args :ref)))
          (depth (if-let ((declared (plist-member args :depth))) (caadr declared) 1))
@@ -306,7 +312,6 @@ The following keys are recognized:
                                      (unless (equal init '(user)) init)))
        ,@(when-let ((before (plist-get args :before)))
            `((let ((default-directory default-directory)) ,@before)))
-       (when buffer (elpaca-test--format-output-buffer buffer ,test))
        (elpaca-test--make-process
         ,procname buffer
         (elpaca-test--command ',(plist-get args :args) ,batchp ,timeout ',early)
