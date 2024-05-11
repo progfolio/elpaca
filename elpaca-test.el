@@ -227,9 +227,7 @@ BATCH, TIMEOUT, and EARLY match :interactive, :timeout, :early-init keys."
             "-l" "./init.el"
             "--eval" "(setq after-init-time (current-time))"
             "--eval" "(run-hooks 'after-init-hook)"
-            "--eval" "(run-hooks 'emacs-startup-hook)"
-            "--eval" "(message \"\n Test Env\n\")"
-            "--eval" "(elpaca-version 'message)")
+            "--eval" "(run-hooks 'emacs-startup-hook)")
         `(,(format "--init-directory=%s" default-directory)))))
 
 (defun elpaca-test--make-process (name buffer command vars)
