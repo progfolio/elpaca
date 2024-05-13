@@ -190,6 +190,23 @@ Each function is called with the test declaration's arguments list.
 When the test is non-interactive, its process buffer is initially current."
   :type 'hook :group 'elpaca)
 
+(defun elpaca-test--announce (args)
+  "Print test message for test with ARGS."
+  (run-with-timer
+   0 nil `(lambda () ;;@HACK: Show message when evaluating interactively
+            (message "Testing Elpaca in %s @ %s"
+                     ,default-directory
+                     (if-let ((localp ,(eq (plist-get args :ref) 'local))
+                              (default-directory (expand-file-name "repos/elpaca/" elpaca-directory)))
+                         (concat (or (ignore-errors (elpaca-process-output "git" "diff" "--quiet")) "DIRTY ")
+                                 (string-trim (elpaca-process-output "git" "log" "--pretty=%h %D" "-1")))
+                       ,(or (plist-get args :ref) "master"))))))
+
+(defcustom elpaca-test-start-functions (list #'elpaca-test--announce)
+  "Abnormal hook run just before test is started.
+Each function is called with the test declaration's arguments list."
+  :type 'hook :group 'elpaca)
+
 (defun elpaca-test--sentinel (process _)
   "Prepare post-test PROCESS buffer output, display, test environment.
 If DELETE is non-nil, delete test environment."
@@ -235,18 +252,6 @@ BATCH, TIMEOUT, and EARLY match :interactive, :timeout, :early-init keys."
   (process-put (make-process :name name :buffer buffer :command command
                              :sentinel #'elpaca-test--sentinel)
                :vars vars))
-
-(defun elpaca-test--announce (localp &optional ref)
-  "Print test message for REF.
-If LOCALP is non-nil use local repo information."
-  (message
-   "Testing Elpaca @ %s in %s"
-   (if-let ((localp)
-            (default-directory (expand-file-name "repos/elpaca/" elpaca-directory)))
-       (concat (or (ignore-errors (elpaca-process-output "git" "diff" "--quiet")) "DIRTY ")
-               (string-trim (elpaca-process-output "git" "log" "--pretty=%h %D" "-1")))
-     (or ref "master"))
-   default-directory))
 
 ;;;###autoload
 (defmacro elpaca-test (&rest body)
@@ -295,12 +300,15 @@ The following keys are recognized:
          (early-file (cond ((eq (car-safe (car-safe early)) :file) (eval (cadar early) t))
                            ((eq (car-safe early) 'user) (locate-user-emacs-file "./early-init.el"))))
          (procname (make-symbol "procname"))
+         (argsym (make-symbol "args"))
          (dir (elpaca-test--dir (car (plist-get args :dir))))
          print-length print-circle print-level
          eval-expression-print-level eval-expression-print-length)
     (elpaca-test--ensure-dir dir args)
+    (setq args (append (list :computed-dir dir) args))
     `(let* ((default-directory ,dir)
             (,procname (format "elpaca-test-%s" default-directory))
+            (,argsym ',args)
             (buffer ,@(if batchp `((generate-new-buffer ,procname)) '(nil))))
        (unless (file-exists-p default-directory) (make-directory default-directory 'parents))
        ,@(when localp '((elpaca-test--copy-local-store)))
@@ -310,11 +318,12 @@ The following keys are recognized:
                                      (unless (equal init '(user)) init)))
        ,@(when-let ((before (plist-get args :before)))
            `((let ((default-directory default-directory)) ,@before)))
+       (run-hook-with-args 'elpaca-test-start-functions ,argsym)
        (elpaca-test--make-process
         ,procname buffer
         (elpaca-test--command ',(plist-get args :args) ,batchp ,timeout ',early)
-        `(:computed-dir ,default-directory ,@',args))
-       (elpaca-test--announce ,localp ,(unless localp ref)))))
+        ,argsym)
+       nil)))
 
 (provide 'elpaca-test)
 ;;; elpaca-test.el ends here
