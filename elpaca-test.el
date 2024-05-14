@@ -39,7 +39,7 @@
 (require 'elpaca)
 (require 'url)
 (defvar elpaca-test--keywords
-  '(:args :before :dir :early-init :init :keep :name :ref :depth :interactive :timeout))
+  '(:args :before :dir :early-init :init :keep :name :ref :depth :interactive :timeout :buffer))
 (defvar elpaca-test--dirs nil "List of directories created by `elpaca-test'.")
 
 (defun elpaca-test--args (body)
@@ -281,7 +281,8 @@ The following keys are recognized:
   :keep t or nil. When non-nil, prevent test environment deletion after test
 
   :timeout N. A number or seconds to wait for package installations to complete.
-              Pending orders are failed after this time."
+              Pending orders are failed after this time.
+  :buffer STRING. Name of the process buffer. Ignored when :interactive."
   (declare (indent 0))
   (unless lexical-binding (user-error "Lexical binding required for elpaca-test"))
   (let* ((args (elpaca-test--args body))
@@ -309,7 +310,8 @@ The following keys are recognized:
     `(let* ((default-directory ,dir)
             (,procname (format "elpaca-test-%s" default-directory))
             (,argsym ',args)
-            (buffer ,@(if batchp `((generate-new-buffer ,procname)) '(nil))))
+            (buffer ,@(list (when batchp (or (car (plist-get args :buffer))
+                                             `(generate-new-buffer ,procname))))))
        (unless (file-exists-p default-directory) (make-directory default-directory 'parents))
        ,@(when localp '((elpaca-test--copy-local-store)))
        ,@(when early `((elpaca-test--write-early-init ,early-file ',(unless early-file early))))
