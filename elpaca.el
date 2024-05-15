@@ -1851,6 +1851,11 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
   "Log that pinned E is being skipped."
   (elpaca--continue-build e "Skipping pinned package" 'pinned))
 
+(defun elpaca--pinned-p (e)
+  "Return non-nil if package is pinned."
+  (or (plist-get (elpaca<-recipe e) :pin)
+      (elpaca--mono-repo (elpaca<-id e) (elpaca<-repo-dir e))))
+
 ;;;###autoload
 (defun elpaca-fetch (id &optional interactive)
   "Fetch ID's associated package remote commits.
@@ -1860,8 +1865,7 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
   (let ((e (or (elpaca-get id) (user-error "Package %S is not queued" id))))
     (elpaca--unprocess e)
     (elpaca--signal e nil 'queued)
-    (setf (elpaca<-build-steps e) (if (plist-get (elpaca<-recipe e) :pin)
-                                      (list #'elpaca--announce-pin)
+    (setf (elpaca<-build-steps e) (if (elpaca--pinned-p e) (list #'elpaca--announce-pin)
                                     (list #'elpaca--fetch #'elpaca--log-updates)))
     (when interactive
       (elpaca--maybe-log)
@@ -1920,8 +1924,7 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
          (recipe (elpaca<-recipe e)))
     (elpaca--unprocess e)
     (setf (elpaca<-build-steps e)
-          (if (plist-get recipe :pin)
-              (list #'elpaca--announce-pin)
+          (if (elpaca--pinned-p e) (list #'elpaca--announce-pin)
             `(,@(when fetch '(elpaca--fetch elpaca--log-updates))
               elpaca--merge
               ,@(cl-set-difference
