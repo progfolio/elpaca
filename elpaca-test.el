@@ -59,7 +59,7 @@
 
 (defun elpaca-test--form (args)
   "Return test form string from ARGS."
-  (let ((form `(elpaca-test ,@args)))
+  (let ((form `(elpaca-test ,@(cl-loop for (k v) on args by #'cddr append `(,k ,@v)))))
     (with-temp-buffer
       (if (fboundp 'pp-emacs-lisp-code)
           (pp-emacs-lisp-code form)
