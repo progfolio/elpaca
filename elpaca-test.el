@@ -192,15 +192,16 @@ When the test is non-interactive, its process buffer is initially current."
 
 (defun elpaca-test--announce (args)
   "Print test message for test with ARGS."
-  (run-with-timer
-   0 nil `(lambda () ;;@HACK: Show message when evaluating interactively
-            (message "Testing Elpaca in %s @ %s"
-                     ,default-directory
-                     (if-let ((localp ,(eq (plist-get args :ref) 'local))
-                              (default-directory (expand-file-name "repos/elpaca/" elpaca-directory)))
-                         (concat (or (ignore-errors (elpaca-process-output "git" "diff" "--quiet")) "DIRTY ")
-                                 (string-trim (elpaca-process-output "git" "log" "--pretty=%h %D" "-1")))
-                       ,(or (plist-get args :ref) "master"))))))
+  (let ((localp (equal (car (plist-get args :ref)) 'local)))
+    (run-with-timer
+     0 nil `(lambda () ;;@HACK: Show message when evaluating interactively
+              (message "Testing Elpaca in %s @ %s"
+                       ,default-directory
+                       (if-let ((localp ,localp)
+                                (default-directory (expand-file-name "repos/elpaca/" elpaca-directory)))
+                           (concat (or (ignore-errors (elpaca-process-output "git" "diff" "--quiet")) "DIRTY ")
+                                   (string-trim (elpaca-process-output "git" "log" "--pretty=%h %D" "-1")))
+                         ,(or (unless localp (car (plist-get args :ref))) "master")))))))
 
 (defcustom elpaca-test-start-functions (list #'elpaca-test--announce)
   "Abnormal hook run just before test is started.
