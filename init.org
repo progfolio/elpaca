@@ -826,7 +826,12 @@ Completion At Point Extensions
 
 #+begin_src emacs-lisp :lexical t
 (use-package cape
-  :commands (cape-file))
+  :commands (cape-file)
+  :general
+  (general-define-key
+   :keymaps '(insert)
+   "C-x C-f" #'cape-file
+   "C-x C-l" #'cape-line))
 #+end_src
 ** cleanroom
 #+begin_src emacs-lisp :lexical t :tangle no
