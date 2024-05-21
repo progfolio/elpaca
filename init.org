@@ -3433,5 +3433,6 @@ https://github.com/NicolasPetton/zerodark-theme
 ** mel
 #+begin_src emacs-lisp :lexical t
 (use-package mel
+  :defer t
   :ensure (:host github :repo "progfolio/mel" :protocol ssh))
 #+end_src
