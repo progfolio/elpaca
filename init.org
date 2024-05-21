@@ -1706,6 +1706,7 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
                               ("mu" "--quiet" "index")))
   :commands (mu4e mu4e-update-index)
   :custom
+  (message-kill-buffer-on-exit t)
   (mu4e-update-interval 900 "Update every fifteen minutes")
   (mail-user-agent 'mu4e-user-agent "Use mu4e as default email program.")
   (mu4e-org-support t)
