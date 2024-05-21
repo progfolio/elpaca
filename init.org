@@ -921,6 +921,7 @@ Directory browsing commands
 (use-feature dired
   :commands (dired)
   :custom
+  (dired-mouse-drag-files t)
   (dired-listing-switches "-alh" "Human friendly file sizes.")
   (dired-kill-when-opening-new-dired-buffer t)
   (dired-omit-files "\\(?:\\.+[^z-a]*\\)")
