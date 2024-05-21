@@ -3423,7 +3423,7 @@ https://github.com/NicolasPetton/zerodark-theme
 ** tunic
 #+begin_src emacs-lisp :lexical t
 (use-package tunic
-  :ensure (:repo "~/elisp/tunic/")
+  :ensure (:host github :repo "~/elisp/tunic/")
   :defer t
   :config
   (evil-make-intercept-map tunic-mode-map)
