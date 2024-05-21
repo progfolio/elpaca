@@ -1701,9 +1701,10 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
                                                  (expand-file-name "~/bin/mu") 'ok-if-exists))
                  :build (:not elpaca--compile-info)
                  :post-build (("mu" "init" "--quiet" "--maildir" ,(concat (getenv "HOME") "/Documents/emails")
-                               "--my-address=" ,secret-personal-email-address
-                               "--my-address=" ,secret-work-email-address)
-                              ("mu" "--quiet" "index")))
+                               "--my-address=" ,(+email-address +email-personal)
+                               "--my-address=" ,(+email-address +email-work)
+                               "--my-address=" ,(+email-address +email-dev))
+                              ("mu" "index" "--quiet")))
   :commands (mu4e mu4e-update-index)
   :custom
   (message-kill-buffer-on-exit t)
@@ -1734,12 +1735,12 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
           :match-func (lambda (msg)
                         (when msg
                           (mu4e-message-contact-field-matches
-                           msg '(:from :to :cc :bcc) secret-personal-email-account)))
-          :vars `((user-mail-address .  ,secret-personal-email-address)
-                  (user-full-name . ,secret-personal-email-name)
+                           msg '(:from :to :cc :bcc) (+email-account +email-personal))))
+          :vars `((user-mail-address .  ,(+email-address +email-personal))
+                  (user-full-name . ,(+email-name +email-personal))
                   (mu4e-compose-format-flowed . t)
                   (message-send-mail-function . smtpmail-send-it)
-                  (smtpmail-smtp-user . ,secret-personal-email-account)
+                  (smtpmail-smtp-user . ,(+email-account +email-personal))
                   (smtpmail-auth-credentials . (expand-file-name "~/.authinfo.gpg"))
                   (smtpmail-smtp-server . "smtp.gmail.com")
                   (smtpmail-smtp-service . 587)
@@ -1752,19 +1753,35 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
           :match-func (lambda (msg)
                         (when msg
                           (mu4e-message-contact-field-matches
-                           msg '(:from :to :cc :bcc) secret-work-email-account)))
-          :vars `((user-mail-address .  ,secret-work-email-address)
-                  (user-full-name . ,secret-work-email-name)
+                           msg '(:from :to :cc :bcc) (+email-account +email-work))))
+          :vars `((user-mail-address .  ,(+email-address +email-work))
+                  (user-full-name . ,(+email-name +email-work))
                   (mu4e-compose-format-flowed . t)
                   (message-send-mail-function . smtpmail-send-it)
-                  (smtpmail-smtp-user . ,secret-work-email-account)
+                  (smtpmail-smtp-user . ,(+email-account +email-work))
                   (smtpmail-starttls-credentials . (("smtp.gmail.com" 587 nil nil)))
                   (smtpmail-auth-credentials . (expand-file-name "~/.authinfo.gpg"))
                   (smtpmail-default-smtp-server . "smtp.gmail.com")
                   (smtpmail-smtp-server . "smtp.gmail.com")
                   (smtpmail-smtp-service . 587)
                   (smtpmail-debug-info . t)
-                  (smtpmail-debug-verbose . t)))))
+                  (smtpmail-debug-verbose . t)))
+         (make-mu4e-context
+          :name "dev"
+          :enter-func (lambda () (mu4e-message "Entering dev context"))
+          :leave-func (lambda () (mu4e-message "Leaving dev context"))
+          :match-func (lambda (msg)
+                        (when msg
+                          (mu4e-message-contact-field-matches
+                           msg '(:from :to :cc :bcc) (+email-account +email-dev))))
+          :vars `((user-mail-address .  ,(+email-address +email-dev))
+                  (user-full-name . ,(+email-name +email-dev))
+                  (smtpmail-smtp-user . ,(+email-address +email-dev))
+                  (smtpmail-auth-credentials . (expand-file-name "~/.authinfo.gpg"))
+                  (smtpmail-smtp-server . "mail.privateemail.com")
+                  (smtpmail-smtp-service . 587)
+                  (smtpmail-stream-type . starttls)
+                  (mu4e-compose-format-flowed . t)))))
 
   (add-to-list 'mu4e-view-actions
                '("ViewInBrowser" . mu4e-action-view-in-browser) t)
