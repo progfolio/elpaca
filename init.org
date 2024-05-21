@@ -2139,16 +2139,7 @@ buffers.
 
 (add-hook 'org-mode-hook
           (lambda ()
-            (add-hook 'after-save-hook '+org-agenda-redo-all nil t)
-            (setq prettify-symbols-unprettify-at-point 'right-edge)
-            (setq prettify-symbols-alist
-                  (mapcan (lambda (el) (list el (cons (upcase (car el)) (cdr el))))
-                          '(("#+begin_src"     . "λ")
-                            ("#+end_src"       . "λ")
-                            (":properties:"    . "⚙")
-                            (":end:"           . "∎")
-                            ("#+results:"      . "→"))))
-            (prettify-symbols-mode 1)))
+            (add-hook 'after-save-hook '+org-agenda-redo-all nil t)))
 #+end_src
 *** :custom
 :PROPERTIES:
