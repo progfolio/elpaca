@@ -892,7 +892,6 @@ https://github.com/minad/corfu
   :defer 5
   :custom
   (corfu-cycle t)
-  (corfu-seperator ?-)
   :config
   (global-corfu-mode)
   (with-eval-after-load 'evil
