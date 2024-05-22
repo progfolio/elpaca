@@ -3076,7 +3076,7 @@ ten, but opening my org agenda files wipes that list out.
   :custom
   (tab-bar-close-button-show nil "Dont' show the x button on tabs")
   (tab-bar-new-button-show   nil)
-  (tab-bar-show   1 "only show tab bar when more than one tab")
+  (tab-bar-show  nil "hide the tab bar. Use commands to access tabs.")
   :general
   (+general-global-tab
     "b" 'tab-bar-history-back
