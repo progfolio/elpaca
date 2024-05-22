@@ -185,7 +185,7 @@
                                  (v (ignore-errors (or (elpaca--declared-version e) (elpaca-latest-tag e)))))
                             (concat (string-trim v) " "
                                     (ignore-errors
-                                      (string-trim (elpaca-process-output "git" "rev-parse"  "--short" "HEAD"))))
+                                      (string-trim (elpaca-process-output "git" "rev-parse" "--short" "HEAD"))))
                           (when-let ((builtin (alist-get id package--builtin-versions)))
                             (concat (mapconcat #'number-to-string builtin ".") " (builtin)")))))
       (list "%s %s" "installed version:" version))
