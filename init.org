@@ -1645,6 +1645,7 @@ A package for miscellaneous functions.
            :host github
            :repo "progfolio/miscellany.el"
            :local-repo "miscellany"
+           :protocol ssh
            :branch "master"
            :pre-build ((require 'ob-tangle)
                        (setq org-confirm-babel-evaluate nil)
