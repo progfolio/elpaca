@@ -1603,7 +1603,7 @@ When MESSAGE is non-nil, message the list of dependents."
                      t))
   (if message (message "%S" (elpaca--dependents id)) (elpaca--dependents id)))
 
-(defcustom elpaca-interactive-interval 0.15
+(defcustom elpaca-interactive-interval 0.05
   "Time to wait before processing queues when multiple `elpaca' forms evaluated."
   :type 'number)
 (defcustom elpaca-wait-interval 0.01 "Seconds between `elpaca-wait' status checks."
@@ -1654,11 +1654,10 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
         (elpaca--unprocess e)
         (push 'queued (elpaca<-statuses e))))
     (cond ((plist-get (elpaca<-recipe e) :wait) (elpaca-wait))
-          (after-init-time
-           (when (member this-command '(eval-last-sexp eval-defun)) (elpaca-process-queues))
-           (when (member this-command '(eval-region eval-buffer org-ctrl-c-ctrl-c))
-             (when elpaca--interactive-timer (cancel-timer elpaca--interactive-timer))
-             (run-at-time elpaca-interactive-interval nil #'elpaca-process-queues))))))
+          (real-this-command ; called interactively
+           (when elpaca--interactive-timer (cancel-timer elpaca--interactive-timer))
+           (setq elpaca--interactive-timer
+                 (run-at-time elpaca-interactive-interval nil #'elpaca-process-queues))))))
 
 ;;;###autoload
 (defmacro elpaca (order &rest body)
