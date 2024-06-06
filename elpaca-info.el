@@ -165,6 +165,12 @@
       (list "%s\n%s" "menu item recipe:"
             (elpaca-info--format-recipe (format "%S" (plist-get item :recipe)))))
     (list "%s\n%s" "full recipe:" (elpaca-info--recipe item))
+    (when-let ((e) (pinned (elpaca--pinned-p e)))
+      (list "%s %s" "pinned:" (if-let ((pinner (car pinned))
+                                       ((not (eq pinner (elpaca<-id e)))))
+                                  (format "implicitly by mono-repo sibling %s"
+                                          (elpaca-info--button pinner))
+                                (format "%s %s" (cadr pinned) (cddr pinned)))))
     (list "%s\n%s" "dependencies:"
           (if-let ((deps (ignore-errors (elpaca--dependencies (elpaca-get id) t))))
               (cl-loop
