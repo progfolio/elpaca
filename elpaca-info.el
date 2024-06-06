@@ -149,7 +149,7 @@
   (cl-loop
    with menus = (elpaca-info--menus id)
    with menu = (or menu (caar menus))
-   with item = (cdr (alist-get menu menus))
+   with item = (or (cdr (alist-get menu menus)) (user-error "No info for %s" id))
    with on-disk-p = (elpaca--on-disk-p id)
    with e = (elpaca-get id)
    with i =  "\n  "
