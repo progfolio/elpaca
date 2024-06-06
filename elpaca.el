@@ -1851,10 +1851,19 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
   "Log that pinned E is being skipped."
   (elpaca--continue-build e "Skipping pinned package" 'pinned))
 
-(defun elpaca--pinned-p (e)
-  "Return non-nil if package is pinned."
-  (or (plist-get (elpaca<-recipe e) :pin)
-      (elpaca--mono-repo (elpaca<-id e) (elpaca<-repo-dir e))))
+(defun elpaca--pinned-p (e &optional ignore)
+  "Return pin description of form (ID keyword . val) if package is pinned."
+  (cl-loop with recipe = (elpaca<-recipe e)
+           with id = (elpaca<-id e)
+           with repo = (elpaca<-repo-dir e)
+           with ignored = (cons (elpaca<-id e) ignore)
+           initially (when-let ((pin (plist-get recipe :pin))) (cl-return `(,id :pin . ,pin)))
+           (when-let ((pin (plist-get recipe :tag))) (cl-return `(,id :tag . ,tag)))
+           (when-let ((pin (plist-get recipe :ref))) (cl-return `(,id :ref . ,ref)))
+           for (id2 . e2) in (elpaca--queued)
+           thereis (and (not (memq id2 ignored))
+                        (equal (elpaca<-repo-dir e2) repo)
+                        (elpaca--pinned-p e2 ignored))))
 
 ;;;###autoload
 (defun elpaca-fetch (id &optional interactive)
