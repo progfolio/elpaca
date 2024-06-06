@@ -1756,14 +1756,15 @@ do not confirm before deleting package and DEPS."
   (interactive (list (elpaca--read-queued "Delete Package: ")
                      (equal current-prefix-arg '(16))
                      (member current-prefix-arg '((4) (16)))))
-  (let* ((e (let ((e (or (elpaca-get id) (elpaca<-create id))))
-              (if (equal (elpaca--status e) 'struct-failed) ;; Orphaned packages
+  (let* ((e (let ((e (or (elpaca-get id)
+                         (ignore-errors (elpaca<-create id)))))
+              (if (or (null e) (equal (elpaca--status e) 'struct-failed)) ;; Orphaned packages
                   (setf (alist-get id (elpaca-q<-elpacas (elpaca--q e)))
-                        (elpaca<-create (list id :url (symbol-name id))))
+                        (elpaca<-create (list id :url (symbol-name id) :main nil)))
                 e)))
          (repo-dir     (elpaca<-repo-dir e))
          (build-dir    (elpaca<-build-dir e))
-         (dependents   (elpaca-dependents id))
+         (dependents   (ignore-errors (elpaca-dependents id)))
          (dependencies (and deps (ignore-errors (elpaca-dependencies
                                                  id elpaca-ignored-dependencies)))))
     (when (cl-some #'elpaca--on-disk-p dependents)

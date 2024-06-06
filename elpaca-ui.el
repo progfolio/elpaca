@@ -64,8 +64,8 @@ Accepted key val pairs are:
                                (directory-files elpaca-repos-directory t)))))
     (mapcar (lambda (dir)
               (let ((name (file-name-nondirectory (directory-file-name dir))))
-                (list (intern name) (vector (propertize name 'orphan-dir dir)
-                                            "orphan package" "n/a" "n/a" "n/a"))))
+                (list (cons (intern name) 'orphan) (vector (propertize name 'orphan-dir dir)
+                                                           "orphan package" "n/a" "n/a" "n/a"))))
             (cl-set-difference (cl-remove-if-not #'file-directory-p repos)
                                (mapcar (lambda (q) (elpaca<-repo-dir (cdr q)))
                                        (elpaca--queued))
@@ -528,7 +528,9 @@ If SILENT is non-nil, suppress update message."
 (defun elpaca-ui-visit (&optional build)
   "Visit current package's repo or BUILD directory."
   (interactive (list current-prefix-arg))
-  (elpaca-visit (elpaca-ui-current-package) build))
+  (if-let ((orphan (get-text-property (line-beginning-position) 'orphan-dir)))
+      (dired orphan)
+    (elpaca-visit (elpaca-ui-current-package) build)))
 
 (defun elpaca-ui-package-marked-p (id)
   "Return t if package with ID is marked."
