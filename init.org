@@ -327,7 +327,7 @@ Packages that I'm developing or aren't part of any online repositories go in =~/
 * Secrets
 I keep my sensitive, personal information in a separate file so I can publish this configuration publicly.
 #+begin_src emacs-lisp :lexical t
-(load-file "~/Documents/emacs-secrets.el")
+(load "~/Documents/emacs-secrets.el" nil 'nomessage)
 #+end_src
 * Packages
 :PROPERTIES:
