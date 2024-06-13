@@ -861,6 +861,11 @@ Consulting completing-read
 (use-package consult
   :demand t
   :config
+  ;;Credit to @alphapapa
+  (defun +consult-info-emacs ()
+    "Search through Emacs info pages."
+    (interactive)
+    (consult-info "emacs" "efaq" "elisp" "cl"))
   (consult-customize
    consult-recent-file
    consult--source-recent-file
