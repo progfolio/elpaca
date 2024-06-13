@@ -967,9 +967,13 @@ https://github.com/seagle0128/doom-modeline
 (use-package doom-modeline
   :defer 2
   :config
-  (column-number-mode 1)
   (doom-modeline-mode)
   :custom
+  (doom-modeline-time-analogue-clock nil)
+  (doom-modeline-time-icon nil)
+  (doom-modeline-unicode-fallback nil)
+  (doom-modeline-buffer-encoding 'nondefault)
+  (display-time-load-average nil)
   (doom-modeline-icon t "Show icons in the modeline"))
 #+end_src
 ** doom-themes
