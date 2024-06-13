@@ -11,6 +11,8 @@
 !/lisp/**
 !/themes/**
 !/snippets/**
+!exwm.desktop
+!exwm.sh
 
 
 /straight/**

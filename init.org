@@ -258,6 +258,159 @@ https://github.com/progfolio/elpaca
   (evil-make-intercept-map elpaca-ui-mode-map))
 #+end_src
 
+** EXWM
+#+begin_src emacs-lisp :lexical t
+(when (getenv "EXWM")
+  (load-theme 'modus-vivendi t)
+  (elpaca exwm
+    (require 'exwm)
+
+    (defun +exwm-edit ()
+      "Edit EXWM input field."
+      (interactive)
+      (unless (derived-mode-p 'exwm-mode) (user-error "Buffer not in EXWM mode."))
+      (with-current-buffer (if (minibufferp)
+                               (window-buffer (minibuffer-selected-window))
+                             (current-buffer))
+        (let ((xwin-id (exwm--buffer->id (current-buffer)))
+              (previous (gui-get-selection 'CLIPBOARD 'UTF8_STRING))
+              (selection (progn
+                           ;; Select current text input.
+                           (exwm-input--fake-key ?\C-a)
+                           (sit-for 0.2) ;;@HACK: Wait for Xserver
+                           (gui-get-selection 'PRIMARY 'UTF8_STRING)))
+              (b (current-buffer))
+              (string-edit-mode-hook #'flyspell-mode))
+          (string-edit (or exwm-title "*EXWM-edit*")
+                       (or selection "")
+                       (lambda (s)
+                         (if (not (buffer-live-p b)) (user-error "Target buffer not live")
+                           (with-current-buffer b
+                             (gui-set-selection 'CLIPBOARD s)
+                             (sit-for 0.2)
+                             (exwm-input--fake-key ?\C-v))))
+                       :abort-callback
+                       (lambda ()
+                         (when (buffer-live-p b)
+                           (with-current-buffer b
+                             (gui-set-selection 'CLIPBOARD previous))))))))
+
+    (defun +exwm-launch (command)
+      (interactive (list (progn (exwm-layout-unset-fullscreen) (read-shell-command "$ "))))
+      (start-process-shell-command command nil command) )
+    (defun +exwm-shell-command (var)
+      "Execute environmental VAR as async shell command."
+      (interactive)
+      (if-let ((program (getenv var)))
+          (progn
+            (start-process-shell-command program nil program))
+        (user-error "$%S not set" var)))
+    (defun +exwm-move-window-right ()
+      "Move current window right like i3wm does."
+      (interactive)
+      (condition-case _
+          (windmove-swap-states-right)
+        ((user-error)
+         (let ((split (split-root-window-right)))
+           (delete-window)
+           (select-window split)))))
+    (defun +exwm-move-window-left ()
+      "Move current window right like i3wm does."
+      (interactive)
+      (condition-case _
+          (windmove-swap-states-left)
+        ((user-error)
+         (let ((split (split-root-window-right)))
+           (delete-window)
+           (select-window split)))))
+    (defun +exwm-move-window-up ()
+      "Move current window right like i3wm does."
+      (interactive)
+      (condition-case _
+          (windmove-swap-states-up)
+        ((user-error)
+         (let ((split (split-root-window-below)))
+           (delete-window)
+           (select-window split)))))
+    (defun +exwm-move-window-down ()
+      "Move current window right like i3wm does."
+      (interactive)
+      (condition-case _
+          (windmove-swap-states-down)
+        ((user-error)
+         (let ((split (split-root-window-below)))
+           (delete-window)
+           (select-window split)))))
+    (defun +exwm-toggle-fullscreen ()
+      "Toggle fullscreen in all windows."
+      (interactive)
+      (if (derived-mode-p 'exwm-mode)
+          (call-interactively #'exwm-layout-toggle-fullscreen)
+        (+toggle-maximize-buffer)))
+    (defvar +exwm-split-side 'right)
+    (setopt exwm-input-global-keys
+            `(([?\s-l] . windmove-right)
+              ([?\M-\s-l] . +exwm-move-window-right)
+              ([?\s-h] . windmove-left)
+              ([?\M-\s-h] . +exwm-move-window-left)
+              ([?\s-j] . windmove-down)
+              ([?\M-\s-j] . +exwm-move-window-down)
+              ([?\s-k] . windmove-up)
+              ([?\M-\s-k] . +exwm-move-window-up)
+              ([?\s-i] . +exwm-edit)
+              ([?\s-r] . exwm-restart)
+              ([?\s-f] . +exwm-toggle-fullscreen)
+              ([?\s-m] . exwm-layout-toggle-mode-line)
+              ([?\s-n] . tab-next)
+              ([?\s-p] . tab-previous)
+              ([?\s-t] . tab-bar-switch-to-tab)
+              ([s-return] . (lambda () (interactive) (+exwm-shell-command "TERMINAL")))
+              ([?\s-b] . (lambda () (interactive) (+exwm-shell-command "BROWSER")))
+              ([?\s-?] . (lambda () (interactive) (setq +exwm-split-side nil)))
+              ([?\s-/] . (lambda () (interactive) (setq +exwm-split-side 'right)))
+              ([?\s-d] . (lambda () (interactive)
+                           (kill-this-buffer)
+                           (ignore-errors (delete-window))
+                           (balance-windows)))
+              ([?\s-\;] . +exwm-launch)
+              ([?\s-\ ] . execute-extended-command)
+              (,(kbd "<XF86Calculator>")  .
+               (lambda () (interactive) (make-process :name "emacs" :command '("emacs"))))))
+    (defun +exwm-rename-workspace-buffer ()
+      "Rename workspace buffer."
+      (exwm-workspace-rename-buffer
+       (concat (truncate-string-to-width (or exwm-title " ") 50)
+               (when (> (length exwm-title) 50) (truncate-string-ellipsis)))))
+    (add-hook 'exwm-update-class-hook #'+exwm-rename-workspace-buffer)
+    (add-hook 'exwm-update-title-hook #'+exwm-rename-workspace-buffer)
+
+    ;; (defun +exwm-new-window ()
+    ;;   ;;(exwm-layout-hide-mode-line)
+    ;;   ;; (split-window nil nil +exwm-split-side)
+    ;;   ;; (balance-windows))
+    ;;   (set-window-dedicated-p (selected-window) t))
+    ;; (add-hook 'exwm-manage-finish-hook #'+exwm-new-window)
+
+    (setq exwm-manage-configurations
+          '(((string-match-p "Void.*Stranger" exwm-title) managed t)
+            (t char-mode t)))
+
+    (require 'exwm-randr)
+    (exwm-randr-enable)
+    (exwm-enable)
+    ;; So child processes don't inherit the variable
+    (setenv "EXWM"))
+  (with-eval-after-load 'general (exwm-input-set-key [?\s-\ ] #'+prefix-map))
+  (display-battery-mode)
+  (make-process :name "picom" :command '("picom") :noquery t)
+  (make-process :name "syndaemon" :command '("syndaemon" "-K" "-i" "0.25" "-R" "-d") :noquery t)
+  (elpaca desktop-environment
+    ;; Remove conflicting binding
+    (require 'desktop-environment)
+    (setf (alist-get (aref (kbd "s-l") 0) desktop-environment-mode-map  nil 'remove) nil)
+    (desktop-environment-mode)))
+#+end_src
+
 ** packaging
 *** keychain
 [[https://www.funtoo.org/Keychain][Keychain]] is a gpg/ssh agent that allows me to cache my credentials.
@@ -367,6 +520,7 @@ The global definer allows me to use a leader key in most states.
  :keymaps 'override
  :states '(insert normal hybrid motion visual operator emacs)
  :prefix-map '+prefix-map
+ :prefix-command '+prefix-map
  :prefix "SPC"
  :global-prefix "S-SPC")
 

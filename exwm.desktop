@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=EXWM
+Exec=sh /home/n/.emacs.d/exwm.sh
+X-LightDM-DesktopName=EXWM
+Type=Application
