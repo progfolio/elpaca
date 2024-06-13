@@ -766,6 +766,14 @@ for your search query.
   :config (global-anzu-mode))
 #+end_src
 
+** auth
+Ensure only encrypted .authinfo.gpg file is used
+#+begin_src emacs-lisp :lexical t
+(use-feature auth-source
+  :defer t
+  :custom (auth-sources '("~/.authinfo.gpg")))
+#+end_src
+
 ** auto-fill-mode
 I usually want lines to wrap at 80 chars (Emacs defaults to 70).
 #+begin_src emacs-lisp :lexical t
