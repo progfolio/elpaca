@@ -3462,3 +3462,19 @@ https://github.com/NicolasPetton/zerodark-theme
   :defer t
   :ensure (:host github :repo "progfolio/melpaca" :protocol ssh))
 #+end_src
+
+** imp
+
+#+begin_src emacs-lisp :lexical t
+(use-package imp
+  :defer t
+  :ensure (:host github :repo "progfolio/imp" :protocol ssh))
+#+end_src
+
+** c4
+
+#+begin_src emacs-lisp :lexical t
+(use-package c4
+  :defer t
+  :ensure (:host github :repo "progfolio/c4" :protocol ssh))
+#+end_src
