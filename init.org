@@ -1432,6 +1432,7 @@ https://github.com/magit/forge
 (use-feature help
   :defer 1
   :custom
+  (help-enable-variable-value-editing t)
   (help-window-select t "Always select the help window"))
 #+end_src
 ** history
