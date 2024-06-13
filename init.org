@@ -1800,7 +1800,7 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
                   (user-full-name . ,(+email-name +email-dev))
                   (smtpmail-smtp-user . ,(+email-address +email-dev))
                   (smtpmail-auth-credentials . (expand-file-name "~/.authinfo.gpg"))
-                  (smtpmail-smtp-server . "mail.privateemail.com")
+                  (smtpmail-smtp-server . "smtp.purelymail.com")
                   (smtpmail-smtp-service . 587)
                   (smtpmail-stream-type . starttls)
                   (mu4e-compose-format-flowed . t)))))
@@ -3079,8 +3079,10 @@ ten, but opening my org agenda files wipes that list out.
 ** smtpmail
 #+begin_src emacs-lisp :lexical t
 (use-feature smtpmail
+  :defer t
   :custom
-  (smtpmail-queue-mail nil))
+  (smtpmail-queue-mail nil)
+  (smtpmail-servers-requiring-authorization "purelymail"))
 #+end_src
 ** straight.el
 #+begin_src emacs-lisp :lexical t
