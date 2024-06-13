@@ -1726,6 +1726,9 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
   (mu4e-context-policy 'pick-first)
   (mu4e-compose-context-policy 'always-ask)
   :config
+  (add-to-list 'display-buffer-alist
+               `(,(regexp-quote mu4e-main-buffer-name)
+                 display-buffer-same-window))
   (setq mu4e-contexts
         (list
          (make-mu4e-context
