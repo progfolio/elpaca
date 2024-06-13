@@ -614,6 +614,7 @@ https://github.com/emacs-evil/evil
   :demand t
   :preface (setq evil-want-keybinding nil)
   :custom
+  (evil-ex-visual-char-range t "limit text replacement in visual selections")
   (evil-symbol-word-search t "search by symbol with * and #.")
   (evil-shift-width 2 "Same behavior for vim's '<' and '>' commands")
   (evil-complete-all-buffers nil)
