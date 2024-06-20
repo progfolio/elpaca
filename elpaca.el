@@ -1533,7 +1533,8 @@ Loads or caches autoloads."
                     (while t (push (read (current-buffer)) forms))
                   ((end-of-file)))
                 (push `(let ((load-file-name ,autoloads)
-                             (load-in-progress t))
+                             (load-in-progress t)
+                             (current-load-list nil))
                          (condition-case err
                              (progn ,@(nreverse forms))
                            ((error) (warn "Error loading %S autoloads: %S" ,pkg err))))
