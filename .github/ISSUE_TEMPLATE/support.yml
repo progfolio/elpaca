@@ -23,7 +23,7 @@ body:
     id: elpaca-version
     attributes:
       label: Elpaca Version
-      description: Output of the elpaca-version command (M-x elpaca-version)
+      description: Output of the elpaca-version command (M-x elpaca-version, then copy the result from the *Messages* buffer)
       placeholder: Please include the output of the elpaca-version command (M-x elpaca-version)
     validations:
       required: true
