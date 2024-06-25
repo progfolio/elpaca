@@ -1175,7 +1175,7 @@ The keyword's value is expected to be one of the following:
              (recipe (elpaca<-recipe e))
              (regexp (or (plist-get recipe :version-regexp) elpaca--tag-regexp))
              (tags (elpaca-with-process
-                       (elpaca-process-call "git" "tag" "--sort=-taggerdate" "--merged")
+                       (elpaca-process-call "git" "tag" "--sort=-creatordate" "--merged")
                      (and success stdout (split-string stdout "\n" 'omit-nulls)))))
     (cl-loop for tag in tags when (string-match regexp tag)
              return (or (match-string 1 tag) (match-string 0 tag)))))
