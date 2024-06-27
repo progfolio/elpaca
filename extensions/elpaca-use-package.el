@@ -43,7 +43,7 @@
 
 (defun elpaca-use-package--normalizer (_name _keyword args)
   "Return first arg of ARGS passed to use-package's :ensure function."
-  (car (last args)))
+  (if args (car (last args)) t)) ; Bare :ensure implies t in vanilla use-package.
 
 ;;;###autoload
 (define-minor-mode elpaca-use-package-mode
