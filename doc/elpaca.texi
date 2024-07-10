@@ -296,13 +296,14 @@ Consider the following example:
 @end lisp
 
 ``Second'' will be message @emph{before} ``First'' and ``Third''.
-Defer forms which are dependent on deferred forms.
-If the top-level form should be executed after a specific package is installed/activated, put it in that declaration's @emph{BODY}.
+If a top-level form should be executed after a specific package is installed/activated, put it in that declaration's @emph{BODY}.
+Declaration @emph{BODY} forms are evaluated synchronously in declared order.
 e.g.
+
 @lisp
 (elpaca package-a (message "First") (message "Second"))  ; Queue First, Second
 (elpaca package-b (message "Third"))  ; Queue Third
-(elpaca-process-queues) ; Process queue: First, Second, Third messaged.
+(elpaca-process-queues) ; Process queue: First, Second, then Third messaged.
 @end lisp
 
 Add configuration which relies on @samp{after-init-hook}, @samp{emacs-startup-hook}, etc to @samp{elpaca-after-init-hook} so it runs after Elpaca has activated all queued packages.
@@ -826,7 +827,7 @@ When all of a queues orders have either finished or failed Elpaca considers it `
 
 Queues ensure packages installation, activation, and configuration take place prior to packages in other queues.
 The @samp{:wait} recipe keyword splits the current queue and immediately begins processing prior queues.
-This is useful when one wants to later on at the top-level of their init file.
+This is useful when one wants to use a package from a previous queue later on at the top-level of their init file.
 For example, a package which implements an Elpaca menu (@ref{Menus, , menu}):
 
 @lisp

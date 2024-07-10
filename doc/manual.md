@@ -190,12 +190,12 @@ Elpaca installs and activates packages asynchronously. Elpaca processes its pack
 (elpaca-process-queues) ; Process queue: First messaged, Third messaged.
 ```
 
-&ldquo;Second&rdquo; will be message *before* &ldquo;First&rdquo; and &ldquo;Third&rdquo;. Defer forms which are dependent on deferred forms. If the top-level form should be executed after a specific package is installed/activated, put it in that declaration&rsquo;s *BODY*. e.g.
+&ldquo;Second&rdquo; will be message *before* &ldquo;First&rdquo; and &ldquo;Third&rdquo;. If a top-level form should be executed after a specific package is installed/activated, put it in that declaration&rsquo;s *BODY*. Declaration *BODY* forms are evaluated synchronously in declared order. e.g.
 
 ```emacs-lisp
 (elpaca package-a (message "First") (message "Second"))  ; Queue First, Second
 (elpaca package-b (message "Third"))  ; Queue Third
-(elpaca-process-queues) ; Process queue: First, Second, Third messaged.
+(elpaca-process-queues) ; Process queue: First, Second, then Third messaged.
 ```
 
 Add configuration which relies on `after-init-hook`, `emacs-startup-hook`, etc to `elpaca-after-init-hook` so it runs after Elpaca has activated all queued packages. This includes loading of saved customizations. e.g.
@@ -668,7 +668,7 @@ This is useful for declaring default order properties. For example, the followin
 
 Elpaca installs packages asynchronously. Orders ([orders](#orders)) are automatically queued in a list. When all of a queues orders have either finished or failed Elpaca considers it &ldquo;processed&rdquo;.
 
-Queues ensure packages installation, activation, and configuration take place prior to packages in other queues. The `:wait` recipe keyword splits the current queue and immediately begins processing prior queues. This is useful when one wants to later on at the top-level of their init file. For example, a package which implements an Elpaca menu ([menu](#menus)):
+Queues ensure packages installation, activation, and configuration take place prior to packages in other queues. The `:wait` recipe keyword splits the current queue and immediately begins processing prior queues. This is useful when one wants to use a package from a previous queue later on at the top-level of their init file. For example, a package which implements an Elpaca menu ([menu](#menus)):
 
 ```emacs-lisp
 (elpaca (melpulls :host github :repo "progfolio/melpulls" :wait t)

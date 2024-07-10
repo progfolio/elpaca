@@ -211,13 +211,14 @@ Consider the following example:
 #+end_src
 
 "Second" will be message /before/ "First" and "Third".
-Defer forms which are dependent on deferred forms.
-If the top-level form should be executed after a specific package is installed/activated, put it in that declaration's /BODY/.
+If a top-level form should be executed after a specific package is installed/activated, put it in that declaration's /BODY/.
+Declaration /BODY/ forms are evaluated synchronously in declared order.
 e.g.
+
 #+begin_src emacs-lisp :lexical t :eval never-export
 (elpaca package-a (message "First") (message "Second"))  ; Queue First, Second
 (elpaca package-b (message "Third"))  ; Queue Third
-(elpaca-process-queues) ; Process queue: First, Second, Third messaged.
+(elpaca-process-queues) ; Process queue: First, Second, then Third messaged.
 #+end_src
 
 Add configuration which relies on =after-init-hook=, =emacs-startup-hook=, etc to =elpaca-after-init-hook= so it runs after Elpaca has activated all queued packages.

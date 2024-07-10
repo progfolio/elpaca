@@ -80,14 +80,14 @@ To install Elpaca, add the following elisp to your init.el. It must come before 
 (elpaca `(,@elpaca-order))
 ```
 
--   Windows users must be able to create symlinks<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>, or enable `elpaca-no-symlink-mode`
+-   Windows users must be able to create symlinks<sup><a id="fnr.-0-1" class="footref" href="#fn.-0-1" role="doc-backlink">1</a></sup>, or enable `elpaca-no-symlink-mode`
 
 ```emacs-lisp
 ;; Uncomment for systems which cannot create symlinks:
 ;; (elpaca-no-symlink-mode)
 ```
 
-You'll also want to disable package.el in your early-init file<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup>:
+You'll also want to disable package.el in your early-init file<sup><a id="fnr.-0-2" class="footref" href="#fn.-0-2" role="doc-backlink">2</a></sup>:
 
 ```emacs-lisp
 (setq package-enable-at-startup nil)
@@ -146,7 +146,7 @@ For example:
 
 **IMPORTANT**:
 
-Elpaca installs and activates packages asynchronously. Elpaca processes its package queues *after* Emacs reads the init file.<sup><a id="fnr.3" class="footref" href="#fn.3" role="doc-backlink">3</a></sup> Consider the following example:
+Elpaca installs and activates packages asynchronously. Elpaca processes its package queues *after* Emacs reads the init file.<sup><a id="fnr.-0-3" class="footref" href="#fn.-0-3" role="doc-backlink">3</a></sup> Consider the following example:
 
 ```emacs-lisp
 (elpaca package-a (message "First")) ; Queue First
@@ -155,12 +155,12 @@ Elpaca installs and activates packages asynchronously. Elpaca processes its pack
 (elpaca-process-queues) ; Process queue: First messaged, Third messaged.
 ```
 
-"Second" will be message *before* "First" and "Third". Defer forms which are dependent on deferred forms. If the top-level form should be executed after a specific package is installed/activated, put it in that declaration's *BODY*. e.g.
+"Second" will be message *before* "First" and "Third". If a top-level form should be executed after a specific package is installed/activated, put it in that declaration's *BODY*. Declaration *BODY* forms are evaluated synchronously in declared order. e.g.
 
 ```emacs-lisp
 (elpaca package-a (message "First") (message "Second"))  ; Queue First, Second
 (elpaca package-b (message "Third"))  ; Queue Third
-(elpaca-process-queues) ; Process queue: First, Second, Third messaged.
+(elpaca-process-queues) ; Process queue: First, Second, then Third messaged.
 ```
 
 Add configuration which relies on `after-init-hook`, `emacs-startup-hook`, etc to `elpaca-after-init-hook` so it runs after Elpaca has activated all queued packages. This includes loading of saved customizations. e.g.

@@ -1666,7 +1666,8 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
 
 ;;;###autoload
 (defmacro elpaca (order &rest body)
-  "Queue ORDER for installation/activation, defer execution of BODY."
+  "Queue ORDER for asynchronous installation/activation.
+Evaluate BODY synchronously once ORDER's queue is finished processing."
   (declare (indent 1) (debug form))
   `(elpaca--expand-declaration ',order ',body))
 
