@@ -548,7 +548,7 @@ When all of a queues orders have either finished or failed Elpaca considers it "
 
 Queues ensure packages installation, activation, and configuration take place prior to packages in other queues.
 The =:wait= recipe keyword splits the current queue and immediately begins processing prior queues.
-This is useful when one wants to use a package from a previous queue later on at the top-level of their init file.
+This is useful when one wants to use a package from a previous queue in their init file.
 For example, a package which implements an Elpaca menu ([[#menus][menu]]):
 
 #+begin_src emacs-lisp :lexical t
@@ -566,7 +566,7 @@ For example, a package which implements an Elpaca menu ([[#menus][menu]]):
 :END:
 
 - elpaca :: =(order &rest body)=
-Installs /ORDER/ ([[#orders][orders]]) and executes /BODY/ after processing ORDER's queue ([[#queues][queue]]).
+Installs /ORDER/ ([[#orders][orders]]) and evaluate /BODY/ after processing ORDER's queue ([[#queues][queue]]).
 
 This macro is for programmatic use in one's init file.
 Any of the following will install the "example" package:

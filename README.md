@@ -129,9 +129,9 @@ For example:
   ;; Enable use-package :ensure support for Elpaca.
   (elpaca-use-package-mode))
 
-;;When installing a package which modifies a form used at the top-level
-;;(e.g. a package which adds a use-package key word),
-;;use the :wait recipe keyword to block until that package has been installed/configured.
+;;When installing a package used in the init file itself,
+;;e.g. a package which adds a use-package key word,
+;;use the :wait recipe keyword to block until that package is installed/configured.
 ;;For example:
 ;;(use-package general :ensure (:wait t) :demand t)
 
@@ -139,7 +139,7 @@ For example:
 (use-package evil :ensure t :demand t)
 
 ;;Turns off elpaca-use-package-mode current declaration
-;;Note this will cause the declaration to be interpreted immediately (not deferred).
+;;Note this will cause evaluate the declaration immediately. It is not deferred.
 ;;Useful for configuring built-in emacs features.
 (use-package emacs :ensure nil :config (setq ring-bell-function #'ignore))
 ```
@@ -155,7 +155,7 @@ Elpaca installs and activates packages asynchronously. Elpaca processes its pack
 (elpaca-process-queues) ; Process queue: First messaged, Third messaged.
 ```
 
-"Second" will be message *before* "First" and "Third". If a top-level form should be executed after a specific package is installed/activated, put it in that declaration's *BODY*. Declaration *BODY* forms are evaluated synchronously in declared order. e.g.
+"Second" will be message *before* "First" and "Third". If a form should be evaluated after a package is installed/activated, put it in that package declaration's *BODY*. Declaration *BODY* forms are evaluated synchronously in declared order. e.g.
 
 ```emacs-lisp
 (elpaca package-a (message "First") (message "Second"))  ; Queue First, Second

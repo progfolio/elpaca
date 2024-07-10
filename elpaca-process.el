@@ -136,7 +136,7 @@ Anaphoric bindings provided:
      ,@body))
 
 (defmacro elpaca-with-process-call (args &rest body)
-  "Execute BODY in `elpaca-with-process', applying `elpaca-process-call' to ARGS."
+  "Evaluate BODY in `elpaca-with-process', applying `elpaca-process-call' to ARGS."
   (declare (indent 1) (debug 'form))
   `(elpaca-with-process (elpaca-process-call ,@(if (listp args) args (list args))) ,@body))
 
