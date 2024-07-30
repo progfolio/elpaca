@@ -86,6 +86,8 @@ Note blocked or failed orders will prevent this hook from being run."
   "If non-nil, cache package autoloads and load all at once.
 Results in faster start-up time." :type 'boolean)
 
+(defcustom elpaca-lock-file nil "Location of the package lockfile." :type 'path)
+
 (defcustom elpaca-directory (expand-file-name "elpaca" user-emacs-directory)
   "Location of the elpaca package store." :type 'directory)
 
@@ -187,7 +189,7 @@ Simplified, faster version of `alist-get'."
     nil))
 
 (defcustom elpaca-menu-functions
-  '( elpaca-menu-extensions elpaca-menu-org elpaca-menu-melpa elpaca-menu-non-gnu-devel-elpa
+  '( elpaca-menu-lockfile elpaca-menu-extensions elpaca-menu-org elpaca-menu-melpa elpaca-menu-non-gnu-devel-elpa
      elpaca-menu-gnu-devel-elpa elpaca-menu-non-gnu-elpa elpaca-menu-gnu-elpa elpaca-menu-declarations)
   "Abnormal hook to lookup packages in menus.
 Each function is passed a request, which may be any of the following symbols:
@@ -1767,31 +1769,39 @@ do not confirm before deleting package and DEPS."
            (sort (cl-delete-duplicates (mapcar #'car (or queued (elpaca--queued)))) #'string<)
            nil t)))
 
+(defun elpaca--check-worktree (e)
+  "Check E's worktree."
+  (if (elpaca-worktree-dirty-p (elpaca<-id e))
+      (elpaca--fail e "Worktree dirty. Refusing to rebuild from scratch.")
+    (elpaca--continue-build e)))
+
 ;;;###autoload
-(defun elpaca-rebuild (id &optional interactive)
+(defun elpaca-rebuild (id &optional scratch interactive)
   "Rebuild ID's associated package.
 When INTERACTIVE is non-nil, prompt for ID, immediately process.
-With a prefix argument, rebuild current file's package or prompt if none found."
-  (interactive (list (or (and-let* ((current-prefix-arg)
-                                    (queued (elpaca--file-package))
-                                    ((car queued))))
-                         (elpaca--read-queued "Rebuild package: "))
-                     t))
+When SCRATCH is non-nil, or called with a prefix-argument, rebuild from scratch."
+  (interactive (list (elpaca--read-queued
+                      (concat "Rebuild package" (when current-prefix-arg " from scratch") ": "))
+                     current-prefix-arg t))
   (let ((e (or (elpaca-get id) (user-error "Package %S is not queued" id))))
-    (when (eq (elpaca--status e) 'finished)
-      ;;@MAYBE: remove Info/load-path entries?
-      (setf (elpaca<-build-steps e)
-            (cl-set-difference (elpaca--build-steps (elpaca<-recipe e))
-                               '(elpaca--clone
-                                 elpaca--configure-remotes
-                                 elpaca--fetch
-                                 elpaca--checkout-ref
-                                 elpaca--queue-dependencies
-                                 elpaca--activate-package))))
+    (setf (elpaca<-build-steps e)
+          (cond (scratch (cons #'elpaca--check-worktree
+                               (elpaca--build-steps (elpaca<-recipe e))))
+                ((eq (elpaca--status e) 'finished) ;;@MAYBE: remove Info/load-path entries?
+                 (setf (elpaca<-build-steps e)
+                       (cl-set-difference (elpaca--build-steps (elpaca<-recipe e))
+                                          '(elpaca--clone
+                                            elpaca--configure-remotes
+                                            elpaca--fetch
+                                            elpaca--checkout-ref
+                                            elpaca--clone-dependencies
+                                            elpaca--activate-package))))))
     (elpaca--unprocess e)
-    (elpaca--signal e "Rebuilding" 'queued)
+    (elpaca--signal e (concat "Rebuilding" (when scratch " from scratch")) 'queued)
     (setf elpaca-cache-autoloads nil (elpaca<-files e) nil)
-    (when interactive (elpaca-process-queues))))
+    (when interactive
+      (elpaca--maybe-log)
+      (elpaca-process-queues))))
 
 (defun elpaca--log-updates (e)
   "Log E's fetched commits."
@@ -1978,10 +1988,16 @@ If INTERACTIVE is non-nil, process queues."
     (not (string-empty-p (elpaca-process-output
                           "git" "-c" "status.branch=false" "status" "--short")))))
 
-(defun elpaca-load-lockfile (&optional lockfile _force)
-  "Load LOCKFILE.  If FORCE is non-nil, @TODO."
-  (interactive "fLockfile: ")
-  (message "%S" lockfile))
+(defvar elpaca-menu-lockfile--index-cache
+  (when elpaca-lock-file (elpaca--read-file elpaca-lock-file))
+  "Cache of lockfile index.")
+
+;;;###autoload
+(defun elpaca-menu-lockfile (_ &optional item)
+  "Return locked package menu ITEM."
+  (when-let* ((cache (or elpaca-menu-lockfile--index-cache
+                         (when elpaca-lock-file (elpaca--read-file elpaca-lock-file)))))
+    (if item (alist-get item cache) cache)))
 
 (defun elpaca-write-lockfile (path)
   "Write lockfile to PATH for current state of package repositories."
