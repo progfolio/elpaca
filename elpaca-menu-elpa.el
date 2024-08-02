@@ -98,6 +98,7 @@
    with branch-prefix = (alist-get 'branch-prefix elpa)
    for (id . props) in (elpaca-menu-elpa--recipes elpa)
    for core = (plist-get props :core)
+   for manual-sync = (plist-get props :manual-sync)
    when core do
    (setq core (mapcar (lambda (f) (if (equal f (file-name-as-directory f)) (concat f "*") f))
                       (if (listp core) core (list core))))
@@ -106,6 +107,7 @@
        (((or core (if releasep (plist-get props :release-branch) t)))
         (name (symbol-name id))
         (url (or (and core elpaca-menu-elpa-emacs-url)
+                 (and manual-sync remote)
                  (if-let ((declared (plist-get props :url))
                           ;;Why does ELPA keep the :url when upstream is gone?
                           ((not (or releasep (string-match-p elpaca-menu-elpa-ignored-url-regexp declared)))))
