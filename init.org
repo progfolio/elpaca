@@ -2344,6 +2344,7 @@ buffers.
 :END:
 Add a custom view for a simplified work agenda.
 #+begin_src emacs-lisp :lexical t
+(org-agenda-window-setup 'current-window)
 (org-agenda-custom-commands
  '(("w" "Work Schedule" agenda "+work"
     ((org-agenda-files '("~/Documents/todo/work.org"))
