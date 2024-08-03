@@ -379,8 +379,12 @@ https://github.com/progfolio/elpaca
     (defun +exwm-rename-workspace-buffer ()
       "Rename workspace buffer."
       (exwm-workspace-rename-buffer
-       (concat (truncate-string-to-width (or exwm-title " ") 50)
-               (when (> (length exwm-title) 50) (truncate-string-ellipsis)))))
+       (concat (when exwm-title
+                 (if (> (length exwm-title)
+                        (/ (window-width) 3.0))
+                     (concat (substring exwm-title 0 (/ (length exwm-title) 2)) "...")
+                   exwm-title))
+               (when exwm-title " | ") exwm-class-name)))
     (add-hook 'exwm-update-class-hook #'+exwm-rename-workspace-buffer)
     (add-hook 'exwm-update-title-hook #'+exwm-rename-workspace-buffer)
 
