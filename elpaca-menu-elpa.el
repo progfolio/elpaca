@@ -98,7 +98,6 @@
    with branch-prefix = (alist-get 'branch-prefix elpa)
    for (id . props) in (elpaca-menu-elpa--recipes elpa)
    for core = (plist-get props :core)
-   for manual-sync = (plist-get props :manual-sync)
    when core do
    (setq core (mapcar (lambda (f) (if (equal f (file-name-as-directory f)) (concat f "*") f))
                       (if (listp core) core (list core))))
