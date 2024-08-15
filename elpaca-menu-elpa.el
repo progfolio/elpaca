@@ -106,6 +106,7 @@
        (((or core (if releasep (plist-get props :release-branch) t)))
         (name (symbol-name id))
         (url (or (and core elpaca-menu-elpa-emacs-url)
+                 (and (plist-get props :manual-sync) remote) ;; developed in ELPA repo
                  (if-let ((declared (plist-get props :url))
                           ;;Why does ELPA keep the :url when upstream is gone?
                           ((not (or releasep (string-match-p elpaca-menu-elpa-ignored-url-regexp declared)))))
