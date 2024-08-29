@@ -508,7 +508,9 @@ If SILENT is non-nil, suppress update message."
 
 (defun elpaca-ui-current-package ()
   "Return current package of UI line."
-  (or (car (tabulated-list-get-id)) (user-error "No package at point")))
+  (or (car (tabulated-list-get-id))
+      (user-error (if (derived-mode-p 'elpaca-ui-mode) "No package at point"
+                    "Not in elpaca-ui-mode buffer"))))
 
 (defun elpaca-ui--sort-package (a b)
   "Sort entries A, B according to name, then menu-function position."
