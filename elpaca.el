@@ -199,7 +199,7 @@ Each function is passed a request, which may be any of the following symbols:
 (when-let  (((< 27 emacs-major-version 30))
             (transient-versions '(("28.1" . (0 3 7)) ("28.2" . (0 3 7))
                                   ("29.1" . (0 4 1)) ("29.2" . (0 4 3))
-                                  ("29.3" . (0 4 3)))))
+                                  ("29.3" . (0 4 3)) ("29.4" . (0 4 3)))))
   (add-to-list 'package--builtin-versions
                (cons 'transient (alist-get emacs-version transient-versions
                                            nil nil #'string-prefix-p))))
