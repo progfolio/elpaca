@@ -261,7 +261,7 @@ BODY is a plist which allows multiple values for certain keys.
 The following keys are recognized:
   :name description of the test
 
-  :ref git ref to check out or `local' to use local copy in current repo state
+  :ref git ref of Elpaca repository to check out or ‘local’ to use local copy
 
   :depth number of Elpaca repository commits to clone
 
