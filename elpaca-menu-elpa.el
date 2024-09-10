@@ -112,7 +112,7 @@
                           ((not (or releasep (string-match-p elpaca-menu-elpa-ignored-url-regexp declared)))))
                      declared
                    remote)))
-        (recipe `( :package ,name :repo ,url :local-repo ,name
+        (recipe `( :package ,name :repo (,url . ,name)
                    ,@(or (and (or core (eq url remote))
                               `(:branch
                                 ,(if core "master" (concat branch-prefix (when releasep "-release") "/" name))))

@@ -428,33 +428,34 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
 (defvar elpaca--repo-dirs nil "List of registered repository directories.")
 (defun elpaca-repo-dir (recipe)
   "Return path to repo given RECIPE."
-  (let* ((local-repo (plist-get recipe :local-repo))
-         (url (plist-get recipe :url))
+  (let* ((url (plist-get recipe :url))
          (repo (plist-get recipe :repo))
+         (remote (car-safe repo))
+         (local (cdr-safe repo))
          (pkg (plist-get recipe :package))
          (host (or (plist-get recipe :host) (plist-get recipe :fetcher)))
          (hostname (and host (prin1-to-string host 'noescape)))
          (user nil)
-         (info (concat url repo hostname))
+         (info (concat url (or remote repo) hostname))
          (key (or (and info (> (length info) 0) (intern info))
                   (error "Cannot determine URL from recipe: %S" recipe)))
          (mono-repo (elpaca-alist-get key elpaca--repo-dirs))
          (dirs (and (not mono-repo) (mapcar #'cdr elpaca--repo-dirs)))
          (name (cond
-                (local-repo
-                 (if-let ((owner (assoc local-repo dirs)))
-                     (error ":local-repo %S owned by %s" local-repo (cdr owner))
-                   local-repo))
+                (local
+                 (if-let ((owner (assoc local dirs)))
+                     (error "Local repo %S owned by %s" local (cdr owner))
+                   local))
                 (mono-repo (car mono-repo))
                 (url
                  (unless (featurep 'url-parse) (require 'url-parse))
                  (file-name-base (directory-file-name (url-filename
                                                        (url-generic-parse-url url)))))
-                (repo
-                 (if (eq (elpaca--repo-type repo) 'local)
-                     (file-name-base (directory-file-name repo))
-                   (when host (setq user (elpaca--repo-user repo)))
-                   (elpaca--repo-name repo)))
+                (repo (if-let ((r (or remote repo))
+                               ((eq (elpaca--repo-type r) 'local)))
+                          (file-name-base (directory-file-name (or local r)))
+                        (when host (setq user (elpaca--repo-user r)))
+                        (elpaca--repo-name (or local r))))
                 (pkg pkg)
                 (t (error "Unable to determine repo name"))))
          (dir (if (assoc name dirs)
@@ -475,6 +476,7 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
                                (host fetcher)
                                (repo url) &allow-other-keys)
       recipe
+    (when (consp repo) (setq repo (car repo))) ; Handle :repo rename
     (pcase (elpaca--repo-type (or repo (error "Unable to determine recipe URL")))
       ('remote repo)
       ('local  (expand-file-name repo))

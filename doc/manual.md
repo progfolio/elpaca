@@ -255,6 +255,12 @@ A string of the form `USER/REPO` when used with the `:host` keyword; a local fil
 (remote :repo "https://foo.example/example.git") ;;remote clone
 ```
 
+A cons cell of the form `(REMOTE . LOCAL)` will rename the local repository:
+
+```emacs-lisp
+(remote :repo ("https://foo.example/example.git" . "local-name"))
+```
+
 
 <a id="recipe-keyword-branch"></a>
 
@@ -446,8 +452,8 @@ The value may also be a menu symbol or list of menu symbols. This is a per-recip
 ```
 
 ```emacs-lisp
-(:package "dracula-theme" :repo "https://github.com/dracula/emacs" :local-repo
-          "dracula-theme" :files
+(:package "dracula-theme" :repo
+          ("https://github.com/dracula/emacs" . "dracula-theme") :files
           ("*"
            (:exclude ".git" "INSTALL.md" "screenshot.png" "start_emacs_test.sh"
                      "test-profile.el"))

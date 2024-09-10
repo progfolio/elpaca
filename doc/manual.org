@@ -110,6 +110,12 @@ A string of the form =USER/REPO= when used with the =:host= keyword; a local fil
 (remote :repo "https://foo.example/example.git") ;;remote clone
 #+end_src
 
+A cons cell of the form =(REMOTE . LOCAL)= will rename the local repository:
+
+#+begin_src emacs-lisp :lexical t :eval never-export
+(remote :repo ("https://foo.example/example.git" . "local-name"))
+#+end_src
+
 **** :branch
 :PROPERTIES:
 :CUSTOM_ID: recipe-keyword-branch
@@ -305,8 +311,8 @@ This is a per-recipe way of setting =elpaca-menu-functions=.
 
 #+RESULTS: recipe-inheritance-menu
 #+begin_src emacs-lisp
-(:package "dracula-theme" :repo "https://github.com/dracula/emacs" :local-repo
-          "dracula-theme" :files
+(:package "dracula-theme" :repo
+          ("https://github.com/dracula/emacs" . "dracula-theme") :files
           ("*"
            (:exclude ".git" "INSTALL.md" "screenshot.png" "start_emacs_test.sh"
                      "test-profile.el"))

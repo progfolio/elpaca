@@ -391,6 +391,12 @@ A string of the form @samp{USER/REPO} when used with the @samp{:host} keyword; a
 (remote :repo "https://foo.example/example.git") ;;remote clone
 @end lisp
 
+A cons cell of the form @samp{(REMOTE . LOCAL)} will rename the local repository:
+
+@lisp
+(remote :repo ("https://foo.example/example.git" . "local-name"))
+@end lisp
+
 @node branch
 @subsubsection :branch
 
@@ -574,8 +580,8 @@ This is a per-recipe way of setting @samp{elpaca-menu-functions}.
 @end lisp
 
 @lisp
-(:package "dracula-theme" :repo "https://github.com/dracula/emacs" :local-repo
-          "dracula-theme" :files
+(:package "dracula-theme" :repo
+          ("https://github.com/dracula/emacs" . "dracula-theme") :files
           ("*"
            (:exclude ".git" "INSTALL.md" "screenshot.png" "start_emacs_test.sh"
                      "test-profile.el"))

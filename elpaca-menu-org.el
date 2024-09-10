@@ -71,8 +71,7 @@
                          :recipe
                          (list
                           :package "org"
-                          :local-repo "org"
-                          :repo "https://git.savannah.gnu.org/git/emacs/org-mode.git"
+                          :repo '("https://git.savannah.gnu.org/git/emacs/org-mode.git" . "org")
                           :pre-build '(progn (require 'elpaca-menu-org) (elpaca-menu-org--build))
                           :autoloads "org-loaddefs.el"
                           :build '(:not elpaca--generate-autoloads-async)
@@ -84,8 +83,7 @@
                          :recipe
                          (list
                           :package "org-contrib"
-                          :local-repo "org-contrib"
-                          :repo "https://git.sr.ht/~bzg/org-contrib"
+                          :repo '("https://git.sr.ht/~bzg/org-contrib" . "org-contrib")
                           :files '(:defaults))))))))
 
 (provide 'elpaca-menu-org)
