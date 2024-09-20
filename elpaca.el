@@ -1172,8 +1172,11 @@ The keyword's value is expected to be one of the following:
                     (error "Unable to find main elisp file for %S" package)))))))
 
 (defvar elpaca--tag-regexp
-  "\\`\\(?:\\|[vVrR]\\|\\(?:release\\|%p\\)[-/]v?\\)?\
-\\(?1:[0-9]+\\(\\.[0-9]+\\)*\\)\\'")
+  (rx bos (opt (or "" (any "RVrv") (seq "release" (any "/-") (opt "v"))))
+      (group-n 1
+        (one-or-more (any "0-9"))
+        (zero-or-more (group "." (one-or-more (any "0-9")))))
+      eos))
 (defun elpaca-latest-tag (e)
   "Return E's latest merged tag matching recipe tag regexp or `elpaca--tag-regexp'."
   (when-let ((default-directory (elpaca<-repo-dir e))
