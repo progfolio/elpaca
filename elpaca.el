@@ -137,6 +137,7 @@ Setting it too high causes prints fewer status updates."
 (defvar elpaca-default-files-directive
   '("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
     "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+    "docs/dir" "docs/*.info" "docs/*.texi" "docs/*.texinfo"
     (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el" "LICENSE"
               "README*" "*-pkg.el"))
   "Default value for the `:files' directive in recipes.
