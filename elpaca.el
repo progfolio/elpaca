@@ -1177,9 +1177,29 @@ The keyword's value is expected to be one of the following:
   (when-let ((default-directory (elpaca<-repo-dir e))
              (recipe (elpaca<-recipe e))
              (regexp (or (plist-get recipe :version-regexp) elpaca--tag-regexp))
-             (tags (elpaca-with-process
-                       (elpaca-process-call "git" "tag" "--sort=-creatordate" "--merged")
-                     (and success stdout (split-string stdout "\n" 'omit-nulls)))))
+             (tags
+              (or (elpaca-with-process
+                      ;; NOTE: I am not sure if sorting by creator date is a
+                      ;; good idea, maybe sort by version:refname like below?
+                      (elpaca-process-call "git" "tag" "--sort=-creatordate" "--merged")
+                    (and success stdout (split-string stdout "\n" 'omit-nulls)))
+                  (elpaca-with-process
+                      (elpaca-process-call
+                       "git" "-c" "versionsort.suffix=-" ;; https://git-scm.com/docs/git-config#Documentation/git-config.txt-versionsortsuffix
+                       "ls-remote" "--refs" "--tags"
+                       "--exit-code" ;; https://git-scm.com/docs/git-ls-remote.html#Documentation/git-ls-remote.txt---exit-code
+                       "--sort=-version:refname" ;; https://git-scm.com/docs/git-tag#Documentation/git-tag.txt---sortltkeygt
+                       "origin")
+                    (and success stdout
+                         ;; Each line looks like this:
+                         ;; 5dcb4c010c16352c95dd1975931d759a8f7d9658	refs/tags/0.8.6
+                         (mapcar (lambda (line)
+                                   (thread-first line
+                                                 (split-string "\t" 'omit-nulls)
+                                                 (cadr)
+                                                 (split-string "/" 'omit-nulls)
+                                                 (caddr)))
+                                 (split-string stdout "\n" 'omit-nulls)))))))
     (cl-loop for tag in tags when (string-match regexp tag)
              return (or (match-string 1 tag) (match-string 0 tag)))))
 
