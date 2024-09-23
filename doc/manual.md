@@ -773,7 +773,7 @@ Note forms like this are not deferred by Elpaca&rsquo;s queue system.
 
 # UI
 
-Elpaca has a UI mode available for managing packages. The main entry points to the UI are the `elpaca-manager`, `elpaca-log`, and `elpaca-status` commands. Each of these commands utilize modes derived from `elpaca-ui-mode`.
+Elpaca has a UI mode available for managing packages. The main entry points to the UI are the `elpaca-manager` and `elpaca-log` commands. Each of these commands utilize modes derived from `elpaca-ui-mode`.
 
 The following commands are available in the `elpaca-ui-mode`:
 
@@ -804,8 +804,6 @@ The following commands are available in the `elpaca-ui-mode`:
 -   **Function: elpaca-manager `&optional recache`:** Display packages registered with Elpaca. Packages can searched for, installed, updated, rebuilt, and deleted from this interface. When `RECACHE` is non-nil, via lisp or interactively via the `universal-argument`, recompute Elpaca&rsquo;s menu item cache before display.
 
 -   **Function: elpaca-log `&optional query`:** Display the log for queued packages filtered by `QUERY`. For acceptable values for `QUERY` see [searching](#searching).
-
--   **Function: elpaca-status:** Display the log for the most recent events for queued packages. This allows one to quickly determine the status and reason for the status of each queued package.
 
 
 <a id="searching"></a>

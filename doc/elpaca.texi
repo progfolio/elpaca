@@ -935,7 +935,7 @@ Note forms like this are not deferred by Elpaca's queue system.
 @chapter UI
 
 Elpaca has a UI mode available for managing packages.
-The main entry points to the UI are the @samp{elpaca-manager}, @samp{elpaca-log}, and @samp{elpaca-status} commands.
+The main entry points to the UI are the @samp{elpaca-manager} and @samp{elpaca-log} commands.
 Each of these commands utilize modes derived from @samp{elpaca-ui-mode}.
 
 The following commands are available in the @samp{elpaca-ui-mode}:
@@ -1018,11 +1018,6 @@ When @samp{RECACHE} is non-nil, via lisp or interactively via the @samp{universa
 @defun elpaca-log 
 Display the log for queued packages filtered by @samp{QUERY}.
 For acceptable values for @samp{QUERY} see @ref{Searching, , searching}.
-@end defun
-
-@defun elpaca-status
-Display the log for the most recent events for queued packages.
-This allows one to quickly determine the status and reason for the status of each queued package.
 @end defun
 
 @menu
