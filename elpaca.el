@@ -144,7 +144,7 @@ Setting it too high causes prints fewer status updates."
 It is also spliced in at any point where the `:defaults' keyword
 is used in a `:files' directive.")
 
-(defvar elpaca-order-defaults (list :protocol 'https :inherit t :depth 1)
+(defvar elpaca-order-defaults (list :protocol 'https :inherit t :depth 'treeless)
   "Default order modifications.")
 
 (defun elpaca-order-defaults (_order) "Return order defaults." elpaca-order-defaults)
@@ -398,6 +398,9 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
     (unless (plist-get r :package) (setq r (plist-put r :package (symbol-name id))))
     (when-let ((recipe-mods (run-hook-with-args-until-success 'elpaca-recipe-functions r)))
       (setq r (elpaca-merge-plists r recipe-mods)))
+    (when-let ((remotes (plist-get r :remotes)) ;; Normalize :remotes to list of specs
+               ((not (ignore-errors (mapc #'length remotes)))))
+      (setq r (plist-put r :remotes (list remotes))))
     (when interactive
       (setq r (elpaca-merge-plists (append (list :package (symbol-name (car-safe id)))
                                            (cdr-safe id))
@@ -831,11 +834,11 @@ Optional ARGS are passed to `elpaca--signal', which see."
   "Perform initial fetch for E, respecting :remotes recipe inheritance."
   (let* ((recipe (copy-tree (elpaca<-recipe e)))
          (remotes (plist-get recipe :remotes)))
-    (unless (ignore-errors (mapc #'length remotes)) remotes (setq remotes (list remotes)))
     (setf recipe (elpaca-merge-plists recipe '(:remotes nil)))
     (cl-loop for remote in remotes
              for opts = (elpaca-merge-plists recipe (cdr-safe remote))
-             for command = `("git" "fetch" ,@(when-let ((depth (plist-get opts :depth)))
+             for command = `("git" "fetch" ,@(when-let ((depth (plist-get opts :depth))
+                                                        ((numberp depth)))
                                                (list "--depth" (format "%s" depth)))
                              ,(or (car-safe remote) remote))
              for fn = (apply-partially (lambda (command e) (apply #'elpaca--fetch e command))
@@ -850,7 +853,6 @@ Optional ARGS are passed to `elpaca--signal', which see."
                (recipe            (elpaca<-recipe   e))
                (remotes           (plist-get recipe :remotes)))
       (elpaca--signal e "Configuring Remotes" 'adding-remotes)
-      (unless (ignore-errors (mapc #'length remotes)) (setq remotes (list remotes)))
       (cl-loop with renamed for spec in remotes do
                (if (stringp spec)
                    (if renamed
@@ -1351,7 +1353,7 @@ This is the branch that would be checked out upon cloning."
   (let* ((recipe (elpaca<-recipe e))
          (default-directory (elpaca<-repo-dir e))
          (remotes (plist-get recipe :remotes))
-         (remote (let ((default (elpaca--remote remotes)))
+         (remote (let ((default (car remotes)))
                    (when (listp default) (setq recipe (elpaca-merge-plists recipe (cdr default))))
                    default))
          (ref    (plist-get recipe :ref))
@@ -1428,32 +1430,33 @@ This is the branch that would be checked out upon cloning."
       (push #'elpaca--clone (elpaca<-build-steps e))
       (elpaca--continue-build e))))
 
-(defun elpaca--remote (remotes)
-  "Return default remote from :REMOTES."
-  (and remotes (if (ignore-errors (mapcar #'length remotes)) (car remotes) remotes)))
-
 (defun elpaca--clone (e)
   "Clone E's repo to `elpaca-directory'."
+  (elpaca--signal e "Cloning" 'cloning)
   (let* ((recipe  (elpaca<-recipe   e))
+         (remotes (plist-get recipe :remotes))
+         (remote  (and remotes (car remotes)))
          (repodir (elpaca<-repo-dir e))
          (URI     (elpaca--repo-uri recipe))
          (default-directory elpaca-directory)
          (command
           `("git" "clone"
             ;;@TODO: Some refs will need a full clone or specific branch.
-            ,@(when-let ((depth (plist-get recipe :depth))
-                         ((numberp depth)))
-                (if (plist-get recipe :ref)
-                    (elpaca--signal e "Ignoring :depth in favor of :ref")
-                  `("--depth" ,(number-to-string depth))))
+            ,@(when-let ((depth (plist-get recipe :depth)))
+                (cond
+                 ((plist-get recipe :ref) (elpaca--signal e "Ignoring :depth in favor of :ref"))
+                 ((numberp depth) `("--depth" ,(number-to-string depth)))
+                 ((memq depth '(treeless blobless))
+                  (cond ((or (null remote) (stringp remote))
+                         (setf (elpaca<-recipe e) (plist-put recipe :depth nil))
+                         (elpaca--signal e ":remotes incompatible with treeless, blobless clones; using :depth nil"))
+                        ((eq depth 'treeless) '("--filter=tree:0"))
+                        ((eq depth 'blobless) '("--filter=blob:none"))))))
             ;;@FIX: allow override
             ,@(when-let ((ref (or (plist-get recipe :branch) (plist-get recipe :tag))))
                 `("--single-branch" "--branch" ,ref))
-            ,@(when-let ((remote (elpaca--remote (plist-get recipe :remotes)))
-                         ((not (stringp remote))))
-                '("--no-checkout"))
+            ,@(unless (or (null remote) (stringp remote)) '("--no-checkout"))
             ,URI ,repodir)))
-    (elpaca--signal e "Cloning" 'cloning)
     (elpaca--make-process e
       :name "clone" :command command :connection-type 'pty
       :sentinel #'elpaca--clone-process-sentinel)))

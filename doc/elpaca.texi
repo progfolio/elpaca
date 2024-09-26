@@ -439,6 +439,8 @@ When non-nil, ignore the package during update commands.
 The package repository's history depth.
 
 @lisp
+(example :depth treeless) ;; https://git-scm.com/docs/partial-clone
+(example :depth blobless) ;; https://git-scm.com/docs/partial-clone
 (example :depth 1) ;; Shallow clone with history truncated to 1 commit.
 (example :depth nil) ;; Full repository clone.
 @end lisp
