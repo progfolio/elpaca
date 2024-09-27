@@ -1174,7 +1174,6 @@ The keyword's value is expected to be one of the following:
                           (elpaca--directory-files-recursively repo (concat "\\`[^.z-a]*" name))))
                     (error "Unable to find main elisp file for %S" package)))))))
 
-;; See `package-build-version-regexp' in https://github.com/melpa/melpa/blob/c84e975e5cd3ff264a134e4608041947ef010f01/package-build/package-build.el#L250
 (defvar elpaca--tag-regexp
   "\\`\\(?:\\|[RVrv]\\|release[/-]v?\\)?\\(?1:[0-9]+\\(\\.[0-9]+\\)*\\)\\'")
 (defun elpaca-latest-tag (e)
