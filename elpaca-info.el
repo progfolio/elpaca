@@ -155,7 +155,9 @@
    with i =  "\n  "
    with sections =
    (list
-    (list nil (propertize (symbol-name id) 'face 'elpaca-info-package))
+    (list nil (propertize (symbol-name id) 'face `(,@(when-let ((status (elpaca--status e)))
+                                                       (list (alist-get status elpaca-status-faces)))
+                                                   elpaca-info-package)))
     (list nil (concat (and (cdr menus) (format  " [%s]" (string-join (elpaca-info--source-buttons menus) "|"))) "\n"))
     (list nil (concat (plist-get item :description) "\n"))
     (list "%s %s" "source:" (plist-get item :source))
