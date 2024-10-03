@@ -636,7 +636,7 @@ If ADVANCEP is non-nil, move `forward-line'."
 (defun elpaca-ui-send-input ()
   "Send input string to current process."
   (interactive)
-  (if-let ((id (get-text-property (point) 'tabulated-list-id))
+  (if-let ((id (car (get-text-property (point) 'tabulated-list-id)))
            (e (alist-get id (elpaca--queued)))
            (process (elpaca<-process e))
            ((process-live-p process)))
