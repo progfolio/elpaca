@@ -268,6 +268,7 @@ https://github.com/progfolio/elpaca
     (defun +exwm-edit ()
       "Edit EXWM input field."
       (interactive)
+      (require 'string-edit)
       (unless (derived-mode-p 'exwm-mode) (user-error "Buffer not in EXWM mode."))
       (with-current-buffer (if (minibufferp)
                                (window-buffer (minibuffer-selected-window))
