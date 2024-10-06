@@ -3405,7 +3405,7 @@ I use doom-modeline for the rest of my mode line configuration.
 ** typst-ts-mode
 #+begin_src emacs-lisp :lexical t
 (use-package typst-ts-mode
-  :ensure (:type git :host sourcehut :repo "meow_king/typst-ts-mode")
+  :ensure (:host codeberg :repo "meow_king/typst-ts-mode")
   :custom
   (typst-ts-mode-watch-options "--open")
   (typst-ts-mode-enable-raw-blocks-highlight t)
