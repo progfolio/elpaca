@@ -44,10 +44,10 @@
 
 (defun elpaca-info--menus (id)
   "Return alist of menus filtered for item matching ID."
-  (cl-loop with cache = (copy-tree elpaca--menu-cache)
-           for (fn . items) in (push (cons 'init-file (elpaca--custom-candidates t)) cache)
-           for found  = (cl-find id items :key #'car)
-           when found collect (cons fn found)))
+  (cl-loop for menu in elpaca-menu-functions
+           for index = (funcall menu 'index)
+           for found  = (cl-find id index :key #'car)
+           when found collect (cons menu found)))
 
 (defun elpaca-info--source-buttons (menus)
   "Return list of package source buttons from MENUS."
@@ -214,9 +214,12 @@
   "Return package info for ID from MENU.
 If INTERACTIVE is non-nil, display info in a dedicated buffer."
   (interactive (if-let* ((elpaca-overriding-prompt "Package info: ")
-                         (items (append (elpaca--custom-candidates t) (elpaca--flattened-menus)))
-                         (item (elpaca-menu-item t items)))
-                   (list (car item) (elpaca-item-menu item) t)))
+                        (item (elpaca-menu-item)))
+                   (list (car item)
+                         (car (cl-find (cdr item)
+                                       (cl-loop for menu in elpaca-menu-functions collect (cons menu (funcall menu 'index)))
+                                       :key #'cdr :test #'rassoc))
+                         t)))
   (let ((info (elpaca--info id menu)))
     (if (not interactive)
         (substring-no-properties info)

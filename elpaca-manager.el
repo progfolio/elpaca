@@ -34,30 +34,27 @@
   :type 'string :group 'elpaca-ui)
 
 (defun elpaca-manager--entries (&optional recache)
-  "Return list of all entries available in `elpaca-menu-functions' and init.
+  "Return list of all entries available in `elpaca-menu-functions'.
 If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
   (or (and (not recache) elpaca-manager--entry-cache)
-      (prog1 (setq elpaca-manager--entry-cache
-                   (cl-loop
-                    with queued = (elpaca--queued)
-                    with init = (elpaca--custom-candidates t)
-                    with try = (cl-set-difference (elpaca--custom-candidates) init :test #'equal)
-                    with menus = (append (list (cons 'init-file init))
-                                         (list (cons 'elpaca-try try))
-                                         (elpaca--menu-items (or (and recache 'recache) t)))
-                    for (menu . items) in menus append
-                    (cl-loop
-                     for (id . props) in items
-                     for date = (or (when-let* ((e (elpaca-alist-get id queued)))
-                                      (elpaca--commit-date e "%Y-%m-%d"))
-                                    (when-let* ((declared (plist-get props :date)))
-                                      (format-time-string "%F" declared)))
-                     collect
-                     (list (cons id menu)
-                           (vector (symbol-name id)
-                                   (or (plist-get props :description) "")
-                                   (or date "")
-                                   (propertize (or (plist-get props :source) "") 'menu menu))))))
+      (prog1
+          (setq elpaca-manager--entry-cache
+                (cl-loop with queued = (elpaca--queued)
+                         for menu in elpaca-menu-functions
+                         for items = (funcall menu 'index)
+                         append
+                         (cl-loop
+                          for (id . props) in items
+                          for date = (or (when-let* ((e (elpaca-alist-get id queued)))
+                                           (elpaca--commit-date e "%Y-%m-%d"))
+                                         (when-let* ((declared (plist-get props :date)))
+                                           (format-time-string "%F" declared)))
+                          collect
+                          (list (cons id menu)
+                                (vector (symbol-name id)
+                                        (or (plist-get props :description) "")
+                                        (or date "")
+                                        (propertize (or (plist-get props :source) "") 'menu menu))))))
         (when recache (message "Elpaca manager cache refreshed.")))))
 
 (define-derived-mode elpaca-manager-mode elpaca-ui-mode "elpaca-manager-mode"

@@ -180,7 +180,7 @@ This hook is run via `run-hook-with-args-until-success'."
 
 (defcustom elpaca-menu-functions
   '( elpaca-menu-extensions elpaca-menu-org elpaca-menu-melpa elpaca-menu-non-gnu-devel-elpa
-     elpaca-menu-gnu-devel-elpa elpaca-menu-non-gnu-elpa elpaca-menu-gnu-elpa )
+     elpaca-menu-gnu-devel-elpa elpaca-menu-non-gnu-elpa elpaca-menu-gnu-elpa elpaca-menu-declarations)
   "Abnormal hook to lookup packages in menus.
 Each function is passed a request, which may be any of the following symbols:
   - `index`
@@ -234,16 +234,6 @@ e.g. elisp forms may be printed via `prin1'."
          ,@body
          nil))))
 
-(defvar elpaca--cache-version 0.1 "Internal cache scheme version.")
-(defvar elpaca--menu-cache
-  (let* ((data (elpaca--read-file (expand-file-name "menu-items.eld" elpaca-cache-directory)))
-         (version (alist-get 'elpaca--cache-version data)))
-    (if (or (not version) (not (= version elpaca--cache-version)))
-        (and (message "Elpaca menu item cache discarded due to version change.") nil)
-      (setf (alist-get 'elpaca--cache-version data nil 'remove) nil)
-      data)) ;; Discard if cache version changed.
-  "Cache for menu candidates.")
-
 (cl-defstruct (elpaca-q (:constructor elpaca-q<-create)
                         (:type list) (:copier nil)
                         (:named) (:conc-name elpaca-q<-))
@@ -269,35 +259,6 @@ Values for each key are that of the right-most plist containing that key."
       (while current (setq plist (plist-put plist (pop current) (pop current)))))
     plist))
 
-(defun elpaca--write-menu-cache ()
-  "Write menu item cache to disk."
-  (unless (file-exists-p elpaca-cache-directory)
-    (make-directory elpaca-cache-directory))
-  (elpaca--write-file (expand-file-name "menu-items.eld" elpaca-cache-directory)
-    (let ((data elpaca--menu-cache))
-      (setf (alist-get 'elpaca--cache-version data) elpaca--cache-version)
-      (prin1 data))))
-
-(defsubst elpaca--flattened-menus ()
-  "Return list cached menu items from all caches."
-  (apply #'append (mapcar #'cdr (elpaca--menu-items t))))
-
-(defun elpaca--menu-items (&optional cache menus)
-  "Return alist of `elpaca-menu-functions' candidates from MENUS.
-CACHE may be any of the following symbols:
-  `t` Return cache or recompute if nil.  Ignore MENUS.
-  `nil` Recompute items, ignoring cache altogether.
-  `recache` Invalidate and recompute cache considering MENUS.
-See `elpaca-menu-functions' for valid values of MENUS."
-  (or (and (eq cache t) elpaca--menu-cache)
-      (let ((items (cl-loop for fn in (or menus elpaca-menu-functions)
-                            for index = (and (functionp fn) (funcall fn 'index))
-                            when index collect (cons fn index))))
-        (when cache
-          (setq elpaca--menu-cache items)
-          (elpaca--write-menu-cache))
-        items)))
-
 (defsubst elpaca-alist-get (key alist &optional default)
   "Return KEY's value in ALIST or DEFAULT.
 Simplified, faster version of `alist-get'."
@@ -312,35 +273,32 @@ Simplified, faster version of `alist-get'."
   (and e (car (last elpaca--queues (1+ (elpaca<-queue-id e))))))
 
 ;;;###autoload
-(defun elpaca-menu-item (id &optional items interactive)
-  "Return menu item matching ID in ITEMS or `elpaca-menu-functions' cache.
-If INTERACTIVE is non-nil or ID is t, prompt for item."
-  (interactive (list t nil t))
-  (let* ((items (or items (elpaca--flattened-menus)))
-         (item (if (or interactive (eq id t))
-                   (let* ((candidates (cl-loop for item in items collect
-                                               (cons (concat (symbol-name (car item))
-                                                             " "
-                                                             (plist-get (cdr item) :source))
-                                                     item)))
-                          (completion-extra-properties
-                           (list :annotation-function
-                                 (lambda (s)
-                                   (concat " " (plist-get (cdr (alist-get s candidates nil nil #'equal))
-                                                          :description)))))
-                          (choice (completing-read
-                                   (or elpaca-overriding-prompt "Menu Item: ")
-                                   candidates nil t)))
-                     (alist-get choice candidates nil nil #'equal))
-                 (assoc id items))))
+(defun elpaca-menu-item (&optional id interactive)
+  "Return menu item matching ID in `elpaca-menu-functions'.
+If ID is nil, prompt for item. If INTERACTIVE is non-nil, copy to `kill-ring'."
+  (interactive (list nil t))
+  (let ((item
+         (if id ;; Depth first search
+             (cl-loop for menu in elpaca-menu-functions
+                      for index = (funcall menu 'index)
+                      thereis (alist-get id index))
+           (cl-loop
+            for menu in elpaca-menu-functions
+            append (cl-loop for i in (funcall menu 'index) collect
+                            (cons (concat (symbol-name (car i)) " " (plist-get (cdr i) :source)) i))
+            into candidates
+            finally return
+            (let* ((completion-extra-properties
+                    (list :annotation-function
+                          (lambda (s)
+                            (concat " " (plist-get (cdr (alist-get s candidates nil nil #'equal))
+                                                   :description)))))
+                   (choice (completing-read (or elpaca-overriding-prompt "Menu Item: ") candidates nil t)))
+              (alist-get choice candidates nil nil #'equal))))))
     (when interactive
       (message "menu-item copied to kill-ring:\n%S" item)
       (kill-new (format "%S" item)))
     item))
-
-(defun elpaca-item-menu (item &optional menus)
-  "Return menu symbol associated with menu ITEM in MENUS or cache."
-  (car (cl-find (cdr item) (or menus elpaca--menu-cache) :key #'cdr :test #'rassoc)))
 
 ;;;###autoload
 (defun elpaca-update-menus (&rest menus)
@@ -351,8 +309,7 @@ When called interactively with \\[universal-argument] update all menus."
                  (mapcar #'intern (completing-read-multiple "Update Menus: "
                                                             elpaca-menu-functions))))
   (let ((elpaca-menu-functions (or menus elpaca-menu-functions)))
-    (run-hook-with-args 'elpaca-menu-functions 'update))
-  (elpaca--menu-items 'recache))
+    (run-hook-with-args 'elpaca-menu-functions 'update)))
 
 (defsubst elpaca--nonheritable-p (obj)
   "Return t if OBJ has explicitly nil :inherit key, nil otherwise."
@@ -360,21 +317,24 @@ When called interactively with \\[universal-argument] update all menus."
               (member (plist-member obj :inherit)))
     (not (cadr member))))
 
+(defun elpaca--order (&optional err)
+  "Prompt for order. User ERR is messaged when no order selected."
+  (if-let* ((elpaca-overriding-prompt (or elpaca-overriding-prompt "Order: "))
+            (item (elpaca-menu-item)))
+      (cons (car item) (plist-get (cdr item) :recipe))
+    (user-error (or err "No order selected"))))
+
 ;;;###autoload
-(defun elpaca-recipe (order &optional items interactive)
+(defun elpaca-recipe (&optional order interactive)
   "Return recipe computed from ORDER.
 ORDER is any of the following values:
   - nil.  The order is prompted for.
   - an ID symbol, looked up in ITEMS or `elpaca-menu-functions' cache.
   - an order list of the form: \\='(ID . PROPS).
 When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
-  (interactive (list (if-let* ((elpaca-overriding-prompt "Recipe: ")
-                               (item (elpaca-menu-item t (append (elpaca--custom-candidates t)
-                                                                 (elpaca--flattened-menus)))))
-                         (cons (car item) (plist-get (cdr item) :recipe))
-                       (user-error "No recipe selected"))
-                     nil t))
-  (let* ((id (elpaca--first order))
+  (interactive (list (elpaca--order) t))
+  (let* ((order (or order (elpaca--order)))
+         (id (elpaca--first order))
          (props (let ((it (cdr-safe order)))
                   (unless (zerop (logand (length it) 1))
                     (user-error "Uneven property list for order %S %s" id it))
@@ -383,16 +343,14 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
          (mods (unless nonheritable-p (run-hook-with-args-until-success
                                        'elpaca-order-functions order)))
          (inherit (plist-member props :inherit))
-         (item (unless (or interactive ;; we already queried for this.
-                           (elpaca--nonheritable-p (elpaca-merge-plists mods inherit)))
-                 (when-let* ((menus (cadr inherit))
-                             ((not (eq menus t))))
-                   (setq items (cl-loop for source in (if (listp menus) menus (list menus))
-                                        unless (memq source elpaca-menu-functions)
-                                        do (error "Unrecognized menu: %S" source)
-                                        append (alist-get source elpaca--menu-cache))))
-                 ;;@FIX: let-binding elpaca-menu-functions won't work here
-                 (cdr (elpaca-menu-item (or id t) items))))
+         (item (let ((elpaca-menu-functions
+                      (unless (or interactive ;; we already queried for this.
+                                  (elpaca--nonheritable-p (elpaca-merge-plists mods inherit)))
+                        (if-let* ((menus (cadr inherit))
+                                  ((not (eq menus t))))
+                            (if (listp menus) menus (list menus))
+                          elpaca-menu-functions))))
+                 (elpaca-menu-item id)))
          (item-recipe (plist-put (plist-get item :recipe) :source (plist-get item :source)))
          (r (elpaca-merge-plists item-recipe mods props)))
     (unless (plist-get r :package) (setq r (plist-put r :package (symbol-name id))))
@@ -1686,34 +1644,24 @@ See Info node `(elpaca) Basic Concepts'."
   "Try ORDER.
 Install the repo/build files on disk.
 Activate the corresponding package for the current session.
-ORDER's package is not made available during subsequent sessions.
+ORDER's package is not activated during subsequent sessions, but still on disk.
 When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
   (interactive
    (list (if (equal current-prefix-arg '(4))
              (minibuffer-with-setup-hook #'backward-char
                (read (read-string "elpaca-try: " "()" 'elpaca--try-package-history)))
-           (if-let* ((items (cl-remove-if #'elpaca-get (elpaca--flattened-menus) :key #'car))
-                     (item (elpaca-menu-item t items)))
+           (if-let* ((menus (cl-remove 'elpaca-menu-declarations elpaca-menu-functions))
+                     (elpaca-menu-functions (list (lambda (&rest _)
+                                                    (cl-loop for menu in menus append
+                                                             (cl-remove-if #'elpaca-get (funcall menu 'index) :key #'car)))))
+                     (item (elpaca-menu-item)))
                (cons (car item) (plist-get (cdr item) :recipe))
              (user-error "No menu item")))
          t))
   (if (not interactive)
       (elpaca--queue order)
     (elpaca--maybe-log)
-    (elpaca-queue
-     (eval `(elpaca ,order
-              ,(when-let* (((equal current-prefix-arg '(4)))
-                           ((listp order))
-                           (id (pop order)))
-                 ;;@TODO: implement as a proper menu function?
-                 ;;What would the semantics of an update be here?
-                 `(progn
-                    (setf (alist-get ',id (alist-get 'elpaca-try elpaca--menu-cache))
-                          (list :source "elpaca-try"
-                                :description "user-provided recipe"
-                                :recipe '(:package ,(symbol-name id) ,@order)))
-                    (elpaca--write-menu-cache))))
-           t))
+    (elpaca-queue (eval `(elpaca ,order) t))
     (elpaca--process-queue (nth 1 elpaca--queues)))
   nil)
 
@@ -2086,31 +2034,26 @@ When BUILD is non-nil visit build directory."
    (file-attributes (expand-file-name (concat (elpaca<-package e) ".el")
                                       (elpaca<-repo-dir e)))))
 
-(defun elpaca--custom-candidates (&optional notry)
-  "Return declared candidate list with no recipe in `elpaca-menu-functions'.
-If NOTRY is non-nil do not include `elpaca-try' recipes."
-  (cl-loop with seen
-           for (id . e) in (elpaca--queued)
-           for menu-item = (elpaca-menu-item id)
-           for tried = (equal (plist-get (cdr menu-item) :source) "elpaca-try")
-           unless (or (member id seen) (and menu-item (or (not tried) notry)))
-           collect (if tried menu-item
-                     (list id :source "Init file"
-                           :date (ignore-errors (elpaca--fallback-date e))
-                           :recipe (elpaca<-recipe e)
-                           :description "Not available in menu functions"))
-           do (push id seen)))
+(defun elpaca-menu-declarations (&rest _)
+  "Return menu items for orders with no recipe in `elpaca-menu-functions'.
+This should only ever be used as the last element of `elpaca-menu-functions'."
+  (cl-loop for (id . e) in (elpaca--queued)
+           with elpaca-menu-functions = (cl-remove 'elpaca-menu-declarations elpaca-menu-functions)
+           when (not (elpaca-menu-item id))
+           collect (list id :source (if (elpaca<-init e) "Init file" "User Declaration")
+                         :date (ignore-errors (elpaca--fallback-date e))
+                         :recipe (elpaca<-recipe e)
+                         :description "Not available in menu functions")))
 
 ;;;###autoload
 (defun elpaca-browse (id)
   "Browse menu item with ID's :url." ;;@Doc: we also fall back to recipe :url
   (interactive (list (let* ((elpaca-overriding-prompt "Browse package: ")
-                            (recipe (elpaca-recipe nil (append (elpaca--custom-candidates)
-                                                               (elpaca--flattened-menus)))))
+                            ;;@TODO: include init file packages
+                            (recipe (elpaca-recipe)))
                        (intern (plist-get recipe :package)))))
   (if-let* ((found (or (elpaca-get id)
-                       (alist-get id (elpaca--flattened-menus))
-                       (alist-get id (elpaca--custom-candidates))))
+                       (alist-get id (cl-loop for menu in elpaca-menu-functions append (funcall menu 'index)))))
             (url (or (plist-get found :url)
                      (file-name-sans-extension
                       (elpaca--repo-uri (elpaca-merge-plists
