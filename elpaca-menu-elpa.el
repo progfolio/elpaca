@@ -133,38 +133,39 @@
   (unless (file-exists-p elpaca-cache-directory) (make-directory elpaca-cache-directory))
   (elpaca--write-file (alist-get 'cache-path elpa) (prin1 (alist-get 'cache elpa))))
 
-(defun elpaca-menu--elpa (elpa request &optional recurse)
+(defun elpaca-menu--elpa (elpa request &optional item recurse)
   "Delegate REQUEST for ELPA.
 If REQUEST is `index`, return a recipe candidate alist.
 If REQUEST is `update`, update the NonGNU ELPA recipe cache.
 If RECURSE is non-nil, message that update succeeded."
   (cond ((eq request 'index)
-         (or (alist-get 'cache elpa)
-             (prog1
-                 (setf (alist-get 'cache elpa) (elpaca-menu-elpa--index elpa))
-               (elpaca-menu-elpa--write-cache elpa)
-               (when recurse (message "Downloading %s...100%%" (alist-get 'name elpa))))))
+         (let ((cache (or (alist-get 'cache elpa)
+                          (prog1
+                              (setf (alist-get 'cache elpa) (elpaca-menu-elpa--index elpa))
+                            (elpaca-menu-elpa--write-cache elpa)
+                            (when recurse (message "Downloading %s...100%%" (alist-get 'name elpa)))))))
+           (if item (elpaca-alist-get item cache) cache)))
         ((eq request 'update)
          (delete-file (alist-get 'cache-path elpa))
          (setf (alist-get 'cache elpa) nil (alist-get 'metadata-cache elpa) nil)
          (elpaca-menu--elpa elpa 'index 'recurse))))
 
 ;;;###autoload
-(defun elpaca-menu-gnu-elpa (request)
-  "Fulfill GNU ELPA menu `index` or `update` REQUEST."
-  (elpaca-menu--elpa (alist-get 'gnu elpaca-menu-elpas) request))
+(defun elpaca-menu-gnu-elpa (request &optional item)
+  "Fulfill GNU ELPA menu `index` or `update` ITEM REQUEST."
+  (elpaca-menu--elpa (alist-get 'gnu elpaca-menu-elpas) request item))
 ;;;###autoload
-(defun elpaca-menu-gnu-devel-elpa (request)
-  "Fulfill GNU ELPA-devel menu `index` or `update` REQUEST."
-  (elpaca-menu--elpa (alist-get 'gnu-devel elpaca-menu-elpas) request))
+(defun elpaca-menu-gnu-devel-elpa (request &optional item)
+  "Fulfill GNU ELPA-devel menu `index` or `update` ITEM REQUEST."
+  (elpaca-menu--elpa (alist-get 'gnu-devel elpaca-menu-elpas) request item))
 ;;;###autoload
-(defun elpaca-menu-non-gnu-elpa (request)
-  "Fulfill menu NonGNU ELPA `index` or `update` REQUEST."
-  (elpaca-menu--elpa (alist-get 'nongnu elpaca-menu-elpas) request))
+(defun elpaca-menu-non-gnu-elpa (request &optional item)
+  "Fulfill menu NonGNU ELPA `index` or `update` ITEM REQUEST."
+  (elpaca-menu--elpa (alist-get 'nongnu elpaca-menu-elpas) request item))
 ;;;###autoload
-(defun elpaca-menu-non-gnu-devel-elpa (request)
-  "Fulfill menu NonGNU ELPA-devel `index` or `update` REQUEST."
-  (elpaca-menu--elpa (alist-get 'nongnu-devel elpaca-menu-elpas) request))
+(defun elpaca-menu-non-gnu-devel-elpa (request &optional item)
+  "Fulfill menu NonGNU ELPA-devel `index` or `update` ITEM REQUEST."
+  (elpaca-menu--elpa (alist-get 'nongnu-devel elpaca-menu-elpas) request item))
 
 (provide 'elpaca-menu-elpa)
 ;;; elpaca-menu-elpa.el ends here

@@ -164,19 +164,27 @@ The function may return nil or a plist to be merged with the recipe.
 This hook is run via `run-hook-with-args-until-success'."
   :type 'hook)
 
+(defsubst elpaca-alist-get (key alist &optional default)
+  "Return KEY's value in ALIST or DEFAULT.
+Simplified, faster version of `alist-get'."
+  (or (cdr (assq key alist)) default))
+
 (defvar elpaca-menu-extensions--cache nil "Cache for `elpaca-menu-extenions' items.")
-(defun elpaca-menu-extensions (request)
-  "Return menu item REQUEST."
-  (or (and (eq request 'index) elpaca-menu-extensions--cache)
-      (setq elpaca-menu-extensions--cache
-            (list (cons 'elpaca-use-package
-                        (list :source "Elpaca extensions"
-                              :description "Elpaca use-package support."
-                              :recipe (list :package "elpaca-use-package" :wait t
-                                            :repo "https://github.com/progfolio/elpaca.git"
-                                            :files '("extensions/elpaca-use-package.el")
-                                            :main "extensions/elpaca-use-package.el"
-                                            :build '(:not elpaca--compile-info))))))))
+(defun elpaca-menu-extensions (request &optional item)
+  "Return menu ITEM REQUEST."
+  (if-let* (((eq request 'index))
+            (cache (or elpaca-menu-extensions--cache (elpaca-menu-extensions 'update))))
+      (if item (elpaca-alist-get item cache) cache)
+    (setq elpaca-menu-extensions--cache
+          (list (cons 'elpaca-use-package
+                      (list :source "Elpaca extensions"
+                            :description "Elpaca use-package support."
+                            :recipe (list :package "elpaca-use-package" :wait t
+                                          :repo "https://github.com/progfolio/elpaca.git"
+                                          :files '("extensions/elpaca-use-package.el")
+                                          :main "extensions/elpaca-use-package.el"
+                                          :build '(:not elpaca--compile-info))))))
+    nil))
 
 (defcustom elpaca-menu-functions
   '( elpaca-menu-extensions elpaca-menu-org elpaca-menu-melpa elpaca-menu-non-gnu-devel-elpa
@@ -188,7 +196,9 @@ Each function is passed a request, which may be any of the following symbols:
      Each candidate is a cell of form:
      (PACKAGE-NAME . (:source SOURCE-NAME :recipe RECIPE-PLIST))
   - `update`
-     Updates the menu's package candidate list."
+     Updates the menu's package candidate list.
+Each function must also accept an optional ITEM as a second argument."
+  ;;@TODO: document ITEM spec requirements
   :type 'hook)
 
 (defcustom elpaca-verbosity 0 "Maximum event verbosity level shown in logs."
@@ -259,11 +269,6 @@ Values for each key are that of the right-most plist containing that key."
       (while current (setq plist (plist-put plist (pop current) (pop current)))))
     plist))
 
-(defsubst elpaca-alist-get (key alist &optional default)
-  "Return KEY's value in ALIST or DEFAULT.
-Simplified, faster version of `alist-get'."
-  (or (cdr (assq key alist)) default))
-
 (defsubst elpaca--first (obj)
   "Return `car' of OBJ if it is a list, else OBJ."
   (if (listp obj) (car obj) obj))
@@ -278,10 +283,7 @@ Simplified, faster version of `alist-get'."
 If ID is nil, prompt for item. If INTERACTIVE is non-nil, copy to `kill-ring'."
   (interactive (list nil t))
   (let ((item
-         (if id ;; Depth first search
-             (cl-loop for menu in elpaca-menu-functions
-                      for index = (funcall menu 'index)
-                      thereis (alist-get id index))
+         (if id (run-hook-with-args-until-success 'elpaca-menu-functions 'index id) ;; Depth first search
            (cl-loop
             for menu in elpaca-menu-functions
             append (cl-loop for i in (funcall menu 'index) collect
@@ -2034,16 +2036,18 @@ When BUILD is non-nil visit build directory."
    (file-attributes (expand-file-name (concat (elpaca<-package e) ".el")
                                       (elpaca<-repo-dir e)))))
 
-(defun elpaca-menu-declarations (&rest _)
-  "Return menu items for orders with no recipe in `elpaca-menu-functions'.
+(defun elpaca-menu-declarations (request &optional item)
+  "Return menu ITEM REQUEST for orders with no recipe in `elpaca-menu-functions'.
 This should only ever be used as the last element of `elpaca-menu-functions'."
-  (cl-loop for (id . e) in (elpaca--queued)
-           with elpaca-menu-functions = (cl-remove 'elpaca-menu-declarations elpaca-menu-functions)
-           when (not (elpaca-menu-item id))
-           collect (list id :source (if (elpaca<-init e) "Init file" "User Declaration")
-                         :date (ignore-errors (elpaca--fallback-date e))
-                         :recipe (elpaca<-recipe e)
-                         :description "Not available in menu functions")))
+  (when (and after-init-time (eq request 'index))
+    (cl-loop for (id . e) in (elpaca--queued)
+             with elpaca-menu-functions = (cl-remove 'elpaca-menu-declarations elpaca-menu-functions)
+             when (not (elpaca-menu-item id))
+             collect (list id :source (if (elpaca<-init e) "Init file" "User Declaration")
+                           :date (ignore-errors (elpaca--fallback-date e))
+                           :recipe (elpaca<-recipe e)
+                           :description (concat "Declared " (if (elpaca<-init e) "in Init file" "by user")))
+             into items finally return (if item (elpaca-alist-get item items) items))))
 
 ;;;###autoload
 (defun elpaca-browse (id)
