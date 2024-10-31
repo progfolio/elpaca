@@ -106,8 +106,8 @@
        do (push (format " %s %S" prop
                         (if (equal val elpaca-default-files-directive) '(:defaults) val))
                 (alist-get (cl-loop for source in sources thereis
-                                    (when-let ((member (plist-member (cdr source) prop))
-                                               ((equal (cadr member) val)))
+                                    (when-let* ((member (plist-member (cdr source) prop))
+                                                ((equal (cadr member) val)))
                                       (car source)))
                            lookup))
        finally return
@@ -155,26 +155,26 @@
    with i =  "\n  "
    with sections =
    (list
-    (list nil (propertize (symbol-name id) 'face `(,@(when-let ((status (elpaca--status e)))
+    (list nil (propertize (symbol-name id) 'face `(,@(when-let* ((status (elpaca--status e)))
                                                        (list (alist-get status elpaca-status-faces)))
                                                    elpaca-info-package)))
     (list nil (concat (and (cdr menus) (format  " [%s]" (string-join (elpaca-info--source-buttons menus) "|"))) "\n"))
     (list nil (concat (plist-get item :description) "\n"))
     (list "%s %s" "source:" (plist-get item :source))
-    (when-let ((url (plist-get item :url)))
+    (when-let* ((url (plist-get item :url)))
       (list "%s %s" "url:" (elpaca-ui--buttonize url #'browse-url url)))
     (unless (equal (plist-get item :source) "Init file")
       (list "%s\n%s" "menu item recipe:"
             (elpaca-info--format-recipe (format "%S" (plist-get item :recipe)))))
     (list "%s\n%s" "full recipe:" (elpaca-info--recipe item))
-    (when-let ((e) (pinned (elpaca--pinned-p e)))
-      (list "%s %s" "pinned:" (if-let ((pinner (car pinned))
-                                       ((not (eq pinner (elpaca<-id e)))))
+    (when-let* ((e) (pinned (elpaca--pinned-p e)))
+      (list "%s %s" "pinned:" (if-let* ((pinner (car pinned))
+                                        ((not (eq pinner (elpaca<-id e)))))
                                   (format "implicitly by mono-repo sibling %s"
                                           (elpaca-info--button pinner))
                                 (format "%s %s" (cadr pinned) (cddr pinned)))))
     (list "%s\n%s" "dependencies:"
-          (if-let ((deps (ignore-errors (elpaca--dependencies (elpaca-get id) t))))
+          (if-let* ((deps (ignore-errors (elpaca--dependencies (elpaca-get id) t))))
               (cl-loop
                with max = (cl-loop for (id . _) in deps maximize (length (symbol-name id)))
                with last = (caar (last deps))
@@ -185,22 +185,22 @@
             (if on-disk-p "nil" (if (memq item (cl-set-difference elpaca-ignored-dependencies '(emacs elpaca)))
                                     "built-in" "?"))))
     (list "%s %s" "dependents:"
-          (if-let ((ds (remq 'emacs (elpaca--dependents id 'noerror))))
+          (if-let* ((ds (remq 'emacs (elpaca--dependents id 'noerror))))
               (concat i (mapconcat #'elpaca-info--button (cl-sort ds #'string<) i))
             (if on-disk-p "nil" "?")))
-    (when-let ((version (if-let ((e)
-                                 (default-directory (elpaca<-repo-dir e))
-                                 (v (ignore-errors (or (elpaca--declared-version e) (elpaca-latest-tag e)))))
-                            (concat (string-trim v) " "
-                                    (ignore-errors
-                                      (string-trim (elpaca-process-output "git" "rev-parse" "--short" "HEAD"))))
-                          (when-let ((builtin (alist-get id package--builtin-versions)))
-                            (concat (mapconcat #'number-to-string builtin ".") " (builtin)")))))
+    (when-let* ((version (if-let* ((e)
+                                   (default-directory (elpaca<-repo-dir e))
+                                   (v (ignore-errors (or (elpaca--declared-version e) (elpaca-latest-tag e)))))
+                             (concat (string-trim v) " "
+                                     (ignore-errors
+                                       (string-trim (elpaca-process-output "git" "rev-parse" "--short" "HEAD"))))
+                           (when-let* ((builtin (alist-get id package--builtin-versions)))
+                             (concat (mapconcat #'number-to-string builtin ".") " (builtin)")))))
       (list "%s %s" "installed version:" version))
-    (when-let ((e) (statuses (elpaca<-statuses e))) (list "%s\n  %S" "statuses:" statuses))
-    (when-let ((e) (files (ignore-errors (elpaca--files e))))
+    (when-let* ((e) (statuses (elpaca<-statuses e))) (list "%s\n  %S" "statuses:" statuses))
+    (when-let* ((e) (files (ignore-errors (elpaca--files e))))
       (list "%s\n  %s" "files:" (string-join (elpaca-info--files files) i)))
-    (when-let ((e) (log (elpaca<-log e)))
+    (when-let* ((e) (log (elpaca<-log e)))
       (list "%s\n%s" "log:"
             (cl-loop for (_ time info _) in (reverse log) concat
                      (format "  %s %s\n" (propertize (format "[%s]" (format-time-string "%F %T" time))
@@ -213,9 +213,9 @@
 (defun elpaca-info (id &optional menu interactive)
   "Return package info for ID from MENU.
 If INTERACTIVE is non-nil, display info in a dedicated buffer."
-  (interactive (if-let ((elpaca-overriding-prompt "Package info: ")
-                        (items (append (elpaca--custom-candidates t) (elpaca--flattened-menus)))
-                        (item (elpaca-menu-item t items)))
+  (interactive (if-let* ((elpaca-overriding-prompt "Package info: ")
+                         (items (append (elpaca--custom-candidates t) (elpaca--flattened-menus)))
+                         (item (elpaca-menu-item t items)))
                    (list (car item) (elpaca-item-menu item) t)))
   (let ((info (elpaca--info id menu)))
     (if (not interactive)

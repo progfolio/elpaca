@@ -70,8 +70,8 @@
       (when (libxml-available-p)
         (require 'dom)
         (with-current-buffer (url-retrieve-synchronously (alist-get 'metadata-url elpa) t)
-          (when-let ((html (libxml-parse-html-region (point-min) (point-max)))
-                     (rows (dom-by-tag html 'tr)))
+          (when-let* ((html (libxml-parse-html-region (point-min) (point-max)))
+                      (rows (dom-by-tag html 'tr)))
             (pop rows) ;discard table headers
             (setf (alist-get 'metadata-cache elpa)
                   (mapcar (lambda (row)
@@ -102,21 +102,21 @@
    (setq core (mapcar (lambda (f) (if (equal f (file-name-as-directory f)) (concat f "*") f))
                       (if (listp core) core (list core))))
    for item =
-   (when-let
+   (when-let*
        (((or core (if releasep (plist-get props :release-branch) t)))
         (name (symbol-name id))
         (url (or (and core elpaca-menu-elpa-emacs-url)
                  (and (plist-get props :manual-sync) remote) ;; developed in ELPA repo
-                 (if-let ((declared (plist-get props :url))
-                          ;;Why does ELPA keep the :url when upstream is gone?
-                          ((not (or releasep (string-match-p elpaca-menu-elpa-ignored-url-regexp declared)))))
+                 (if-let* ((declared (plist-get props :url))
+                           ;;Why does ELPA keep the :url when upstream is gone?
+                           ((not (or releasep (string-match-p elpaca-menu-elpa-ignored-url-regexp declared)))))
                      declared
                    remote)))
         (recipe `( :package ,name :repo (,url . ,name)
                    ,@(or (and (or core (eq url remote))
                               `(:branch
                                 ,(if core "master" (concat branch-prefix (when releasep "-release") "/" name))))
-                         (when-let ((branch (plist-get props :branch))) `(:branch ,branch)))
+                         (when-let* ((branch (plist-get props :branch))) `(:branch ,branch)))
                    ,@(let ((ignored (plist-get props :ignored-files)))
                        ;;@TODO: support :core ((file new-name)...) format
                        `(:files (,@(or core '("*")) ; ("*" :exclude ".git") is what package/straight.el default to.

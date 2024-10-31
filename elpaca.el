@@ -197,7 +197,7 @@ Each function is passed a request, which may be any of the following symbols:
 
 ;;@COMPAT @HACK:
 ;;Transient not in `package--builtin-versions' from addition in 28.1 until Emacs 30.
-(when-let  (((< 27 emacs-major-version 30))
+(when-let* (((< 27 emacs-major-version 30))
             (transient-versions '(("28.1" . (0 3 7)) ("28.2" . (0 3 7))
                                   ("29.1" . (0 4 1)) ("29.2" . (0 4 3))
                                   ("29.3" . (0 4 3)) ("29.4" . (0 4 3)))))
@@ -212,8 +212,8 @@ Each function is passed a request, which may be any of the following symbols:
 
 (defun elpaca--read-file (path)
   "Read file at PATH into memory."
-  (when-let (((file-exists-p path))
-             (dir default-directory))
+  (when-let* (((file-exists-p path))
+              (dir default-directory))
     (condition-case-unless-debug err
         (with-current-buffer (get-buffer-create " elpaca--read-file")
           (setq default-directory dir)
@@ -356,8 +356,8 @@ When called interactively with \\[universal-argument] update all menus."
 
 (defsubst elpaca--nonheritable-p (obj)
   "Return t if OBJ has explicitly nil :inherit key, nil otherwise."
-  (when-let (((listp obj))
-             (member (plist-member obj :inherit)))
+  (when-let* (((listp obj))
+              (member (plist-member obj :inherit)))
     (not (cadr member))))
 
 ;;;###autoload
@@ -368,9 +368,9 @@ ORDER is any of the following values:
   - an ID symbol, looked up in ITEMS or `elpaca-menu-functions' cache.
   - an order list of the form: \\='(ID . PROPS).
 When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
-  (interactive (list (if-let ((elpaca-overriding-prompt "Recipe: ")
-                              (item (elpaca-menu-item t (append (elpaca--custom-candidates t)
-                                                                (elpaca--flattened-menus)))))
+  (interactive (list (if-let* ((elpaca-overriding-prompt "Recipe: ")
+                               (item (elpaca-menu-item t (append (elpaca--custom-candidates t)
+                                                                 (elpaca--flattened-menus)))))
                          (cons (car item) (plist-get (cdr item) :recipe))
                        (user-error "No recipe selected"))
                      nil t))
@@ -385,8 +385,8 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
          (inherit (plist-member props :inherit))
          (item (unless (or interactive ;; we already queried for this.
                            (elpaca--nonheritable-p (elpaca-merge-plists mods inherit)))
-                 (when-let ((menus (cadr inherit))
-                            ((not (eq menus t))))
+                 (when-let* ((menus (cadr inherit))
+                             ((not (eq menus t))))
                    (setq items (cl-loop for source in (if (listp menus) menus (list menus))
                                         unless (memq source elpaca-menu-functions)
                                         do (error "Unrecognized menu: %S" source)
@@ -396,10 +396,10 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
          (item-recipe (plist-put (plist-get item :recipe) :source (plist-get item :source)))
          (r (elpaca-merge-plists item-recipe mods props)))
     (unless (plist-get r :package) (setq r (plist-put r :package (symbol-name id))))
-    (when-let ((recipe-mods (run-hook-with-args-until-success 'elpaca-recipe-functions r)))
+    (when-let* ((recipe-mods (run-hook-with-args-until-success 'elpaca-recipe-functions r)))
       (setq r (elpaca-merge-plists r recipe-mods)))
-    (when-let ((remotes (plist-get r :remotes)) ;; Normalize :remotes to list of specs
-               ((not (ignore-errors (mapc #'length remotes)))))
+    (when-let* ((remotes (plist-get r :remotes)) ;; Normalize :remotes to list of specs
+                ((not (ignore-errors (mapc #'length remotes)))))
       (setq r (plist-put r :remotes (list remotes))))
     (when interactive
       (setq r (elpaca-merge-plists (append (list :package (symbol-name (car-safe id)))
@@ -447,7 +447,7 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
          (dirs (and (not mono-repo) (mapcar #'cdr elpaca--repo-dirs)))
          (name (cond
                 (local
-                 (if-let ((owner (assoc local dirs)))
+                 (if-let* ((owner (assoc local dirs)))
                      (error "Local repo %S owned by %s" local (cdr owner))
                    local))
                 (mono-repo (car mono-repo))
@@ -455,8 +455,8 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
                  (unless (featurep 'url-parse) (require 'url-parse))
                  (file-name-base (directory-file-name (url-filename
                                                        (url-generic-parse-url url)))))
-                (repo (if-let ((r (or remote repo))
-                               ((eq (elpaca--repo-type r) 'local)))
+                (repo (if-let* ((r (or remote repo))
+                                ((eq (elpaca--repo-type r) 'local)))
                           (file-name-base (directory-file-name (or local r)))
                         (when host (setq user (elpaca--repo-user r)))
                         (elpaca--repo-name (or local r))))
@@ -526,14 +526,14 @@ If N is nil return a list of all queued elpacas."
 (defun elpaca--build-steps (recipe &optional builtp clonedp mono-repo)
   "Return list of build functions for RECIPE.
 BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
-  (when-let ((defaults (if builtp elpaca--pre-built-steps elpaca-build-steps))
-             (steps (let* ((build (plist-member recipe :build))
-                           (steps (cadr build))
-                           (removep (and (eq (car-safe steps) :not) (pop steps))))
-                      (cond
-                       ((or (not build) (eq steps t)) defaults)
-                       (removep (cl-set-difference defaults steps))
-                       ((listp steps) steps)))))
+  (when-let* ((defaults (if builtp elpaca--pre-built-steps elpaca-build-steps))
+              (steps (let* ((build (plist-member recipe :build))
+                            (steps (cadr build))
+                            (removep (and (eq (car-safe steps) :not) (pop steps))))
+                       (cond
+                        ((or (not build) (eq steps t)) defaults)
+                        (removep (cl-set-difference defaults steps))
+                        ((listp steps) steps)))))
     (if builtp
         steps
       (when mono-repo
@@ -558,7 +558,7 @@ The first function, if any, which returns non-nil is used." :type 'hook)
 (declare-function elpaca-log "elpaca-log")
 (defun elpaca--maybe-log ()
   "Log if `elpaca-log-functions' return non-nil."
-  (when-let ((query (run-hook-with-args-until-success 'elpaca-log-functions)))
+  (when-let* ((query (run-hook-with-args-until-success 'elpaca-log-functions)))
     (require 'elpaca-log)
     (unless (eq query 'silent)
       (setq elpaca--log-request-time (current-time)) ;;@MAYBE: move into elpaca-log?
@@ -584,8 +584,8 @@ The first function, if any, which returns non-nil is used." :type 'hook)
          (clonedp (and repo-dir (file-exists-p repo-dir)))
          (builtp (and clonedp build-dir (file-exists-p build-dir)))
          (blockers nil)
-         (mono-repo (when-let (((not builtp))
-                               (e (elpaca--mono-repo id repo-dir)))
+         (mono-repo (when-let* (((not builtp))
+                                (e (elpaca--mono-repo id repo-dir)))
                       (when (and (eq (elpaca<-queue-id e) (elpaca-q<-id (car elpaca--queues)))
                                  (not (memq 'ref-checked-out (elpaca<-statuses e))))
                         (setq status 'blocked info (concat "Waiting on monorepo " repo-dir))
@@ -606,8 +606,8 @@ The first function, if any, which returns non-nil is used." :type 'hook)
 (declare-function elpaca-ui--update-search-query "elpaca-ui")
 (defun elpaca--update-log-buffer ()
   "Update views in `elpaca-log-buffer'."
-  (when-let ((log (bound-and-true-p elpaca-log-buffer))
-             ((get-buffer-window log t))) ;; log buffer visible
+  (when-let* ((log (bound-and-true-p elpaca-log-buffer))
+              ((get-buffer-window log t))) ;; log buffer visible
     (with-current-buffer log (elpaca-ui--update-search-query log))))
 
 (defun elpaca--log (e text &optional verbosity replace)
@@ -639,9 +639,9 @@ If STATUS is non-nil and is not E's current STATUS, signal E's dependents to
 check (and possibly change) their statuses."
   (let* ((new-status-p (and status (not (eq status (elpaca--status e)))))
          (queued (and new-status-p (elpaca--queued))))
-    (when-let ((new-status-p)
-               ((push status (elpaca<-statuses e)))
-               ((memq status elpaca--inactive-states)))
+    (when-let* ((new-status-p)
+                ((push status (elpaca<-statuses e)))
+                ((memq status elpaca--inactive-states)))
       (setq elpaca--status-counts (elpaca--count-statuses))
       (dolist (blocked (elpaca<-blocking e))
         (elpaca--check-status e (elpaca-alist-get blocked queued)))
@@ -662,8 +662,8 @@ check (and possibly change) their statuses."
   (unless (eq (elpaca--status e) 'failed)
     (let ((q (elpaca--q e)))
       (setf (elpaca-q<-forms q) (assq-delete-all (elpaca<-id e) (elpaca-q<-forms q))))
-    (when-let ((p (elpaca<-process e)))
-      (when-let ((entry (car (last (elpaca<-log e) (process-get p :loglen)))))
+    (when-let* ((p (elpaca<-process e)))
+      (when-let* ((entry (car (last (elpaca<-log e) (process-get p :loglen)))))
         (setf (nth 2 entry) (propertize (nth 2 entry) 'face 'elpaca-failed)))
       (when (process-live-p p) (kill-process p)))
     (push 'reclone (elpaca<-statuses e)) ;;@HACK: Prevent reclone when legitimate failure during clone.
@@ -699,20 +699,20 @@ Optional ARGS are passed to `elpaca--signal', which see."
                   nil nil 2)
   (when args (apply #'elpaca--signal e args))
   (unless (memq (elpaca--status e) elpaca--inactive-states)
-    (if-let ((elpaca-queue-limit)
-             ((not (elpaca<-builtp e)))
-             ;; Don't double count current E
-             (active (1- (cl-loop for (_ . e) in (elpaca-q<-elpacas (elpaca--q e))
-                                  count (not (memq (elpaca--status e) elpaca--inactive-states)))))
-             ((>= active elpaca-queue-limit)))
+    (if-let* ((elpaca-queue-limit)
+              ((not (elpaca<-builtp e)))
+              ;; Don't double count current E
+              (active (1- (cl-loop for (_ . e) in (elpaca-q<-elpacas (elpaca--q e))
+                                   count (not (memq (elpaca--status e) elpaca--inactive-states)))))
+              ((>= active elpaca-queue-limit)))
         (unless (eq (elpaca--status e) 'blocked) ;;@MAYBE: check for queue-throttled, too?
           (push 'queue-throttled (elpaca<-statuses e))
           (elpaca--signal e "elpaca-queue-limit exceeded" 'blocked nil 1))
       (let ((step (or (pop (elpaca<-build-steps e)) #'elpaca--finalize)))
         (condition-case-unless-debug err ;;@TODO: signal/catch custom error types
-            (if-let ((vars (plist-get (elpaca<-recipe e) :vars))
-                     (fn `(lambda (elpaca elpaca-build-step)
-                            (let* (,@vars) (funcall elpaca-build-step elpaca)))))
+            (if-let* ((vars (plist-get (elpaca<-recipe e) :vars))
+                      (fn `(lambda (elpaca elpaca-build-step)
+                             (let* (,@vars) (funcall elpaca-build-step elpaca)))))
                 (funcall fn e step)
               (funcall step e))
           ((error) (elpaca--fail e (format "%s: %S" step err))))))))
@@ -723,11 +723,11 @@ Optional ARGS are passed to `elpaca--signal', which see."
 
 (defun elpaca--queue (order &optional queue)
   "ADD ORDER to QUEUE or current queue.  Return E."
-  (if-let ((id (elpaca--first (or order (signal 'wrong-type-argument
-                                                '((or symbolp listp) nil)))))
-           ((not after-init-time))
-           (e (elpaca-get id)))
-      (if-let ((dependents (elpaca<-dependents e)))
+  (if-let* ((id (elpaca--first (or order (signal 'wrong-type-argument
+                                                 '((or symbolp listp) nil)))))
+            ((not after-init-time))
+            (e (elpaca-get id)))
+      (if-let* ((dependents (elpaca<-dependents e)))
           (warn "%S previously queued as dependency of: %S" id dependents)
         (warn "Duplicate item ID queued: %S" id))
     (let* ((e (elpaca<-create order))
@@ -762,12 +762,12 @@ Optional ARGS are passed to `elpaca--signal', which see."
 - load cached autoloads
 - evaluate deferred package configuration forms
 - possibly run `elpaca-after-init-hook'."
-  (when-let ((autoloads (elpaca-q<-autoloads q)))
+  (when-let* ((autoloads (elpaca-q<-autoloads q)))
     (condition-case-unless-debug err
         (eval `(progn ,@(reverse autoloads)) t)
       ((error) (warn "Autoload Error: %S" err))))
   (setf (elpaca-q<-status q) 'complete) ; Avoid loop when forms call elpaca-process-queue.
-  (when-let ((forms (nreverse (elpaca-q<-forms q))))
+  (when-let* ((forms (nreverse (elpaca-q<-forms q))))
     (with-current-buffer (get-buffer-create " *elpaca--finalize-queue*")
       (setq-local lexical-binding t)
       (cl-loop for (id . body) in forms
@@ -801,16 +801,16 @@ Optional ARGS are passed to `elpaca--signal', which see."
      'finished))
   (let* ((q (elpaca--q e))
          (es (elpaca-q<-elpacas q)))
-    (when-let ((elpaca-queue-limit)
-               (next (cl-loop for (_ . e) in es thereis (and (elpaca--throttled-p e) e))))
+    (when-let* ((elpaca-queue-limit)
+                (next (cl-loop for (_ . e) in es thereis (and (elpaca--throttled-p e) e))))
       (elpaca--signal next nil 'unthrottled)
       (elpaca--continue-build next))
     (when (= (cl-incf (elpaca-q<-processed q)) (length es)) (elpaca--finalize-queue q))))
 
 (defun elpaca--propertize-subprocess (process)
   "Propertize PROCESS according to exit status in associated E."
-  (when-let ((e (process-get process :elpaca))
-             (entry (car (last (elpaca<-log e) (process-get process :loglen)))))
+  (when-let* ((e (process-get process :elpaca))
+              (entry (car (last (elpaca<-log e) (process-get process :loglen)))))
     (setf (nth 2 entry) (propertize (nth 2 entry) 'face
                                     (if (zerop (process-exit-status process))
                                         'elpaca-finished 'elpaca-failed)))))
@@ -825,8 +825,8 @@ Optional ARGS are passed to `elpaca--signal', which see."
     (elpaca--signal e (propertize (elpaca--command-string command)
                                   'face (if success 'elpaca-finished 'elpaca-failed))
                     nil nil verbosity)
-    (when-let ((output (string-trim (concat stdout stderr)))
-               ((not (string-empty-p output))))
+    (when-let* ((output (string-trim (concat stdout stderr)))
+                ((not (string-empty-p output))))
       (elpaca--signal e output nil nil verbosity))
     result))
 
@@ -837,8 +837,8 @@ Optional ARGS are passed to `elpaca--signal', which see."
     (setf recipe (elpaca-merge-plists recipe '(:remotes nil)))
     (cl-loop for remote in remotes
              for opts = (elpaca-merge-plists recipe (cdr-safe remote))
-             for command = `("git" "fetch" ,@(when-let ((depth (plist-get opts :depth))
-                                                        ((numberp depth)))
+             for command = `("git" "fetch" ,@(when-let* ((depth (plist-get opts :depth))
+                                                         ((numberp depth)))
                                                (list "--depth" (format "%s" depth)))
                              ,(or (car-safe remote) remote))
              for fn = (apply-partially (lambda (command e) (apply #'elpaca--fetch e command))
@@ -849,9 +849,9 @@ Optional ARGS are passed to `elpaca--signal', which see."
 (defun elpaca--configure-remotes (e)
   "Add and/or rename E's repo remotes."
   (let ((fetchp nil))
-    (when-let ((default-directory (elpaca<-repo-dir e))
-               (recipe            (elpaca<-recipe   e))
-               (remotes           (plist-get recipe :remotes)))
+    (when-let* ((default-directory (elpaca<-repo-dir e))
+                (recipe            (elpaca<-recipe   e))
+                (remotes           (plist-get recipe :remotes)))
       (elpaca--signal e "Configuring Remotes" 'adding-remotes)
       (cl-loop with renamed for spec in remotes do
                (if (stringp spec)
@@ -861,10 +861,10 @@ Optional ARGS are passed to `elpaca--signal', which see."
                        (elpaca--call-with-log
                         e 1 "git" "remote" "rename" elpaca-default-remote-name spec))
                      (setq renamed spec))
-                 (when-let ((remote    (car spec))
-                            (props     (cdr spec))
-                            (inherited (elpaca-merge-plists recipe props))
-                            (URI       (elpaca--repo-uri inherited)))
+                 (when-let* ((remote    (car spec))
+                             (props     (cdr spec))
+                             (inherited (elpaca-merge-plists recipe props))
+                             (URI       (elpaca--repo-uri inherited)))
                    (setq fetchp t)
                    (elpaca-with-process
                        (elpaca--call-with-log e 1 "git" "remote" "add" remote URI)
@@ -884,7 +884,7 @@ FILES and NOCONS are used recursively."
    with default-directory = repo-dir
    with build-dir = (elpaca<-build-dir e)
    with recipe    = (elpaca<-recipe e)
-   with files     = (or files (if-let ((member (plist-member recipe :files)))
+   with files     = (or files (if-let* ((member (plist-member recipe :files)))
                                   (cadr member) elpaca-default-files-directive))
    with (exclusions targets with-subdirs)
    for el in files do
@@ -913,13 +913,13 @@ FILES and NOCONS are used recursively."
 
 (defun elpaca--find-source-file-maybe ()
   "Find corresponding source file for `current-buffer'."
-  (when-let ((file (buffer-file-name))
-             ((string-prefix-p elpaca-builds-directory file))
-             (e (cdr (cl-find-if (lambda (bdir) (string-match-p bdir file))
-                                 (elpaca--queued)
-                                 :key (lambda (qd) (elpaca<-build-dir (cdr qd))))))
-             (source (car (rassoc file (elpaca--files e))))
-             ((file-exists-p source)))
+  (when-let* ((file (buffer-file-name))
+              ((string-prefix-p elpaca-builds-directory file))
+              (e (cdr (cl-find-if (lambda (bdir) (string-match-p bdir file))
+                                  (elpaca--queued)
+                                  :key (lambda (qd) (elpaca<-build-dir (cdr qd))))))
+              (source (car (rassoc file (elpaca--files e))))
+              ((file-exists-p source)))
     (find-alternate-file source)
     (message "Found Elpaca build file source")))
 
@@ -940,9 +940,9 @@ FILES and NOCONS are used recursively."
     (when (file-exists-p build-dir) (delete-directory build-dir 'recusrive))
     (make-directory build-dir 'parents)
     (dolist (spec files)
-      (when-let ((file   (car spec))
-                 ((file-exists-p file))
-                 (link   (cdr spec)))
+      (when-let* ((file   (car spec))
+                  ((file-exists-p file))
+                  (link   (cdr spec)))
         (make-directory (file-name-directory link) 'parents)
         (if elpaca-no-symlink-mode
             (if (file-directory-p file)
@@ -966,8 +966,8 @@ FILES and NOCONS are used recursively."
 
 (defun elpaca--process-busy (process) ;;@TODO restore previous status when unblocked
   "Update E's status when PROCESS has stopped producing output."
-  (when-let (((eq (process-status process) 'run))
-             (e (process-get process :elpaca)))
+  (when-let* (((eq (process-status process) 'run))
+              (e (process-get process :elpaca)))
     (elpaca--signal e (process-get process :parsed) 'busy)))
 
 (defvar elpaca--eol (if (memq system-type '(ms-dos windows-nt cygwin)) "\r\n" "\n"))
@@ -993,8 +993,8 @@ FILES and NOCONS are used recursively."
 
 (defun elpaca--process-sentinel (&optional info status process event)
   "Update E's INFO and STATUS when PROCESS EVENT is finished."
-  (if-let ((e (process-get process :elpaca))
-           ((and (equal event "finished\n") (not (eq (elpaca--status e) 'failed)))))
+  (if-let* ((e (process-get process :elpaca))
+            ((and (equal event "finished\n") (not (eq (elpaca--status e) 'failed)))))
       (progn (elpaca--propertize-subprocess process)
              (elpaca--continue-build e info status))
     (elpaca--fail e (format "Subprocess error (see previous log entries)"))))
@@ -1029,19 +1029,19 @@ FILES and NOCONS are used recursively."
 (defun elpaca--compile-info (e)
   "Compile E's .texi files."
   (elpaca--signal e "Compiling Info files" 'info)
-  (if-let ((default-directory (elpaca<-build-dir e))
-           (elpaca-makeinfo-executable)
-           (no-info t)
-           (files
-            (cl-loop for (repo-file . build-file) in
-                     (or (elpaca<-files e)
-                         (setf (elpaca<-files e) (elpaca--files e)))
-                     when (and no-info (string-match-p "\\.info$" repo-file))
-                     do (setq no-info nil)
-                     for f = (when (string-match-p "\\.texi\\(nfo\\)?$" repo-file)
-                               (list repo-file "-o"
-                                     (concat (file-name-sans-extension build-file) ".info")))
-                     when f collect f)))
+  (if-let* ((default-directory (elpaca<-build-dir e))
+            (elpaca-makeinfo-executable)
+            (no-info t)
+            (files
+             (cl-loop for (repo-file . build-file) in
+                      (or (elpaca<-files e)
+                          (setf (elpaca<-files e) (elpaca--files e)))
+                      when (and no-info (string-match-p "\\.info$" repo-file))
+                      do (setq no-info nil)
+                      for f = (when (string-match-p "\\.texi\\(nfo\\)?$" repo-file)
+                                (list repo-file "-o"
+                                      (concat (file-name-sans-extension build-file) ".info")))
+                      when f collect f)))
       (elpaca--make-process e
         :name "compile-info"
         :command `(,elpaca-makeinfo-executable ,@(apply #'append files))
@@ -1069,10 +1069,10 @@ FILES and NOCONS are used recursively."
 
 (defun elpaca--install-info (e)
   "Install E's .info files."
-  (when-let ((elpaca-install-info-executable)
-             (dir (expand-file-name "dir" (elpaca<-build-dir e)))
-             ((not (file-exists-p dir)))
-             (specs (or (elpaca<-files e) (setf (elpaca<-files e) (elpaca--files e)))))
+  (when-let* ((elpaca-install-info-executable)
+              (dir (expand-file-name "dir" (elpaca<-build-dir e)))
+              ((not (file-exists-p dir)))
+              (specs (or (elpaca<-files e) (setf (elpaca<-files e) (elpaca--files e)))))
     (elpaca--signal e "Installing Info files" 'info)
     (cl-loop for (target . link) in specs
              for file = (cond
@@ -1110,9 +1110,9 @@ The keyword's value is expected to be one of the following:
   - A list of commands
   - nil, in which case no commands are executed.
     Note if :build is nil, :pre/post-build commands are not executed."
-  (if-let ((recipe   (elpaca<-recipe e))
-           (commands (plist-get recipe type))
-           (name (symbol-name type)))
+  (if-let* ((recipe   (elpaca<-recipe e))
+            (commands (plist-get recipe type))
+            (name (symbol-name type)))
       (progn
         (elpaca--signal e (concat "Running " name " commands") (intern (substring name 1)))
         (let* ((default-directory (elpaca<-repo-dir e))
@@ -1160,11 +1160,11 @@ The keyword's value is expected to be one of the following:
   "Return E's main file name. Recompute when RECACHE non-nil."
   (or (and (not recache) (elpaca<-main e))
       (setf (elpaca<-main e)
-            (if-let ((recipe (elpaca<-recipe e))
-                     (repo (elpaca<-repo-dir e))
-                     ((or (file-exists-p repo) (error "Repository not on disk")))
-                     (default-directory repo)
-                     (declared (plist-member recipe :main)))
+            (if-let* ((recipe (elpaca<-recipe e))
+                      (repo (elpaca<-repo-dir e))
+                      ((or (file-exists-p repo) (error "Repository not on disk")))
+                      (default-directory repo)
+                      (declared (plist-member recipe :main)))
                 (cadr declared)
               (let* ((package (file-name-sans-extension (elpaca<-package e)))
                      (name (concat "\\(?:" (regexp-quote package) "\\(?:-pkg\\)?\\.el\\)\\'")))
@@ -1178,12 +1178,12 @@ The keyword's value is expected to be one of the following:
   "\\`\\(?:\\|[RVrv]\\|release[/-]v?\\)?\\(?1:[0-9]+\\(\\.[0-9]+\\)*\\)\\'")
 (defun elpaca-latest-tag (e)
   "Return E's latest merged tag matching recipe tag regexp or `elpaca--tag-regexp'."
-  (when-let ((default-directory (elpaca<-repo-dir e))
-             (recipe (elpaca<-recipe e))
-             (regexp (or (plist-get recipe :version-regexp) elpaca--tag-regexp))
-             (tags (elpaca-with-process
-                       (elpaca-process-call "git" "tag" "--sort=-creatordate" "--merged")
-                     (and success stdout (split-string stdout "\n" 'omit-nulls)))))
+  (when-let* ((default-directory (elpaca<-repo-dir e))
+              (recipe (elpaca<-recipe e))
+              (regexp (or (plist-get recipe :version-regexp) elpaca--tag-regexp))
+              (tags (elpaca-with-process
+                        (elpaca-process-call "git" "tag" "--sort=-creatordate" "--merged")
+                      (and success stdout (split-string stdout "\n" 'omit-nulls)))))
     (cl-loop for tag in tags when (string-match regexp tag)
              return (or (match-string 1 tag) (match-string 0 tag)))))
 
@@ -1205,18 +1205,18 @@ The keyword's value is expected to be one of the following:
     (goto-char (point-min))
     (if (string-suffix-p "-pkg.el" file)
         (nth 2 (read (current-buffer)))
-      (when-let ((case-fold-search t)
-                 (regexp "^;+[ ]+\\(Package-\\)?\\(Version\\)[ ]*:[ ]*")
-                 ((re-search-forward regexp nil 'noerror)))
+      (when-let* ((case-fold-search t)
+                  (regexp "^;+[ ]+\\(Package-\\)?\\(Version\\)[ ]*:[ ]*")
+                  ((re-search-forward regexp nil 'noerror)))
         ;; Remove Windows \r before newline. See: #218
         (string-trim (buffer-substring-no-properties (point) (line-end-position)))))))
 
 (defun elpaca--declared-version (e)
   "Return E's version as declared in recipe or main file's metadata."
-  (if-let ((declared (plist-get (elpaca<-recipe e) :version)))
+  (if-let* ((declared (plist-get (elpaca<-recipe e) :version)))
       (funcall declared e)
-    (when-let ((main (elpaca--main-file e))
-               (default-directory (elpaca<-repo-dir e)))
+    (when-let* ((main (elpaca--main-file e))
+                (default-directory (elpaca<-repo-dir e)))
       (elpaca--parse-version main))))
 
 (defconst elpaca--emacs-releases '(("27.1" . 20200804) ("27.2" . 20210319) ("28.1" . 20220403)
@@ -1265,10 +1265,10 @@ The keyword's value is expected to be one of the following:
   "Return a list of E's declared dependencies.
 If RECACHE is non-nil, do not use cached dependencies."
   (let ((cache (elpaca<-dependencies e)))
-    (if-let (((or recache (not cache)))
-             (repo (elpaca<-repo-dir e))
-             (package (file-name-sans-extension (elpaca<-package e)))
-             (main (elpaca--main-file e)))
+    (if-let* (((or recache (not cache)))
+              (repo (elpaca<-repo-dir e))
+              (package (file-name-sans-extension (elpaca<-package e)))
+              (main (elpaca--main-file e)))
         (let ((deps
                (condition-case err
                    (with-current-buffer (get-buffer-create " *elpaca--dependencies*")
@@ -1276,7 +1276,7 @@ If RECACHE is non-nil, do not use cached dependencies."
                      (insert-file-contents-literally main nil nil nil 'replace)
                      (goto-char (point-min))
                      (if (string-suffix-p "-pkg.el" main) (eval (nth 4 (read (current-buffer))))
-                       (when-let
+                       (when-let*
                            ((case-fold-search t)
                             ((re-search-forward
                               "^;+[ ]+\\(Package-Requires\\)[ ]*:[ ]*" nil 'noerror))
@@ -1361,16 +1361,16 @@ This is the branch that would be checked out upon cloning."
          (tag    (plist-get recipe :tag))
          (branch (plist-get recipe :branch))
          (target (or ref tag branch)))
-    (when-let ((name    (car-safe remote))
-               (default (elpaca-process-output "git" "rev-parse" "--abbrev-ref" "HEAD")))
+    (when-let* ((name    (car-safe remote))
+                (default (elpaca-process-output "git" "rev-parse" "--abbrev-ref" "HEAD")))
       (elpaca--call-with-log e 1 "git" "checkout" "--detach")
       (elpaca--call-with-log e 1 "git" "branch"   "--delete" (string-trim default))
       (elpaca--call-with-log e 1 "git" "config"   "checkout.defaultRemote" name)
-      (when-let (((not branch))
-                 (default-branch
-                  (condition-case err ;;@FIX: will this stop if we fail elpaca?
-                      (elpaca--remote-default-branch name)
-                    (t (elpaca--fail e (format "Remote default branch err: %S" err))))))
+      (when-let* (((not branch))
+                  (default-branch
+                   (condition-case err ;;@FIX: will this stop if we fail elpaca?
+                       (elpaca--remote-default-branch name)
+                     (t (elpaca--fail e (format "Remote default branch err: %S" err))))))
         (setq branch default-branch target branch)))
     (if (null target)
         (unless (eq (elpaca--status e) 'failed)
@@ -1419,8 +1419,8 @@ This is the branch that would be checked out upon cloning."
 
 (defun elpaca--clone-process-sentinel (process _event)
   "Sentinel for clone PROCESS."
-  (if-let ((e (process-get process :elpaca))
-           (success (= (process-exit-status process) 0)))
+  (if-let* ((e (process-get process :elpaca))
+            (success (= (process-exit-status process) 0)))
       (progn (elpaca--propertize-subprocess process)
              (elpaca--continue-build e))
     (if (or (memq 'reclone (elpaca<-statuses e))
@@ -1443,7 +1443,7 @@ This is the branch that would be checked out upon cloning."
          (command
           `("git" "clone"
             ;;@TODO: Some refs will need a full clone or specific branch.
-            ,@(when-let ((depth (plist-get recipe :depth)))
+            ,@(when-let* ((depth (plist-get recipe :depth)))
                 (cond
                  ((plist-get recipe :ref) (elpaca--signal e "Ignoring :depth in favor of :ref"))
                  ((numberp depth) `("--depth" ,(number-to-string depth)))
@@ -1454,7 +1454,7 @@ This is the branch that would be checked out upon cloning."
                         ((eq depth 'treeless) '("--filter=tree:0"))
                         ((eq depth 'blobless) '("--filter=blob:none"))))))
             ;;@FIX: allow override
-            ,@(when-let ((ref (or (plist-get recipe :branch) (plist-get recipe :tag))))
+            ,@(when-let* ((ref (or (plist-get recipe :branch) (plist-get recipe :tag))))
                 `("--single-branch" "--branch" ,ref))
             ,@(unless (or (null remote) (stringp remote)) '("--no-checkout"))
             ,URI ,repodir)))
@@ -1487,23 +1487,23 @@ This is the branch that would be checked out upon cloning."
      ((fboundp 'make-directory-autoloads) (make-directory-autoloads dir output))
      ((fboundp 'update-directory-autoloads) ;; Compatibility for Emacs < 28.1
       (with-no-warnings (update-directory-autoloads dir))))
-    (when-let ((buf (find-buffer-visiting output))) (kill-buffer buf))
+    (when-let* ((buf (find-buffer-visiting output))) (kill-buffer buf))
     output))
 
 (defun elpaca--generate-autoloads-async (e)
   "Generate E's autoloads asynchronously."
-  (if-let ((recipe (elpaca<-recipe e))
-           (autoloads (let ((member (plist-member recipe :autoloads)))
-                        (if member (cadr member) t)))
-           (package (elpaca<-package  e))
-           (default-directory (elpaca<-build-dir e))
-           (elpaca (expand-file-name "elpaca/" elpaca-repos-directory))
-           (program (let (print-level print-circle)
-                      (format "%S" `(progn (setq gc-cons-percentage 1.0
-                                                 ,@(when (stringp autoloads)
-                                                     `(generated-autoload-file ,autoloads)))
-                                           (elpaca-generate-autoloads
-                                            ,package ,default-directory))))))
+  (if-let* ((recipe (elpaca<-recipe e))
+            (autoloads (let ((member (plist-member recipe :autoloads)))
+                         (if member (cadr member) t)))
+            (package (elpaca<-package  e))
+            (default-directory (elpaca<-build-dir e))
+            (elpaca (expand-file-name "elpaca/" elpaca-repos-directory))
+            (program (let (print-level print-circle)
+                       (format "%S" `(progn (setq gc-cons-percentage 1.0
+                                                  ,@(when (stringp autoloads)
+                                                      `(generated-autoload-file ,autoloads)))
+                                            (elpaca-generate-autoloads
+                                             ,package ,default-directory))))))
       (progn
         (elpaca--signal e (concat "Generating autoloads: " default-directory) 'autoloads)
         (elpaca--make-process e
@@ -1524,13 +1524,13 @@ Loads or caches autoloads."
       (warn "%S loaded before Elpaca activation" (elpaca<-id e)))
     (cl-pushnew default-directory load-path :test #'equal)
     (elpaca--signal e "Package build dir added to load-path")
-    (if-let ((recipe (elpaca<-recipe e))
-             (key (let ((member (plist-member recipe :autoloads)))
-                    (if (not member) 'undeclared (cadr member))))
-             (pkg (elpaca<-package e)) ;;@MAYBE: strip file extension
-             (autoloads (expand-file-name
-                         (or (and (stringp key) key) (concat pkg "-autoloads.el"))))
-             ((file-exists-p autoloads)))
+    (if-let* ((recipe (elpaca<-recipe e))
+              (key (let ((member (plist-member recipe :autoloads)))
+                     (if (not member) 'undeclared (cadr member))))
+              (pkg (elpaca<-package e)) ;;@MAYBE: strip file extension
+              (autoloads (expand-file-name
+                          (or (and (stringp key) key) (concat pkg "-autoloads.el"))))
+              ((file-exists-p autoloads)))
         (if elpaca-cache-autoloads
             (let ((forms nil))
               (elpaca--signal e "Caching autoloads")
@@ -1590,12 +1590,12 @@ IGNORE may be a list of symbols which are not included in the resulting list.
 RECURSE is used to track recursive calls.
 When INTERACTIVE is non-nil, message the list of dependencies."
   (interactive (list (elpaca--read-queued "Dependencies of: ") nil t))
-  (if-let ((e (elpaca-get id))
-           (dependencies (elpaca--dependencies e))
-           (transitives (cl-loop for (d . _) in dependencies
-                                 unless (memq d ignore) collect
-                                 (cons d (elpaca-dependencies d (cons d ignore) nil t))))
-           (deps (delete-dups (flatten-tree transitives))))
+  (if-let* ((e (elpaca-get id))
+            (dependencies (elpaca--dependencies e))
+            (transitives (cl-loop for (d . _) in dependencies
+                                  unless (memq d ignore) collect
+                                  (cons d (elpaca-dependencies d (cons d ignore) nil t))))
+            (deps (delete-dups (flatten-tree transitives))))
       (if interactive (message "%s" deps) deps)
     (when recurse id)))
 
@@ -1629,9 +1629,9 @@ When MESSAGE is non-nil, message the list of dependents."
 (defun elpaca-wait ()
   "Block until currently queued orders are processed.
 When quit with \\[keyboard-quit], running sub-processes are not stopped."
-  (when-let ((q (cl-loop for q in elpaca--queues thereis
-                         (and (eq (elpaca-q<-status q) 'incomplete)
-                              (elpaca-q<-elpacas q) q))))
+  (when-let* ((q (cl-loop for q in elpaca--queues thereis
+                          (and (eq (elpaca-q<-status q) 'incomplete)
+                               (elpaca-q<-elpacas q) q))))
     (setq elpaca--waiting t mode-line-process "elpaca-wait...")
     (elpaca-process-queues)
     (condition-case nil
@@ -1692,8 +1692,8 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
    (list (if (equal current-prefix-arg '(4))
              (minibuffer-with-setup-hook #'backward-char
                (read (read-string "elpaca-try: " "()" 'elpaca--try-package-history)))
-           (if-let ((items (cl-remove-if #'elpaca-get (elpaca--flattened-menus) :key #'car))
-                    (item (elpaca-menu-item t items)))
+           (if-let* ((items (cl-remove-if #'elpaca-get (elpaca--flattened-menus) :key #'car))
+                     (item (elpaca-menu-item t items)))
                (cons (car item) (plist-get (cdr item) :recipe))
              (user-error "No menu item")))
          t))
@@ -1702,9 +1702,9 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
     (elpaca--maybe-log)
     (elpaca-queue
      (eval `(elpaca ,order
-              ,(when-let (((equal current-prefix-arg '(4)))
-                          ((listp order))
-                          (id (pop order)))
+              ,(when-let* (((equal current-prefix-arg '(4)))
+                           ((listp order))
+                           (id (pop order)))
                  ;;@TODO: implement as a proper menu function?
                  ;;What would the semantics of an update be here?
                  `(progn
@@ -1725,7 +1725,7 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
   "Process elpacas in Q."
   (cond
    ((eq (elpaca-q<-status q) 'complete)
-    (when-let ((next (nth (1+ (elpaca-q<-id q)) (reverse elpaca--queues))))
+    (when-let* ((next (nth (1+ (elpaca-q<-id q)) (reverse elpaca--queues))))
       (elpaca--process-queue next)))
    (t (mapc #'elpaca--process (reverse (mapcar #'cdr (elpaca-q<-elpacas q)))))))
 
@@ -1741,11 +1741,11 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
   "Process the incomplete queues.
 FILTER must be a unary function which accepts and returns a queue list."
   (when (and after-init-time elpaca--debug-init) (setq debug-on-error t elpaca--debug-init nil))
-  (if-let ((queues (if filter (funcall filter (reverse elpaca--queues))
-                     (reverse elpaca--queues)))
-           ((mapc #'elpaca--maybe-reset-queue queues))
-           (incomplete (cl-find 'incomplete queues :key #'elpaca-q<-status))
-           ((elpaca-q<-elpacas incomplete)))
+  (if-let* ((queues (if filter (funcall filter (reverse elpaca--queues))
+                      (reverse elpaca--queues)))
+            ((mapc #'elpaca--maybe-reset-queue queues))
+            (incomplete (cl-find 'incomplete queues :key #'elpaca-q<-status))
+            ((elpaca-q<-elpacas incomplete)))
       (progn (setq elpaca--status-counts (elpaca--count-statuses))
              (elpaca--maybe-log)
              (elpaca--process-queue incomplete))
@@ -1756,9 +1756,9 @@ FILTER must be a unary function which accepts and returns a queue list."
 
 (defun elpaca--on-disk-p (id)
   "Return t if ID has an associated E with a build or repo dir on disk."
-  (when-let ((e (elpaca-get id)))
-    (or (when-let ((repo (elpaca<-repo-dir e))) (file-exists-p repo))
-        (when-let ((build (elpaca<-repo-dir e))) (file-exists-p build)))))
+  (when-let* ((e (elpaca-get id)))
+    (or (when-let* ((repo (elpaca<-repo-dir e))) (file-exists-p repo))
+        (when-let* ((build (elpaca<-repo-dir e))) (file-exists-p build)))))
 
 ;;@MAYBE: Should this delete user's declared package if it is a dependency?
 ;;@MAYBE: user option for deletion policy when repo is dirty.
@@ -1804,7 +1804,7 @@ do not confirm before deleting package and DEPS."
 
 (defun elpaca--file-package (&optional file)
   "Return queued E if current buffer's FILE is part of a repo, nil otherwise."
-  (when-let ((name (or file (buffer-file-name))))
+  (when-let* ((name (or file (buffer-file-name))))
     (cl-find-if (lambda (e) (assoc name (elpaca--files e)))
                 (reverse (elpaca--queued)) :key #'cdr)))
 
@@ -1874,9 +1874,9 @@ IGNORE used internally to track recursive calls."
            with id = (elpaca<-id e)
            with repo = (elpaca<-repo-dir e)
            with ignored = (cons (elpaca<-id e) ignore)
-           initially (when-let ((pin (plist-get recipe :pin))) (cl-return `(,id :pin . ,pin)))
-           (when-let ((tag (plist-get recipe :tag))) (cl-return `(,id :tag . ,tag)))
-           (when-let ((ref (plist-get recipe :ref))) (cl-return `(,id :ref . ,ref)))
+           initially (when-let* ((pin (plist-get recipe :pin))) (cl-return `(,id :pin . ,pin)))
+           (when-let* ((tag (plist-get recipe :tag))) (cl-return `(,id :tag . ,tag)))
+           (when-let* ((ref (plist-get recipe :ref))) (cl-return `(,id :ref . ,ref)))
            for (id2 . e2) in (elpaca--queued)
            thereis (and (not (memq id2 ignored))
                         (equal (elpaca<-repo-dir e2) repo)
@@ -1916,10 +1916,10 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
 
 (defun elpaca--merge-process-sentinel (process _event)
   "Handle PROCESS EVENT."
-  (if-let ((e (process-get process :elpaca))
-           ((= (process-exit-status process) 0))
-           (repo (elpaca<-repo-dir e))
-           (default-directory repo))
+  (if-let* ((e (process-get process :elpaca))
+            ((= (process-exit-status process) 0))
+            (repo (elpaca<-repo-dir e))
+            (default-directory repo))
       (progn (when (equal (elpaca-process-output "git" "rev-parse" "HEAD")
                           (process-get process :elpaca-git-rev))
                (cl-loop for (_ . d) in (elpaca--queued)
@@ -2007,7 +2007,7 @@ If INTERACTIVE is non-nil, process queues."
 ;;; Lockfiles
 (defun elpaca-declared-p (id)
   "Return t if ID is declared in user's init file, nil otherwise."
-  (when-let ((e (elpaca-get id)))
+  (when-let* ((e (elpaca-get id)))
     (or (elpaca<-init e) (cl-loop for dependent in (elpaca-dependents id)
                                   when (elpaca-declared-p dependent) return t))))
 
@@ -2019,11 +2019,11 @@ If INTERACTIVE is non-nil, process queues."
 
 (defun elpaca-worktree-dirty-p (id)
   "Return t if ID's associated repository has a dirty worktree, nil otherwise."
-  (when-let ((e (elpaca-get id))
-             (recipe (elpaca<-recipe e))
-             (repo-dir (elpaca<-repo-dir e))
-             ((file-exists-p repo-dir))
-             (default-directory repo-dir))
+  (when-let* ((e (elpaca-get id))
+              (recipe (elpaca<-recipe e))
+              (repo-dir (elpaca<-repo-dir e))
+              ((file-exists-p repo-dir))
+              (default-directory repo-dir))
     (not (string-empty-p (elpaca-process-output
                           "git" "-c" "status.branch=false" "status" "--short")))))
 
@@ -2074,8 +2074,8 @@ When BUILD is non-nil visit build directory."
   (when (eq id '##) (setq id nil)) ; Empty `elpaca--read-queued' response
   (if (not id)
       (find-file (if build elpaca-builds-directory elpaca-repos-directory))
-    (if-let ((e (elpaca-get id))
-             (dir (if build (elpaca<-build-dir e) (elpaca<-repo-dir e))))
+    (if-let* ((e (elpaca-get id))
+              (dir (if build (elpaca<-build-dir e) (elpaca<-repo-dir e))))
         (if (file-exists-p dir)
             (find-file dir)
           (user-error "Directory does not exist: %S" dir))
@@ -2109,16 +2109,16 @@ If NOTRY is non-nil do not include `elpaca-try' recipes."
                             (recipe (elpaca-recipe nil (append (elpaca--custom-candidates)
                                                                (elpaca--flattened-menus)))))
                        (intern (plist-get recipe :package)))))
-  (if-let ((found (or (elpaca-get id)
-                      (alist-get id (elpaca--flattened-menus))
-                      (alist-get id (elpaca--custom-candidates))))
-           (url (or (plist-get found :url)
-                    (file-name-sans-extension
-                     (elpaca--repo-uri (elpaca-merge-plists
-                                        (or (plist-get found :recipe)
-                                            (and (elpaca-p found) (elpaca<-recipe found))
-                                            (user-error "No URL associated with id %S" id))
-                                        '(:protocol https)))))))
+  (if-let* ((found (or (elpaca-get id)
+                       (alist-get id (elpaca--flattened-menus))
+                       (alist-get id (elpaca--custom-candidates))))
+            (url (or (plist-get found :url)
+                     (file-name-sans-extension
+                      (elpaca--repo-uri (elpaca-merge-plists
+                                         (or (plist-get found :recipe)
+                                             (and (elpaca-p found) (elpaca<-recipe found))
+                                             (user-error "No URL associated with id %S" id))
+                                         '(:protocol https)))))))
       (browse-url url)))
 
 ;;;###autoload

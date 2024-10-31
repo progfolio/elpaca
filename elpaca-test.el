@@ -69,10 +69,10 @@
 (defun elpaca-test--dir (&optional name)
   "Return valid test directory from NAME.
 Creates a temporary dir if NAME is nil."
-  (if-let ((name)
-           (expanded (file-name-as-directory (expand-file-name name)))
-           ((or (not (equal expanded (expand-file-name user-emacs-directory)))
-                (user-error ":dir cannot be user-emacs-directory"))))
+  (if-let* ((name)
+            (expanded (file-name-as-directory (expand-file-name name)))
+            ((or (not (equal expanded (expand-file-name user-emacs-directory)))
+                 (user-error ":dir cannot be user-emacs-directory"))))
       (if (equal name expanded) expanded (expand-file-name name temporary-file-directory))
     (expand-file-name (make-temp-name "elpaca.") temporary-file-directory)))
 
@@ -145,7 +145,7 @@ For DEPTH and FORMS see `elpaca-test' :depth and :init."
         dest (expand-file-name dest))
   (copy-directory dir dest 'keep-time 'parents 'copy-contents)
   (cl-loop for f in (directory-files-recursively dest ".*" 'dirs nil)
-           do (when-let  (((file-symlink-p f))
+           do (when-let* (((file-symlink-p f))
                           (truename (file-truename f)))
                 (delete-file f)
                 (copy-file truename f 'overwrite))))
@@ -154,8 +154,8 @@ For DEPTH and FORMS see `elpaca-test' :depth and :init."
   "Copy host `elpaca-directory' store to test env."
   (cl-loop with env = (expand-file-name "./elpaca/")
            for path in '("./repos/elpaca" "./cache/")
-           do (when-let ((local (expand-file-name path elpaca-directory))
-                         ((file-exists-p local)))
+           do (when-let* ((local (expand-file-name path elpaca-directory))
+                          ((file-exists-p local)))
                 (elpaca-test--copy-dir local (expand-file-name path env)))))
 
 (defun elpaca-test--display (vars)
@@ -197,8 +197,8 @@ When the test is non-interactive, its process buffer is initially current."
      0 nil `(lambda () ;;@HACK: Show message when evaluating interactively
               (message "Testing Elpaca in %s @ %s"
                        ,default-directory
-                       (if-let ((localp ,localp)
-                                (default-directory (expand-file-name "repos/elpaca/" elpaca-directory)))
+                       (if-let* ((localp ,localp)
+                                 (default-directory (expand-file-name "repos/elpaca/" elpaca-directory)))
                            (concat (or (ignore-errors (elpaca-process-output "git" "diff" "--quiet")) "DIRTY ")
                                    (string-trim (elpaca-process-output "git" "log" "--pretty=%h %D" "-1")))
                          ,(or (unless localp (car (plist-get args :ref))) "master")))))))
@@ -211,14 +211,14 @@ Each function is called with the test declaration's arguments list."
 (defun elpaca-test--sentinel (process _)
   "Prepare post-test PROCESS buffer output, display, test environment.
 If DELETE is non-nil, delete test environment."
-  (when-let (((member (process-status process) '(exit signal failed)))
-             (vars (process-get process :vars)))
-    (when-let (((not (car-safe (plist-get vars :keep))))
-               (dir (plist-get vars :computed-dir)))
+  (when-let* (((member (process-status process) '(exit signal failed)))
+              (vars (process-get process :vars)))
+    (when-let* (((not (car-safe (plist-get vars :keep))))
+                (dir (plist-get vars :computed-dir)))
       (message "Removing Elpaca test env: %S" dir)
       (delete-directory dir 'recursive))
-    (with-current-buffer (if-let ((buffer (process-buffer process))
-                                  ((buffer-live-p buffer)))
+    (with-current-buffer (if-let* ((buffer (process-buffer process))
+                                   ((buffer-live-p buffer)))
                              buffer
                            (current-buffer))
       (run-hook-with-args 'elpaca-test-finish-functions vars))))
@@ -291,7 +291,7 @@ The following keys are recognized:
          (timeout (car (plist-get args :timeout)))
          (init (plist-get args :init))
          (ref (car (plist-get args :ref)))
-         (depth (if-let ((declared (plist-member args :depth))) (caadr declared) 1))
+         (depth (if-let* ((declared (plist-member args :depth))) (caadr declared) 1))
          (localp (eq ref 'local))
          (init-file (cond ((eq (car-safe (car-safe init)) :file)
                            (when localp (user-error "Cannot use :ref local with :init (:file ...)"))
@@ -319,7 +319,7 @@ The following keys are recognized:
        (elpaca--test-write-init
         ,init-file ',ref ',depth ',(when (or localp (null init-file))
                                      (unless (equal init '(user)) init)))
-       ,@(when-let ((before (plist-get args :before)))
+       ,@(when-let* ((before (plist-get args :before)))
            `((let ((default-directory default-directory)) ,@before)))
        (run-hook-with-args 'elpaca-test-start-functions ,argsym)
        (elpaca-test--make-process

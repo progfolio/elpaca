@@ -48,9 +48,9 @@ If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
                     for (menu . items) in menus append
                     (cl-loop
                      for (id . props) in items
-                     for date = (or (when-let ((e (elpaca-alist-get id queued)))
+                     for date = (or (when-let* ((e (elpaca-alist-get id queued)))
                                       (elpaca--commit-date e "%Y-%m-%d"))
-                                    (when-let ((declared (plist-get props :date)))
+                                    (when-let* ((declared (plist-get props :date)))
                                       (format-time-string "%F" declared)))
                      collect
                      (list (cons id menu)
