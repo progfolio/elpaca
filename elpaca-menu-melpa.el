@@ -76,23 +76,23 @@
   (with-current-buffer (get-buffer-create " elpaca-menu-melpa--convert")
     (insert-file-contents file nil nil nil 'replace)
     (condition-case-unless-debug _
-        (when-let ((recipe (read (buffer-string)))
-                   (package (pop recipe))
-                   ((member (plist-get recipe :fetcher)
-                            '(git github gitlab sourcehut codeberg))))
+        (when-let* ((recipe (read (buffer-string)))
+                    (package (pop recipe))
+                    ((member (plist-get recipe :fetcher)
+                             '(git github gitlab sourcehut codeberg))))
           (setq recipe
                 (append (list :package (symbol-name package)) recipe))
           (unless (plist-member recipe :files)
             (setq recipe (plist-put recipe :files elpaca-default-files-directive)))
           (let ((candidate (list :source "MELPA" :recipe recipe)))
-            (when-let ((data (alist-get package metadata)))
+            (when-let* ((data (alist-get package metadata)))
               (setq candidate
                     (append candidate
                             (list :description (alist-get 'desc data)
                                   :date
                                   (ignore-errors
-                                    (when-let ((s (number-to-string
-                                                   (aref (alist-get 'ver data) 0))))
+                                    (when-let* ((s (number-to-string
+                                                    (aref (alist-get 'ver data) 0))))
                                       (date-to-time
                                        (string-join (list
                                                      (substring s 0 4)

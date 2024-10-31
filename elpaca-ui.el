@@ -251,14 +251,14 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
 (defvar-local elpaca-ui--marked nil)
 (defun elpaca-ui--apply-face ()
   "Apply face to current entry id."
-  (when-let ((entry (tabulated-list-get-entry))
-             (name  (aref entry 0))
-             (source (aref entry 3))
-             (namelen (length name))
-             (id    (intern name))
-             (beg (line-beginning-position))
-             (noconflict t))
-    (when-let ((e (elpaca-get id)))
+  (when-let* ((entry (tabulated-list-get-entry))
+              (name (aref entry 0))
+              (source (aref entry 3))
+              (namelen (length name))
+              (id (intern name))
+              (beg (line-beginning-position))
+              (noconflict t))
+    (when-let* ((e (elpaca-get id)))
       (put-text-property
        beg (+ beg namelen) 'face
        (or (elpaca-alist-get (get-text-property (point) 'elpaca-status) elpaca-status-faces)
@@ -268,8 +268,8 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                (elpaca-alist-get (elpaca--status e) elpaca-status-faces)
              (progn (setq noconflict nil) 'elpaca-ui-conflicting))
            '(:weight bold))))
-    (if-let ((noconflict)
-             (marked (cl-find id elpaca-ui--marked-packages :key #'car)))
+    (if-let* ((noconflict)
+              (marked (cl-find id elpaca-ui--marked-packages :key #'car)))
         (if (memq id elpaca-ui--marked)
             (add-text-properties beg (+ beg namelen)
                                  (list 'display (propertize name 'face 'elpaca-ui-conflicting)
@@ -282,7 +282,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                  (offset (+ beg (length mark))))
             (when (derived-mode-p 'elpaca-manager-mode) (push id elpaca-ui--marked))
             (add-text-properties beg (+ beg namelen) (list 'display mark 'offset offset))))
-      (when-let ((offset (get-text-property (point) 'offset)))
+      (when-let* ((offset (get-text-property (point) 'offset)))
         (remove-text-properties beg offset '(display))))))
 
 (defun elpaca-ui--jit-apply-faces (beg end)
@@ -311,11 +311,11 @@ Called in `jit-lock-functions', which see."
 
 (defun elpaca-ui--minibuffer-setup ()
   "Set up the minibuffer for live filtering."
-  (when-let ((buffer (with-minibuffer-selected-window
-                       (and elpaca-ui-live-update-mode
-                            (derived-mode-p 'elpaca-ui-mode)
-                            (eq this-command 'elpaca-ui-search)
-                            (current-buffer)))))
+  (when-let* ((buffer (with-minibuffer-selected-window
+                        (and elpaca-ui-live-update-mode
+                             (derived-mode-p 'elpaca-ui-mode)
+                             (eq this-command 'elpaca-ui-search)
+                             (current-buffer)))))
     (add-hook 'post-command-hook (lambda () (ignore-errors (elpaca-ui--debounce-search buffer))) nil :local)))
 
 (defvar elpaca-ui--search-cache (make-hash-table :test #'equal))
@@ -387,12 +387,12 @@ Called in `jit-lock-functions', which see."
 
 (defun elpaca-ui--print-appender (&rest _)
   "Prints button to append more `elpaca-ui-entries' rows."
-  (when-let (((derived-mode-p 'elpaca-ui-mode))
-             (tlen (length tabulated-list-entries))
-             (elen (length elpaca-ui-entries))
-             ((< tlen elen))
-             (s (propertize (format "+ %d more rows..." (- elen tlen))
-                            'face '(:weight bold))))
+  (when-let* (((derived-mode-p 'elpaca-ui-mode))
+              (tlen (length tabulated-list-entries))
+              (elen (length elpaca-ui-entries))
+              ((< tlen elen))
+              (s (propertize (format "+ %d more rows..." (- elen tlen))
+                             'face '(:weight bold))))
     (save-excursion
       (goto-char (point-max))
       (with-silent-modifications
@@ -400,7 +400,7 @@ Called in `jit-lock-functions', which see."
 
 (defun elpaca-ui--print ()
   "Print table entries."
-  (when-let (derived-mode-p 'elpaca-ui-mode)
+  (when-let* ((derived-mode-p 'elpaca-ui-mode))
     (let ((p (point)))
       (tabulated-list-print)
       (goto-char (if elpaca-ui-tail-mode (point-max) p)))))
@@ -408,14 +408,14 @@ Called in `jit-lock-functions', which see."
 (defun elpaca-ui-show-hidden-rows (&optional n)
   "Append rows up to N times `elpaca-ui-row-limit'."
   (interactive "p")
-  (if-let ((tlen (length tabulated-list-entries))
-           (elen (length elpaca-ui-entries))
-           ((< tlen elen)))
+  (if-let* ((tlen (length tabulated-list-entries))
+            (elen (length elpaca-ui-entries))
+            ((< tlen elen)))
       (let ((limit (or elpaca-ui-row-limit most-positive-fixnum)))
-        (when-let ((sorter (tabulated-list--get-sorter)))
+        (when-let* ((sorter (tabulated-list--get-sorter)))
           (setq tabulated-list-entries (sort tabulated-list-entries sorter)))
         (dotimes (i (min (* limit (or n 1)) (- elen tlen)))
-          (when-let ((entry (nth (+ i tlen) elpaca-ui-entries)))
+          (when-let* ((entry (nth (+ i tlen) elpaca-ui-entries)))
             (setcdr (last tabulated-list-entries) (cons entry nil))))
         (elpaca-ui--print)
         (elpaca-ui--header-line elpaca-ui-header-line-prefix))
@@ -429,14 +429,14 @@ If QUERY is nil, the contents of the minibuffer are used instead."
         (b (or buffer (with-minibuffer-selected-window (current-buffer)) (current-buffer))))
     (with-current-buffer (get-buffer-create b)
       (when (string-empty-p query) (setq query elpaca-ui-default-query))
-      (when-let ((parsed (ignore-errors (elpaca-ui--lex-query query)))
-                 (fn (elpaca-ui--search-fn parsed)))
+      (when-let* ((parsed (ignore-errors (elpaca-ui--lex-query query)))
+                  (fn (elpaca-ui--search-fn parsed)))
         (let ((entries (funcall (byte-compile fn))))
-          (when-let ((fn (tabulated-list--get-sorter))) (setq entries (sort entries fn)))
+          (when-let* ((fn (tabulated-list--get-sorter))) (setq entries (sort entries fn)))
           (setq elpaca-ui-entries entries
                 tabulated-list-entries
-                (if-let ((elen (length elpaca-ui-entries))
-                         ((or (not elpaca-ui-row-limit) (<= elen elpaca-ui-row-limit))))
+                (if-let* ((elen (length elpaca-ui-entries))
+                          ((or (not elpaca-ui-row-limit) (<= elen elpaca-ui-row-limit))))
                     elpaca-ui-entries
                   (cl-subseq elpaca-ui-entries 0 (min elpaca-ui-row-limit elen)))
                 elpaca-ui-search-query query))
@@ -463,8 +463,8 @@ If QUERY is nil, the contents of the minibuffer are used instead."
 
 (defun elpaca-ui--tag-annotator (tag)
   "Annotate TAG."
-  (when-let ((fn (alist-get tag elpaca-ui-search-tags nil nil #'string=))
-             (doc (documentation fn)))
+  (when-let* ((fn (alist-get tag elpaca-ui-search-tags nil nil #'string=))
+              (doc (documentation fn)))
     (concat " " (substring doc 0 (string-search "\n" doc)))))
 
 (defvar elpaca-ui-search-prompt "Search (empty for default query):")
@@ -517,8 +517,8 @@ If SILENT is non-nil, suppress update message."
   (let ((p1 (caar a))
         (p2 (caar b)))
     (if (eq p1 p2)
-        (when-let ((m1 (cl-position (cdar a) elpaca-menu-functions))
-                   (m2 (cl-position (cdar b) elpaca-menu-functions)))
+        (when-let* ((m1 (cl-position (cdar a) elpaca-menu-functions))
+                    (m2 (cl-position (cdar b) elpaca-menu-functions)))
           (< m1 m2))
       (string<  p1 p2))))
 
@@ -530,7 +530,7 @@ If SILENT is non-nil, suppress update message."
 (defun elpaca-ui-visit (&optional build)
   "Visit current package's repo or BUILD directory."
   (interactive (list current-prefix-arg))
-  (if-let ((orphan (get-text-property (line-beginning-position) 'orphan-dir)))
+  (if-let* ((orphan (get-text-property (line-beginning-position) 'orphan-dir)))
       (dired orphan)
     (elpaca-visit (elpaca-ui-current-package) build)))
 
@@ -545,13 +545,13 @@ If TARGET is the keyword `:region', act on all marked packages in active region.
 If non-nil, call TEST with each ID.
 If COMMAND is nil remove marks, otherwise mark for `elpaca-ui-marks' COMMAND.
 If ADVANCEP is non-nil, move `forward-line'."
-  (if-let (((and (eq target :region) (use-region-p)))
-           (end (region-end)))
+  (if-let* (((and (eq target :region) (use-region-p)))
+            (end (region-end)))
       (let (targets)
         (save-excursion
           (goto-char (region-beginning))
           (while (< (point) end)
-            (when-let ((id (tabulated-list-get-id))) (push (car id) targets))
+            (when-let* ((id (tabulated-list-get-id))) (push (car id) targets))
             (forward-line)))
         (elpaca-ui-mark targets command test)
         (deactivate-mark))
@@ -559,9 +559,9 @@ If ADVANCEP is non-nil, move `forward-line'."
     (cl-loop for id in (if (consp target) target (list target)) do
              (when test (funcall test id))
              (setf (alist-get id elpaca-ui--marked-packages nil t)
-                   (when-let ((found (assoc command elpaca-ui-marks))
-                              ((not (eq (car (alist-get id elpaca-ui--marked-packages))
-                                        command))))
+                   (when-let* ((found (assoc command elpaca-ui-marks))
+                               ((not (eq (car (alist-get id elpaca-ui--marked-packages))
+                                         command))))
                      (append found (list :prefix-arg current-prefix-arg)))))
     (jit-lock-refontify)
     (when advancep (forward-line))))
@@ -607,12 +607,12 @@ If ADVANCEP is non-nil, move `forward-line'."
   "Refresh views."
   (require 'elpaca-log)
   (require 'elpaca-manager)
-  (when-let ((buffer (get-buffer elpaca-manager-buffer)))
+  (when-let* ((buffer (get-buffer elpaca-manager-buffer)))
     (with-current-buffer buffer
       (when (functionp elpaca-ui-entries-function)
         (funcall elpaca-ui-entries-function))
       (elpaca-ui-search-refresh buffer)))
-  (when-let ((buffer (get-buffer elpaca-log-buffer)))
+  (when-let* ((buffer (get-buffer elpaca-log-buffer)))
     (with-current-buffer buffer
       (when (functionp elpaca-ui-entries-function)
         (funcall elpaca-ui-entries-function))
@@ -636,10 +636,10 @@ If ADVANCEP is non-nil, move `forward-line'."
 (defun elpaca-ui-send-input ()
   "Send input string to current process."
   (interactive)
-  (if-let ((id (car (get-text-property (point) 'tabulated-list-id)))
-           (e (alist-get id (elpaca--queued)))
-           (process (elpaca<-process e))
-           ((process-live-p process)))
+  (if-let* ((id (car (get-text-property (point) 'tabulated-list-id)))
+            (e (alist-get id (elpaca--queued)))
+            (process (elpaca<-process e))
+            ((process-live-p process)))
       (let* ((input (read-string (format "Send input to %S: " (process-name process)))))
         (process-send-string process (concat input "\n")))
     (user-error "No running process associated with %S" (elpaca<-package e))))
