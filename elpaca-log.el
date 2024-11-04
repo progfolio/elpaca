@@ -73,8 +73,8 @@ It must accept a package ID symbol and REF string as its first two arguments."
 ;;;###autoload
 (defun elpaca-log-command-query ()
   "Return logging query matching `this-command' in `elpaca-log-command-queries'."
-  (when-let ((found (alist-get this-command elpaca-log-command-queries
-                               nil nil #'elpaca-log--find-command)))
+  (when-let* ((found (alist-get this-command elpaca-log-command-queries
+                                nil nil #'elpaca-log--find-command)))
     (if (functionp found) (funcall found) found)))
 
 ;;;###autoload
@@ -112,12 +112,12 @@ It must accept a package ID symbol and REF string as its first two arguments."
   (let ((queued (elpaca--queued)))
     (mapcar
      (lambda (entry)
-       (if-let ((cols (cadr entry))
-                ((equal (aref cols 1) "byte-compilation"))
-                (copy (copy-tree entry))
-                (info (string-trim (aref (cadr copy) 2)))
-                (name (aref (cadr copy) 0))
-                (e (elpaca-alist-get (intern name) queued)))
+       (if-let* ((cols (cadr entry))
+                 ((equal (aref cols 1) "byte-compilation"))
+                 (copy (copy-tree entry))
+                 (info (string-trim (aref (cadr copy) 2)))
+                 (name (aref (cadr copy) 0))
+                 (e (elpaca-alist-get (intern name) queued)))
            (progn
              (when (string-match-p "\\(?:Error\\|Warning\\):" info)
                (setf (aref (cadr copy) 2) (propertize info 'face 'elpaca-log-error)))
@@ -159,9 +159,9 @@ It must accept a package ID symbol and REF string as its first two arguments."
 (declare-function magit-show-commit "magit")
 (defun elpaca-log-magit-diff (id ref)
   "Show diff for ID at REF."
-  (if-let ((fboundp 'magit-show-commit)
-           (e (elpaca-get id))
-           (default-directory (elpaca<-repo-dir e)))
+  (if-let* ((fboundp 'magit-show-commit)
+            (e (elpaca-get id))
+            (default-directory (elpaca<-repo-dir e)))
       (let ((magit-display-buffer-noselect elpaca-log-update-mode)
             (magit-uniquify-buffer-names (not elpaca-log-update-mode))
             (magit-buffer-name-format "*elpaca-diff*"))
@@ -172,9 +172,9 @@ It must accept a package ID symbol and REF string as its first two arguments."
 
 (defun elpaca-log-diff (id ref)
   "Display diff buffer for package ID at REF."
-  (if-let ((e (elpaca-get id))
-           (repo (elpaca<-repo-dir e))
-           (diff (let ((default-directory repo)) (elpaca-process-output "git" "show" ref))))
+  (if-let* ((e (elpaca-get id))
+            (repo (elpaca<-repo-dir e))
+            (diff (let ((default-directory repo)) (elpaca-process-output "git" "show" ref))))
       (let ((displayp elpaca-log-update-mode))
         (with-current-buffer (get-buffer-create "*elpaca-diff*")
           (with-silent-modifications (erase-buffer) (insert diff))
@@ -201,28 +201,28 @@ It must accept a package ID symbol and REF string as its first two arguments."
   (cl-loop
    with compact
    for entry in entries
-   do (if-let ((cols (cadr entry))
-               (status (aref cols 1))
-               ((equal status "update-log"))
-               (info (aref cols 2))
-               ((not (string-prefix-p "$git" info)))
-               (tokens (split-string info " " 'omit-nulls))
-               (commit (pop tokens))
-               (date (propertize (replace-regexp-in-string "^.*\\((.*)\\)" "\\1" info)
-                                 'face 'elpaca-log-info))
-               (info (let* ((i (string-trim (replace-regexp-in-string (regexp-quote date) ""
-                                                                      (string-join tokens " "))))
-                            (i (replace-regexp-in-string "^\\* +" "" i))
-                            (i (replace-regexp-in-string
-                                "\\(?:[([]\\{1\\}[^z-a]*?#[^z-a]+?[])]\\{1\\}\\)"
-                                (lambda (s) (propertize s 'face 'elpaca-log-highlight))
-                                i)))
-                       (replace-regexp-in-string
-                        "^.*: " (lambda (s) (propertize s 'face 'elpaca-log-highlight))
-                        i nil t)))
-               (button (elpaca-ui--buttonize commit #'elpaca-log-view-diff
-                                             (cons (caar entry) commit)))
-               (copy (copy-tree entry)))
+   do (if-let* ((cols (cadr entry))
+                (status (aref cols 1))
+                ((equal status "update-log"))
+                (info (aref cols 2))
+                ((not (string-prefix-p "$git" info)))
+                (tokens (split-string info " " 'omit-nulls))
+                (commit (pop tokens))
+                (date (propertize (replace-regexp-in-string "^.*\\((.*)\\)" "\\1" info)
+                                  'face 'elpaca-log-info))
+                (info (let* ((i (string-trim (replace-regexp-in-string (regexp-quote date) ""
+                                                                       (string-join tokens " "))))
+                             (i (replace-regexp-in-string "^\\* +" "" i))
+                             (i (replace-regexp-in-string
+                                 "\\(?:[([]\\{1\\}[^z-a]*?#[^z-a]+?[])]\\{1\\}\\)"
+                                 (lambda (s) (propertize s 'face 'elpaca-log-highlight))
+                                 i)))
+                        (replace-regexp-in-string
+                         "^.*: " (lambda (s) (propertize s 'face 'elpaca-log-highlight))
+                         i nil t)))
+                (button (elpaca-ui--buttonize commit #'elpaca-log-view-diff
+                                              (cons (caar entry) commit)))
+                (copy (copy-tree entry)))
           (progn
             (setf (aref (cadr copy) 2) (concat button " " info " " date))
             (push copy compact))
@@ -237,8 +237,8 @@ It must accept a package ID symbol and REF string as its first two arguments."
            "\\(?:#(?verbosity[^z-a]*?)\\|#verbosity\\)"
            ""
            (or (with-selected-window (minibuffer-window)
-                 (when-let ((s (buffer-substring-no-properties (point-min) (point-max)))
-                            ((string-match-p elpaca-ui-search-prompt s)))
+                 (when-let* ((s (buffer-substring-no-properties (point-min) (point-max)))
+                             ((string-match-p elpaca-ui-search-prompt s)))
                    (substring s (length elpaca-ui-search-prompt))))
                elpaca-ui-search-query))))
     (elpaca-ui-search-refresh (get-buffer elpaca-log-buffer) 'silent)
@@ -255,8 +255,8 @@ It must accept a package ID symbol and REF string as its first two arguments."
    (cl-loop
     for (status time info verbosity) in log
     for entry =
-    (when-let (((<= verbosity elpaca-verbosity))
-               (delta (format-time-string "%02s.%6N" (time-subtract time queue-time))))
+    (when-let* (((<= verbosity elpaca-verbosity))
+                (delta (format-time-string "%02s.%6N" (time-subtract time queue-time))))
       (list (list id) (vector (propertize package 'elpaca-status status)
                               (symbol-name status) info (propertize delta 'time time))))
     when entry collect entry)))
