@@ -167,7 +167,7 @@
       (list "%s\n%s" "menu item recipe:"
             (elpaca-info--format-recipe (format "%S" (plist-get item :recipe)))))
     (list "%s\n%s" "full recipe:" (elpaca-info--recipe item))
-    (when-let* ((e) (pinned (elpaca--pinned-p e)))
+    (when-let* ((e) (pinned (elpaca-pinned-p e)))
       (list "%s %s" "pinned:" (if-let* ((pinner (car pinned))
                                         ((not (eq pinner (elpaca<-id e)))))
                                   (format "implicitly by mono-repo sibling %s"
