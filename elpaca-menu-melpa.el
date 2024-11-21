@@ -109,15 +109,14 @@ If ITEM is non-nil, return that ITEM if found."
   (let ((miss-p nil))
     (setq elpaca-menu-melpa--index-cache
           (or elpaca-menu-melpa--index-cache
-              (prog1
-                  (let* ((repo (expand-file-name "melpa/" elpaca-cache-directory))
-                         (default-directory repo))
-                    (setq miss-p t)
-                    (unless (file-exists-p repo) (elpaca-menu-melpa--clone repo))
-                    (cl-loop with metadata = (elpaca-menu-melpa--metadata)
-                             for file in (directory-files "./recipes/" 'full "\\(?:\\`[^.]\\)")
-                             for candidate = (elpaca-menu-melpa--convert file metadata)
-                             when candidate collect candidate)))))
+              (let* ((repo (expand-file-name "melpa/" elpaca-cache-directory))
+                     (default-directory repo))
+                (setq miss-p t)
+                (unless (file-exists-p repo) (elpaca-menu-melpa--clone repo))
+                (cl-loop with metadata = (elpaca-menu-melpa--metadata)
+                         for file in (directory-files "./recipes/" 'full "\\(?:\\`[^.]\\)")
+                         for candidate = (elpaca-menu-melpa--convert file metadata)
+                         when candidate collect candidate))))
     (when miss-p (elpaca--write-file (expand-file-name "melpa.eld" elpaca-cache-directory)
                    (prin1 elpaca-menu-melpa--index-cache))))
   (if item (elpaca-alist-get item elpaca-menu-melpa--index-cache) elpaca-menu-melpa--index-cache))
