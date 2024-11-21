@@ -1215,8 +1215,10 @@ The keyword's value is expected to be one of the following:
    unless (eq version 'skip)
    when (or (and core (version-list-< version min))
             (and (version-list-< version min)
-                 (let ((tag (elpaca-latest-tag dep)))
-                   (or (null tag) (version-list-< (version-to-list tag) min)))))
+                 (if-let* ((tag (elpaca-latest-tag dep))
+                           ((setq version (version-to-list tag))))
+                     (version-list-< version min)
+                   (null tag))))
    do (cl-return (elpaca--fail e (format "%s installed version %s lower than min required %s"
                                          id version need))))
   (elpaca--continue-build e))
