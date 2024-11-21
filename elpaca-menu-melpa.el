@@ -67,9 +67,10 @@
 
 (defun elpaca-menu-melpa--update ()
   "Update recipes in MELPA menu."
-  (message "Downloading MELPA...")
-  (elpaca-with-process-call ("git" "pull")
-    (message (if success "Downloading MELPA...100%%" "Unable to pull MELPA recipes"))))
+  (let ((default-directory (expand-file-name "melpa/" elpaca-cache-directory)))
+    (message "Downloading MELPA...")
+    (elpaca-with-process-call ("git" "pull")
+      (message "%s" (if success "Downloading MELPA...100%%" stderr)))))
 
 (defun elpaca-menu-melpa--convert (file metadata)
   "Return menu item candidate for FILE's MELPA recipe and METADATA."
