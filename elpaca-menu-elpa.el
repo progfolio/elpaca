@@ -148,7 +148,7 @@ If RECURSE is non-nil, message that update succeeded."
         ((eq request 'update)
          (delete-file (alist-get 'cache-path elpa))
          (setf (alist-get 'cache elpa) nil (alist-get 'metadata-cache elpa) nil)
-         (elpaca-menu--elpa elpa 'index 'recurse))))
+         (elpaca-menu--elpa elpa 'index item 'recurse))))
 
 ;;;###autoload
 (defun elpaca-menu-gnu-elpa (request &optional item)
