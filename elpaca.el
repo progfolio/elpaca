@@ -1493,8 +1493,19 @@ Loads or caches autoloads."
               (autoloads (expand-file-name
                           (or (and (stringp key) key) (concat pkg "-autoloads.el"))))
               ((file-exists-p autoloads)))
-        (if elpaca-cache-autoloads
-            (let ((forms nil))
+        (cond
+         ((null elpaca-cache-autoloads)
+          (condition-case err
+              (progn
+                (load autoloads nil 'nomessage)
+                (elpaca--signal e "Package activated" 'activated))
+            ((error) (elpaca--signal
+                      e (format "Failed to load %S: %S" autoloads err) 'failed-to-activate))))
+         ((stringp elpaca-cache-autoloads)
+          (unless (assoc elpaca-cache-autoloads load-history)
+            (elpaca--signal e (format "Loading autoloads cache: %s" elpaca-cache-autoloads))
+            (load-file elpaca-cache-autoloads)))
+         (t (let ((forms nil))
               (elpaca--signal e "Caching autoloads")
               (with-current-buffer (get-buffer-create " *elpaca--activate-package*")
                 (insert-file-contents autoloads nil nil nil 'replace)
@@ -1510,14 +1521,8 @@ Loads or caches autoloads."
                            ((error) (warn "Error loading %S autoloads: %S" ,pkg err))))
                       (elpaca-q<-autoloads (elpaca--q e))))
               (elpaca--signal e "Autoloads cached"))
-          (condition-case err
-              (progn
-                (load autoloads nil 'nomessage)
-                (elpaca--signal e "Package activated" 'activated))
-            ((error) (elpaca--signal
-                      e (format "Failed to load %S: %S" autoloads err) 'failed-to-activate))))
-      (and (stringp key) (elpaca--signal e (concat "nonexistent :autoloads file \"" key "\"")))))
-  (elpaca--continue-build e))
+            (and (stringp key) (elpaca--signal e (concat "nonexistent :autoloads file \"" key "\""))))))
+    (elpaca--continue-build e)))
 
 (defun elpaca--byte-compile (e)
   "Byte compile E's package."
@@ -1978,10 +1983,18 @@ If INTERACTIVE is non-nil, process queues."
     (not (string-empty-p (elpaca-process-output
                           "git" "-c" "status.branch=false" "status" "--short")))))
 
-(defun elpaca-load-lockfile (&optional lockfile _force)
-  "Load LOCKFILE.  If FORCE is non-nil, @TODO."
-  (interactive "fLockfile: ")
-  (message "%S" lockfile))
+(defun elpaca-write-autoloads (path)
+  "Write init file autoloads to PATH."
+  (interactive "FWrite elpaca autoloads to: ")
+  (and (file-exists-p path)
+       (not (yes-or-no-p (format "Overwrite %s?" path)))
+       (user-error "Overwrite aborted"))
+  (elpaca--write-file path
+    (insert ";;; Elpaca Autoloads  -*- lexical-binding:t -*-\n")
+    (prin1 (macroexp-progn (cl-loop for q in (reverse elpaca--queues)
+                                    for autoloads = (and (eq (elpaca-q<-type q) 'init)
+                                                         (elpaca-q<-autoloads q))
+                                    when autoloads append (reverse autoloads))))))
 
 (defun elpaca-write-lockfile (path)
   "Write lockfile to PATH for current state of package repositories."
