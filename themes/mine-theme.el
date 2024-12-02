@@ -60,7 +60,7 @@
                                                               (symbol-name (car spec))))))))
                                `(,full ,@(cdr spec))))
                            ',specs))
-       (if-let ((found (assoc (car spec) mine-faces)))
+       (if-let* ((found (assoc (car spec) mine-faces)))
            (setf (cdr found) (cdr spec))
          (setq mine-faces (nreverse (push spec mine-faces)))))))
 

@@ -302,7 +302,7 @@ https://github.com/progfolio/elpaca
     (defun +exwm-shell-command (var)
       "Execute environmental VAR as async shell command."
       (interactive)
-      (if-let ((program (getenv var)))
+      (if-let* ((program (getenv var)))
           (progn
             (start-process-shell-command program nil program))
         (user-error "$%S not set" var)))
@@ -787,7 +787,7 @@ https://github.com/emacs-evil/evil
   :config
   (defun +evil-lookup-elisp-symbol ()
     "Lookup elisp symbol at point."
-    (if-let ((symbol (thing-at-point 'symbol)))
+    (if-let* ((symbol (thing-at-point 'symbol)))
         (describe-symbol (intern symbol))
       (user-error "No symbol at point")))
   (+general-global-window
@@ -1204,11 +1204,11 @@ I may move it from its default location (=~/.elfeed=), in =elfeed-db-directory=.
               (goto-char (point-min))
               (let ((found nil))
                 (org-element-map (org-element-parse-buffer) 'link
-                  (lambda (node) (when-let ((props (cadr node))
-                                            (standards (plist-get props :standard-properties))
-                                            (tags (org-get-tags (aref standards 0)))
-                                            ((member "elfeed" tags))
-                                            ((not (member "ignore" tags))))
+                  (lambda (node) (when-let* ((props (cadr node))
+                                             (standards (plist-get props :standard-properties))
+                                             (tags (org-get-tags (aref standards 0)))
+                                             ((member "elfeed" tags))
+                                             ((not (member "ignore" tags))))
                                    (push (cons (plist-get props :raw-link)
                                                (delq 'elfeed (mapcar #'intern tags)))
                                          found)))
@@ -2558,7 +2558,7 @@ Utility functions for use inside Org capture templates.
   "Hook function run durning `org-capture-mode-hook'.
   If a template has a :properties keyword, add them to the entry."
   (when (eq (org-capture-get :type 'local) 'entry)
-    (when-let ((properties (doct-get :properties t)))
+    (when-let* ((properties (doct-get :properties t)))
       (dolist (property properties)
         (org-set-property
          (symbol-name (car property))
@@ -2657,7 +2657,7 @@ Utility functions for use inside Org capture templates.
                             (unless (derived-mode-p 'org-mode) (org-mode)
                                     ;;set to utf-8 because we may be visiting raw file
                                     (setq buffer-file-coding-system 'utf-8-unix))
-                            (when-let ((headline (doct-get :headline)))
+                            (when-let* ((headline (doct-get :headline)))
                               (unless (org-find-exact-headline-in-buffer headline)
                                 (goto-char (point-max))
                                 (insert "* " headline)
@@ -3454,8 +3454,8 @@ https://github.com/akermu/emacs-libvterm
                                 (buffer-substring (line-beginning-position)
                                                   (line-end-position)))
                        (forward-line)))
-                   (when-let ((so (expand-file-name "./vterm-module.so"))
-                              ((file-exists-p so)))
+                   (when-let* ((so (expand-file-name "./vterm-module.so"))
+                               ((file-exists-p so)))
                      (make-symbolic-link
                       so (expand-file-name (file-name-nondirectory so)
                                            "../../builds/vterm")
