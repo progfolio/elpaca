@@ -1410,7 +1410,7 @@ This is the branch that would be checked out upon cloning."
                  ((plist-get recipe :ref) (elpaca--signal e "Ignoring :depth in favor of :ref"))
                  ((numberp depth) `("--depth" ,(number-to-string depth)))
                  ((memq depth '(treeless blobless))
-                  (cond ((or (null remote) (stringp remote))
+                  (cond ((consp remote)
                          (setf (elpaca<-recipe e) (plist-put recipe :depth nil))
                          (elpaca--signal e ":remotes incompatible with treeless, blobless clones; using :depth nil"))
                         ((eq depth 'treeless) '("--filter=tree:0"))
