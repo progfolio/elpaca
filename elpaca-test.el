@@ -139,24 +139,15 @@ For DEPTH and FORMS see `elpaca-test' :depth and :init."
       (mapc #'print forms)
       (elisp-enable-lexical-binding))))
 
-(defun elpaca-test--copy-dir (dir dest)
-  "Copy DIR to DEST, resolving symlinks so files in DEST do not point to DIR."
-  (setq dir (expand-file-name dir)
-        dest (expand-file-name dest))
-  (copy-directory dir dest 'keep-time 'parents 'copy-contents)
-  (cl-loop for f in (directory-files-recursively dest ".*" 'dirs nil)
-           do (when-let* (((file-symlink-p f))
-                          (truename (file-truename f)))
-                (delete-file f)
-                (copy-file truename f 'overwrite))))
-
 (defun elpaca-test--copy-local-store ()
   "Copy host `elpaca-directory' store to test env."
   (cl-loop with env = (expand-file-name "./elpaca/")
            for path in '("./repos/elpaca" "./cache/")
            do (when-let* ((local (expand-file-name path elpaca-directory))
-                          ((file-exists-p local)))
-                (elpaca-test--copy-dir local (expand-file-name path env)))))
+                          ((file-exists-p local))
+                          (destination (expand-file-name path env)))
+                (copy-directory local destination nil 'parents 'copy-conents)
+                (mapc #'delete-file (directory-files-recursively destination "\\.elc")))))
 
 (defun elpaca-test--display (vars)
   "Display test with VARS when test finished and Emacs idle."
