@@ -30,7 +30,7 @@ It allows users to find, install, update, and remove third-party packages for Em
 It is a replacement for the built-in Emacs package manager, package.el.
 
 @quotation
-Copyright (C) 2022-2024 Nicholas Vollmer
+Copyright (C) 2022-2025 Nicholas Vollmer
 
 You can redistribute this document and/or modify it under the terms of the GNU
 General Public License as published by the Free Software Foundation, either

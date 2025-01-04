@@ -1,6 +1,6 @@
 ;;; elpaca-manager.el --- Elpaca package management UI  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2022-2024 Nicholas Vollmer
+;; Copyright (C) 2022-2025 Nicholas Vollmer
 
 ;; Author:  Nicholas Vollmer
 ;; Keywords:

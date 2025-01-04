@@ -1,6 +1,6 @@
 ;;; elpaca.el --- An elisp package manager           -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2022-2024  Nicholas Vollmer
+;; Copyright (C) 2022-2025  Nicholas Vollmer
 
 ;; Author: Nicholas Vollmer
 ;; URL: https://github.com/progfolio/elpaca
