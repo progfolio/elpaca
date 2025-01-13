@@ -34,11 +34,12 @@
            (or load-file-name (buffer-name)) name keyword)
     (plist-put rest :ensure nil))
   (let ((processed (use-package-process-keywords name rest state)))
+    (when (memq (car ensure) '(quote \`)) (setq ensure (eval ensure t)))
     (cond ((null ensure) processed) ; :ensure nil = no Elpaca integration
           ;; :ensure t or `use-package-always-ensure' non-nil = (elpaca NAME ...)
           ((or (eq ensure t) (equal ensure '(t))) (setq ensure name))
           ;; Handle ID/NAME mismatch
-          ((and (listp ensure) (keywordp (car ensure))) (push name ensure)))
+          ((and (consp ensure) (keywordp (car ensure))) (push name ensure)))
     (if ensure `((elpaca ,ensure ,@processed)) processed)))
 
 (defun elpaca-use-package--normalizer (_name _keyword args)
