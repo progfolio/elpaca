@@ -183,12 +183,11 @@ Simplified, faster version of `alist-get'."
                                           :repo "https://github.com/progfolio/elpaca.git"
                                           :files '("extensions/elpaca-use-package.el")
                                           :main "extensions/elpaca-use-package.el"
-                                          :build '(:not elpaca--compile-info))))))
-    nil))
+                                          :build '(:not elpaca--compile-info))))))))
 
 (defcustom elpaca-menu-functions
-  '( elpaca-menu-extensions elpaca-menu-org elpaca-menu-melpa elpaca-menu-non-gnu-devel-elpa
-     elpaca-menu-gnu-devel-elpa elpaca-menu-non-gnu-elpa elpaca-menu-gnu-elpa elpaca-menu-declarations)
+  '( elpaca-menu-extensions elpaca-menu-org elpaca-menu-melpa
+     elpaca-menu-non-gnu-elpa elpaca-menu-gnu-elpa elpaca-menu-declarations)
   "Abnormal hook to lookup packages in menus.
 Each function is passed a request, which may be any of the following symbols:
   - `index`
