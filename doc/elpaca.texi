@@ -26,17 +26,17 @@
 
 @noindent
 Elpaca is an elisp package manager.
-It allows users to find, install, update, and remove third-party packages for Emacs.
-It is a replacement for the built-in Emacs package manager, package.el.
+It allows users to find@comma{} install@comma{} update@comma{} and remove third-party packages for Emacs.
+It is a replacement for the built-in Emacs package manager@comma{} package.el.
 
 @quotation
 Copyright (C) 2022-2025 Nicholas Vollmer
 
 You can redistribute this document and/or modify it under the terms of the GNU
-General Public License as published by the Free Software Foundation, either
-version 3 of the License, or (at your option) any later version.
+General Public License as published by the Free Software Foundation@comma{} either
+version 3 of the License@comma{} or (at your option) any later version.
 
-This document is distributed in the hope that it will be useful,
+This document is distributed in the hope that it will be useful@comma{}
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE@.  See the GNU
 General Public License for more details.
@@ -139,6 +139,7 @@ It must come before any calls to other Elpaca functions/macros.
 This will clone Elpaca into your @samp{user-emacs-directory} under the @samp{elpaca} subdirectory.
 It then builds and activates Elpaca.
 
+@anchor{installation-script}
 @lisp
 (defvar elpaca-installer-version 0.8)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
@@ -177,12 +178,12 @@ It then builds and activates Elpaca.
     (elpaca-generate-autoloads "elpaca" repo)
     (load "./elpaca-autoloads")))
 (add-hook 'after-init-hook #'elpaca-process-queues)
-(elpaca `(,@@elpaca-order))
+(elpaca `(@comma{}@@elpaca-order))
 @end lisp
 
 @itemize
 @item
-Windows users must be able to create symlinks@footnote{@uref{https://www.howtogeek.com/16226/complete-guide-to-symbolic-links-symlinks-on-windows-or-linux/, windows symlink guide}}, or enable @samp{elpaca-no-symlink-mode}
+Windows users must be able to create symlinks@footnote{@uref{https://www.howtogeek.com/16226/complete-guide-to-symbolic-links-symlinks-on-windows-or-linux/, windows symlink guide}}@comma{} or enable @samp{elpaca-no-symlink-mode}
 @end itemize
 
 @lisp
@@ -248,11 +249,11 @@ And remove anything related to package.el in your init file. e.g. calls to @code
 @tab @code{b}
 @tab @code{elpaca-browse}
 @end multitable
-​* Update is an alias for ``pull''. It's encouraged to fetch, review, and @strong{then} merge package updates rather than pulling.
+​* Update is an alias for ``pull''. It's encouraged to fetch@comma{} review@comma{} and @strong{then} merge package updates rather than pulling.
 
 
 Packages installed via the above commands are not loaded on subsequent Emacs sessions (after restarting).
-To install and load packages persistently (across Emacs restarts), use the @samp{elpaca} macro in your init file after the installer. (@ref{Installer, , installer})
+To install and load packages persistently (across Emacs restarts)@comma{} use the @samp{elpaca} macro in your init file after the installer. (@ref{Installer, , installer})
 
 For example:
 
@@ -267,8 +268,8 @@ For example:
   ;; Enable use-package :ensure support for Elpaca.
   (elpaca-use-package-mode))
 
-;;When installing a package used in the init file itself,
-;;e.g. a package which adds a use-package key word,
+;;When installing a package used in the init file itself@comma{}
+;;e.g. a package which adds a use-package key word@comma{}
 ;;use the :wait recipe keyword to block until that package is installed/configured.
 ;;For example:
 ;;(use-package general :ensure (:wait t) :demand t)
@@ -292,21 +293,21 @@ Consider the following example:
 (elpaca package-a (message "First")) ; Queue First
 (message "Second") ; Second messaged
 (elpaca package-b (message "Third")) ; Queue Third
-(elpaca-process-queues) ; Process queue: First messaged, Third messaged.
+(elpaca-process-queues) ; Process queue: First messaged@comma{} Third messaged.
 @end lisp
 
 ``Second'' will be message @emph{before} ``First'' and ``Third''.
-If a form should be evaluated after a package is installed/activated, put it in that package declaration's @emph{BODY}.
+If a form should be evaluated after a package is installed/activated@comma{} put it in that package declaration's @emph{BODY}.
 Declaration @emph{BODY} forms are evaluated synchronously in declared order.
 e.g.
 
 @lisp
-(elpaca package-a (message "First") (message "Second"))  ; Queue First, Second
+(elpaca package-a (message "First") (message "Second"))  ; Queue First@comma{} Second
 (elpaca package-b (message "Third"))  ; Queue Third
-(elpaca-process-queues) ; Process queue: First, Second, then Third messaged.
+(elpaca-process-queues) ; Process queue: First@comma{} Second@comma{} then Third messaged.
 @end lisp
 
-Add configuration which relies on @samp{after-init-hook}, @samp{emacs-startup-hook}, etc to @samp{elpaca-after-init-hook} so it runs after Elpaca has activated all queued packages.
+Add configuration which relies on @samp{after-init-hook}@comma{} @samp{emacs-startup-hook}@comma{} etc to @samp{elpaca-after-init-hook} so it runs after Elpaca has activated all queued packages.
 This includes loading of saved customizations. e.g.
 
 @lisp
@@ -427,7 +428,7 @@ The git ref@footnote{@uref{https://git-scm.com/book/en/v2/Git-Internals-Git-Refe
 @node pin
 @subsubsection :pin
 
-When non-nil, ignore the package during update commands.
+When non-nil@comma{} ignore the package during update commands.
 
 @lisp
 (example :pin t)
@@ -453,7 +454,7 @@ The files linked from the package's repository to its build directory.
 Each element of the list is either:
 @itemize
 @item
-The symbol @samp{:defaults}, which expands to @samp{elpaca-default-files-directive}.
+The symbol @samp{:defaults}@comma{} which expands to @samp{elpaca-default-files-directive}.
 @item
 A string naming files or folders. Shell glob patterns match multiple files.
 @item
@@ -470,7 +471,7 @@ A list starting with the @samp{:exclude} keyword. The remaining elements are not
 
 The protocol to use when cloning repositories.
 
-The value must be a symbol, either @samp{https} or @samp{ssh}.
+The value must be a symbol@comma{} either @samp{https} or @samp{ssh}.
 
 @lisp
 (example :protocol https) ; Use the https protocol.
@@ -491,7 +492,7 @@ The following will rename the cloned remote (usually ``origin'' by git conventio
 (example :remotes "upstream")
 @end lisp
 
-In order to add a another remote, a spec may be a list of the form:
+In order to add a another remote@comma{} a spec may be a list of the form:
 
 @lisp
 ("NAME" [PROPS])
@@ -508,7 +509,7 @@ For example:
 @end lisp
 
 Will add a remote named fork which points to a repository hosted on the same forge as the upstream remote.
-The following does the same above, additionally adding a third remote at a different forge.
+The following does the same above@comma{} additionally adding a third remote at a different forge.
 
 @lisp
 (example :host github :repo "upstream/example"
@@ -521,7 +522,7 @@ The following does the same above, additionally adding a third remote at a diffe
 
 The name of the main elisp file.
 When provided this can speed up the process of cloning and loading a package's dependencies.
-When declared @samp{nil}, skip dependency check.
+When declared @samp{nil}@comma{} skip dependency check.
 
 @lisp
 (example :main "example.el")
@@ -534,7 +535,7 @@ When declared @samp{nil}, skip dependency check.
 @node build
 @subsubsection :build
 
-A list of build steps, nil or t.
+A list of build steps@comma{} nil or t.
 To remove steps from @samp{elpaca-default-build-steps} by starting the list with the @samp{:not} keyword.
 
 @lisp
@@ -544,9 +545,10 @@ To remove steps from @samp{elpaca-default-build-steps} by starting the list with
 @node inherit
 @subsubsection :inherit
 
-When non-nil, inherit @emph{PROPS} from @samp{elpaca-order-functions} and possibly @samp{elpaca-menu-functions}.
-For example, without inheritance:
+When non-nil@comma{} inherit @emph{PROPS} from @samp{elpaca-order-functions} and possibly @samp{elpaca-menu-functions}.
+For example@comma{} without inheritance:
 
+@anchor{recipe-inheritance-nil}
 @lisp
 (elpaca-recipe '(doct :inherit nil))
 @end lisp
@@ -559,6 +561,7 @@ returns the recipe as declared:
 
 With inheritance enabled:
 
+@anchor{recipe-inheritance-t}
 @lisp
 (elpaca-recipe '(dracula-theme :inherit t)))
 @end lisp
@@ -577,6 +580,7 @@ the Elpaca's MELPA menu provides the rest of the recipe.
 The value may also be a menu symbol or list of menu symbols.
 This is a per-recipe way of setting @samp{elpaca-menu-functions}.
 
+@anchor{recipe-inheritance-menu}
 @lisp
 (elpaca-recipe '(dracula-theme :inherit elpaca-menu-non-gnu-devel-elpa))
 @end lisp
@@ -610,7 +614,7 @@ For example:
 @node post-build
 @subsubsection :post-build
 
-The same as @samp{:pre-build}, but run just before activating a package.
+The same as @samp{:pre-build}@comma{} but run just before activating a package.
 
 @lisp
 (elpaca (example :post-build (message "activate next")))
@@ -620,8 +624,8 @@ The same as @samp{:pre-build}, but run just before activating a package.
 @subsubsection :autoloads
 
 The name of the file the package's autoload file.
-When @samp{nil}, autoload loading and generation are disabled for the package.
-When @samp{t}, the default autoload file is generated/loaded (@samp{PACKAGE-NAME-autoloads.el}).
+When @samp{nil}@comma{} autoload loading and generation are disabled for the package.
+When @samp{t}@comma{} the default autoload file is generated/loaded (@samp{PACKAGE-NAME-autoloads.el}).
 The value may also be a string which is expanded relative to the package's build directory.
 e.g. @samp{"org-loaddefs.el"}.
 
@@ -655,7 +659,7 @@ The bindings will not be in scope by the time each build step is run.
 @node wait
 @subsubsection :wait
 
-When non-nil, process all queued orders immediately before continuing.
+When non-nil@comma{} process all queued orders immediately before continuing.
 e.g.
 
 @lisp
@@ -702,6 +706,7 @@ The first function to return a plist has its return value merged with the curren
 
 This is useful if you want to guarantee the values of certain keywords despite allowing recipe inheritance.
 
+@anchor{recipe-functions-example}
 @lisp
 (let ((elpaca-recipe-functions '((lambda (_) "Add extra cheese to everything."
                                    (list :cheese 'extra)))))
@@ -732,7 +737,7 @@ A string naming the menu.
 @end table
 
 It may also provide additional information about a package.
-For example, the Elpaca UI utilizes the following keywords when present:
+For example@comma{} the Elpaca UI utilizes the following keywords when present:
 
 @table @asis
 @item :url
@@ -755,13 +760,13 @@ update the menu's alist.
 @lisp
 (defun elpaca-menu-minimal (request_)
   "A minimal menu example.
-Ignore REQUEST, as this is a static, curated list of packages."
+Ignore REQUEST@comma{} as this is a static@comma{} curated list of packages."
   '((example :source "EXAMPLE" :recipe (example :host github :repo "user/example"))
     (two :source "EXAMPLE" :recipe (two :host gitlab :repo "user/two"))))
 @end lisp
 
 Menus allow one to offer Elpaca users curated lists of package recipes.
-For example, @uref{https://www.github.com/progfolio/melpulls, melpulls} implements an Elpaca menu for pending MELPA packages.
+For example@comma{} @uref{https://www.github.com/progfolio/melpulls, melpulls} implements an Elpaca menu for pending MELPA packages.
 
 @menu
 * elpaca-menu-functions::
@@ -790,7 +795,7 @@ Menus are checked in order until one returns the requested menu item or the menu
 @node Orders
 @subsection Orders
 
-At a minimum, an order is a symbol which represents the name of a menu item (@ref{Menus, , menu}):
+At a minimum@comma{} an order is a symbol which represents the name of a menu item (@ref{Menus, , menu}):
 
 @lisp
 (elpaca example)
@@ -815,7 +820,7 @@ Each function in the list should accept the current order as its sole argument a
 The first function to return a plist has its return value merged with the current order.
 
 This is useful for declaring default order properties.
-For example, the following function disables recipe inheritance by default:
+For example@comma{} the following function disables recipe inheritance by default:
 
 @lisp
 (let ((elpaca-order-functions '((lambda (_) "Disable inheritance." '(:inherit nil)))))
@@ -833,10 +838,10 @@ Elpaca installs packages asynchronously.
 Orders (@ref{Orders, , orders}) are automatically queued in a list.
 When all of a queues orders have either finished or failed Elpaca considers it ``processed''.
 
-Queues ensure packages installation, activation, and configuration take place prior to packages in other queues.
+Queues ensure packages installation@comma{} activation@comma{} and configuration take place prior to packages in other queues.
 The @samp{:wait} recipe keyword splits the current queue and immediately begins processing prior queues.
 This is useful when one wants to use a package from a previous queue in their init file.
-For example, a package which implements an Elpaca menu (@ref{Menus, , menu}):
+For example@comma{} a package which implements an Elpaca menu (@ref{Menus, , menu}):
 
 @lisp
 (elpaca (melpulls :host github :repo "progfolio/melpulls" :wait t)
@@ -873,7 +878,7 @@ Any of the following will install the ``example'' package:
 
 @lisp
 (elpaca `(example :host github :repo "user/example"
-                  ,@@(when (eq system-type 'darwin) ;; backqouting supported
+                  @comma{}@@(when (eq system-type 'darwin) ;; backqouting supported
                       (list :pre-build ((message "Mac specific pre-build"))))))
 @end lisp
 
@@ -924,7 +929,7 @@ For example:
 ;; use-package declarations beyond this point may use the `:general' use-package keyword.
 @end lisp
 
-In order to turn off @samp{elpaca-use-package-mode} for a given declaration, specify @samp{:ensure nil}:
+In order to turn off @samp{elpaca-use-package-mode} for a given declaration@comma{} specify @samp{:ensure nil}:
 
 @lisp
 ;; `emacs' is a pseudo-feature which can be used to configure built-in functionality.
@@ -972,7 +977,7 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @tab Search for ``#unique #installed''
 @item elpaca-log
 @tab g l
-@tab When INTERACTIVE is non-nil, Display ‘elpaca-log-buffer’ filtered by QUERY@.
+@tab When INTERACTIVE is non-nil@comma{} Display ‘elpaca-log-buffer’ filtered by QUERY@.
 @item elpaca-manager
 @tab g m
 @tab Display Elpaca’s package management UI@.
@@ -999,7 +1004,7 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @tab Mark package at point for ‘elpaca-rebuild’.
 @item elpaca-ui-search
 @tab s
-@tab Filter current buffer by QUERY@. If QUERY is nil, prompt for it.
+@tab Filter current buffer by QUERY@. If QUERY is nil@comma{} prompt for it.
 @item elpaca-ui-unmark
 @tab u
 @tab Unmark current package or packages in active region.
@@ -1011,13 +1016,13 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @tab Execute each mark in ‘elpaca-ui-marked-packages’.
 @end multitable
 
-@defun elpaca-manager 
+@defun elpaca-manager @samp{&optional recache}
 Display packages registered with Elpaca.
-Packages can searched for, installed, updated, rebuilt, and deleted from this interface.
-When @samp{RECACHE} is non-nil, via lisp or interactively via the @samp{universal-argument}, recompute Elpaca's menu item cache before display.
+Packages can searched for@comma{} installed@comma{} updated@comma{} rebuilt@comma{} and deleted from this interface.
+When @samp{RECACHE} is non-nil@comma{} via lisp or interactively via the @samp{universal-argument}@comma{} recompute Elpaca's menu item cache before display.
 @end defun
 
-@defun elpaca-log 
+@defun elpaca-log @samp{&optional query}
 Display the log for queued packages filtered by @samp{QUERY}.
 For acceptable values for @samp{QUERY} see @ref{Searching, , searching}.
 @end defun
@@ -1037,10 +1042,10 @@ Setting the query to an empty string resets the query to @samp{elpaca-ui-default
 The buffer's header line displays the current query.
 
 Queries are regular expressions checked against each row of the UI table.
-For example, @samp{test} will match any row which contains the string ``test''.
+For example@comma{} @samp{test} will match any row which contains the string ``test''.
 Some characters change the matching behavior in queries.
 
-The pipe character, @samp{|}, will delimit text searches to specific columns of the table.
+The pipe character@comma{} @samp{|}@comma{} will delimit text searches to specific columns of the table.
 Considering the following table:
 
 @multitable {aaaaaa} {aaaaa} {aaaaa} {a}
@@ -1066,7 +1071,7 @@ The query @samp{o} will match rows 1 (on @samp{one}) and 2 (on @samp{four}).
 The query @samp{3 |} will only search for @samp{3} in the first column and match row three.
 While @samp{||| 3} Will search for @samp{3} in the fourth column of the table and match row 1.
 
-The pound (a.k.a. hash) character, @samp{#}, followed by the name of a search tag filters table entries.
+The pound (a.k.a. hash) character@comma{} @samp{#}@comma{} followed by the name of a search tag filters table entries.
 For example @samp{#random} will display 10 random entries.
 If the search tag accepts arguments they may passed by wrapping the tag name in parenthesis.
 e.g. @samp{#(random 20)} will display 20 random entries.
@@ -1079,10 +1084,10 @@ An alist of with elements of the form (NAME . FILTER).
 @samp{NAME} is a unique symbol describing the filter function.
 The user types name after @samp{#} in the minibuffer to apply the filter.
 @samp{FILTER} is a function which must accept a list of @samp{tabulated-list-entries} as its first argument.
-It may accept additional, optional arguments.
+It may accept additional@comma{} optional arguments.
 The function must return a list of @samp{tabulated-list-entries}.
 
-For example, the following search tag will embolden the first column of the @samp{elpaca-manager} table when the search query contains @samp{#bold-names}:
+For example@comma{} the following search tag will embolden the first column of the @samp{elpaca-manager} table when the search query contains @samp{#bold-names}:
 @end defopt
 
 @lisp
