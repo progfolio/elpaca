@@ -46,7 +46,7 @@ If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
                          (cl-loop
                           for (id . props) in items
                           for date = (or (when-let* ((e (elpaca-alist-get id queued)))
-                                           (elpaca--commit-date e "%Y-%m-%d"))
+                                           (ignore-errors (elpaca--commit-date e "%Y-%m-%d")))
                                          (when-let* ((declared (plist-get props :date)))
                                            (format-time-string "%F" declared)))
                           collect
