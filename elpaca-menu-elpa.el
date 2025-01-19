@@ -27,6 +27,7 @@
 (require 'elpaca)
 (require 'url)
 (defvar url-http-end-of-headers)
+(defvar url-http-response-status)
 (defvar elpaca-menu-elpas
   (cl-loop
    for (id . props) in
@@ -54,13 +55,17 @@
 
 (defun elpaca-menu-elpa--recipes (elpa)
   "Return list of recipes from ELPA."
-  (let ((name (alist-get 'name elpa)))
+  (when-let* ((name (alist-get 'name elpa))
+              (url (alist-get 'packages-url elpa)))
     (message "Downloading %s..." name)
-    (with-current-buffer (url-retrieve-synchronously (alist-get 'packages-url elpa) t)
+    (with-current-buffer (url-retrieve-synchronously url t)
       (goto-char url-http-end-of-headers)
       (condition-case err
-          (read (current-buffer))
-        ((error) (error "Unable to read %s package file: %S" name err))))))
+          (progn (unless (equal url-http-response-status 200)
+                   (error "%s responded with status %s" url url-http-response-status))
+                 (read (current-buffer)))
+        ((error) (always (lwarn `(elpaca menu) :warning
+                                "Unable to read %s package file: %S" name err)))))))
 
 (declare-function dom-by-tag "dom")
 (declare-function dom-texts  "dom")
@@ -96,7 +101,9 @@
    with remote        = (alist-get 'remote elpa)
    with metadata-url  = (alist-get 'metadata-url elpa)
    with branch-prefix = (alist-get 'branch-prefix elpa)
-   for (id . props) in (elpaca-menu-elpa--recipes elpa)
+   with recipes       = (elpaca-menu-elpa--recipes elpa)
+   initially (when (eq recipes t) (cl-return t))
+   for (id . props) in recipes
    for core = (plist-get props :core)
    when core do
    (setq core (mapcar (lambda (f) (if (equal f (file-name-as-directory f)) (concat f "*") f))
@@ -131,7 +138,9 @@
 (defun elpaca-menu-elpa--write-cache (elpa)
   "Write ELPA menu item cache."
   (unless (file-exists-p elpaca-cache-directory) (make-directory elpaca-cache-directory))
-  (elpaca--write-file (alist-get 'cache-path elpa) (prin1 (alist-get 'cache elpa))))
+  (when-let* ((cache (alist-get 'cache elpa))
+              ((not (eq cache t))))
+    (elpaca--write-file (alist-get 'cache-path elpa) (prin1 cache))))
 
 (defun elpaca-menu--elpa (elpa request &optional item recurse)
   "Delegate REQUEST for ELPA.
@@ -144,9 +153,8 @@ If RECURSE is non-nil, message that update succeeded."
                               (setf (alist-get 'cache elpa) (elpaca-menu-elpa--index elpa))
                             (elpaca-menu-elpa--write-cache elpa)
                             (when recurse (message "Downloading %s...100%%" (alist-get 'name elpa)))))))
-           (if item (elpaca-alist-get item cache) cache)))
+           (unless (eq cache t) (if item (elpaca-alist-get item cache) cache))))
         ((eq request 'update)
-         (delete-file (alist-get 'cache-path elpa))
          (setf (alist-get 'cache elpa) nil (alist-get 'metadata-cache elpa) nil)
          (elpaca-menu--elpa elpa 'index item 'recurse))))
 
