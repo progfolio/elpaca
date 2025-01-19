@@ -30,6 +30,7 @@
 (defvar url-http-response-status)
 (defvar elpaca-menu-elpas
   `((gnu . ((name         . "GNU ELPA")
+            (cache . ,(elpaca--read-file (expand-file-name "gnu-elpa.eld" elpaca-cache-directory)))
             (cache-path   . ,(expand-file-name "gnu-elpa.eld" elpaca-cache-directory))
             (packages-url . "https://git.savannah.gnu.org/gitweb/?p=emacs/elpa.git;a=blob_plain;f=elpa-packages;hb=HEAD")
             (metadata-url . "https://elpa.gnu.org/packages/")
@@ -37,6 +38,7 @@
             (branch-prefix . "externals")))
     (nongnu . ((name         . "NonGNU ELPA")
                (cache-path   . ,(expand-file-name "non-gnu-elpa.eld" elpaca-cache-directory))
+               (cache . ,(elpaca--read-file (expand-file-name "non-gnu-elpa.eld" elpaca-cache-directory)))
                (packages-url . "https://git.savannah.gnu.org/gitweb/?p=emacs/nongnu.git;a=blob_plain;f=elpa-packages;hb=HEAD")
                (metadata-url . "https://elpa.nongnu.org/nongnu/")
                (remote       . "git://git.sv.gnu.org/emacs/nongnu")
@@ -141,14 +143,14 @@ If RECURSE is non-nil, message that update succeeded."
                                 (setf (alist-get 'metadata-cache (alist-get name elpaca-menu-elpas))
                                       (elpaca-menu-elpa--metadata elpa)
                                       (alist-get 'cache (alist-get name elpaca-menu-elpas))
-                                      (elpaca-menu-elpa--index elpa))
-                              (elpaca-menu-elpa--write-cache elpa)
+                                      (elpaca-menu-elpa--index (alist-get name elpaca-menu-elpas)))
+                              (elpaca-menu-elpa--write-cache (alist-get name elpaca-menu-elpas))
                               (when recurse (message "Downloading %s...100%%" (alist-get 'name elpa)))))))
              (unless (eq cache t) (if item (elpaca-alist-get item cache) cache))))
           ((eq request 'update)
            (setf (alist-get 'cache (alist-get name elpaca-menu-elpas)) nil
                  (alist-get 'metadata-cache (alist-get name elpaca-menu-elpas)) nil)
-           (elpaca-menu--elpa elpa 'index item 'recurse)))))
+           (elpaca-menu--elpa name 'index item 'recurse)))))
 
 ;;;###autoload
 (defun elpaca-menu-gnu-elpa (request &optional item)
