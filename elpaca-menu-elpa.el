@@ -29,34 +29,23 @@
 (defvar url-http-end-of-headers)
 (defvar url-http-response-status)
 (defvar elpaca-menu-elpas
-  (cl-loop
-   for (id . props) in
-   `((gnu . ((name         . "GNU ELPA")
-             (cache-path   . ,(expand-file-name "gnu-elpa.eld" elpaca-cache-directory))
-             (packages-url . "https://git.savannah.gnu.org/cgit/emacs/elpa.git/plain/elpa-packages")
-             (metadata-url . "https://elpa.gnu.org/packages/")
-             (remote       . "git://git.sv.gnu.org/emacs/elpa")
-             (branch-prefix . "externals")))
-     (nongnu . ((name         . "NonGNU ELPA")
-                (cache-path   . ,(expand-file-name "non-gnu-elpa.eld" elpaca-cache-directory))
-                (packages-url . "https://git.savannah.gnu.org/cgit/emacs/nongnu.git/plain/elpa-packages")
-                (metadata-url . "https://elpa.nongnu.org/nongnu/")
-                (remote       . "git://git.sv.gnu.org/emacs/nongnu")
-                (branch-prefix . "elpa"))))
-   for dev = (copy-tree props)
-   do (setf (alist-get 'name dev) (replace-regexp-in-string " "  "-devel " (alist-get 'name dev))
-            (alist-get 'devel dev) t
-            (alist-get 'cache-path dev)
-            (replace-regexp-in-string "\\([^z-a]+-\\)" "\\1devel-" (alist-get 'cache-path dev))
-            (alist-get 'cache dev) (elpaca--read-file (alist-get 'cache-path dev))
-            (alist-get 'cache props) (elpaca--read-file (alist-get 'cache-path props)))
-   collect (cons id props)
-   collect (cons (intern (concat (symbol-name id) "-devel")) dev)))
+  `((gnu . ((name         . "GNU ELPA")
+            (cache-path   . ,(expand-file-name "gnu-elpa.eld" elpaca-cache-directory))
+            (packages-url . "https://git.savannah.gnu.org/gitweb/?p=emacs/elpa.git;a=blob_plain;f=elpa-packages;hb=HEAD")
+            (metadata-url . "https://elpa.gnu.org/packages/")
+            (remote       . "git://git.sv.gnu.org/emacs/elpa")
+            (branch-prefix . "externals")))
+    (nongnu . ((name         . "NonGNU ELPA")
+               (cache-path   . ,(expand-file-name "non-gnu-elpa.eld" elpaca-cache-directory))
+               (packages-url . "https://git.savannah.gnu.org/gitweb/?p=emacs/nongnu.git;a=blob_plain;f=elpa-packages;hb=HEAD")
+               (metadata-url . "https://elpa.nongnu.org/nongnu/")
+               (remote       . "git://git.sv.gnu.org/emacs/nongnu")
+               (branch-prefix . "elpa")))))
 
 (defun elpaca-menu-elpa--recipes (elpa)
   "Return list of recipes from ELPA."
-  (when-let* ((name (alist-get 'name elpa))
-              (url (alist-get 'packages-url elpa)))
+  (let ((name (alist-get 'name elpa))
+        (url (alist-get 'packages-url elpa)))
     (message "Downloading %s..." name)
     (with-current-buffer (url-retrieve-synchronously url t)
       (goto-char url-http-end-of-headers)
@@ -71,20 +60,18 @@
 (declare-function dom-texts  "dom")
 (defun elpaca-menu-elpa--metadata (elpa)
   "Return alist of ELPA package metadata."
-  (or (alist-get 'metadata-cache elpa)
-      (when (libxml-available-p)
-        (require 'dom)
-        (with-current-buffer (url-retrieve-synchronously (alist-get 'metadata-url elpa) t)
-          (when-let* ((html (libxml-parse-html-region (point-min) (point-max)))
-                      (rows (dom-by-tag html 'tr)))
-            (pop rows) ;discard table headers
-            (setf (alist-get 'metadata-cache elpa)
-                  (mapcar (lambda (row)
-                            (let* ((s (split-string (dom-texts row) " " 'omit-nulls))
-                                   (item (intern (pop s))))
-                              (pop s) ; Discard version info here and "Rank" column below
-                              (cons item (string-join (butlast s) " "))))
-                          rows)))))))
+  (when (libxml-available-p)
+    (require 'dom)
+    (with-current-buffer (url-retrieve-synchronously (alist-get 'metadata-url elpa) t)
+      (when-let* ((html (libxml-parse-html-region (point-min) (point-max)))
+                  (rows (dom-by-tag html 'tr)))
+        (pop rows) ;discard table headers
+        (mapcar (lambda (row)
+                  (let* ((s (split-string (dom-texts row) " " 'omit-nulls))
+                         (item (intern (pop s))))
+                    (pop s) ; Discard version info here and "Rank" column below
+                    (cons item (string-join (butlast s) " "))))
+                rows)))))
 
 (defcustom elpaca-menu-elpa-ignored-url-regexp "\\(?:bzr::\\|hg::\\|dr-qubit\\)"
   "Regular expression to ignore matching :url values." :type 'string :group 'elpaca)
@@ -95,9 +82,9 @@
 (defun elpaca-menu-elpa--index (elpa)
   "Return ELPA TYPE menu item candidate list."
   (cl-loop
-   with releasep      = (not (alist-get 'devel elpa))
-   with metadata      = (elpaca-menu-elpa--metadata elpa)
+   with metadata      = (alist-get 'metadata-cache elpa)
    with elpa-name     = (alist-get 'name elpa)
+   with devel-name    = (replace-regexp-in-string " \\(.*\\)" "-devel \\1" elpa-name t)
    with remote        = (alist-get 'remote elpa)
    with metadata-url  = (alist-get 'metadata-url elpa)
    with branch-prefix = (alist-get 'branch-prefix elpa)
@@ -105,13 +92,13 @@
    initially (when (eq recipes t) (cl-return t))
    for (id . props) in recipes
    for core = (plist-get props :core)
+   for releasep = (plist-get props :release-branch)
    when core do
    (setq core (mapcar (lambda (f) (if (equal f (file-name-as-directory f)) (concat f "*") f))
                       (if (listp core) core (list core))))
    for item =
    (when-let*
-       (((or core (if releasep (plist-get props :release-branch) t)))
-        (name (symbol-name id))
+       ((name (symbol-name id))
         (url (or (and core elpaca-menu-elpa-emacs-url)
                  (and (plist-get props :manual-sync) remote) ;; developed in ELPA repo
                  (if-let* ((declared (plist-get props :url))
@@ -128,7 +115,7 @@
                        ;;@TODO: support :core ((file new-name)...) format
                        `(:files (,@(or core '("*")) ; ("*" :exclude ".git") is what package/straight.el default to.
                                  ,@(list (append '(:exclude ".git") (if (listp ignored) ignored (list ignored)))))))))
-        (item-props (list :source elpa-name
+        (item-props (list :source (if releasep elpa-name devel-name)
                           :url (concat metadata-url name ".html")
                           :description (or (alist-get id metadata) "n/a")
                           :recipe recipe)))
@@ -142,38 +129,35 @@
               ((not (eq cache t))))
     (elpaca--write-file (alist-get 'cache-path elpa) (prin1 cache))))
 
-(defun elpaca-menu--elpa (elpa request &optional item recurse)
-  "Delegate REQUEST for ELPA.
+(defun elpaca-menu--elpa (name request &optional item recurse)
+  "Delegate REQUEST for NAME in `elpaca-menu-elpas'.
 If REQUEST is `index`, return a recipe candidate alist.
 If REQUEST is `update`, update the NonGNU ELPA recipe cache.
 If RECURSE is non-nil, message that update succeeded."
-  (cond ((eq request 'index)
-         (let ((cache (or (alist-get 'cache elpa)
-                          (prog1
-                              (setf (alist-get 'cache elpa) (elpaca-menu-elpa--index elpa))
-                            (elpaca-menu-elpa--write-cache elpa)
-                            (when recurse (message "Downloading %s...100%%" (alist-get 'name elpa)))))))
-           (unless (eq cache t) (if item (elpaca-alist-get item cache) cache))))
-        ((eq request 'update)
-         (setf (alist-get 'cache elpa) nil (alist-get 'metadata-cache elpa) nil)
-         (elpaca-menu--elpa elpa 'index item 'recurse))))
+  (let ((elpa (alist-get name elpaca-menu-elpas)))
+    (cond ((eq request 'index)
+           (let ((cache (or (alist-get 'cache elpa)
+                            (prog1
+                                (setf (alist-get 'metadata-cache (alist-get name elpaca-menu-elpas))
+                                      (elpaca-menu-elpa--metadata elpa)
+                                      (alist-get 'cache (alist-get name elpaca-menu-elpas))
+                                      (elpaca-menu-elpa--index elpa))
+                              (elpaca-menu-elpa--write-cache elpa)
+                              (when recurse (message "Downloading %s...100%%" (alist-get 'name elpa)))))))
+             (unless (eq cache t) (if item (elpaca-alist-get item cache) cache))))
+          ((eq request 'update)
+           (setf (alist-get 'cache (alist-get name elpaca-menu-elpas)) nil
+                 (alist-get 'metadata-cache (alist-get name elpaca-menu-elpas)) nil)
+           (elpaca-menu--elpa elpa 'index item 'recurse)))))
 
 ;;;###autoload
 (defun elpaca-menu-gnu-elpa (request &optional item)
   "Fulfill GNU ELPA menu `index` or `update` ITEM REQUEST."
-  (elpaca-menu--elpa (alist-get 'gnu elpaca-menu-elpas) request item))
-;;;###autoload
-(defun elpaca-menu-gnu-devel-elpa (request &optional item)
-  "Fulfill GNU ELPA-devel menu `index` or `update` ITEM REQUEST."
-  (elpaca-menu--elpa (alist-get 'gnu-devel elpaca-menu-elpas) request item))
+  (elpaca-menu--elpa 'gnu request item))
 ;;;###autoload
 (defun elpaca-menu-non-gnu-elpa (request &optional item)
   "Fulfill menu NonGNU ELPA `index` or `update` ITEM REQUEST."
-  (elpaca-menu--elpa (alist-get 'nongnu elpaca-menu-elpas) request item))
-;;;###autoload
-(defun elpaca-menu-non-gnu-devel-elpa (request &optional item)
-  "Fulfill menu NonGNU ELPA-devel `index` or `update` ITEM REQUEST."
-  (elpaca-menu--elpa (alist-get 'nongnu-devel elpaca-menu-elpas) request item))
+  (elpaca-menu--elpa 'nongnu request item))
 
 (provide 'elpaca-menu-elpa)
 ;;; elpaca-menu-elpa.el ends here
