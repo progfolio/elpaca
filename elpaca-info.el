@@ -168,7 +168,7 @@
   (propertize (concat string ":") 'face 'elpaca-info-section))
 
 (elpaca-info-defsection title
-  (propertize (symbol-name .id) 'face `(,@(when-let* ((status (elpaca--status .e)))
+  (propertize (symbol-name .id) 'face `(,@(when-let* ((.e) (status (elpaca--status .e)))
                                             (list (alist-get status elpaca-status-faces)))
                                         elpaca-info-package)))
 (elpaca-info-defsection menu-buttons
