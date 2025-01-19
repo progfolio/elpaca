@@ -86,7 +86,7 @@
   (cl-loop
    with metadata      = (alist-get 'metadata-cache elpa)
    with elpa-name     = (alist-get 'name elpa)
-   with devel-name    = (replace-regexp-in-string " \\(.*\\)" "-devel \\1" elpa-name t)
+   ;;with devel-name    = (replace-regexp-in-string " \\(.*\\)" "-devel \\1" elpa-name t)
    with remote        = (alist-get 'remote elpa)
    with metadata-url  = (alist-get 'metadata-url elpa)
    with branch-prefix = (alist-get 'branch-prefix elpa)
@@ -105,11 +105,11 @@
                  (and (plist-get props :manual-sync) remote) ;; developed in ELPA repo
                  (if-let* ((declared (plist-get props :url))
                            ;;Why does ELPA keep the :url when upstream is gone?
-                           ((not (or releasep (string-match-p elpaca-menu-elpa-ignored-url-regexp declared)))))
+                           ((not (string-match-p elpaca-menu-elpa-ignored-url-regexp declared))))
                      declared
                    remote)))
         (recipe `( :package ,name :repo (,url . ,name)
-                   ,@(or (and (or core (eq url remote))
+                   ,@(or (and (or core (and url remote (eq url remote)))
                               `(:branch
                                 ,(if core "master" (concat branch-prefix (when releasep "-release") "/" name))))
                          (when-let* ((branch (plist-get props :branch))) `(:branch ,branch)))
@@ -117,7 +117,7 @@
                        ;;@TODO: support :core ((file new-name)...) format
                        `(:files (,@(or core '("*")) ; ("*" :exclude ".git") is what package/straight.el default to.
                                  ,@(list (append '(:exclude ".git") (if (listp ignored) ignored (list ignored)))))))))
-        (item-props (list :source (if releasep elpa-name devel-name)
+        (item-props (list :source elpa-name
                           :url (concat metadata-url name ".html")
                           :description (or (alist-get id metadata) "n/a")
                           :recipe recipe)))
