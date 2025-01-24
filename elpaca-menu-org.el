@@ -86,8 +86,7 @@
                        (list
                         :package "org-contrib"
                         :repo '("https://git.sr.ht/~bzg/org-contrib" . "org-contrib")
-                        :files '(:defaults))))))
-    nil))
+                        :files '(:defaults))))))))
 
 (provide 'elpaca-menu-org)
 ;;; elpaca-menu-org.el ends here
