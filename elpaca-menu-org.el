@@ -75,7 +75,7 @@
                         :package "org"
                         :repo '("https://git.savannah.gnu.org/git/emacs/org-mode.git" . "org")
                         :pre-build '(progn (require 'elpaca-menu-org) (elpaca-menu-org--build))
-                        :autoloads "org-loaddefs.el"
+                        :autoloads "org-loaddefs.el" :depth 1
                         :build '(:not elpaca--generate-autoloads-async)
                         :files '(:defaults ("etc/styles/" "etc/styles/*" "doc/*.texi")))))
            (cons 'org-contrib
