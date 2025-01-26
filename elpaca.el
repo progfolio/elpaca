@@ -923,12 +923,6 @@ FILES and NOCONS are used recursively."
       (elpaca--signal e "No Info dir file found" 'info))
     (elpaca--continue-build e)))
 
-(defun elpaca--process-busy (process) ;;@TODO restore previous status when unblocked
-  "Update E's status when PROCESS has stopped producing output."
-  (when-let* (((eq (process-status process) 'run))
-              (e (process-get process :elpaca)))
-    (elpaca--signal e (process-get process :parsed) 'busy)))
-
 (defvar elpaca--eol (if (memq system-type '(ms-dos windows-nt cygwin)) "\r\n" "\n"))
 (defun elpaca--process-filter (process output)
   "Filter PROCESS OUTPUT."
@@ -942,7 +936,7 @@ FILES and NOCONS are used recursively."
     (when timer (cancel-timer timer))
     (unless (eq (elpaca--status e) 'failed)
       (process-put
-       process :timer (run-at-time elpaca-busy-interval nil #'elpaca--process-busy process)))
+       process :timer (run-at-time elpaca-busy-interval nil #'elpaca--update-log-buffer)))
     (unless linep
       (process-put process :parsed (car (last lines)))
       (setq lines (butlast lines)))

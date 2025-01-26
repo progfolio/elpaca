@@ -252,14 +252,18 @@ It must accept a package ID symbol and REF string as its first two arguments."
    for log = (elpaca<-log e)
    for package = (elpaca<-package e)
    append
-   (cl-loop
-    for (status time info verbosity) in log
-    for entry =
-    (when-let* (((<= verbosity elpaca-verbosity))
-                (delta (format-time-string "%02s.%6N" (time-subtract time queue-time))))
-      (list (list id) (vector (propertize package 'elpaca-status status)
-                              (symbol-name status) info (propertize delta 'time time))))
-    when entry collect entry)))
+   (cl-loop for (status time info verbosity) in log
+            for i below (length log)
+            for entry =
+            (when-let* (((<= verbosity elpaca-verbosity))
+                        (next (if (= i 0) (current-time) (nth 1 (nth (1- i) log))))
+                        (delta (format-time-string "%02s.%6N" (time-subtract time queue-time))))
+              (when (and (not (memq status '(finished failed blocked)))
+                         (time-less-p (time-add time elpaca-busy-interval) next))
+                (setq status 'busy))
+              (list (list id) (vector (propertize package 'elpaca-status status)
+                                      (symbol-name status) info (propertize delta 'time time))))
+            when entry collect entry)))
 
 (defun elpaca-log--sort-chronologically (a b)
   "Sort entries A and B chronologically."
