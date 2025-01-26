@@ -188,7 +188,6 @@ It receives one argument, the parsed search query list.")
   "Function responsible for returning the UI buffer's `tabulated-list-entries'.")
 (defvar-local elpaca-ui-entries nil "List of table entries.")
 (defvar-local elpaca-ui--history nil "History for `elpaca-ui' minibuffer.")
-(defvar url-http-end-of-headers)
 (defvar elpaca-ui--pbh-cache nil "Progress bar help echo cache.")
 (defvar elpaca-ui--pbh-timer nil "Progress bar help echo timer.")
 
