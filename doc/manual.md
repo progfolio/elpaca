@@ -439,10 +439,8 @@ With inheritance enabled:
 ```emacs-lisp
 (:package "dracula-theme" :fetcher github :repo "dracula/emacs" :files
           ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
-           "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
-           (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
-                     "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
-          :source "MELPA" :protocol https :inherit t :depth 1)
+           "doc/*.info" "doc/*.texi" "doc/*.texinfo" ...)
+          :source "MELPA" ...)
 ```
 
 the Elpaca&rsquo;s MELPA menu provides the rest of the recipe.
@@ -450,7 +448,7 @@ the Elpaca&rsquo;s MELPA menu provides the rest of the recipe.
 The value may also be a menu symbol or list of menu symbols. This is a per-recipe way of setting `elpaca-menu-functions`.
 
 ```emacs-lisp
-(elpaca-recipe '(dracula-theme :inherit elpaca-menu-non-gnu-devel-elpa))
+(elpaca-recipe '(dracula-theme :inherit elpaca-menu-non-gnu-elpa))
 ```
 
 ```emacs-lisp
@@ -459,8 +457,7 @@ The value may also be a menu symbol or list of menu symbols. This is a per-recip
           ("*"
            (:exclude ".git" "INSTALL.md" "screenshot.png" "start_emacs_test.sh"
                      "test-profile.el"))
-          :source "NonGNU-devel ELPA" :protocol https :inherit
-          elpaca-menu-non-gnu-devel-elpa :depth 1)
+          :source "NonGNU ELPA" :protocol https ...)
 ```
 
 
@@ -578,7 +575,7 @@ This is useful if you want to guarantee the values of certain keywords despite a
 ```
 
 ```emacs-lisp
-(:source nil :protocol https :inherit t :depth 1 :package "burger" :cheese extra)
+(:source nil :protocol https :inherit t :depth treeless :package "burger" ...)
 ```
 
 

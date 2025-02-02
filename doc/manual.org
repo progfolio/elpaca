@@ -308,7 +308,7 @@ This is a per-recipe way of setting =elpaca-menu-functions=.
 
 #+name: recipe-inheritance-menu
 #+begin_src emacs-lisp :lexical t :results raw code :exports both
-(elpaca-recipe '(dracula-theme :inherit elpaca-menu-non-gnu-devel-elpa))
+(elpaca-recipe '(dracula-theme :inherit elpaca-menu-non-gnu-elpa))
 #+end_src
 
 #+RESULTS: recipe-inheritance-menu
@@ -318,8 +318,7 @@ This is a per-recipe way of setting =elpaca-menu-functions=.
           ("*"
            (:exclude ".git" "INSTALL.md" "screenshot.png" "start_emacs_test.sh"
                      "test-profile.el"))
-          :source "NonGNU-devel ELPA" :protocol https :inherit
-          elpaca-menu-non-gnu-devel-elpa :depth 1)
+          :source "NonGNU ELPA" :protocol https ...)
 #+end_src
 
 **** :pre-build
