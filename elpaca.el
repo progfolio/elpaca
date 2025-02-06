@@ -2011,14 +2011,14 @@ TYPE is either `repo` or `build`, for repo or build directory."
      do (when (and (not (member id seen))
                    (run-hook-with-args-until-failure 'elpaca-lock-file-functions e))
           (push `(,id
-                  ( :source "elpaca-menu-lock-file" :date ,(current-time)
-                    :recipe
-                    ,(plist-put (copy-tree (elpaca<-recipe e))
-                                :ref
-                                (elpaca-with-dir id repo
-                                  (elpaca-with-process-call ("git" "rev-parse" "HEAD")
-                                    (if success (string-trim stdout)
-                                      (error "Unable to write lock-file: %s %S" id stderr)))))))
+                  :source "elpaca-menu-lock-file" :date ,(current-time)
+                  :recipe
+                  ,(plist-put (copy-tree (elpaca<-recipe e))
+                              :ref
+                              (elpaca-with-dir id repo
+                                (elpaca-with-process-call ("git" "rev-parse" "HEAD")
+                                  (if success (string-trim stdout)
+                                    (error "Unable to write lock-file: %s %S" id stderr))))))
                 es)
           (push id seen))
      finally (message "wrote %d elpacas to %s" (length es) path)
