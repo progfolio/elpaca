@@ -39,7 +39,7 @@
 (require 'elpaca)
 (require 'url)
 (defvar elpaca-test--keywords
-  '(:args :before :dir :early-init :init :keep :name :ref :depth :interactive :timeout :buffer))
+  '(:args :before :dir :early-init :init :keep :name :ref :depth :interactive :timeout :buffer :repo :installer))
 (defvar elpaca-test--dirs nil "List of directories created by `elpaca-test'.")
 
 (defun elpaca-test--args (body)
@@ -88,9 +88,8 @@ Creates a temporary dir if NAME is nil."
 
 (defvar url-http-end-of-headers)
 (defvar url-http-response-status)
-(defconst elpaca-test--upstream-format
-  "https://raw.githubusercontent.com/progfolio/elpaca/%s/doc/init.el"
-  "Format string for upstream URL. @TODO: don't hardcode this.")
+(defconst elpaca-test--installer
+  "https://raw.githubusercontent.com/progfolio/elpaca/master/doc/init.el")
 
 (defun elpaca-test--init (string order &optional installerp)
   "Return modified init.el STRING according to ORDER.
@@ -109,25 +108,25 @@ If INSTALLERP is non-nil, stop after Elpaca installer."
       ((error) (error (car err) (cdr err))))
     (mapconcat #'pp-to-string (nreverse body))))
 
-(defun elpaca-test--upstream-init (&optional ref)
-  "Return upstream init.el file for REF."
-  (let ((url (format elpaca-test--upstream-format (or ref "master"))))
+(defun elpaca-test--upstream-init (&optional installer)
+  "Return upstream INSTALLER file."
+  (let ((url (or installer elpaca-test--installer)))
     (with-current-buffer (url-retrieve-synchronously url 'silent 'inhibit-cookies)
       (unless (equal url-http-response-status 200)
         (error "Unable to download %S %S" url url-http-response-status))
       (delete-region (point-min) url-http-end-of-headers)
       (string-trim (buffer-substring-no-properties (point-min) (point-max))))))
 
-(defun elpaca--test-write-init (file ref depth forms)
+(defun elpaca--test-write-init (file ref installer depth repo forms)
   "Write init.el FILE with FORMS in test environment.
-If FILE is nil, use upstream demo init file determined by REF.
-For DEPTH and FORMS see `elpaca-test' :depth and :init."
+If FILE is nil, use upstream INSTALLER file.
+For DEPTH, REPO, REF, FORMS see `elpaca-test' keyword args."
   (let ((contents (if file (with-temp-buffer (insert-file-contents (expand-file-name file))
                                              (buffer-string))
-                    (elpaca-test--upstream-init ref))))
+                    (elpaca-test--upstream-init installer))))
     (elpaca--write-file (expand-file-name "./init.el")
       (emacs-lisp-mode)
-      (insert (elpaca-test--init contents `(:ref ,(unless (eq ref 'local) ref) :depth ,depth) forms))
+      (insert (elpaca-test--init contents `(:ref ,(unless (eq ref 'local) ref) :depth ,depth :repo ,repo) forms))
       (mapc #'print forms)
       (elisp-enable-lexical-binding))))
 
@@ -252,6 +251,10 @@ BODY is a plist which allows multiple values for certain keys.
 The following keys are recognized:
   :name description of the test
 
+  :repo URL for the upstream Elpaca repository
+
+  :installer URL for the upstream installer script
+
   :ref git ref of Elpaca repository to check out or ‘local’ to use local copy
 
   :depth number of Elpaca repository commits to clone
@@ -282,6 +285,8 @@ The following keys are recognized:
          (timeout (car (plist-get args :timeout)))
          (init (plist-get args :init))
          (ref (car (plist-get args :ref)))
+         (repo (car (plist-get args :repo)))
+         (installer (car (plist-get args :installer)))
          (depth (if-let* ((declared (plist-member args :depth))) (caadr declared) 1))
          (localp (eq ref 'local))
          (init-file (cond ((eq (car-safe (car-safe init)) :file)
@@ -308,7 +313,7 @@ The following keys are recognized:
        ,@(when localp '((elpaca-test--copy-local-store)))
        ,@(when early `((elpaca-test--write-early-init ,early-file ',(unless early-file early))))
        (elpaca--test-write-init
-        ,init-file ',ref ',depth ',(when (or localp (null init-file))
+        ,init-file ',ref ',installer ',depth ',repo ',(when (or localp (null init-file))
                                      (unless (equal init '(user)) init)))
        ,@(when-let* ((before (plist-get args :before)))
            `((let ((default-directory default-directory)) ,@before)))
