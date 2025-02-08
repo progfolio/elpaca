@@ -314,7 +314,7 @@ The following keys are recognized:
        ,@(when early `((elpaca-test--write-early-init ,early-file ',(unless early-file early))))
        (elpaca--test-write-init
         ,init-file ',ref ',installer ',depth ',repo ',(when (or localp (null init-file))
-                                     (unless (equal init '(user)) init)))
+                                                        (unless (equal init '(user)) init)))
        ,@(when-let* ((before (plist-get args :before)))
            `((let ((default-directory default-directory)) ,@before)))
        (run-hook-with-args 'elpaca-test-start-functions ,argsym)
