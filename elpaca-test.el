@@ -126,7 +126,7 @@ For DEPTH, REPO, REF, FORMS see `elpaca-test' keyword args."
                     (elpaca-test--upstream-init installer))))
     (elpaca--write-file (expand-file-name "./init.el")
       (emacs-lisp-mode)
-      (insert (elpaca-test--init contents `(:ref ,(unless (eq ref 'local) ref) :depth ,depth :repo ,repo) forms))
+      (insert (elpaca-test--init contents `(:ref ,(unless (eq ref 'local) ref) :depth ,depth ,@(when repo `(:repo ,repo))) forms))
       (mapc #'print forms)
       (elisp-enable-lexical-binding))))
 
@@ -285,7 +285,7 @@ The following keys are recognized:
          (timeout (car (plist-get args :timeout)))
          (init (plist-get args :init))
          (ref (car (plist-get args :ref)))
-         (repo (car (plist-get args :repo)))
+         (repo (or (car (plist-get args :repo))))
          (installer (car (plist-get args :installer)))
          (depth (if-let* ((declared (plist-member args :depth))) (caadr declared) 1))
          (localp (eq ref 'local))
