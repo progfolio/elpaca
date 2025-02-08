@@ -103,11 +103,10 @@
        ((name (symbol-name id))
         (url (or (and core elpaca-menu-elpa-emacs-url)
                  (and (plist-get props :manual-sync) remote) ;; developed in ELPA repo
-                 (if-let* ((declared (plist-get props :url))
-                           ;;Why does ELPA keep the :url when upstream is gone?
-                           ((not (string-match-p elpaca-menu-elpa-ignored-url-regexp declared))))
-                     declared
-                   remote)))
+                 (let ((declared (or (plist-get props :url) remote)))
+                   (when (symbolp declared) ;; "sub-package" according to ELPA spec
+                     (setq declared (or (plist-get (alist-get declared recipes) :url) remote)))
+                   (if (string-match-p elpaca-menu-elpa-ignored-url-regexp declared) remote declared))))
         (recipe `( :package ,name :repo (,url . ,name)
                    ,@(or (and (or core (and url remote (eq url remote)))
                               `(:branch
