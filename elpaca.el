@@ -1146,7 +1146,7 @@ The keyword's value is expected to be one of the following:
     (elpaca--with-no-git-config
      (elpaca-with-process (apply #'elpaca-process-call
                                  `("git" "log" "-n" "1" "--format=%cd"
-                                   ,(concat "--date=format:" (or format "%Y%m%d"))))
+                                   ,(concat "--date=format:" (or format "%Y%m%d.%H%M"))))
        (if (not success) (elpaca--fail e stderr) (string-trim stdout))))))
 
 (defun elpaca--parse-version (file)
