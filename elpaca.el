@@ -2011,7 +2011,7 @@ TYPE is either `repo` or `build`, for repo or build directory."
      do (when (and (not (member id seen))
                    (run-hook-with-args-until-failure 'elpaca-lock-file-functions e))
           (push `(,id
-                  :source "elpaca-menu-lock-file" :date ,(current-time)
+                  :source "elpaca-menu-lock-file"
                   :recipe
                   ,(plist-put (copy-tree (elpaca<-recipe e))
                               :ref
