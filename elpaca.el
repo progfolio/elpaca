@@ -1144,10 +1144,10 @@ The keyword's value is expected to be one of the following:
   "Return date of E's checked out commit with FORMAT spec."
   (let ((default-directory (elpaca<-repo-dir e)))
     (elpaca--with-no-git-config
-     (elpaca-with-process (apply #'elpaca-process-call
-                                 `("git" "log" "-n" "1" "--format=%cd"
-                                   ,(concat "--date=format:" (or format "%Y%m%d.%H%M"))))
-       (if (not success) (elpaca--fail e stderr) (string-trim stdout))))))
+     (elpaca-with-process-call ("git" "log" "-n" "1" "--format=%cd" "--date=unix")
+       (if (not success) (elpaca--fail e stderr)
+         (format-time-string (or format "%Y%m%d.%H%M") (seconds-to-time (string-to-number stdout))
+                             0))))))
 
 (defun elpaca--parse-version (file)
   "Parse FILE's version via package header or pkg file data."
