@@ -729,9 +729,9 @@ Optional ARGS are passed to `elpaca--signal', which see."
   (when-let* ((forms (nreverse (elpaca-q<-forms q))))
     (with-current-buffer (get-buffer-create " *elpaca--finalize-queue*")
       (setq-local lexical-binding t)
-      (cl-loop for (id . body) in forms
+      (cl-loop for (id . cb) in forms
                do (condition-case-unless-debug err
-                      (eval `(progn ,@body) t)
+                      (funcall cb)
                     ((error) (warn "Config Error %s: %S" id err)))))
     (setf (elpaca-q<-forms q) nil))
   (run-hooks 'elpaca-post-queue-hook)
@@ -1608,14 +1608,14 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
     (when (> (elpaca-q<-processed q) 0) (cl-decf (elpaca-q<-processed q)))
     (setf (elpaca-q<-status q) 'incomplete)))
 
-(defun elpaca--expand-declaration (order body)
-  "Expand ORDER declaration, deferring BODY."
+(defun elpaca--expand-declaration (order callback)
+  "Expand ORDER declaration, deferring CALLBACK."
   (unless order (signal 'wrong-type-argument '((or symbolp consp) nil)))
   (when (memq (car-safe order) '(quote \`)) (setq order (eval order t)))
   (let* ((id (elpaca--first order))
          (q (or (and after-init-time (elpaca--q (elpaca-get id))) (car elpaca--queues)))
          (e (elpaca--queue order q)))
-    (when body (setf (alist-get id (elpaca-q<-forms q)) body))
+    (when callback (setf (alist-get id (elpaca-q<-forms q)) callback))
     (when after-init-time
       (elpaca--maybe-log)
       (unless (eq (elpaca--status e) 'failed)
@@ -1633,7 +1633,8 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
 Evaluate BODY forms synchronously once ORDER's queue is processed.
 See Info node `(elpaca) Basic Concepts'."
   (declare (indent 1) (debug form))
-  `(elpaca--expand-declaration ',order ',body))
+  (when body (setq body `(lambda () ,@body)))
+  `(elpaca--expand-declaration ',order ,body))
 
 (defvar elpaca--try-package-history nil "History for `elpaca-try'.")
 ;;;###autoload
