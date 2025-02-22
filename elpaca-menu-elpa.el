@@ -130,11 +130,10 @@
               ((not (eq cache t))))
     (elpaca--write-file (alist-get 'cache-path elpa) (prin1 cache))))
 
-(defun elpaca-menu--elpa (name request &optional item recurse)
+(defun elpaca-menu--elpa (name request &optional item)
   "Delegate REQUEST for NAME in `elpaca-menu-elpas'.
 If REQUEST is `index`, return a recipe candidate alist.
-If REQUEST is `update`, update the NonGNU ELPA recipe cache.
-If RECURSE is non-nil, message that update succeeded."
+If REQUEST is `update`, update the NonGNU ELPA recipe cache."
   (let ((elpa (alist-get name elpaca-menu-elpas)))
     (cond ((eq request 'index)
            (let ((cache (or (alist-get 'cache elpa)
@@ -144,12 +143,12 @@ If RECURSE is non-nil, message that update succeeded."
                                       (alist-get 'cache (alist-get name elpaca-menu-elpas))
                                       (elpaca-menu-elpa--index (alist-get name elpaca-menu-elpas)))
                               (elpaca-menu-elpa--write-cache (alist-get name elpaca-menu-elpas))
-                              (when recurse (message "Downloading %s...100%%" (alist-get 'name elpa)))))))
+                              (message "Downloading %s...100%%" (alist-get 'name elpa))))))
              (unless (eq cache t) (if item (elpaca-alist-get item cache) cache))))
           ((eq request 'update)
            (setf (alist-get 'cache (alist-get name elpaca-menu-elpas)) nil
                  (alist-get 'metadata-cache (alist-get name elpaca-menu-elpas)) nil)
-           (elpaca-menu--elpa name 'index item 'recurse)))))
+           (elpaca-menu--elpa name 'index item)))))
 
 ;;;###autoload
 (defun elpaca-menu-gnu-elpa (request &optional item)

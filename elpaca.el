@@ -351,6 +351,7 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
                                   ((not (eq menus t))))
                             (if (listp menus) menus (list menus))
                           elpaca-menu-functions))))
+                 (message "called here")
                  (elpaca-menu-item id)))
          (item-recipe (plist-put (plist-get item :recipe) :source (plist-get item :source)))
          (r (elpaca-merge-plists item-recipe mods props)))
@@ -684,7 +685,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
   "ADD ORDER to QUEUE or current queue.  Return E."
   (if-let* ((id (elpaca--first (or order (signal 'wrong-type-argument
                                                  '((or symbolp listp) nil)))))
-            ((not elpaca-after-init-time))
+            ((not after-init-time))
             (e (elpaca-get id)))
       (if-let* ((dependents (elpaca<-dependents e)))
           (warn "%S previously queued as dependency of: %S" id dependents)
