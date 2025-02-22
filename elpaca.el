@@ -684,7 +684,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
   "ADD ORDER to QUEUE or current queue.  Return E."
   (if-let* ((id (elpaca--first (or order (signal 'wrong-type-argument
                                                  '((or symbolp listp) nil)))))
-            ((not after-init-time))
+            ((not elpaca-after-init-time))
             (e (elpaca-get id)))
       (if-let* ((dependents (elpaca<-dependents e)))
           (warn "%S previously queued as dependency of: %S" id dependents)
