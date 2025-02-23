@@ -142,7 +142,7 @@ It then builds and activates Elpaca.
 
 @anchor{installation-script}
 @lisp
-(defvar elpaca-installer-version 0.9)
+(defvar elpaca-installer-version 0.10)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
@@ -157,7 +157,7 @@ It then builds and activates Elpaca.
   (add-to-list 'load-path (if (file-exists-p build) build repo))
   (unless (file-exists-p repo)
     (make-directory repo t)
-    (when (< emacs-major-version 28) (require 'subr-x))
+    (when (<= emacs-major-version 28) (require 'subr-x))
     (condition-case-unless-debug err
         (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
                   ((zerop (apply #'call-process `("git" nil @comma{}buffer t "clone"
@@ -571,8 +571,11 @@ With inheritance enabled:
 @lisp
 (:package "dracula-theme" :fetcher github :repo "dracula/emacs" :files
           ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
-           "doc/*.info" "doc/*.texi" "doc/*.texinfo" ...)
-          :source "MELPA" ...)
+           "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el" "docs/dir"
+           "docs/*.info" "docs/*.texi" "docs/*.texinfo"
+           (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
+                     "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
+          :source "MELPA" :protocol https :inherit t :depth treeless)
 @end lisp
 
 the Elpaca's MELPA menu provides the rest of the recipe.
@@ -591,7 +594,8 @@ This is a per-recipe way of setting @samp{elpaca-menu-functions}.
           ("*"
            (:exclude ".git" "INSTALL.md" "screenshot.png" "start_emacs_test.sh"
                      "test-profile.el"))
-          :source "NonGNU ELPA" :protocol https ...)
+          :source "NonGNU ELPA" :protocol https :inherit
+          elpaca-menu-non-gnu-elpa :depth treeless)
 @end lisp
 
 @node pre-build
@@ -713,7 +717,8 @@ This is useful if you want to guarantee the values of certain keywords despite a
 @end lisp
 
 @lisp
-(:source nil :protocol https :inherit t :depth treeless :package "burger" ...)
+(:source nil :protocol https :inherit t :depth treeless :package "burger"
+         :cheese extra)
 @end lisp
 
 @node Menus

@@ -69,7 +69,7 @@ Elpaca requires:
 To install Elpaca, add the following elisp to your init.el. It must come before any calls to other Elpaca functions/macros. This will clone Elpaca into your `user-emacs-directory` under the `elpaca` subdirectory. It then builds and activates Elpaca.
 
 ```emacs-lisp
-(defvar elpaca-installer-version 0.9)
+(defvar elpaca-installer-version 0.10)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
@@ -84,7 +84,7 @@ To install Elpaca, add the following elisp to your init.el. It must come before 
   (add-to-list 'load-path (if (file-exists-p build) build repo))
   (unless (file-exists-p repo)
     (make-directory repo t)
-    (when (< emacs-major-version 28) (require 'subr-x))
+    (when (<= emacs-major-version 28) (require 'subr-x))
     (condition-case-unless-debug err
         (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
                   ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
@@ -440,8 +440,11 @@ With inheritance enabled:
 ```emacs-lisp
 (:package "dracula-theme" :fetcher github :repo "dracula/emacs" :files
           ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
-           "doc/*.info" "doc/*.texi" "doc/*.texinfo" ...)
-          :source "MELPA" ...)
+           "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el" "docs/dir"
+           "docs/*.info" "docs/*.texi" "docs/*.texinfo"
+           (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
+                     "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
+          :source "MELPA" :protocol https :inherit t :depth treeless)
 ```
 
 the Elpaca&rsquo;s MELPA menu provides the rest of the recipe.
@@ -458,7 +461,8 @@ The value may also be a menu symbol or list of menu symbols. This is a per-recip
           ("*"
            (:exclude ".git" "INSTALL.md" "screenshot.png" "start_emacs_test.sh"
                      "test-profile.el"))
-          :source "NonGNU ELPA" :protocol https ...)
+          :source "NonGNU ELPA" :protocol https :inherit
+          elpaca-menu-non-gnu-elpa :depth treeless)
 ```
 
 
@@ -576,7 +580,8 @@ This is useful if you want to guarantee the values of certain keywords despite a
 ```
 
 ```emacs-lisp
-(:source nil :protocol https :inherit t :depth treeless :package "burger" ...)
+(:source nil :protocol https :inherit t :depth treeless :package "burger"
+         :cheese extra)
 ```
 
 
