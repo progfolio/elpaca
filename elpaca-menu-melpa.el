@@ -130,7 +130,9 @@ If REQUEST is `update`, update the MELPA recipe cache."
   (pcase request
     ('index  (elpaca-menu-melpa--index item))
     ('update (setq elpaca-menu-melpa--index-cache nil)
-             (elpaca-menu-melpa--update))))
+             (if (file-exists-p (expand-file-name "melpa/" elpaca-cache-directory))
+                 (elpaca-menu-melpa--update)
+               (elpaca-menu-melpa 'index item)))))
 
 (provide 'elpaca-menu-melpa)
 ;;; elpaca-menu-melpa.el ends here
