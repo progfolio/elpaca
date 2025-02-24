@@ -351,7 +351,6 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
                                   ((not (eq menus t))))
                             (if (listp menus) menus (list menus))
                           elpaca-menu-functions))))
-                 (message "called here")
                  (elpaca-menu-item id)))
          (item-recipe (plist-put (plist-get item :recipe) :source (plist-get item :source)))
          (r (elpaca-merge-plists item-recipe mods props)))
