@@ -92,7 +92,10 @@ Results in faster start-up time." :type 'boolean)
 (defvar elpaca-cache-directory (expand-file-name "cache" elpaca-directory)
   "Location of the cache directory.")
 
-(defvar elpaca-builds-directory (expand-file-name "builds" elpaca-directory)
+(defvar elpaca-builds-directory
+  (expand-file-name
+   (concat "builds-" (or (bound-and-true-p comp-native-version-dir) emacs-version))
+   elpaca-directory)
   "Location of the builds directory.")
 
 (defvar elpaca-repos-directory (expand-file-name "repos" elpaca-directory)
