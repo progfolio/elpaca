@@ -276,6 +276,28 @@ Values for each key are that of the right-most plist containing that key."
   "Return E's Q."
   (and e (car (last elpaca--queues (1+ (elpaca<-queue-id e))))))
 
+(defun elpaca--completion-group-by-menu (candidate transform)
+  "Return CANDIDATE menu if TRANSFORM non-nil, otherwise CANDIDATE item."
+  (if-let* ((space (string-match-p " " candidate)))
+      (substring candidate (if transform 0 (1+ space)) (when transform space))
+    candidate))
+
+(defcustom elpaca-description-column 20 "Minimum column for completion descriptions."
+  :type 'number)
+
+(defun elpaca--completion-affixation-fn (candidates)
+  "Return `elpaca-menu-item' CANDIDATES affixation function."
+  (let ((col elpaca-description-column))
+    (lambda (completions)
+      (setq col (max col (or (cl-loop for c in completions maximize (string-match-p " " c)) 0)))
+      (mapcar
+       (lambda (c) (list c ""
+                         (concat (propertize " " 'display `(space :align-to ,col))
+                                 (when-let* ((item (cdr (assoc-string c candidates)))
+                                             (desc (plist-get (cdr item) :description)))
+                                   (propertize (concat " " desc) 'face 'completions-annotations)))))
+       completions))))
+
 ;;;###autoload
 (defun elpaca-menu-item (&optional id interactive)
   "Return menu item matching ID in `elpaca-menu-functions'.
@@ -289,12 +311,13 @@ If ID is nil, prompt for item. If INTERACTIVE is non-nil, copy to `kill-ring'."
                             (cons (concat (symbol-name (car i)) " " (plist-get (cdr i) :source)) i))
             into candidates
             finally return
-            (let* ((completion-extra-properties
-                    (list :annotation-function
-                          (lambda (s)
-                            (concat " " (plist-get (cdr (alist-get s candidates nil nil #'equal))
-                                                   :description)))))
-                   (choice (completing-read (or elpaca-overriding-prompt "Menu Item: ") candidates nil t)))
+            (let ((choice (completing-read
+                           (or elpaca-overriding-prompt "Menu Item: ")
+                           (completion-table-with-metadata
+                            candidates
+                            `((group-function . elpaca--completion-group-by-menu)
+                              (affixation-function . ,(elpaca--completion-affixation-fn candidates))))
+                           nil t)))
               (alist-get choice candidates nil nil #'equal))))))
     (when interactive
       (message "menu-item copied to kill-ring:\n%S" item)
