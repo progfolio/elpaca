@@ -313,10 +313,11 @@ If ID is nil, prompt for item. If INTERACTIVE is non-nil, copy to `kill-ring'."
             finally return
             (let ((choice (completing-read
                            (or elpaca-overriding-prompt "Menu Item: ")
-                           (completion-table-with-metadata
-                            candidates
-                            `((group-function . elpaca--completion-group-by-menu)
-                              (affixation-function . ,(elpaca--completion-affixation-fn candidates))))
+                           (lambda (string pred action)
+                             (if (eq action 'metadata)
+                                 `(metadata . ((group-function . elpaca--completion-group-by-menu)
+                                               (affixation-function . ,(elpaca--completion-affixation-fn candidates))))
+                               (complete-with-action action candidates string pred)))
                            nil t)))
               (alist-get choice candidates nil nil #'equal))))))
     (when interactive
