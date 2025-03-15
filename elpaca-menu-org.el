@@ -25,6 +25,8 @@
 ;;; Code:
 (require 'elpaca)
 (defvar elpaca-menu-org--index-cache nil "Cache of Org menu index.")
+(defcustom elpaca-menu-org-make-manual t "When non-nil build Org manual."
+  :type 'boolean :group 'elpaca)
 
 (defun elpaca-menu-org--build ()
   "Generate `org-version.el`.
@@ -53,7 +55,7 @@
     (when (fboundp 'org-make-org-version)
       (message "Making org-version")
       (org-make-org-version orgversion gitversion))
-    (when (fboundp 'org-make-manual)
+    (when (and elpaca-menu-org-make-manual (fboundp 'org-make-manual))
       (cd "../doc")
       (message "Making manual")
       (org-make-manual))))
@@ -74,7 +76,9 @@
                        (list
                         :package "org"
                         :repo '("https://git.savannah.gnu.org/git/emacs/org-mode.git" . "org")
-                        :pre-build '(progn (require 'elpaca-menu-org) (elpaca-menu-org--build))
+                        :pre-build `(progn (require 'elpaca-menu-org)
+                                           (setq elpaca-menu-org-make-manual ,elpaca-menu-org-make-manual)
+                                           (elpaca-menu-org--build))
                         :autoloads "org-loaddefs.el" :depth 1
                         :build '(:not elpaca--generate-autoloads-async)
                         :files '(:defaults ("etc/styles/" "etc/styles/*" "doc/*.texi")))))
