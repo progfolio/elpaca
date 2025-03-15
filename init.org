@@ -356,10 +356,10 @@ https://github.com/progfolio/elpaca
          (let ((split (split-root-window-below)))
            (delete-window)
            (select-window split)))))
-    (defun +exwm-toggle-fullscreen ()
+    (defun +exwm-toggle-fullscreen (&optional fullp)
       "Toggle fullscreen in all windows."
-      (interactive)
-      (if (derived-mode-p 'exwm-mode)
+      (interactive "P")
+      (if fullp
           (call-interactively #'exwm-layout-toggle-fullscreen)
         (+toggle-maximize-buffer)))
     (defvar +exwm-split-side 'right)
