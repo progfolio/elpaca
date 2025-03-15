@@ -1812,7 +1812,8 @@ Enrich existing commands with completion annotations
 #+begin_src emacs-lisp :lexical t
 (use-package marginalia
   :defer 2
-  :config (marginalia-mode))
+  :config (marginalia-mode)
+  (setf (alist-get 'elpaca-info marginalia-command-categories) 'elpaca))
 #+end_src
 ** markdown
 #+begin_quote
