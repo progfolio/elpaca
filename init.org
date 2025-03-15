@@ -421,6 +421,7 @@ https://github.com/progfolio/elpaca
 
     (setq exwm-manage-configurations
           '(((string-match-p "Void.*Stranger" exwm-title) managed t)
+            ((string-match-p "UFO 50" exwm-title) floating nil)
             (t char-mode t)))
 
     (require 'exwm-randr)
