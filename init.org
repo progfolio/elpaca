@@ -310,6 +310,16 @@ https://github.com/progfolio/elpaca
           (progn
             (start-process-shell-command program nil program))
         (user-error "$%S not set" var)))
+    (defun +exwm-firefox-tab (buffer)
+      (interactive (list (read-buffer
+                          "Firefox tab: " nil t
+                          (lambda (candidate)
+                            (let ((candidate (or (car-safe candidate) candidate))
+                                  (current (with-minibuffer-selected-window
+                                             (buffer-name (window-buffer)))))
+                              (and (string-match-p "| firefox" candidate)
+                                   (not (equal candidate current))))))))
+      (switch-to-buffer buffer))
     (defun +exwm-move-window-right ()
       "Move current window right like i3wm does."
       (interactive)
@@ -377,9 +387,12 @@ https://github.com/progfolio/elpaca
                            (kill-this-buffer)
                            (ignore-errors (delete-window))
                            (balance-windows)))
-              ([?\s-\;] . +exwm-launch)
+              ([?\s-\"] . +exwm-launch)
+              ([?\s-\:] . tab-bar-switch-to-tab)
+              ([?\s-\'] . +exwm-firefox-tab)
+              ([?\s-\;] . consult-buffer)
               ([?\s-\ ] . execute-extended-command)
-              (,(kbd "<XF86Calculator>")  .
+              (,(kbd "<XF86Launch2>")  .
                (lambda () (interactive) (make-process :name "emacs" :command '("emacs"))))))
     (defun +exwm-rename-workspace-buffer ()
       "Rename workspace buffer."
