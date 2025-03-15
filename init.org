@@ -430,8 +430,9 @@ https://github.com/progfolio/elpaca
     (setenv "EXWM"))
   (with-eval-after-load 'general (exwm-input-set-key [?\s-\ ] #'+prefix-map))
   (display-battery-mode)
-  (make-process :name "picom" :command '("picom") :noquery t)
-  (make-process :name "syndaemon" :command '("syndaemon" "-K" "-i" "0.25" "-R" "-d") :noquery t)
+  (with-demoted-errors "Exwm start programs: %s"
+    (make-process :name "picom" :command '("picom") :noquery t)
+    (make-process :name "syndaemon" :command '("syndaemon" "-K" "-i" "0.25" "-R" "-d") :noquery t))
   (elpaca desktop-environment
     ;; Remove conflicting binding
     (require 'desktop-environment)
