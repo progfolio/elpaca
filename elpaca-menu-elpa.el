@@ -28,20 +28,32 @@
 (require 'url)
 (defvar url-http-end-of-headers)
 (defvar url-http-response-status)
+
+(defcustom elpaca-menu-elpas-use-mirror t
+  "When non-nil utilize Github mirror of GNU/NonGNU Savannah ELPA."
+  :type 'boolean :group 'elpaca)
+
 (defvar elpaca-menu-elpas
   `((gnu . ((name         . "GNU ELPA")
             (cache . ,(elpaca--read-file (expand-file-name "gnu-elpa.eld" elpaca-cache-directory)))
             (cache-path   . ,(expand-file-name "gnu-elpa.eld" elpaca-cache-directory))
-            (packages-url . "https://git.savannah.gnu.org/cgit/emacs/elpa.git/plain/elpa-packages")
+            (packages-url . ,(if elpaca-menu-elpas-use-mirror
+                                 "https://raw.githubusercontent.com/emacsmirror/gnu_elpa/refs/heads/main/elpa-packages"
+                               "https://git.savannah.gnu.org/cgit/emacs/elpa.git/plain/elpa-packages"))
             (metadata-url . "https://elpa.gnu.org/packages/")
-            (remote       . "https://git.savannah.gnu.org/git/emacs/elpa.git")
+            (remote       . ,(if elpaca-menu-elpas-use-mirror "https://github.com/emacsmirror/gnu_elpa"
+                               "https://git.savannah.gnu.org/git/emacs/elpa.git"))
             (branch-prefix . "externals")))
     (nongnu . ((name         . "NonGNU ELPA")
                (cache-path   . ,(expand-file-name "non-gnu-elpa.eld" elpaca-cache-directory))
                (cache . ,(elpaca--read-file (expand-file-name "non-gnu-elpa.eld" elpaca-cache-directory)))
-               (packages-url . "https://git.savannah.gnu.org/cgit/emacs/nongnu.git/plain/elpa-packages")
+               (packages-url . ,(if elpaca-menu-elpas-use-mirror
+                                    "https://raw.githubusercontent.com/emacsmirror/nongnu_elpa/refs/heads/main/elpa-packages"
+                                  "https://git.savannah.gnu.org/cgit/emacs/nongnu.git/plain/elpa-packages"))
                (metadata-url . "https://elpa.nongnu.org/nongnu/")
-               (remote       . "https://git.savannah.gnu.org/git/emacs/nongnu.git")
+               (remote       . ,(if elpaca-menu-elpas-use-mirror
+                                    "https://github.com/emacsmirror/nongnu_elpa"
+                                  "https://git.savannah.gnu.org/git/emacs/nongnu.git"))
                (branch-prefix . "elpa")))))
 
 (defun elpaca-menu-elpa--recipes (elpa)
