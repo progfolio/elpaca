@@ -75,7 +75,8 @@
                        :recipe
                        (list
                         :package "org"
-                        :repo '("https://git.savannah.gnu.org/git/emacs/org-mode.git" . "org")
+                        ;;"https://git.savannah.gnu.org/git/emacs/org-mode.git"
+                        :repo '("https://git.sr.ht/~bzg/org-mode" . "org")
                         :pre-build `(progn (require 'elpaca-menu-org)
                                            (setq elpaca-menu-org-make-manual ,elpaca-menu-org-make-manual)
                                            (elpaca-menu-org--build))
