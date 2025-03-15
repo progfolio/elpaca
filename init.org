@@ -3660,6 +3660,7 @@ https://github.com/NicolasPetton/zerodark-theme
 (use-package tunic
   :ensure (:host github :repo "~/elisp/tunic/")
   :defer t
+  :disabled t
   :config
   (evil-make-intercept-map tunic-mode-map)
   (evil-make-intercept-map tunic-decoder-mode-map))
