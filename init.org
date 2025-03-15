@@ -362,6 +362,15 @@ https://github.com/progfolio/elpaca
       (if fullp
           (call-interactively #'exwm-layout-toggle-fullscreen)
         (+toggle-maximize-buffer)))
+    (defvar hide-mode-line-format nil)
+    (define-minor-mode hide-mode-line-mode
+      "Hide mode-line in current buffer."
+      :lighter " hml"
+      (if hide-mode-line-mode
+          (setq-local hide-mode-line-format mode-line-format
+                      mode-line-format nil)
+        (setq-local mode-line-format hide-mode-line-format
+                    hide-mode-line-format nil)))
     (defvar +exwm-split-side 'right)
     (setopt exwm-input-global-keys
             `(([?\s-l] . windmove-right)
@@ -375,7 +384,7 @@ https://github.com/progfolio/elpaca
               ([?\s-i] . +exwm-edit)
               ([?\s-r] . exwm-restart)
               ([?\s-f] . +exwm-toggle-fullscreen)
-              ([?\s-m] . exwm-layout-toggle-mode-line)
+              ([?\s-m] . hide-mode-line-mode)
               ([?\s-n] . tab-next)
               ([?\s-p] . tab-previous)
               ([?\s-t] . tab-bar-switch-to-tab)
