@@ -437,6 +437,14 @@ https://github.com/progfolio/elpaca
     ;; Remove conflicting binding
     (require 'desktop-environment)
     (setf (alist-get (aref (kbd "s-l") 0) desktop-environment-mode-map  nil 'remove) nil)
+    (setq desktop-environment-volume-get-command "pamixer --get-volume-human")
+    (setq desktop-environment-volume-set-command "pamixer %s")
+    (setq desktop-environment-volume-toggle-regexp "\\(muted\\|[0-9]+\\)")
+    (setq desktop-environment-volume-toggle-command "pamixer --toggle-mute && pamixer --get-volume-human")
+    (setq desktop-environment-volume-toggle-regexp "\\(muted\\)")
+    (setq desktop-environment-volume-normal-increment "--allow-boost -i 5")
+    (setq desktop-environment-volume-normal-decrement "--allow-boost -d 5")
+    (setq desktop-environment-screenshot-command "flameshot gui")
     (desktop-environment-mode)))
 #+end_src
 
