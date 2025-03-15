@@ -273,7 +273,7 @@ https://github.com/progfolio/elpaca
       "Edit EXWM input field."
       (interactive)
       (require 'string-edit)
-      (unless (derived-mode-p 'exwm-mode) (user-error "Buffer not in EXWM mode."))
+      (unless (derived-mode-p 'exwm-mode) (user-error "Buffer not in EXWM mode"))
       (with-current-buffer (if (minibufferp)
                                (window-buffer (minibuffer-selected-window))
                              (current-buffer))
@@ -385,10 +385,7 @@ https://github.com/progfolio/elpaca
       "Rename workspace buffer."
       (exwm-workspace-rename-buffer
        (concat (when exwm-title
-                 (if (> (length exwm-title)
-                        (/ (window-width) 3.0))
-                     (concat (substring exwm-title 0 (/ (length exwm-title) 2)) "...")
-                   exwm-title))
+                 (truncate-string-to-width exwm-title (/ (window-width) 2) nil nil t t))
                (when exwm-title " | ") exwm-class-name)))
     (add-hook 'exwm-update-class-hook #'+exwm-rename-workspace-buffer)
     (add-hook 'exwm-update-title-hook #'+exwm-rename-workspace-buffer)
