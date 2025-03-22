@@ -824,8 +824,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
                                                          ((numberp depth)))
                                                (list "--depth" (format "%s" depth)))
                              ,(or (car-safe remote) remote))
-             for fn = (apply-partially (lambda (command e) (apply #'elpaca--fetch e command))
-                                       command)
+             for fn = `(lambda (e) (elpaca--fetch e ,@command))
              do (push fn (elpaca<-build-steps e))
              finally (elpaca--continue-build e))))
 
@@ -1058,7 +1057,7 @@ FILES and NOCONS are used recursively."
                           (concat (file-name-sans-extension link) ".info")))
              when (and file (file-exists-p file))
              do (setf (elpaca<-build-steps e)
-                      (push (apply-partially #'elpaca--install-info-async file dir)
+                      (push `(lambda (e) (elpaca--install-info-async ,file ,dir e))
                             (elpaca<-build-steps e)))))
   (elpaca--continue-build e (unless elpaca-install-info-executable
                               "No elpaca-install-info-executable")))
@@ -1147,7 +1146,7 @@ The keyword's value is expected to be one of the following:
                      (name (concat "\\(?:" (regexp-quote package) "\\(?:-pkg\\)?\\.el\\)\\'")))
                 (or (car (directory-files repo nil (concat "\\`" name)))
                     (car (cl-remove-if-not
-                          (apply-partially #'string-match-p (concat "[/\\]" name))
+                          (lambda (f) (string-match-p (concat "[/\\]" name) f))
                           (elpaca--directory-files-recursively repo (concat "\\`[^.z-a]*" name))))
                     (error "Unable to find main elisp file for %S" package)))))))
 
@@ -1373,9 +1372,8 @@ This is the branch that would be checked out upon cloning."
                              (concat (or (elpaca--first remote)
                                          elpaca-default-remote-name)
                                      "/" branch)))))
-          :sentinel (apply-partially #'elpaca--process-sentinel
-                                     (concat target " checked out")
-                                     'ref-checked-out))))))
+          :sentinel (lambda (process event)
+                      (elpaca--process-sentinel (concat target " checked out") 'ref-checked-out process event)))))))
 
 (defun elpaca--check-status (dependency e)
   "Possibly change E's status depending on DEPENDENCY statuses."
@@ -1490,7 +1488,7 @@ This is the branch that would be checked out upon cloning."
           :command (list (elpaca--emacs-path) "-Q" "-L" elpaca
                          "-l" (expand-file-name "elpaca.el" elpaca)
                          "--batch" "--eval" program)
-          :sentinel (apply-partially #'elpaca--process-sentinel "Autoloads Generated" nil)))
+          :sentinel (lambda (process event) (elpaca--process-sentinel "Autoloads Generated" nil process event))))
     (elpaca--continue-build e)))
 
 (defun elpaca--activate-package (e)
@@ -1560,7 +1558,8 @@ Loads or caches autoloads."
     (elpaca--make-process e
       :name "byte-compile"
       :command  `(,emacs "-q" "--batch" "--eval" ,(format "%S" program))
-      :sentinel (apply-partially #'elpaca--process-sentinel "Byte compilation complete" nil))))
+      :sentinel (lambda (process event)
+                  (elpaca--process-sentinel "Byte compilation complete" nil process event)))))
 
 ;;;###autoload
 (defun elpaca-dependencies (id &optional ignore interactive recurse)
@@ -1820,7 +1819,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
       ;; Pager breaks pipe process.
       :command (list "git" "--no-pager" "log" "--reverse" (concat "--since=" date)
                      "--pretty=%h %s (%ch)" "..@{u}")
-      :sentinel (apply-partially #'elpaca--process-sentinel nil nil))))
+      :sentinel (lambda (process event) (elpaca--process-sentinel nil nil process event)))))
 
 (defun elpaca--fetch (e &rest command)
   "Fetch E's remotes' commits.
@@ -1830,7 +1829,7 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
     (elpaca--make-process e
       :name "fetch"
       :command  (or command '("git" "fetch" "--all" "-v"))
-      :sentinel (apply-partially #'elpaca--process-sentinel "Remotes fetched" nil))))
+      :sentinel (lambda (process event) (elpaca--process-sentinel "Remotes fetched" nil process event)))))
 
 (defun elpaca--announce-pin (e)
   "Log that pinned E is being skipped."
