@@ -149,6 +149,7 @@ It must accept a package ID symbol and REF string as its first two arguments."
 
 (define-minor-mode elpaca-log-update-mode "Auto display update diffs."
   :lighter " elum"
+  :interactive (elapca-log-mode)
   (unless (derived-mode-p 'elpaca-log-mode) (user-error "Not in `elpaca-log-mode' buffer"))
   (if elpaca-log-update-mode
       (progn
@@ -193,7 +194,8 @@ It must accept a package ID symbol and REF string as its first two arguments."
                                        (narrow-to-region (point) (line-end-position))
                                        (condition-case _ (forward-button 1)
                                          (error (user-error "No ref found on current line")))
-                                       (get-text-property (point) 'button-data)))))
+                                       (get-text-property (point) 'button-data))))
+               elpaca-log-mode)
   (funcall elpaca-log-diff-function (car data) (cdr data)))
 
 (defun elpaca-log--updates (entries)
@@ -279,6 +281,7 @@ It must accept a package ID symbol and REF string as its first two arguments."
 
 (define-derived-mode elpaca-log-mode elpaca-ui-mode "elpaca-log-mode"
   "Major mode for displaying Elpaca order log entries."
+  :interactive nil
   (setq tabulated-list-format [("Package" 30 t)
                                ("Status" 20 t)
                                ("Info" 80 t)

@@ -121,7 +121,7 @@ exclamation point to it. e.g. !#installed."
   (declare (indent 1) (debug t))
   `(defun ,(intern (format "elpaca-ui-search-%s" name)) ()
      ,(format "Search for %S" query)
-     (interactive)
+     (interactive nil elpaca-ui-mode)
      (elpaca-ui-search ,query)))
 
 (defun elpaca-ui--button-noop (&rest args)
@@ -299,6 +299,7 @@ Called in `jit-lock-functions', which see."
 
 (define-derived-mode elpaca-ui-mode tabulated-list-mode "elpaca-ui"
   "Major mode to manage packages."
+  :interactive nil
   (add-hook 'minibuffer-setup-hook 'elpaca-ui--minibuffer-setup)
   (elpaca-ui-live-update-mode 1)
   (jit-lock-register #'elpaca-ui--jit-apply-faces)
@@ -306,7 +307,8 @@ Called in `jit-lock-functions', which see."
   (hl-line-mode))
 
 (define-minor-mode elpaca-ui-live-update-mode "Filters results as query is typed."
-  :lighter " elui")
+  :lighter " elui"
+  :interactive (elpaca-ui-mode))
 
 (defun elpaca-ui--minibuffer-setup ()
   "Set up the minibuffer for live filtering."
@@ -382,7 +384,8 @@ Called in `jit-lock-functions', which see."
                            (setq ,@(cl-loop for fn in fns append `(entries ,fn)))))))))
 
 (define-minor-mode elpaca-ui-tail-mode "Automatically follow tail of UI buffer when enabled."
-  :lighter " elpaca-ui-tail")
+  :lighter " elpaca-ui-tail"
+  :interactive (elpaca-ui-mode))
 
 (defun elpaca-ui--print-appender (&rest _)
   "Prints button to append more `elpaca-ui-entries' rows."
@@ -406,7 +409,7 @@ Called in `jit-lock-functions', which see."
 
 (defun elpaca-ui-show-hidden-rows (&optional n)
   "Append rows up to N times `elpaca-ui-row-limit'."
-  (interactive "p")
+  (interactive "p" elpaca-ui-mode)
   (if-let* ((tlen (length tabulated-list-entries))
             (elen (length elpaca-ui-entries))
             ((< tlen elen)))
@@ -487,7 +490,8 @@ If QUERY is nil, the contents of the minibuffer are used instead."
                 (read-from-minibuffer elpaca-ui-search-prompt
                                       (and current-prefix-arg elpaca-ui-search-query)
                                       nil nil elpaca-ui--history)
-              (quit elpaca-ui-search-query))))))
+              (quit elpaca-ui-search-query)))))
+   elpaca-ui-mode)
   (elpaca-ui--ensure-mode)
   (when (string-empty-p query) (setq query elpaca-ui-default-query))
   (unless (string= query elpaca-ui-search-query)
@@ -498,7 +502,7 @@ If QUERY is nil, the contents of the minibuffer are used instead."
   "Rerun the current search for BUFFER.
 If BUFFER is non-nil, the current buffer is used.
 If SILENT is non-nil, suppress update message."
-  (interactive (list (current-buffer)))
+  (interactive (list (current-buffer)) elpaca-ui-mode)
   (with-current-buffer (or buffer (current-buffer))
     (elpaca-ui--update-search-query (or buffer (current-buffer))
                                     (or elpaca-ui-search-query
@@ -523,12 +527,12 @@ If SILENT is non-nil, suppress update message."
 
 (defun elpaca-ui-browse-package ()
   "Browse current package's URL via `browse-url'."
-  (interactive)
+  (interactive nil elpaca-ui-mode)
   (elpaca-browse (elpaca-ui-current-package)))
 
 (defun elpaca-ui-visit (&optional build)
   "Visit current package's repo or BUILD directory."
-  (interactive (list current-prefix-arg))
+  (interactive (list current-prefix-arg) elpaca-ui-mode)
   (if-let* ((orphan (get-text-property (line-beginning-position) 'orphan-dir)))
       (dired orphan)
     (elpaca-visit (elpaca-ui-current-package) build)))
@@ -567,7 +571,7 @@ If ADVANCEP is non-nil, move `forward-line'."
 
 (defun elpaca-ui-unmark ()
   "Unmark current package or packages in active region."
-  (interactive)
+  (interactive nil elpaca-ui-mode)
   (elpaca-ui-mark :region nil nil 'advance))
 
 (defmacro elpaca-ui-defmark (name test)
@@ -576,7 +580,7 @@ If ADVANCEP is non-nil, move `forward-line'."
   `(defun ,(intern (format "elpaca-ui-mark-%s"
                            (replace-regexp-in-string "^elpaca-" "" (symbol-name name))))
        () ,(format "Mark package at point for `%s'." name)
-       (interactive)
+       (interactive nil elpaca-ui-mode)
        (elpaca-ui-mark :region ',name ,test 'advance)))
 
 (elpaca-ui-defmark elpaca-rebuild
@@ -619,7 +623,7 @@ If ADVANCEP is non-nil, move `forward-line'."
 
 (defun elpaca-ui-execute-marks () ;;@TODO: make more flexible with regard to :args, :prefix-arg
   "Execute each mark in `elpaca-ui-marked-packages'."
-  (interactive)
+  (interactive nil elpaca-ui-mode)
   (when (null elpaca-ui--marked-packages) (user-error "No marked packages"))
   (cl-loop initially do (deactivate-mark) (elpaca--maybe-log)
            for (id command . props) in elpaca-ui--marked-packages
@@ -634,7 +638,7 @@ If ADVANCEP is non-nil, move `forward-line'."
 
 (defun elpaca-ui-send-input ()
   "Send input string to current process."
-  (interactive)
+  (interactive nil elpaca-ui-mode)
   (if-let* ((id (car (get-text-property (point) 'tabulated-list-id)))
             (e (alist-get id (elpaca--queued)))
             (process (elpaca<-process e))
@@ -646,7 +650,7 @@ If ADVANCEP is non-nil, move `forward-line'."
 (declare-function elpaca-info "elpaca-info")
 (defun elpaca-ui-info ()
   "Show info for current package."
-  (interactive)
+  (interactive nil elpaca-ui-mode)
   (elpaca-info (elpaca-ui-current-package)
                (get-text-property 0 'menu (aref (tabulated-list-get-entry) 3)) t))
 
