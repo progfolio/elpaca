@@ -59,6 +59,7 @@ If RECACHE is non-nil, recompute `elpaca-manager--entry-cache'."
 
 (define-derived-mode elpaca-manager-mode elpaca-ui-mode "elpaca-manager-mode"
   "Major mode for displaying Elpaca packages."
+  :interactive nil
   (setq tabulated-list-format [("Package" 30 elpaca-ui--sort-package)
                                ("Description" 80 t)
                                ("Date" 15 t)

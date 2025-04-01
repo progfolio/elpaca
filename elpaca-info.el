@@ -40,7 +40,8 @@
 (define-derived-mode elpaca-info-mode special-mode "elpaca-info-mode"
   "Major mode for viewing Elpaca package info.
 
-\\{elpaca-info-mode-map}")
+\\{elpaca-info-mode-map}"
+  :interactive nil)
 
 (defun elpaca-info--menus (id)
   "Return alist of menus filtered for item matching ID."
