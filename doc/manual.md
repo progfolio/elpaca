@@ -728,7 +728,7 @@ Interactively evaluating an `elpaca` declaration will re-process the order. This
 
 A lock file is a collection of recipes for the exact versions of installed packages. They can be used to build different versions of an Emacs configuration when combined with init file package declarations.
 
-The `elpaca-write-lock-file` command is used to write a lock file to disk. Setting the `elpaca-lock-file` variable to that file&rsquo;s path will cause Elpaca to use those versions of the recipes when installing packages assuming the `elpaca-lock-file-menu` is the first menu in `elpaca-menu-functions`.
+The `elpaca-write-lock-file` command is used to write a lock file to disk. Setting the `elpaca-lock-file` variable to that file&rsquo;s path will cause Elpaca to use those versions of the recipes when installing packages assuming the `elpaca-menu-lock-file` is the first menu in `elpaca-menu-functions`.
 
 
 <a id="use-package-integration"></a>
