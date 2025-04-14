@@ -39,7 +39,7 @@
 (defvar Info-directory-list)
 (defconst elpaca--inactive-states '(blocked finished failed))
 (defvar elpaca-installer-version -1)
-(or noninteractive (= elpaca-installer-version 0.10)
+(or noninteractive (= elpaca-installer-version 0.11)
     (lwarn '(elpaca installer) :warning "%s installer version does not match %s."
            (or (symbol-file 'elpaca-installer-version 'defvar) "Init")
            (expand-file-name "./doc/installer.el" (file-name-directory (or load-file-name (buffer-file-name))))))
@@ -1527,7 +1527,7 @@ Loads or caches autoloads."
               (elpaca--signal e "Autoloads cached"))
           (condition-case err
               (progn
-                (load autoloads nil 'nomessage)
+                (let ((load-source-file-function nil)) (load autoloads nil 'nomessage))
                 (elpaca--signal e "Package activated" 'activated))
             ((error) (elpaca--signal
                       e (format "Failed to load %S: %S" autoloads err) 'failed-to-activate))))
