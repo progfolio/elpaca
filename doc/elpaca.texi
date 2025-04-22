@@ -640,7 +640,7 @@ It must return a version string understood by @samp{version-to-list}.
 e.g.
 
 @lisp
-(elpaca (auctex :version (lambda (_) (require 'tex-site) AUCTeX-version)))
+(elpaca (example :version (lambda (_) "1.0.0")))
 @end lisp
 
 @node vars

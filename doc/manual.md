@@ -508,7 +508,7 @@ The name of the file the package&rsquo;s autoload file. When `nil`, autoload loa
 A function which must accept an Elpaca struct as its sole argument. It must return a version string understood by `version-to-list`. e.g.
 
 ```emacs-lisp
-(elpaca (auctex :version (lambda (_) (require 'tex-site) AUCTeX-version)))
+(elpaca (example :version (lambda (_) "1.0.0")))
 ```
 
 

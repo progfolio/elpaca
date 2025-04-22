@@ -368,7 +368,7 @@ It must return a version string understood by =version-to-list=.
 e.g.
 
 #+begin_src emacs-lisp :lexical t :eval never
-(elpaca (auctex :version (lambda (_) (require 'tex-site) AUCTeX-version)))
+(elpaca (example :version (lambda (_) "1.0.0")))
 #+end_src
 
 **** :vars
