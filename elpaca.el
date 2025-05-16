@@ -2029,7 +2029,7 @@ TYPE is either `repo` or `build`, for repo or build directory."
   (interactive "FWrite lock-file to: ")
   (elpaca--write-file path
     (cl-loop
-     with print-circle = t with seen with es
+     with seen with es
      for (id . e) in (or elpacas (elpaca--queued))
      do (when (and (not (member id seen))
                    (run-hook-with-args-until-failure 'elpaca-lock-file-functions e))
@@ -2045,7 +2045,7 @@ TYPE is either `repo` or `build`, for repo or build directory."
                 es)
           (push id seen))
      finally (message "wrote %d elpacas to %s" (length es) path)
-     (pp (nreverse es)))))
+     (pp (cl-sort es #'string< :key (lambda (e) (symbol-name (car e))))))))
 
 (declare-function elpaca-ui-current-package "elpaca-ui")
 ;;;###autoload
