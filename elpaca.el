@@ -2005,11 +2005,7 @@ If INTERACTIVE is non-nil, process queues."
         (if item (alist-get item cache) cache)
       (setq elpaca-menu-lock-file--cache (elpaca--read-file elpaca-lock-file)))))
 
-(defun elpaca--lock-file-init-p (e)
-  "Return non-nil if E declared in init file during startup."
-  (elpaca<-init e))
-
-(defcustom elpaca-lock-file-functions (list #'elpaca--lock-file-init-p)
+(defcustom elpaca-lock-file-functions (list #'elpaca<-init)
   "List of functions which take an E as a first argument.
 Any function returning nil will prevent the E from being written to the file."
   :type 'hook)
