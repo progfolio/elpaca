@@ -256,6 +256,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
               (namelen (length name))
               (id    (intern name))
               (beg (line-beginning-position))
+              (col (cadr (aref tabulated-list-format 0)))
               (noconflict t))
     (when-let* ((e (elpaca-get id)))
       (put-text-property
@@ -277,16 +278,14 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
                  (face   (or (plist-get props :face) 'default))
                  (prefix (concat (when (plist-get props :prefix-arg) "+")
                                  (or (plist-get props :prefix) "*")))
-                 (pad (make-string (- (cadr (aref tabulated-list-format 0))
-                                      (length name) (string-width prefix) 1)
-                                   ?\s))
+                 (pad (make-string (max (- col (length name) (string-width prefix) 1) 0) ?\s))
                  (mark   (propertize (concat prefix " " name pad) 'face face))
                  (offset (+ beg (length mark))))
             (when (derived-mode-p 'elpaca-manager-mode) (push id elpaca-ui--marked))
             (add-text-properties beg (+ beg namelen) (list 'display mark 'offset offset))))
       (when-let* ((offset (get-text-property (point) 'offset)))
         (remove-text-properties beg offset '(display))
-        (tabulated-list-print)))))
+        (put-text-property (+ beg namelen) (+ beg col) 'display `(space :align-to ,col))))))
 
 (defun elpaca-ui--jit-apply-faces (beg end)
   "Apply faces to entries between BEG and END.
