@@ -1094,6 +1094,7 @@ The keyword's value is expected to be one of the following:
         (let* ((default-directory (elpaca<-repo-dir e))
                (emacs             (elpaca--emacs-path))
                (program           `(let ((load-prefer-newer t)
+                                         (max-lisp-eval-depth ,max-lisp-eval-depth)
                                          (gc-cons-percentage 1.0))
                                      (require 'elpaca)
                                      (normal-top-level-add-subdirs-to-load-path)
@@ -1477,6 +1478,7 @@ This is the branch that would be checked out upon cloning."
             (elpaca (expand-file-name "elpaca/" elpaca-repos-directory))
             (program (let (print-level print-circle)
                        (format "%S" `(progn (setq gc-cons-percentage 1.0
+                                                  max-lisp-eval-depth ,max-lisp-eval-depth
                                                   ,@(when (stringp autoloads)
                                                       `(generated-autoload-file ,autoloads)))
                                             (elpaca-generate-autoloads
@@ -1546,6 +1548,7 @@ Loads or caches autoloads."
                    for build-dir = (and dep (elpaca<-build-dir dep))
                    when build-dir collect build-dir))
          (program `(let ((gc-cons-percentage 1.0) ;; trade memory for gc speed
+                         (max-lisp-eval-depth ,max-lisp-eval-depth)
                          ,@(when (boundp 'native-comp-eln-load-path)
                              `((native-comp-eln-load-path ',native-comp-eln-load-path))))
                      (dolist (dir ',(cons default-directory dependency-dirs))
