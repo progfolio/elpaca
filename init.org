@@ -1446,6 +1446,7 @@ I'd rather have everything in one folder to keep my file system tidy.
             (set-visited-file-name new-name)
             (set-buffer-modified-p nil))))))
   :custom
+  (trusted-content (list "~/.emacs.d/elpaca/"))
   (require-final-newline t "Automatically add newline at end of file")
   (backup-by-copying t)
   (backup-directory-alist `((".*" . ,(expand-file-name
