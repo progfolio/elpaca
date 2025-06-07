@@ -471,8 +471,8 @@ An Elpaca menu for MELPA submissions.
 *** use-package
 #+begin_src emacs-lisp :lexical t
 (defmacro use-feature (name &rest args)
-  "Like `use-package' but accounting for asynchronous installation.
-  NAME and ARGS are in `use-package'."
+  "`use-package' for packages which do not require installation.
+  See `use-package' for NAME and ARGS."
   (declare (indent defun))
   `(use-package ,name
      :ensure nil
