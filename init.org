@@ -1021,6 +1021,16 @@ https://github.com/jorgenschaefer/emacs-buttercup
 (use-package buttercup
   :commands (buttercup-run-at-point))
 #+end_src
+** calc
+Emacs calculator
+#+begin_src emacs-lisp :lexical t
+(use-feature calc
+  :general
+  (+general-global-menu! "calc" "c"
+    "c" 'quick-calc
+    "C" 'calc
+    "f" 'full-calc))
+#+end_src
 ** cape
 #+begin_quote
 Completion At Point Extensions
