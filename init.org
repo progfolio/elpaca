@@ -311,16 +311,6 @@ https://github.com/progfolio/elpaca
           (progn
             (start-process-shell-command program nil program))
         (user-error "$%S not set" var)))
-    (defun +exwm-firefox-tab (buffer)
-      (interactive (list (read-buffer
-                          "Firefox tab: " nil t
-                          (lambda (candidate)
-                            (let ((candidate (or (car-safe candidate) candidate))
-                                  (current (with-minibuffer-selected-window
-                                             (buffer-name (window-buffer)))))
-                              (and (string-match-p "| firefox" candidate)
-                                   (not (equal candidate current))))))))
-      (switch-to-buffer buffer))
     (defun +exwm-move-window-right ()
       "Move current window right like i3wm does."
       (interactive)
@@ -375,13 +365,13 @@ https://github.com/progfolio/elpaca
     (defvar +exwm-split-side 'right)
     (setopt exwm-input-global-keys
             `(([?\s-l] . windmove-right)
-              ([?\M-\s-l] . +exwm-move-window-right)
+              ([?\s-L] . +exwm-move-window-right)
               ([?\s-h] . windmove-left)
-              ([?\M-\s-h] . +exwm-move-window-left)
+              ([?\s-H] . +exwm-move-window-left)
               ([?\s-j] . windmove-down)
-              ([?\M-\s-j] . +exwm-move-window-down)
+              ([?\s-J] . +exwm-move-window-down)
               ([?\s-k] . windmove-up)
-              ([?\M-\s-k] . +exwm-move-window-up)
+              ([?\s-K] . +exwm-move-window-up)
               ([?\s-i] . +exwm-edit)
               ([?\s-r] . exwm-restart)
               ([?\s-f] . +exwm-toggle-fullscreen)
@@ -398,20 +388,19 @@ https://github.com/progfolio/elpaca
                            (ignore-errors (delete-window))
                            (balance-windows)))
               ([?\s-\"] . +exwm-launch)
-              ([?\s-\:] . tab-bar-switch-to-tab)
-              ([?\s-\'] . +exwm-firefox-tab)
-              ([?\s-\;] . consult-buffer)
+              ([?\s-:] . tab-bar-switch-to-tab)
               ([?\s-\ ] . execute-extended-command)
+              ([?\s-\;] . (lambda () (interactive) (call-interactively #'consult-buffer)))
               (,(kbd "<XF86Launch2>")  .
                (lambda () (interactive) (make-process :name "emacs" :command '("emacs"))))))
-    (defun +exwm-rename-workspace-buffer ()
+    (defun +exwm-rename-buffer ()
       "Rename workspace buffer."
       (exwm-workspace-rename-buffer
        (concat (when exwm-title
                  (truncate-string-to-width exwm-title (/ (window-width) 2) nil nil t t))
-               (when exwm-title " | ") exwm-class-name)))
-    (add-hook 'exwm-update-class-hook #'+exwm-rename-workspace-buffer)
-    (add-hook 'exwm-update-title-hook #'+exwm-rename-workspace-buffer)
+               (when exwm-title " | ") exwm-class-name " EXWM")))
+    (add-hook 'exwm-update-class-hook #'+exwm-rename-buffer)
+    (add-hook 'exwm-update-title-hook #'+exwm-rename-buffer)
 
     ;; (defun +exwm-new-window ()
     ;;   ;;(exwm-layout-hide-mode-line)
@@ -1083,7 +1072,69 @@ Consulting completing-read
    consult--source-recent-file
    consult--source-buffer
    consult--source-bookmark
+   consult-buffer
    :preview-key nil)
+
+  (defvar +consult-source-tabs
+    (list :name "Tabs"
+          :narrow ?t;
+          :hidden t
+          :category 'tab
+          :action #'tab-bar-switch-to-tab
+          :new #'tab-bar-switch-to-tab
+          :items (lambda () (mapcar (lambda (tab) (alist-get 'name tab))
+                                    (tab-bar--tabs-recent))))
+    "EXWM tabs source.")
+  (add-to-list 'consult-buffer-sources '+consult-source-tabs 'append)
+
+  (defvar +consult-exwm-filter " EXWM\\'")
+  (add-to-list 'consult-buffer-filter +consult-exwm-filter)
+  (defvar +consult-source-exwm
+    (list  :name "EXWM"
+           :narrow    ?\;
+           :hidden    t
+           :category  'buffer
+           :face      'consult-buffer
+           :history   'buffer-name-history
+           :action    #'consult--buffer-action ;; No preview
+           ;; :state  #'consult--buffer-state  ;; Preview
+           :items
+           (lambda () (consult--buffer-query
+                       :sort 'visibility
+                       :as #'buffer-name
+                       :exclude (remq +consult-exwm-filter consult-buffer-filter)
+                       :mode 'exwm-mode)))
+    "EXWM buffer source.")
+  (add-to-list 'consult-buffer-sources '+consult-source-exwm 'append)
+
+  (defvar +consult-source-firefox
+    (list :name "Firefox"
+          :category 'buffer
+          :narrow ?w ;; for "web"
+          :hidden t
+          :action  #'consult--buffer-action ;; No preview
+          :face 'consult-buffer
+          :new (lambda (search)
+                 (make-process :name (format "firefox: %s" search)
+                               :buffer nil
+                               :command (list "firefox" "--search" search)))
+          :items (lambda ()
+                   (let ((consult-buffer-filter nil))
+                     (consult--buffer-query :include (list "firefox")
+                                            :as #'buffer-name
+                                            :mode 'exwm-mode)))))
+  (add-to-list 'consult-buffer-sources '+consult-source-firefox 'append)
+
+  (defvar +consult-source-shell
+    (list :name "$"
+          :category 'command
+          :narrow ?s ;; for "shell"
+          :hidden t
+          :action (lambda (command) (start-process-shell-command command nil command))
+          :new (lambda (command) (start-process-shell-command command nil command))
+          :items (lambda () (delete-dups (mapcar #'string-trim shell-command-history)))))
+  (add-to-list 'consult-buffer-sources '+consult-source-shell 'append)
+
   (global-leader
     :major-modes '(org-mode)
     :keymaps     '(org-mode-map)
