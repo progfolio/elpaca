@@ -258,6 +258,7 @@ https://github.com/progfolio/elpaca
 #+end_src
 
 #+begin_src emacs-lisp :lexical t
+(setq elpaca-menu-org-make-manual nil)
 (with-eval-after-load 'evil
   (evil-make-intercept-map elpaca-ui-mode-map))
 #+end_src
