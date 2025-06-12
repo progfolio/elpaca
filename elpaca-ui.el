@@ -472,7 +472,7 @@ If QUERY is nil, the contents of the minibuffer are used instead."
               (doc (documentation fn)))
     (concat " " (substring doc 0 (string-search "\n" doc)))))
 
-(defvar elpaca-ui-search-prompt "Search (empty for default query):")
+(defvar elpaca-ui-search-prompt "Search (empty for default query): ")
 
 (defun elpaca-ui--complete-tag ()
   "Return `elpaca-ui-search-tags' as completion candidates."
