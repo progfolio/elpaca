@@ -387,7 +387,7 @@ A string of the form @samp{USER/REPO} when used with the @samp{:host} keyword; a
 @end lisp
 
 @lisp
-(local :repo "~/repos/local/") ;;cloned from local filesystem
+(local :repo "~/repos/local/") ;;built from local filesystem
 @end lisp
 
 @lisp
@@ -398,6 +398,8 @@ A cons cell of the form @samp{(REMOTE . LOCAL)} will rename the local repository
 
 @lisp
 (remote :repo ("https://foo.example/example.git" . "local-name"))
+;;This will still clone the repository under `elpaca-repos-directory'
+(remote :repo ("~/repos/local" . "local-name"))
 @end lisp
 
 @node branch
@@ -895,7 +897,7 @@ It's best to restart Emacs after a successful rebuild if you wish to have the ch
 @subsection Lock Files
 
 A lock file is a collection of recipes for the exact versions of installed packages.
-They can be used to build different versions of an Emacs configuration when combined with init file package declarations. 
+They can be used to build different versions of an Emacs configuration when combined with init file package declarations.
 
 The @samp{elpaca-write-lock-file} command is used to write a lock file to disk.
 Setting the @samp{elpaca-lock-file} variable to that file's path will cause Elpaca to use those versions of the recipes when installing packages assuming the @samp{elpaca-menu-lock-file} is the first menu in @samp{elpaca-menu-functions}.

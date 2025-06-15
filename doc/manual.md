@@ -249,7 +249,7 @@ A string of the form `USER/REPO` when used with the `:host` keyword; a local fil
 ```
 
 ```emacs-lisp
-(local :repo "~/repos/local/") ;;cloned from local filesystem
+(local :repo "~/repos/local/") ;;built from local filesystem
 ```
 
 ```emacs-lisp
@@ -260,6 +260,8 @@ A cons cell of the form `(REMOTE . LOCAL)` will rename the local repository:
 
 ```emacs-lisp
 (remote :repo ("https://foo.example/example.git" . "local-name"))
+;;This will still clone the repository under `elpaca-repos-directory'
+(remote :repo ("~/repos/local" . "local-name"))
 ```
 
 

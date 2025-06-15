@@ -440,7 +440,9 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
                                                        (url-generic-parse-url url)))))
                 (repo (if-let* ((r (or remote repo))
                                 ((eq (elpaca--repo-type r) 'local)))
-                          (file-name-base (directory-file-name (or local r)))
+                          (if local
+                              (file-name-base (directory-file-name local))
+                            r)
                         (when host (setq user (elpaca--repo-user r)))
                         (elpaca--repo-name (or local r))))
                 (pkg pkg)
