@@ -14,7 +14,7 @@ compile: *.el
 
 .PHONY: test
 test: elpaca.elc
-	$(EMACS) -Q --batch -L . -l ert -l ./test/elpaca-test.el \
+	$(EMACS) -Q --batch -L . -l ert -l ./test/elpaca-tests.el \
   --eval "(let ((ert-quiet t)) (ert-run-tests-batch-and-exit))"
 
 .PHONY: autoloads
