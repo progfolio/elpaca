@@ -1370,7 +1370,7 @@ This is the branch that would be checked out upon cloning."
             ,@(cond
                (ref    (list "checkout" ref))
                (tag    (list "checkout" (concat "tags/" tag)))
-               (branch (list "switch" "-C" branch ; "--no-guess"?
+               (branch (list "checkout" "-B" branch ; "--no-guess"?
                              (concat (or (elpaca--first remote)
                                          elpaca-default-remote-name)
                                      "/" branch)))))
