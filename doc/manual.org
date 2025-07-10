@@ -506,6 +506,10 @@ The =elpaca-menu-functions= variable contains menu functions for the following p
 
 Menus are checked in order until one returns the requested menu item or the menu list is exhausted.
 
+**** Updating menus
+Menus can be updated via the =elpaca-update-menus= command.
+Doing so will fetch the latest recipes from the menu source and overwrite the menu item cache for the updated menus.
+
 *** Orders
 :PROPERTIES:
 :CUSTOM_ID: orders

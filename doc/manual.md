@@ -28,6 +28,7 @@
       - [elpaca-recipe-functions](#elpaca-recipe-functions)
     - [Menus](#menus)
       - [elpaca-menu-functions](#elpaca-menu-functions)
+      - [Updating menus](#orga583e10)
     - [Orders](#orders)
       - [elpaca-order-functions](#elpaca-order-functions)
     - [Queues](#queues)
@@ -637,6 +638,13 @@ The `elpaca-menu-functions` variable contains menu functions for the following p
 -   [NonGNU ELPA](https://elpa.nongnu.org)
 
 Menus are checked in order until one returns the requested menu item or the menu list is exhausted.
+
+
+<a id="orga583e10"></a>
+
+#### Updating menus
+
+Menus can be updated via the `elpaca-update-menus` command. Doing so will fetch the latest recipes from the menu source and overwrite the menu item cache for the updated menus.
 
 
 <a id="orders"></a>

@@ -100,6 +100,7 @@ Recipes
 Menus
 
 * elpaca-menu-functions::
+* Updating menus::
 
 Orders
 
@@ -776,6 +777,7 @@ For example@comma{} @uref{https://www.github.com/progfolio/melpulls, melpulls} i
 
 @menu
 * elpaca-menu-functions::
+* Updating menus::
 @end menu
 
 @node elpaca-menu-functions
@@ -797,6 +799,12 @@ The @samp{elpaca-menu-functions} variable contains menu functions for the follow
 @end itemize
 
 Menus are checked in order until one returns the requested menu item or the menu list is exhausted.
+
+@node Updating menus
+@subsubsection Updating menus
+
+Menus can be updated via the @samp{elpaca-update-menus} command.
+Doing so will fetch the latest recipes from the menu source and overwrite the menu item cache for the updated menus.
 
 @node Orders
 @subsection Orders
