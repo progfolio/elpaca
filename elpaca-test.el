@@ -106,7 +106,7 @@ If INSTALLERP is non-nil, stop after Elpaca installer."
                  (signal 'end-of-file nil))))
       ((end-of-file) nil)
       ((error) (error (car err) (cdr err))))
-    (mapconcat #'pp-to-string (nreverse body))))
+    (mapconcat #'pp-to-string (nreverse body) "")))
 
 (defun elpaca-test--upstream-init (&optional installer)
   "Return upstream INSTALLER file."
