@@ -149,7 +149,7 @@ It must accept a package ID symbol and REF string as its first two arguments."
 
 (define-minor-mode elpaca-log-update-mode "Auto display update diffs."
   :lighter " elum"
-  :interactive (elapca-log-mode)
+  :interactive (elpaca-log-mode)
   (unless (derived-mode-p 'elpaca-log-mode) (user-error "Not in `elpaca-log-mode' buffer"))
   (if elpaca-log-update-mode
       (progn
