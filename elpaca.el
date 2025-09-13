@@ -412,7 +412,7 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
   (cond ((string-match-p "^[/~]" string) 'local)
         ((string-match-p ":" string) 'remote)))
 
-(defvar elpaca--repo-dirs nil "List of registered repository directories.")
+(defvar elpaca--src-dirs nil "List of registered repository directories.")
 (defun elpaca-repo-dir (recipe)
   "Return path to repo given RECIPE."
   (let* ((url (plist-get recipe :url))
@@ -426,8 +426,8 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
          (info (concat url (or remote repo) hostname))
          (key (or (and info (> (length info) 0) (intern info))
                   (error "Cannot determine URL from recipe: %S" recipe)))
-         (mono-repo (elpaca-alist-get key elpaca--repo-dirs))
-         (dirs (and (not mono-repo) (mapcar #'cdr elpaca--repo-dirs)))
+         (mono-repo (elpaca-alist-get key elpaca--src-dirs))
+         (dirs (and (not mono-repo) (mapcar #'cdr elpaca--src-dirs)))
          (name (cond
                 (local
                  (if-let* ((owner (assoc local dirs)))
@@ -450,7 +450,7 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
          (dir (if (assoc name dirs)
                   (string-join (list name hostname user) ".")
                 (and name (replace-regexp-in-string "\\.el$" "" name)))))
-    (unless mono-repo (push (cons key (cons dir pkg)) elpaca--repo-dirs))
+    (unless mono-repo (push (cons key (cons dir pkg)) elpaca--src-dirs))
     (file-name-as-directory (expand-file-name dir elpaca-repos-directory))))
 
 (defun elpaca-build-dir (recipe)
@@ -1768,8 +1768,8 @@ do not confirm before deleting package and DEPS."
         (setf (elpaca-q<-elpacas queue)
               (cl-remove id (elpaca-q<-elpacas queue) :key #'car)))
       (setf (alist-get (car (cl-find (file-name-base (directory-file-name repo-dir))
-                                     elpaca--repo-dirs :key #'cadr :test #'equal))
-                       elpaca--repo-dirs nil t)
+                                     elpaca--src-dirs :key #'cadr :test #'equal))
+                       elpaca--src-dirs nil t)
             nil)
       (message "Deleted package %S" id)
       (dolist (dependency dependencies nil)
