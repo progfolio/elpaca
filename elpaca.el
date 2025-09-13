@@ -1139,18 +1139,20 @@ The keyword's value is expected to be one of the following:
   (or (and (not recache) (elpaca<-main e))
       (setf (elpaca<-main e)
             (if-let* ((recipe (elpaca<-recipe e))
-                      (repo (elpaca<-repo-dir e))
-                      ((or (file-exists-p repo) (error "Repository not on disk")))
-                      (default-directory repo)
                       (declared (plist-member recipe :main)))
                 (cadr declared)
-              (let* ((package (file-name-sans-extension (elpaca<-package e)))
+              (let* ((repo (elpaca<-repo-dir e))
+                     (default-directory repo)
+                     (package (file-name-sans-extension (elpaca<-package e)))
                      (name (concat "\\(?:" (regexp-quote package) "\\(?:-pkg\\)?\\.el\\)\\'")))
-                (or (car (directory-files repo nil (concat "\\`" name)))
-                    (car (cl-remove-if-not
-                          (lambda (f) (string-match-p (concat "[/\\]" name) f))
-                          (elpaca--directory-files-recursively repo (concat "\\`[^.z-a]*" name))))
-                    (error "Unable to find main elisp file for %S" package)))))))
+                (or (file-exists-p repo) (error "Repository not on disk"))
+                (or
+
+                 (car (directory-files repo nil (concat "\\`" name)))
+                 (car (cl-remove-if-not
+                       (lambda (f) (string-match-p (concat "[/\\]" name) f))
+                       (elpaca--directory-files-recursively repo (concat "\\`[^.z-a]*" name))))
+                 (error "Unable to find main elisp file for %S" package)))))))
 
 (defvar elpaca--tag-regexp
   "\\`\\(?:\\|[RVrv]\\|release[/-]v?\\)?\\(?1:[0-9]+\\(\\.[0-9]+\\)*\\)\\'")
