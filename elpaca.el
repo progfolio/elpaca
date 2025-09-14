@@ -562,7 +562,8 @@ The first function, if any, which returns non-nil is used." :type 'hook)
                         (t (signal 'wrong-type-error `((stringp t) ,query))))
                   t))))
 
-(defcustom elpaca-types '((git . elpaca-git))
+(defcustom elpaca-types '((git . elpaca-git)
+                          (file . elpaca-file))
   "Alist of form ((SYM . LIBRARY)). SYM is a valid recipe :type symbol."
   :type 'alist)
 
