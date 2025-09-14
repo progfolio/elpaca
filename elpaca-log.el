@@ -162,7 +162,7 @@ It must accept a package ID symbol and REF string as its first two arguments."
   "Show diff for ID at REF."
   (if-let* ((fboundp 'magit-show-commit)
             (e (elpaca-get id))
-            (default-directory (elpaca<-repo-dir e)))
+            (default-directory (elpaca<-src-dir e)))
       (let ((magit-display-buffer-noselect elpaca-log-update-mode)
             (magit-uniquify-buffer-names (not elpaca-log-update-mode))
             (magit-buffer-name-format "*elpaca-diff*"))
@@ -174,7 +174,7 @@ It must accept a package ID symbol and REF string as its first two arguments."
 (defun elpaca-log-diff (id ref)
   "Display diff buffer for package ID at REF."
   (if-let* ((e (elpaca-get id))
-            (repo (elpaca<-repo-dir e))
+            (repo (elpaca<-src-dir e))
             (diff (let ((default-directory repo)) (elpaca-process-output "git" "show" ref))))
       (let ((displayp elpaca-log-update-mode))
         (with-current-buffer (get-buffer-create "*elpaca-diff*")
