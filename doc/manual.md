@@ -28,7 +28,7 @@
       - [elpaca-recipe-functions](#elpaca-recipe-functions)
     - [Menus](#menus)
       - [elpaca-menu-functions](#elpaca-menu-functions)
-      - [Updating menus](#orga583e10)
+      - [Updating menus](#orgef3d012)
     - [Orders](#orders)
       - [elpaca-order-functions](#elpaca-order-functions)
     - [Queues](#queues)
@@ -70,14 +70,14 @@ Elpaca requires:
 To install Elpaca, add the following elisp to your init.el. It must come before any calls to other Elpaca functions/macros. This will clone Elpaca into your `user-emacs-directory` under the `elpaca` subdirectory. It then builds and activates Elpaca.
 
 ```emacs-lisp
-(defvar elpaca-installer-version 0.11)
+(defvar elpaca-installer-version 0.12)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
 (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
                               :ref nil :depth 1 :inherit ignore
                               :files (:defaults "elpaca-test.el" (:exclude "extensions"))
-                              :build (:not elpaca--activate-package)))
+                              :build (:sub (elpaca--activate-package))))
 (let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
        (build (expand-file-name "elpaca/" elpaca-builds-directory))
        (order (cdr elpaca-order))
@@ -640,7 +640,7 @@ The `elpaca-menu-functions` variable contains menu functions for the following p
 Menus are checked in order until one returns the requested menu item or the menu list is exhausted.
 
 
-<a id="orga583e10"></a>
+<a id="orgef3d012"></a>
 
 #### Updating menus
 
