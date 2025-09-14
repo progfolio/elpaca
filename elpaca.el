@@ -1508,6 +1508,7 @@ do not confirm before deleting package and DEPS."
          (dependents   (ignore-errors (elpaca-dependents id)))
          (dependencies (and deps (ignore-errors (elpaca-dependencies
                                                  id elpaca-ignored-dependencies)))))
+    (elpaca-build-steps e) ;; Allow :type dispatching here.
     (when (cl-some #'elpaca--on-disk-p dependents)
       (user-error "Cannot delete %S unless dependents %S are deleted" id dependents))
     (when (or force (yes-or-no-p (format "Delete package %S? " id)))
