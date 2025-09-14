@@ -81,7 +81,7 @@
                                            (setq elpaca-menu-org-make-manual ,elpaca-menu-org-make-manual)
                                            (elpaca-menu-org--build))
                         :autoloads "org-loaddefs.el" :depth 1
-                        :build '(:not elpaca--generate-autoloads-async)
+                        :build '(:sub (elpaca--generate-autoloads-async))
                         :files '(:defaults ("etc/styles/" "etc/styles/*" "doc/*.texi")))))
            (cons 'org-contrib
                  (list :source "Org"

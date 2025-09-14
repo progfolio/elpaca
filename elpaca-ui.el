@@ -67,7 +67,7 @@ Accepted key val pairs are:
                 (list (cons (intern name) 'orphan) (vector (propertize name 'orphan-dir dir)
                                                            "orphan package" "n/a" "n/a" "n/a"))))
             (cl-set-difference (cl-remove-if-not #'file-directory-p repos)
-                               (mapcar (lambda (q) (elpaca<-repo-dir (cdr q)))
+                               (mapcar (lambda (q) (elpaca<-src-dir (cdr q)))
                                        (elpaca--queued))
                                :test #'equal))))
 
@@ -634,7 +634,8 @@ If ADVANCEP is non-nil, move `forward-line'."
                                (cond ((eq arg 'id) id)
                                      ((eq arg 'prefix-arg) (plist-get props :prefix-arg))
                                      (t arg)))
-           do (apply command (or args (list id)))
+           do (let ((this-command command))
+                (apply command (or args (list id))))
            (pop elpaca-ui--marked-packages)
            finally (setq elpaca--post-queues-hook '(elpaca-ui--post-execute)))
   (let (elpaca-log-functions) (elpaca-process-queues)))
