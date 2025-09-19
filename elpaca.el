@@ -1540,14 +1540,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
   (let ((e (or (elpaca-get id) (user-error "Package %S is not queued" id))))
     (when (eq (elpaca--status e) 'finished)
       ;;@MAYBE: remove Info/load-path entries?
-      (setf (elpaca<-build-steps e)
-            (cl-set-difference (elpaca-build-steps (elpaca<-recipe e))
-                               '(elpaca-git--clone
-                                 elpaca-git--congifure-remotes
-                                 elpaca--fetch
-                                 elpaca-git--checkout-ref
-                                 elpaca--queue-dependencies
-                                 elpaca--activate-package))))
+      (setf (elpaca<-build-steps e) (elpaca-build-steps e)))
     (elpaca--unprocess e)
     (elpaca--signal e "Rebuilding" 'queued)
     (setf elpaca-cache-autoloads nil (elpaca<-files e) nil)
