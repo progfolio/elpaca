@@ -1513,7 +1513,7 @@ do not confirm before deleting package and DEPS."
       (user-error "Cannot delete %S unless dependents %S are deleted" id dependents))
     (when (or force (yes-or-no-p (format "Delete package %S? " id)))
       (cl-assert (not (member src-dir (list user-emacs-directory elpaca-builds-directory
-                                             elpaca-repos-directory))))
+                                            elpaca-repos-directory))))
       (when (file-exists-p src-dir) (delete-directory src-dir 'recursive))
       (when (file-exists-p build-dir)
         (setq load-path (delete build-dir load-path))
@@ -1555,14 +1555,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
   (let ((e (or (elpaca-get id) (user-error "Package %S is not queued" id))))
     (when (eq (elpaca--status e) 'finished)
       ;;@MAYBE: remove Info/load-path entries?
-      (setf (elpaca<-build-steps e)
-            (cl-set-difference (elpaca-build-steps (elpaca<-recipe e))
-                               '(elpaca-git--clone
-                                 elpaca-git--congifure-remotes
-                                 elpaca--fetch
-                                 elpaca-git--checkout-ref
-                                 elpaca--queue-dependencies
-                                 elpaca--activate-package))))
+      (setf (elpaca<-build-steps e) (elpaca-build-steps e)))
     (elpaca--unprocess e)
     (elpaca--signal e "Rebuilding" 'queued)
     (setf elpaca-cache-autoloads nil (elpaca<-files e) nil)
@@ -1845,14 +1838,9 @@ This should only ever be used as the last element of `elpaca-menu-functions'."
                        (intern (plist-get recipe :package)))))
   (if-let* ((found (or (elpaca-get id)
                        (alist-get id (cl-loop for menu in elpaca-menu-functions append (funcall menu 'index)))))
-            (url (or (plist-get found :url)
-                     (file-name-sans-extension
-                      (elpaca-git--repo-uri (elpaca-merge-plists
-                                             (or (plist-get found :recipe)
-                                                 (and (elpaca-p found) (elpaca<-recipe found))
-                                                 (user-error "No URL associated with id %S" id))
-                                             '(:protocol https)))))))
-      (browse-url url)))
+            (url (plist-get found :url)))
+      (browse-url url)
+    (user-error "No URL associated with id %S" id)))
 
 ;;;###autoload
 (defun elpaca-version (&optional output)
