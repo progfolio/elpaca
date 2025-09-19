@@ -558,14 +558,6 @@ check (and possibly change) their statuses."
   "Return queued E associated with ID."
   (elpaca-alist-get id (elpaca--queued)))
 
-(defun elpaca--run-build-commands (commands)
-  "Run build COMMANDS."
-  (dolist (command (if (listp (car-safe commands)) commands (list commands)))
-    (message "Running command: %S" command)
-    (if (cl-every #'stringp command)
-        (apply #'elpaca-process-poll command)
-      (eval command t))))
-
 (defun elpaca--caller-name (n &rest skip)
   "Return Nth calling function's name, skipping symbols in SKIP."
   (cl-loop with current = (backtrace-frame (1+ n)) ;; Skip this function call.
@@ -877,6 +869,34 @@ FILES and NOCONS are used recursively."
     (process-put process :loglen (length (elpaca<-log e)))
     (setf (elpaca<-process e) process)))
 
+(defmacro elpaca-with-emacs (e &optional args &rest forms)
+  "Execute E's FORMS in an async Emacs subprocess with ARGS.
+ARGS must be a plist including any of the following keywords value pairs:
+
+:name an expression evaluating to a string, used as the subprocess name.
+:args an expression evaluating to a list of Emacs subprocess command line args.
+:env a `let' VARLIST which is evaluated and injected in the subprocess."
+  (declare (indent 1))
+  (let ((esym (make-symbol "e"))
+        (formsym (make-symbol "forms"))
+        (argsym (make-symbol "args"))
+        (namesym (make-symbol "name")))
+    `(let* ((,esym ,e)
+            (,formsym (backquote ,forms))
+            (,argsym (backquote ,args))
+            (,namesym (or (plist-get ,argsym :name)
+                          (concat "elpaca-with-emacs-" (elpaca<-package ,esym)))))
+       (unless (keywordp (car ,argsym)) (setq ,formsym (list ,argsym) ,argsym nil))
+       (elpaca--make-process ,esym
+         :name ,namesym
+         :buffer ,namesym
+         :command
+         (list (elpaca--emacs-path) "-Q" "--batch" ,@(plist-get args :args)
+               "--eval" (format "%S" (macroexp-progn ,formsym)))
+         :sentinel
+         (lambda (process event)
+           (elpaca--process-sentinel (concat ,namesym " complete") nil process event))))))
+
 (defun elpaca--compile-info (e)
   "Compile E's .texi files."
   (elpaca--signal e "Compiling Info files" 'info)
@@ -936,63 +956,6 @@ FILES and NOCONS are used recursively."
                             (elpaca<-build-steps e)))))
   (elpaca--continue-build e (unless elpaca-install-info-executable
                               "No elpaca-install-info-executable")))
-
-(defun elpaca--dispatch-build-commands-process-sentinel (process event)
-  "PROCESS EVENT."
-  (let ((e    (process-get process :elpaca))
-        (type (process-get process :build-type)))
-    (elpaca--propertize-subprocess process)
-    (cond
-     ((equal event "finished\n") (elpaca--continue-build e (concat type " steps finished")))
-     ((string-match-p "abnormally" event) (elpaca--fail e (concat type " command failed"))))))
-
-(defun elpaca--dispatch-build-commands (e type)
-  "Run E's TYPE commands for.
-TYPE is either the keyword :pre-build, or :post-build.
-Each command is either an elisp form to be evaluated or a list of
-strings to be executed in a shell context of the form:
-
-  (\"executable\" \"arg\"...)
-
-Commands are executed in the E's repository directory.
-The keyword's value is expected to be one of the following:
-
-  - A single command
-  - A list of commands
-  - nil, in which case no commands are executed.
-    Note if :build is nil, :pre/post-build commands are not executed."
-  (if-let* ((recipe   (elpaca<-recipe e))
-            (commands (plist-get recipe type))
-            (name (symbol-name type)))
-      (progn
-        (elpaca--signal e (concat "Running " name " commands") (intern (substring name 1)))
-        (let* ((default-directory (elpaca<-src-dir e))
-               (emacs             (elpaca--emacs-path))
-               (program           `(let ((load-prefer-newer t)
-                                         (gc-cons-percentage 1.0))
-                                     (require 'elpaca)
-                                     (normal-top-level-add-subdirs-to-load-path)
-                                     (elpaca--run-build-commands ',commands)))
-               (process (elpaca--make-process e
-                          :name name :connection-type 'pty
-                          :command (list
-                                    emacs "-Q"
-                                    "-L" "./"
-                                    "-L" (expand-file-name "elpaca/" elpaca-builds-directory)
-                                    "--batch"
-                                    "--eval" (let (print-level print-length print-circle)
-                                               (format "%S" program)))
-                          :sentinel #'elpaca--dispatch-build-commands-process-sentinel)))
-          (process-put process :build-type name)))
-    (elpaca--continue-build e)))
-
-(defun elpaca--run-pre-build-commands (e)
-  "Run E's :pre-build commands."
-  (elpaca--dispatch-build-commands e :pre-build))
-
-(defun elpaca--run-post-build-commands (e)
-  "Run E's :post-build commands."
-  (elpaca--dispatch-build-commands e :post-build))
 
 ;;@HACK: It seems like `directory-files-recursively' is a little slow because it
 ;;covers all sorts of general edge cases. e.g. tramp remote files.
@@ -1259,23 +1222,16 @@ This is the branch that would be checked out upon cloning."
   (if-let* ((recipe (elpaca<-recipe e))
             (autoloads (let ((member (plist-member recipe :autoloads)))
                          (if member (cadr member) t)))
-            (package (elpaca<-package  e))
             (default-directory (elpaca<-build-dir e))
-            (elpaca (expand-file-name "elpaca/" elpaca-repos-directory))
-            (program (let (print-level print-circle)
-                       (format "%S" `(progn (setq gc-cons-percentage 1.0
-                                                  ,@(when (stringp autoloads)
-                                                      `(generated-autoload-file ,autoloads)))
-                                            (elpaca-generate-autoloads
-                                             ,package ,default-directory))))))
+            (elpaca (expand-file-name "elpaca/" elpaca-repos-directory)))
       (progn
         (elpaca--signal e (concat "Generating autoloads: " default-directory) 'autoloads)
-        (elpaca--make-process e
-          :name "autoloads"
-          :command (list (elpaca--emacs-path) "-Q" "-L" elpaca
-                         "-l" (expand-file-name "elpaca.el" elpaca)
-                         "--batch" "--eval" program)
-          :sentinel (lambda (process event) (elpaca--process-sentinel "Autoloads Generated" nil process event))))
+        (elpaca-with-emacs e
+          (:name "autoloads" :args ("-L" elpaca "-l" (expand-file-name "elpaca.el" elpaca)))
+          (let (print-level print-circle)
+            (setq gc-cons-percentage 1.0
+                  ,@(when (stringp autoloads) `(setq generated-autoload-file ,autoloads)))
+            (elpaca-generate-autoloads ,(elpaca<-package e) ,default-directory))))
     (elpaca--continue-build e)))
 
 (defun elpaca--activate-package (e)
