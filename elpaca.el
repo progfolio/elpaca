@@ -1765,8 +1765,7 @@ Any function returning nil will prevent the E from being written to the file."
   "Evaluate BODY with E's `default-directory' bound.
 TYPE is either `source` or `build`, for source or build directory."
   (declare (indent 2) (debug (symbolp symbolp &rest form)))
-  `(let* ((e (elpaca-get ,id))
-          (default-directory (,(intern (format "elpaca<-%s-dir" (symbol-name type))) e)))
+  `(let ((default-directory (,(intern (format "elpaca<-%s-dir" (symbol-name type))) ,e)))
      ,@body))
 
 ;;;###autoload
