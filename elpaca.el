@@ -1823,14 +1823,9 @@ This should only ever be used as the last element of `elpaca-menu-functions'."
                        (intern (plist-get recipe :package)))))
   (if-let* ((found (or (elpaca-get id)
                        (alist-get id (cl-loop for menu in elpaca-menu-functions append (funcall menu 'index)))))
-            (url (or (plist-get found :url)
-                     (file-name-sans-extension
-                      (elpaca-git--repo-uri (elpaca-merge-plists
-                                             (or (plist-get found :recipe)
-                                                 (and (elpaca-p found) (elpaca<-recipe found))
-                                                 (user-error "No URL associated with id %S" id))
-                                             '(:protocol https)))))))
-      (browse-url url)))
+            (url (plist-get found :url)))
+      (browse-url url)
+    (user-error "No URL associated with id %S" id)))
 
 ;;;###autoload
 (defun elpaca-version (&optional output)
