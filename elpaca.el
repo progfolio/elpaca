@@ -659,14 +659,6 @@ check (and possibly change) their statuses."
   "Return queued E associated with ID."
   (elpaca-alist-get id (elpaca--queued)))
 
-(defun elpaca--run-build-commands (commands)
-  "Run build COMMANDS."
-  (dolist (command (if (listp (car-safe commands)) commands (list commands)))
-    (message "Running command: %S" command)
-    (if (cl-every #'stringp command)
-        (apply #'elpaca-process-poll command)
-      (eval command t))))
-
 (defun elpaca--caller-name (n &rest skip)
   "Return Nth calling function's name, skipping symbols in SKIP."
   (cl-loop with current = (backtrace-frame (1+ n)) ;; Skip this function call.
@@ -1099,63 +1091,6 @@ ARGS must be a plist including any of the following keywords value pairs:
                             (elpaca<-build-steps e)))))
   (elpaca--continue-build e (unless elpaca-install-info-executable
                               "No elpaca-install-info-executable")))
-
-(defun elpaca--dispatch-build-commands-process-sentinel (process event)
-  "PROCESS EVENT."
-  (let ((e    (process-get process :elpaca))
-        (type (process-get process :build-type)))
-    (elpaca--propertize-subprocess process)
-    (cond
-     ((equal event "finished\n") (elpaca--continue-build e (concat type " steps finished")))
-     ((string-match-p "abnormally" event) (elpaca--fail e (concat type " command failed"))))))
-
-(defun elpaca--dispatch-build-commands (e type)
-  "Run E's TYPE commands for.
-TYPE is either the keyword :pre-build, or :post-build.
-Each command is either an elisp form to be evaluated or a list of
-strings to be executed in a shell context of the form:
-
-  (\"executable\" \"arg\"...)
-
-Commands are executed in the E's repository directory.
-The keyword's value is expected to be one of the following:
-
-  - A single command
-  - A list of commands
-  - nil, in which case no commands are executed.
-    Note if :build is nil, :pre/post-build commands are not executed."
-  (if-let* ((recipe   (elpaca<-recipe e))
-            (commands (plist-get recipe type))
-            (name (symbol-name type)))
-      (progn
-        (elpaca--signal e (concat "Running " name " commands") (intern (substring name 1)))
-        (let* ((default-directory (elpaca<-repo-dir e))
-               (emacs             (elpaca--emacs-path))
-               (program           `(let ((load-prefer-newer t)
-                                         (gc-cons-percentage 1.0))
-                                     (require 'elpaca)
-                                     (normal-top-level-add-subdirs-to-load-path)
-                                     (elpaca--run-build-commands ',commands)))
-               (process (elpaca--make-process e
-                          :name name :connection-type 'pty
-                          :command (list
-                                    emacs "-Q"
-                                    "-L" "./"
-                                    "-L" (expand-file-name "elpaca/" elpaca-builds-directory)
-                                    "--batch"
-                                    "--eval" (let (print-level print-length print-circle)
-                                               (format "%S" program)))
-                          :sentinel #'elpaca--dispatch-build-commands-process-sentinel)))
-          (process-put process :build-type name)))
-    (elpaca--continue-build e)))
-
-(defun elpaca--run-pre-build-commands (e)
-  "Run E's :pre-build commands."
-  (elpaca--dispatch-build-commands e :pre-build))
-
-(defun elpaca--run-post-build-commands (e)
-  "Run E's :post-build commands."
-  (elpaca--dispatch-build-commands e :post-build))
 
 ;;@HACK: It seems like `directory-files-recursively' is a little slow because it
 ;;covers all sorts of general edge cases. e.g. tramp remote files.
