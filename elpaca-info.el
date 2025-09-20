@@ -211,11 +211,9 @@
             (if .on-disk-p "nil" "?"))))
 (elpaca-info-defsection version
   (when-let* ((version (if-let* ((.e)
-                                 (default-directory (elpaca<-repo-dir .e))
-                                 (v (ignore-errors (or (elpaca--declared-version .e) (elpaca-latest-tag .e)))))
-                           (concat (string-trim v) " "
-                                   (ignore-errors
-                                     (string-trim (elpaca-process-output "git" "rev-parse" "--short" "HEAD"))))
+                                 (default-directory (elpaca<-source-dir .e))
+                                 (v (ignore-errors (or (elpaca--version .e) (elpaca--version .e :alternative)))))
+                           (concat (string-trim v) " " (ignore-errors (elpaca-ref .e)))
                          (when-let* ((builtin (alist-get .id package--builtin-versions)))
                            (concat (mapconcat #'number-to-string builtin ".") " (builtin)")))))
     (format "\n%s %s" (elpaca-info--header "installed version") version)))
@@ -260,7 +258,7 @@ If INTERACTIVE is non-nil, display info in a dedicated buffer."
           (unless (derived-mode-p 'elpaca-info-mode) (elpaca-info-mode))
           (with-silent-modifications
             (erase-buffer)
-            (when e (setq default-directory (elpaca<-repo-dir e)))
+            (when e (setq default-directory (elpaca<-source-dir e)))
             (insert info)
             (goto-char (point-min))
             (pop-to-buffer (current-buffer))))))))

@@ -120,7 +120,7 @@ It must accept a package ID symbol and REF string as its first two arguments."
   "Show diff for ID at REF."
   (if-let* ((fboundp 'magit-show-commit)
             (e (elpaca-get id))
-            (default-directory (elpaca<-repo-dir e)))
+            (default-directory (elpaca<-source-dir e)))
       (let ((magit-display-buffer-noselect elpaca-log-update-mode)
             (magit-uniquify-buffer-names (not elpaca-log-update-mode))
             (magit-buffer-name-format "*elpaca-diff*"))
@@ -132,7 +132,7 @@ It must accept a package ID symbol and REF string as its first two arguments."
 (defun elpaca-log-diff (id ref)
   "Display diff buffer for package ID at REF."
   (if-let* ((e (elpaca-get id))
-            (repo (elpaca<-repo-dir e))
+            (repo (elpaca<-source-dir e))
             (diff (let ((default-directory repo)) (elpaca-process-output "git" "show" ref))))
       (let ((displayp elpaca-log-update-mode))
         (with-current-buffer (get-buffer-create "*elpaca-diff*")
@@ -265,6 +265,8 @@ Otherwise return log buffer string."
     (if interactive (pop-to-buffer elpaca-log-buffer '((display-buffer-reuse-window display-buffer-same-window)))
       (buffer-substring-no-properties (save-excursion (goto-char (point-min)) (line-end-position)) (point-max)))))
 
+(cl-defgeneric elpaca--log-updates (e) "Log E's updates."
+               (error "No log-updates method for %s" (elpaca<-id e)))
 ;;;###autoload
 (defun elpaca-log-updates ()
   "Log each available update without fetching."

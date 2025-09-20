@@ -49,25 +49,21 @@ Accepted key val pairs are:
 
 (defvar-local elpaca-ui--marked-packages nil "Aist of buffer's marked packages.")
 
-(defun elpaca-ui--tag-dirty (entries)
-  "Return ENTRIES for packages with a dirty worktree."
-  (cl-remove-if-not #'elpaca-worktree-dirty-p entries :key #'caar))
-
 (defun elpaca-ui--tag-declared (entries)
   "Return ENTRIES for packages declared during init."
   (cl-remove-if-not #'elpaca-declared-p entries :key #'caar))
 
 (defun elpaca-ui--tag-orphan (_)
   "Return entires for packages not temporarlily installed or declared."
-  (let ((repos (nthcdr 2 ; Discard "." ".."
-                       (mapcar #'file-name-as-directory
-                               (directory-files elpaca-repos-directory t)))))
+  (let ((sources (nthcdr 2 ; Discard "." ".."
+                         (mapcar #'file-name-as-directory
+                                 (directory-files elpaca-sources-directory t)))))
     (mapcar (lambda (dir)
               (let ((name (file-name-nondirectory (directory-file-name dir))))
                 (list (cons (intern name) 'orphan) (vector (propertize name 'orphan-dir dir)
                                                            "orphan package" "n/a" "n/a" "n/a"))))
-            (cl-set-difference (cl-remove-if-not #'file-directory-p repos)
-                               (mapcar (lambda (q) (elpaca<-repo-dir (cdr q)))
+            (cl-set-difference (cl-remove-if-not #'file-directory-p sources)
+                               (mapcar (lambda (q) (elpaca<-source-dir (cdr q)))
                                        (elpaca--queued))
                                :test #'equal))))
 
@@ -534,7 +530,7 @@ If SILENT is non-nil, suppress update message."
   (elpaca-browse (elpaca-ui-current-package)))
 
 (defun elpaca-ui-visit (&optional build)
-  "Visit current package's repo or BUILD directory."
+  "Visit current package's source or BUILD directory."
   (interactive (list current-prefix-arg) elpaca-ui-mode)
   (if-let* ((orphan (get-text-property (line-beginning-position) 'orphan-dir)))
       (dired orphan)
@@ -634,7 +630,8 @@ If ADVANCEP is non-nil, move `forward-line'."
                                (cond ((eq arg 'id) id)
                                      ((eq arg 'prefix-arg) (plist-get props :prefix-arg))
                                      (t arg)))
-           do (apply command (or args (list id)))
+           do (let ((this-command command))
+                (apply command (or args (list id))))
            (pop elpaca-ui--marked-packages)
            finally (setq elpaca--post-queues-hook '(elpaca-ui--post-execute)))
   (let (elpaca-log-functions) (elpaca-process-queues)))

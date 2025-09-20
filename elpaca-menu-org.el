@@ -28,37 +28,41 @@
 (defcustom elpaca-menu-org-make-manual t "When non-nil build Org manual."
   :type 'boolean :group 'elpaca)
 
-(defun elpaca-menu-org--build ()
-  "Generate `org-version.el`.
-`default-directory' is assumed to be org's repo dir."
-  (let* ((default-directory (expand-file-name "lisp/"))
-         (emacs (elpaca--emacs-path))
-         (orgversion (elpaca-process-cond ( emacs "-Q" "--batch"
-                                            "--eval" "(require 'lisp-mnt)"
-                                            "--visit" "org.el"
-                                            "--eval" "(princ (lm-header \"version\"))")
-                       (failure (error "Failed to parse ORGVERSION: %S" result))
-                       (t (string-trim (replace-regexp-in-string "-dev" "" stdout)))))
-         (gitversion (elpaca-process-cond ("git" "rev-parse" "--short=6" "HEAD")
-                       (success (concat orgversion "-n/a-g" stdout))
-                       (t (message "%S" stderr) "N/A"))))
-    (message "Org version: %s %s" orgversion gitversion)
-    (defvar org-startup-folded)
-    (defvar org-element-cache-persistent)
-    (setq vc-handled-backends nil org-startup-folded nil org-element-cache-persistent nil)
-    (add-to-list 'load-path default-directory)
-    (load "./org-compat.el")
-    (load "../mk/org-fixup.el")
-    (when (fboundp 'org-make-org-loaddefs)
-      (message "Making loaddefs")
-      (org-make-org-loaddefs))
-    (when (fboundp 'org-make-org-version)
-      (message "Making org-version")
-      (org-make-org-version orgversion gitversion))
-    (when (and elpaca-menu-org-make-manual (fboundp 'org-make-manual))
-      (cd "../doc")
-      (message "Making manual")
-      (org-make-manual))))
+(defun elpaca-menu-org--build (e)
+  "Generate E's `org-version.el`."
+  (let ((elpaca-dir (elpaca<-source-dir (elpaca-get 'elpaca))))
+    (elpaca-with-emacs e
+      ( :name "build-org"
+        :args ("-L" elpaca-dir "-l" (expand-file-name "elpaca-process.el" elpaca-dir)))
+      (let* ((default-directory ,(expand-file-name "lisp/" (elpaca<-source-dir e)))
+             (orgversion (elpaca-process-cond (,(elpaca--emacs-path) "-Q" "--batch"
+                                               "--eval" "(require 'lisp-mnt)"
+                                               "--visit" "org.el"
+                                               "--eval" "(princ (lm-header \"version\"))")
+                           (failure (error "Failed to parse ORGVERSION: %S" result))
+                           (t (string-trim (replace-regexp-in-string "-dev" "" stdout)))))
+             (gitversion (elpaca-process-cond ("git" "rev-parse" "--short=6" "HEAD")
+                           (success (concat orgversion "-n/a-g" stdout))
+                           (t (message "%S" stderr) "N/A"))))
+        (message "Org version: %s %s" orgversion gitversion)
+        (defvar org-startup-folded)
+        (defvar org-element-cache-persistent)
+        (setq vc-handled-backends nil org-startup-folded nil org-element-cache-persistent nil)
+        (add-to-list 'load-path default-directory)
+        (load "./org-compat.el")
+        (load "../mk/org-fixup.el")
+        (when (fboundp 'org-make-org-loaddefs)
+          (message "Making loaddefs")
+          (org-make-org-loaddefs))
+        (when (fboundp 'org-make-org-version)
+          (message "Making org-version")
+          (org-make-org-version orgversion gitversion))
+        (if (not ,elpaca-menu-org-make-manual)
+            (message "Skipping manaual generation")
+          (when (fboundp 'org-make-manual))
+          (cd "../doc")
+          (message "Making manual")
+          (org-make-manual))))))
 
 ;;;###autoload
 (defun elpaca-menu-org (request &optional item)
@@ -80,7 +84,8 @@
                                            (elpaca-menu-org--build))
                         :host 'github :repo "emacsmirror/org"
                         :autoloads "org-loaddefs.el" :depth 1
-                        :build '(:not elpaca--generate-autoloads-async)
+                        :build '((:not (elpaca-build-autoloads))
+                                 (:after elpaca-git--checkout-ref elpaca-menu-org--build))
                         :files '(:defaults ("etc/styles/" "etc/styles/*" "doc/*.texi")))))
            (cons 'org-contrib
                  (list :source "Org"

@@ -40,15 +40,15 @@ Elpaca requires:
 To install Elpaca, add the following elisp to your init.el. It must come before any calls to other Elpaca functions/macros. This will clone Elpaca into your `user-emacs-directory` under the `elpaca` subdirectory. It then builds and activates Elpaca.
 
 ```emacs-lisp
-(defvar elpaca-installer-version 0.11)
+(defvar elpaca-installer-version 0.12)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
-(defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
+(defvar elpaca-sources-directory (expand-file-name "sources/" elpaca-directory))
 (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
                               :ref nil :depth 1 :inherit ignore
                               :files (:defaults "elpaca-test.el" (:exclude "extensions"))
-                              :build (:not elpaca--activate-package)))
-(let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
+                              :build (:not elpaca-activate)))
+(let* ((repo  (expand-file-name "elpaca/" elpaca-sources-directory))
        (build (expand-file-name "elpaca/" elpaca-builds-directory))
        (order (cdr elpaca-order))
        (default-directory repo))
@@ -108,7 +108,7 @@ And remove anything related to package.el in your init file. e.g. calls to `(pac
 | Rebuilding Packages                   | `r` `x`                             | `elpaca-rebuild`                       |
 | Deleting Packages                     | `d` `x`                             | `elpaca-delete`                        |
 | View Package Logs                     | `g` `l`                             | `elpaca-log`                           |
-| Visit Package Repository Directory    | `v`                                 | `elpaca-visit`                         |
+| Visit Package Source Directory        | `v`                                 | `elpaca-visit`                         |
 | Visit Package Build Directory         | `C-u` `v`                           | `C-u M-x` `elpaca-visit`               |
 | Browse Package Website                | `b`                                 | `elpaca-browse`                        |
 
