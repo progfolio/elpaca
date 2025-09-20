@@ -83,7 +83,7 @@
   "Print annotated recipe, considering menu ITEM."
   (let* ((item-recipe (plist-get item :recipe))
          (id (intern (plist-get item-recipe :package)))
-         (e (elpaca-get id))
+         (e (elpaca-find id))
          (order (if e (elpaca<-order e) id))
          (declared (cdr-safe order)))
     (with-temp-buffer
@@ -152,7 +152,7 @@
     (with-temp-buffer
       (setf elpaca-info-alist
             `((id . ,id) (menus . ,menus) (menu .  ,menu) (item . ,item)
-              (on-disk-p ,(elpaca--on-disk-p id)) (e . , (elpaca-get id)) (indentation . "\n  ")))
+              (on-disk-p ,(elpaca--on-disk-p id)) (e . , (elpaca-find id)) (indentation . "\n  ")))
       (run-hooks 'elpaca-info-sections-hook)
       (buffer-string))))
 
@@ -194,7 +194,7 @@
                                                        (format "%s %s" (cadr pinned) (cddr pinned))))))
 (elpaca-info-defsection dependencies
   (format "\n%s\n%s" (elpaca-info--header "dependencies")
-          (if-let* ((deps (ignore-errors (elpaca--dependencies (elpaca-get .id) t))))
+          (if-let* ((deps (ignore-errors (elpaca--dependencies (elpaca-find .id) t))))
               (cl-loop
                with max = (cl-loop for (id . _) in deps maximize (length (symbol-name id)))
                with last = (caar (last deps))
@@ -211,11 +211,9 @@
             (if .on-disk-p "nil" "?"))))
 (elpaca-info-defsection version
   (when-let* ((version (if-let* ((.e)
-                                 (default-directory (elpaca<-repo-dir .e))
-                                 (v (ignore-errors (or (elpaca--declared-version .e) (elpaca-latest-tag .e)))))
-                           (concat (string-trim v) " "
-                                   (ignore-errors
-                                     (string-trim (elpaca-process-output "git" "rev-parse" "--short" "HEAD"))))
+                                 (default-directory (elpaca<-source-dir .e))
+                                 (v (ignore-errors (or (elpaca--version .e) (elpaca--version .e :alternative)))))
+                           (concat (string-trim v) " " (ignore-errors (elpaca-ref .e)))
                          (when-let* ((builtin (alist-get .id package--builtin-versions)))
                            (concat (mapconcat #'number-to-string builtin ".") " (builtin)")))))
     (format "\n%s %s" (elpaca-info--header "installed version") version)))
@@ -254,13 +252,13 @@ If INTERACTIVE is non-nil, display info in a dedicated buffer."
   (let ((info (elpaca--info id menu)))
     (if (not interactive)
         (substring-no-properties info)
-      (let* ((e (elpaca-get id)))
+      (let* ((e (elpaca-find id)))
         (with-current-buffer (get-buffer-create "*elpaca-info*")
           (setq-local revert-buffer-function (lambda (&rest _) (elpaca-info id menu t)))
           (unless (derived-mode-p 'elpaca-info-mode) (elpaca-info-mode))
           (with-silent-modifications
             (erase-buffer)
-            (when e (setq default-directory (elpaca<-repo-dir e)))
+            (when e (setq default-directory (elpaca<-source-dir e)))
             (insert info)
             (goto-char (point-min))
             (pop-to-buffer (current-buffer))))))))

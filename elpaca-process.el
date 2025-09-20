@@ -56,53 +56,6 @@ If the process is unable to start, return an elisp error object."
               (buffer-substring-no-properties (point-min) (point-max)))))))
 
 (declare-function elpaca--emacs-path "elpaca")
-(defun elpaca-process-poll--filter (process output &optional pattern error)
-  "Filter PROCESS OUTPUT.
-PATTERN is a string which is checked against the entire process output.
-If it matches, signal ERROR if non-nil."
-  (process-put process :raw-output (concat (process-get process :raw-output) output))
-  (unless (process-get process :messaged)
-    (message "$%s" (string-join (process-command process) " "))
-    (process-put process :messaged t))
-  (let* ((result  (process-get process :result))
-         (chunk   (concat result output))
-         (lines   (split-string chunk "\n"))
-         (linep   (= 0 (length (car (last lines))))))
-    (unless linep
-      (process-put process :result (car (last lines)))
-      (setq lines (butlast lines)))
-    (dolist (line lines) (unless (= 0 (length line)) (message "%s" line)))
-    (when (and pattern error (string-match-p pattern output))
-      (process-put process :result nil)
-      (error "Subprocess filter error: %S" error))))
-
-(defun elpaca-process-poll (program &rest args)
-  "Run PROGRAM with ARGS asynchronously, polling for messages.
-This allows for output to be passed back to the parent Emacs process."
-  (let* ((program (if (string-match-p "/" program) (expand-file-name program) program))
-         (subprocess
-          `(with-temp-buffer
-             (when (< emacs-major-version 28) (require 'subr-x)) ;;@COMPAT: Emacs 27
-             (setq load-prefer-newer t)
-             (let ((p (make-process
-                       :name   ,(concat "elpaca-process-poll-" program)
-                       :buffer (current-buffer)
-                       :command ',(cons program args))))
-               (add-hook
-                'after-change-functions
-                (lambda (beg end _)
-                  (when (process-live-p p)
-                    (message "%s" (string-trim (buffer-substring-no-properties beg end)))))
-                nil t)
-               (while (accept-process-output p)))))
-         (process (make-process
-                   :name   (concat "elpaca-process-poll-" program)
-                   :buffer (concat "elpaca-process-poll-" program)
-                   :connection-type 'pipe
-                   :command (list (elpaca--emacs-path) "-Q" "--batch" "--eval"
-                                  (format "%S" subprocess))
-                   :filter #'elpaca-process-poll--filter)))
-    (while (accept-process-output process))))
 
 (defmacro elpaca-with-process (result &rest body)
   "Provide anaphoric RESULT bindings for duration of BODY.
@@ -126,13 +79,6 @@ Anaphoric bindings provided:
           (stderr (nth 2 result)))
      ;; Stop the byte-compiler from complaining about unused bindings.
      (ignore result exit invoked success failure stdout stderr)
-     ,@body))
-
-(defmacro elpaca--with-no-git-config (&rest body)
-  "Eval BODY with user Git config ignored."
-  `(let ((process-environment (append '("GIT_CONFIG_SYSTEM=/dev/null"
-                                        "GIT_CONFIG_GLOBAL=/dev/null")
-                                      process-environment)))
      ,@body))
 
 (defmacro elpaca-with-process-call (args &rest body)
