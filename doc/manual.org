@@ -79,103 +79,65 @@ It is a list of the form:
 /ID/ is a symbol uniquely identifying the package.
 /PROPS/ is a plist with any of the following recipe keywords:
 
-**** :host | :fetcher
+**** Package types
+The =:type= recipe keyword allows specifying a symbol representing the type of package to install.
+Elpaca searches for a matching =elpaca-types= entry to load a library supporting the type if necessary.
+The default supported types are:
+  - =git= for local and remote git repositories.
+  - =tar= for tarball archives.
+  - =file= for local files and directories.
+
+Different package types may interpret recipe keywords differently or ignore them altogether.
+
+**** General recipe keywords
+The following recipe keywords apply to all the default package types. 
+***** :autoloads
 :PROPERTIES:
-:CUSTOM_ID: recipe-keyword-host
+:CUSTOM_ID: recipe-keyword-autoloads
 :END:
-A symbol or string representing the hosting service of the repository.
-Strings are inserted in the URI verbatim.
+The name of the file the package's autoload file.
+When =nil=, autoload loading and generation are disabled for the package.
+When =t=, the default autoload file is generated/loaded (=PACKAGE-NAME-autoloads.el=).
+The value may also be a string which is expanded relative to the package's build directory.
+e.g. ="org-loaddefs.el"=.
 
-#+begin_src emacs-lisp :lexical t :eval never-export
-(example :host github)
-(example :fetcher gitlab)
-(example :host "www.example.com")
-#+end_src
-
-**** :repo
+***** :build
 :PROPERTIES:
-:CUSTOM_ID: recipe-keyword-repo
+:CUSTOM_ID: recipe-keyword-build
 :END:
-A string of the form =USER/REPO= when used with the =:host= keyword; a local file path or remote URL when =:host= is not used.
-
-#+begin_src emacs-lisp :lexical t :eval never-export
-(example :host github :repo "user/example") ;;downloaded from github
+A list of build steps executed in order.
+Accepted values are:
+- nil to disable all build steps
+#+begin_src emacs-lisp :lexical t
+(example :build nil) ;; Disable all build steps
+#+end_src
+- A substitution rule of the form =(TYPE TARGET SUBSTITUTIONS...)=
+  The =SUBSTITUTIONS= are function symbols which replace the =TARGET= symbol.
+  =TYPE= is one of the following keywords:
+  - =:after= places =SUBSTITUTIONS= after =TARGET=.
+  - =:before= places =SUBSTITUTIONS= before =TARGET=.
+  - =:first= places =TARGET= and =SUBSTITUTIONS= at the beginning of the list.
+  - =:last= places =TARGET= and =SUBSTITUTIONS= at the end of the list.
+  - =:sub= replaces =TARGET= with =SUBSTITUTIONS=.
+  - =:not= removes =TARGET= and =SUBSTITUTIONS=.
+#+begin_src emacs-lisp :lexical t
+(example :build (:after fn1 fn1.5)) ;; Insert fn1.5 after fn1
+(example :build (:before fn1 fn0)) ;; Insert fn0 before fn1.
+(example :build (:sub fn1 subbed)) ;; Substitute fn1 with subbed.
+(example :build (:not fn1 fn2)) ;; Remove fn1 and fn2
 #+end_src
 
-#+begin_src emacs-lisp :lexical t :eval never-export
-(local :repo "~/repos/local/") ;;built from local filesystem
+- A list of substitution rules. Each rule is run in declared order and applied to the previous rule's results.
+#+begin_src emacs-lisp :lexical t
+;; All of the above in a single recipe.
+(example :build ((:after fn1 fn1.5)) (:before fn1 fn0) (:sub fn1 subbed) (:not fn1 fn2))
 #+end_src
 
-#+begin_src emacs-lisp :lexical t :eval never-export
-(remote :repo "https://foo.example/example.git") ;;remote clone
-#+end_src
-
-A cons cell of the form =(REMOTE . LOCAL)= will rename the local repository:
-
-#+begin_src emacs-lisp :lexical t :eval never-export
-(remote :repo ("https://foo.example/example.git" . "local-name"))
-;;This will still clone the repository under `elpaca-repos-directory'
-(remote :repo ("~/repos/local" . "local-name"))
-#+end_src
-
-**** :branch
-:PROPERTIES:
-:CUSTOM_ID: recipe-keyword-branch
-:END:
-The repository branch to check out when installing the package.
-
-#+begin_src emacs-lisp :lexical t :eval never-export
-(example :host github :repo "user/example" :branch "main")
-#+end_src
-
-**** :tag
-:PROPERTIES:
-:CUSTOM_ID: recipe-keyword-tag
-:END:
-The tag to check out when installing the package.
-
-#+begin_src emacs-lisp :lexical t :eval never-export
-(example :host github :repo "user/example" :tag "v1.0")
-#+end_src
-
-**** :ref
-:PROPERTIES:
-:CUSTOM_ID: recipe-keyword-ref
-:END:
-The git ref[fn:1] to check out when installing the package.
-
-#+begin_src emacs-lisp :lexical t :eval never-export
-(example :host github :repo "user/example" :ref "a76ca0a") ;; Check out a specific commit.
-#+end_src
-
-**** :pin
-:PROPERTIES:
-:CUSTOM_ID: recipe-keyword-pin
-:END:
-When non-nil, ignore the package during update commands.
-
-#+begin_src emacs-lisp :lexical t :eval never-export
-(example :pin t)
-#+end_src
-
-**** :depth
-:PROPERTIES:
-:CUSTOM_ID: recipe-keyword-depth
-:END:
-The package repository's history depth.
-
-#+begin_src emacs-lisp :lexical t :eval never-export
-(example :depth treeless) ;; https://git-scm.com/docs/partial-clone
-(example :depth blobless) ;; https://git-scm.com/docs/partial-clone
-(example :depth 1) ;; Shallow clone with history truncated to 1 commit.
-(example :depth nil) ;; Full repository clone.
-#+end_src
-
-**** :files
+***** :files
 :PROPERTIES:
 :CUSTOM_ID: recipe-keyword-files
 :END:
-The files linked from the package's repository to its build directory.
+The files linked from the package's source directory to its build directory.
 
 Each element of the list is either:
 - The symbol =:defaults=, which expands to =elpaca-default-files-directive=.
@@ -187,87 +149,7 @@ Each element of the list is either:
 (example :files (:defaults (:exclude "*.c"))) ;; Exclude all files with the "c" file extension.
 #+end_src
 
-**** :protocol
-:PROPERTIES:
-:CUSTOM_ID: recipe-keyword-protocol
-:END:
-The protocol to use when cloning repositories.
-
-The value must be a symbol, either =https= or =ssh=.
-
-#+begin_src emacs-lisp :lexical t
-(example :protocol https) ; Use the https protocol.
-(example :protocol ssh) ; Use the ssh protocol.
-#+end_src
-
-**** :remotes
-:PROPERTIES:
-:CUSTOM_ID: recipe-keyword-remotes
-:END:
-Configures the repository remotes[fn:2].
-
-The value must be a single remote spec or a list of remote specs.
-The first remote given will have its ref checked out when cloning the repository.
-A spec may be a string to rename the default remote.
-The following will rename the cloned remote (usually "origin" by git convention) to "upstream":
-
-#+begin_src emacs-lisp :lexical t
-(example :remotes "upstream")
-#+end_src
-
-In order to add a another remote, a spec may be a list of the form:
-
-#+begin_src emacs-lisp :lexical t
-("NAME" [PROPS])
-#+end_src
-
-/NAME/ is a string indicating the name of the remote.
-/PROPS/ is an optional plist used to override inherited recipe keywords.
-
-For example:
-
-#+begin_src emacs-lisp :lexical t
-(example :host github :repo "upstream/example"
-         :remotes ("fork" :repo "fork/zenburn-emacs"))
-#+end_src
-
-Will add a remote named fork which points to a repository hosted on the same forge as the upstream remote.
-The following does the same above, additionally adding a third remote at a different forge.
-
-#+begin_src emacs-lisp :lexical t
-(example :host github :repo "upstream/example"
-         :remotes (("fork" :repo "fork/zenburn-emacs") ; :host github inherited from above
-                   ("other" :host gitlab :repo "other/zenburn-emacs")))
-#+end_src
-
-**** :main
-:PROPERTIES:
-:CUSTOM_ID: recipe-keyword-main
-:END:
-The name of the main elisp file.
-When provided this can speed up the process of cloning and loading a package's dependencies.
-When declared =nil=, skip dependency check.
-
-#+begin_src emacs-lisp :lexical t :eval never-export
-(example :main "example.el")
-#+end_src
-
-#+begin_src emacs-lisp :lexical t
-(example :main nil)
-#+end_src
-
-**** :build
-:PROPERTIES:
-:CUSTOM_ID: recipe-keyword-build
-:END:
-A list of build steps, nil or t.
-To remove steps from =elpaca-default-build-steps= by starting the list with the =:not= keyword.
-
-#+begin_src emacs-lisp :lexical t :eval never-export
-(example :build (:not elpaca--byte-compile))
-#+end_src
-
-**** :inherit
+***** :inherit
 :PROPERTIES:
 :CUSTOM_ID: recipe-keyword-inherit
 :END:
@@ -323,57 +205,33 @@ This is a per-recipe way of setting =elpaca-menu-functions=.
           :source "NonGNU ELPA" :protocol https ...)
 #+end_src
 
-**** :pre-build
+***** :main
 :PROPERTIES:
-:CUSTOM_ID: recipe-keyword-pre-build
+:CUSTOM_ID: recipe-keyword-main
 :END:
-Commands and/or elisp evaluated prior to =:build= steps with the package repository as =default-directory=.
-Each command is either an elisp form or a list of strings executed in a shell context of the form:
+The name of the main elisp file.
+When provided this can speed up the process of cloning and loading a package's dependencies.
+When declared =nil=, skip dependency check.
 
-#+begin_src emacs-lisp :lexical t :eval never
-("executable" "argument"...)
+#+begin_src emacs-lisp :lexical t :eval never-export
+(example :main "example.el")
 #+end_src
 
-For example:
-
-#+begin_src emacs-lisp :lexical t :eval never
-(elpaca (example :pre-build (("configure") ("make" "install"))))
+#+begin_src emacs-lisp :lexical t
+(example :main nil)
 #+end_src
 
-**** :post-build
+***** :pin
 :PROPERTIES:
-:CUSTOM_ID: recipe-keyword-post-build
+:CUSTOM_ID: recipe-keyword-pin
 :END:
-The same as =:pre-build=, but run just before activating a package.
+When non-nil, ignore the package during update commands.
 
-#+begin_src emacs-lisp :lexical t :eval never
-(elpaca (example :post-build (message "activate next")))
+#+begin_src emacs-lisp :lexical t :eval never-export
+(example :pin t)
 #+end_src
 
-**** :autoloads
-:PROPERTIES:
-:CUSTOM_ID: recipe-keyword-autoloads
-:END:
-The name of the file the package's autoload file.
-When =nil=, autoload loading and generation are disabled for the package.
-When =t=, the default autoload file is generated/loaded (=PACKAGE-NAME-autoloads.el=).
-The value may also be a string which is expanded relative to the package's build directory.
-e.g. ="org-loaddefs.el"=.
-
-**** :version
-:PROPERTIES:
-:CUSTOM_ID: recipe-keyword-version
-:END:
-
-A function which must accept an Elpaca struct as its sole argument.
-It must return a version string understood by =version-to-list=.
-e.g.
-
-#+begin_src emacs-lisp :lexical t :eval never
-(elpaca (example :version (lambda (_) "1.0.0")))
-#+end_src
-
-**** :vars
+***** :vars
 :PROPERTIES:
 :CUSTOM_ID: recipe-keyword-vars
 :END:
@@ -391,7 +249,20 @@ variables within the form.
 Wrapping a declaration in a =let*= form will not suffice because the steps are run asynchronously.
 The bindings will not be in scope by the time each build step is run.
 
-**** :wait
+***** :version
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-version
+:END:
+
+A function which must accept an Elpaca struct as its sole argument.
+It must return a version string understood by =version-to-list=.
+e.g.
+
+#+begin_src emacs-lisp :lexical t :eval never
+(elpaca (example :version (lambda (_) "1.0.0")))
+#+end_src
+
+***** :wait
 :PROPERTIES:
 :CUSTOM_ID: recipe-keyword-wait
 :END:
@@ -403,8 +274,144 @@ e.g.
 (elpaca (general :wait t))
 #+end_src
 
+**** Repository recipe keywords
+The following recipe keywords apply to =:type =git= packages.
+***** :branch
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-branch
+:END:
+The repository branch to check out when installing the package.
 
-**** Inheritance precedence
+#+begin_src emacs-lisp :lexical t :eval never-export
+(example :host github :repo "user/example" :branch "main")
+#+end_src
+
+***** :depth
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-depth
+:END:
+The package repository's history depth.
+
+#+begin_src emacs-lisp :lexical t :eval never-export
+(example :depth treeless) ;; https://git-scm.com/docs/partial-clone
+(example :depth blobless) ;; https://git-scm.com/docs/partial-clone
+(example :depth 1) ;; Shallow clone with history truncated to 1 commit.
+(example :depth nil) ;; Full repository clone.
+#+end_src
+
+***** :host | :fetcher
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-host
+:END:
+A symbol or string representing a repository's hosting service.
+Strings are inserted in the URI verbatim.
+
+#+begin_src emacs-lisp :lexical t :eval never-export
+(example :host github)
+(example :fetcher gitlab)
+(example :host "www.example.com")
+#+end_src
+
+***** :protocol
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-protocol
+:END:
+The protocol to use when cloning repositories.
+
+The value must be a symbol, either =https= or =ssh=.
+
+#+begin_src emacs-lisp :lexical t
+(example :protocol https) ; Use the https protocol.
+(example :protocol ssh) ; Use the ssh protocol.
+#+end_src
+
+***** :ref
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-ref
+:END:
+The git ref[fn:1] to check out when installing the package.
+
+#+begin_src emacs-lisp :lexical t :eval never-export
+(example :host github :repo "user/example" :ref "a76ca0a") ;; Check out a specific commit.
+#+end_src
+
+***** :remotes
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-remotes
+:END:
+Configures the repository remotes[fn:2].
+
+The value must be a single remote spec or a list of remote specs.
+The first remote given will have its ref checked out when cloning the repository.
+A spec may be a string to rename the default remote.
+The following will rename the cloned remote (usually "origin" by git convention) to "upstream":
+
+#+begin_src emacs-lisp :lexical t
+(example :remotes "upstream")
+#+end_src
+
+In order to add a another remote, a spec may be a list of the form:
+
+#+begin_src emacs-lisp :lexical t
+("NAME" [PROPS])
+#+end_src
+
+/NAME/ is a string indicating the name of the remote.
+/PROPS/ is an optional plist used to override inherited recipe keywords.
+
+For example:
+
+#+begin_src emacs-lisp :lexical t
+(example :host github :repo "upstream/example"
+         :remotes ("fork" :repo "fork/zenburn-emacs"))
+#+end_src
+
+Will add a remote named fork which points to a repository hosted on the same forge as the upstream remote.
+The following does the same above, additionally adding a third remote at a different forge.
+
+#+begin_src emacs-lisp :lexical t
+(example :host github :repo "upstream/example"
+         :remotes (("fork" :repo "fork/zenburn-emacs") ; :host github inherited from above
+                   ("other" :host gitlab :repo "other/zenburn-emacs")))
+#+end_src
+
+***** :repo
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-repo
+:END:
+A string of the form =USER/REPO= when used with the =:host= keyword; a local file path or remote URL when =:host= is not used.
+
+#+begin_src emacs-lisp :lexical t :eval never-export
+(example :host github :repo "user/example") ;;downloaded from github
+#+end_src
+
+#+begin_src emacs-lisp :lexical t :eval never-export
+(local :repo "~/repos/local/") ;;built from local filesystem
+#+end_src
+
+#+begin_src emacs-lisp :lexical t :eval never-export
+(remote :repo "https://foo.example/example.git") ;;remote clone
+#+end_src
+
+A cons cell of the form =(REMOTE . LOCAL)= will rename the local repository:
+
+#+begin_src emacs-lisp :lexical t :eval never-export
+(remote :repo ("https://foo.example/example.git" . "local-name"))
+;;This will still clone the repository under `elpaca-sources-directory'
+(remote :repo ("~/repos/local" . "local-name"))
+#+end_src
+
+***** :tag
+:PROPERTIES:
+:CUSTOM_ID: recipe-keyword-tag
+:END:
+The tag to check out when installing the package.
+
+#+begin_src emacs-lisp :lexical t :eval never-export
+(example :host github :repo "user/example" :tag "v1.0")
+#+end_src
+
+**** Recipe inheritance precedence
 :PROPERTIES:
 :CUSTOM_ID: inheritance-precedence
 :END:
