@@ -18,8 +18,6 @@
       - [:main](#recipe-keyword-main)
       - [:build](#recipe-keyword-build)
       - [:inherit](#recipe-keyword-inherit)
-      - [:pre-build](#recipe-keyword-pre-build)
-      - [:post-build](#recipe-keyword-post-build)
       - [:autoloads](#recipe-keyword-autoloads)
       - [:version](#recipe-keyword-version)
       - [:vars](#recipe-keyword-vars)
@@ -28,7 +26,7 @@
       - [elpaca-recipe-functions](#elpaca-recipe-functions)
     - [Menus](#menus)
       - [elpaca-menu-functions](#elpaca-menu-functions)
-      - [Updating menus](#orga583e10)
+      - [Updating menus](#org7a35e2b)
     - [Orders](#orders)
       - [elpaca-order-functions](#elpaca-order-functions)
     - [Queues](#queues)
@@ -411,10 +409,45 @@ The name of the main elisp file. When provided this can speed up the process of 
 
 #### :build
 
-A list of build steps, nil or t. To remove steps from `elpaca-default-build-steps` by starting the list with the `:not` keyword.
+A list of build steps executed in order. Accepted values are:
+
+-   nil to disable all build steps
 
 ```emacs-lisp
-(example :build (:not elpaca--byte-compile))
+(example :build nil) ;; Disable all build steps
+```
+
+-   A static list of functions which accept an elpaca struct as their sole argument.
+
+```emacs-lisp
+(example :build (fn1 fn2 fn3))
+```
+
+-   A function which accepts an elpaca struct as its sole argument and returns a list of similar functions.
+
+```emacs-lisp
+(let ((build-step-fn (lambda (_) (list 'fn2 fn3 fn4))))
+  (example :build build-step-fn)) ;; A function returns the list of build steps.
+```
+
+-   A substitution rule of the form `(TYPE TARGET SUBSTITUTIONS...)` The `SUBSTITUTIONS` are function symbols which replace the `TARGET` symbol as returned by `elpaca-build-step-functions`. `TYPE` is one of the following keywords:
+    -   `:after` places `SUBSTITUTIONS` after `TARGET`.
+    -   `:before` places `SUBSTITUTIONS` before `TARGET`.
+    -   `:sub` replaces `TARGET` with `SUBSTITUTIONS`.
+    -   `:not` removes `TARGET` and `SUBSTITUTIONS`.
+
+```emacs-lisp
+(example :build (:after fn1 fn1.5)) ;; Insert fn1.5 after fn1
+(example :build (:before fn1 fn0)) ;; Insert fn0 before fn1.
+(example :build (:sub fn1 subbed)) ;; Substitute fn1 with subbed.
+(example :build (:not fn1 fn2)) ;; Remove fn1 and fn2
+```
+
+-   A list of substitution rules. Each rule is run in declared order and applied to the previous rule&rsquo;s results.
+
+```emacs-lisp
+;; All of the above in a single recipe.
+(example :build ((:after fn1 fn1.5)) (:before fn1 fn0) (:sub fn1 subbed) (:not fn1 fn2))
 ```
 
 
@@ -447,7 +480,7 @@ With inheritance enabled:
            "docs/*.info" "docs/*.texi" "docs/*.texinfo"
            (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
                      "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
-          :source "MELPA" :protocol https :inherit t :depth treeless)
+          :source "MELPA" :type git :protocol https :inherit t :depth treeless)
 ```
 
 the Elpaca&rsquo;s MELPA menu provides the rest of the recipe.
@@ -464,36 +497,8 @@ The value may also be a menu symbol or list of menu symbols. This is a per-recip
           ("*"
            (:exclude ".git" "INSTALL.md" "screenshot.png" "start_emacs_test.sh"
                      "test-profile.el"))
-          :source "NonGNU ELPA" :protocol https :inherit
+          :source "NonGNU ELPA" :type git :protocol https :inherit
           elpaca-menu-non-gnu-elpa :depth treeless)
-```
-
-
-<a id="recipe-keyword-pre-build"></a>
-
-#### :pre-build
-
-Commands and/or elisp evaluated prior to `:build` steps with the package repository as `default-directory`. Each command is either an elisp form or a list of strings executed in a shell context of the form:
-
-```emacs-lisp
-("executable" "argument"...)
-```
-
-For example:
-
-```emacs-lisp
-(elpaca (example :pre-build (("configure") ("make" "install"))))
-```
-
-
-<a id="recipe-keyword-post-build"></a>
-
-#### :post-build
-
-The same as `:pre-build`, but run just before activating a package.
-
-```emacs-lisp
-(elpaca (example :post-build (message "activate next")))
 ```
 
 
@@ -583,8 +588,8 @@ This is useful if you want to guarantee the values of certain keywords despite a
 ```
 
 ```emacs-lisp
-(:source nil :protocol https :inherit t :depth treeless :package "burger"
-         :cheese extra)
+(:source nil :type git :protocol https :inherit t :depth treeless :package
+         "burger" :cheese extra)
 ```
 
 
@@ -640,7 +645,7 @@ The `elpaca-menu-functions` variable contains menu functions for the following p
 Menus are checked in order until one returns the requested menu item or the menu list is exhausted.
 
 
-<a id="orga583e10"></a>
+<a id="org7a35e2b"></a>
 
 #### Updating menus
 

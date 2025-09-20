@@ -211,7 +211,7 @@
             (if .on-disk-p "nil" "?"))))
 (elpaca-info-defsection version
   (when-let* ((version (if-let* ((.e)
-                                 (default-directory (elpaca<-repo-dir .e))
+                                 (default-directory (elpaca<-source-dir .e))
                                  (v (ignore-errors (or (elpaca--declared-version .e) (elpaca-latest-tag .e)))))
                            (concat (string-trim v) " "
                                    (ignore-errors
@@ -260,7 +260,7 @@ If INTERACTIVE is non-nil, display info in a dedicated buffer."
           (unless (derived-mode-p 'elpaca-info-mode) (elpaca-info-mode))
           (with-silent-modifications
             (erase-buffer)
-            (when e (setq default-directory (elpaca<-repo-dir e)))
+            (when e (setq default-directory (elpaca<-source-dir e)))
             (insert info)
             (goto-char (point-min))
             (pop-to-buffer (current-buffer))))))))

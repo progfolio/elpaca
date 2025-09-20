@@ -88,8 +88,6 @@ Recipes
 * main::
 * build::
 * inherit::
-* pre-build::
-* post-build::
 * autoloads::
 * version::
 * vars::
@@ -356,8 +354,6 @@ It is a list of the form:
 * main::
 * build::
 * inherit::
-* pre-build::
-* post-build::
 * autoloads::
 * version::
 * vars::
@@ -540,11 +536,60 @@ When declared @samp{nil}@comma{} skip dependency check.
 @node build
 @subsubsection :build
 
-A list of build steps@comma{} nil or t.
-To remove steps from @samp{elpaca-default-build-steps} by starting the list with the @samp{:not} keyword.
-
+A list of build steps executed in order.
+Accepted values are:
+@itemize
+@item
+nil to disable all build steps
+@end itemize
 @lisp
-(example :build (:not elpaca--byte-compile))
+(example :build nil) ;; Disable all build steps
+@end lisp
+@itemize
+@item
+A static list of functions which accept an elpaca struct as their sole argument.
+@end itemize
+@lisp
+(example :build (fn1 fn2 fn3))
+@end lisp
+@itemize
+@item
+A function which accepts an elpaca struct as its sole argument and returns a list of similar functions.
+@end itemize
+@lisp
+(let ((build-step-fn (lambda (_) (list 'fn2 fn3 fn4))))
+  (example :build build-step-fn)) ;; A function returns the list of build steps.
+@end lisp
+@itemize
+@item
+A substitution rule of the form @samp{(TYPE TARGET SUBSTITUTIONS...)}
+The @samp{SUBSTITUTIONS} are function symbols which replace the @samp{TARGET} symbol as returned by @samp{elpaca-build-step-functions}.
+@samp{TYPE} is one of the following keywords:
+@itemize
+@item
+@samp{:after} places @samp{SUBSTITUTIONS} after @samp{TARGET}.
+@item
+@samp{:before} places @samp{SUBSTITUTIONS} before @samp{TARGET}.
+@item
+@samp{:sub} replaces @samp{TARGET} with @samp{SUBSTITUTIONS}.
+@item
+@samp{:not} removes @samp{TARGET} and @samp{SUBSTITUTIONS}.
+@end itemize
+@end itemize
+@lisp
+(example :build (:after fn1 fn1.5)) ;; Insert fn1.5 after fn1
+(example :build (:before fn1 fn0)) ;; Insert fn0 before fn1.
+(example :build (:sub fn1 subbed)) ;; Substitute fn1 with subbed.
+(example :build (:not fn1 fn2)) ;; Remove fn1 and fn2
+@end lisp
+
+@itemize
+@item
+A list of substitution rules. Each rule is run in declared order and applied to the previous rule's results.
+@end itemize
+@lisp
+;; All of the above in a single recipe.
+(example :build ((:after fn1 fn1.5)) (:before fn1 fn0) (:sub fn1 subbed) (:not fn1 fn2))
 @end lisp
 
 @node inherit
@@ -578,7 +623,7 @@ With inheritance enabled:
            "docs/*.info" "docs/*.texi" "docs/*.texinfo"
            (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
                      "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
-          :source "MELPA" :protocol https :inherit t :depth treeless)
+          :source "MELPA" :type git :protocol https :inherit t :depth treeless)
 @end lisp
 
 the Elpaca's MELPA menu provides the rest of the recipe.
@@ -597,33 +642,8 @@ This is a per-recipe way of setting @samp{elpaca-menu-functions}.
           ("*"
            (:exclude ".git" "INSTALL.md" "screenshot.png" "start_emacs_test.sh"
                      "test-profile.el"))
-          :source "NonGNU ELPA" :protocol https :inherit
+          :source "NonGNU ELPA" :type git :protocol https :inherit
           elpaca-menu-non-gnu-elpa :depth treeless)
-@end lisp
-
-@node pre-build
-@subsubsection :pre-build
-
-Commands and/or elisp evaluated prior to @samp{:build} steps with the package repository as @samp{default-directory}.
-Each command is either an elisp form or a list of strings executed in a shell context of the form:
-
-@lisp
-("executable" "argument"...)
-@end lisp
-
-For example:
-
-@lisp
-(elpaca (example :pre-build (("configure") ("make" "install"))))
-@end lisp
-
-@node post-build
-@subsubsection :post-build
-
-The same as @samp{:pre-build}@comma{} but run just before activating a package.
-
-@lisp
-(elpaca (example :post-build (message "activate next")))
 @end lisp
 
 @node autoloads
@@ -720,8 +740,8 @@ This is useful if you want to guarantee the values of certain keywords despite a
 @end lisp
 
 @lisp
-(:source nil :protocol https :inherit t :depth treeless :package "burger"
-         :cheese extra)
+(:source nil :type git :protocol https :inherit t :depth treeless :package
+         "burger" :cheese extra)
 @end lisp
 
 @node Menus

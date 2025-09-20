@@ -260,11 +260,39 @@ When declared =nil=, skip dependency check.
 :PROPERTIES:
 :CUSTOM_ID: recipe-keyword-build
 :END:
-A list of build steps, nil or t.
-To remove steps from =elpaca-default-build-steps= by starting the list with the =:not= keyword.
-
+A list of build steps executed in order.
+Accepted values are:
+- nil to disable all build steps
+#+begin_src emacs-lisp :lexical t
+(example :build nil) ;; Disable all build steps
+#+end_src
+- A static list of functions which accept an elpaca struct as their sole argument.
+#+begin_src emacs-lisp :lexical t
+(example :build (fn1 fn2 fn3))
+#+end_src
+- A function which accepts an elpaca struct as its sole argument and returns a list of similar functions.
 #+begin_src emacs-lisp :lexical t :eval never-export
-(example :build (:not elpaca--byte-compile))
+(let ((build-step-fn (lambda (_) (list 'fn2 fn3 fn4))))
+  (example :build build-step-fn)) ;; A function returns the list of build steps.
+#+end_src
+- A substitution rule of the form =(TYPE TARGET SUBSTITUTIONS...)=
+  The =SUBSTITUTIONS= are function symbols which replace the =TARGET= symbol as returned by =elpaca-build-step-functions=.
+  =TYPE= is one of the following keywords:
+  - =:after= places =SUBSTITUTIONS= after =TARGET=.
+  - =:before= places =SUBSTITUTIONS= before =TARGET=.
+  - =:sub= replaces =TARGET= with =SUBSTITUTIONS=.
+  - =:not= removes =TARGET= and =SUBSTITUTIONS=.
+#+begin_src emacs-lisp :lexical t
+(example :build (:after fn1 fn1.5)) ;; Insert fn1.5 after fn1
+(example :build (:before fn1 fn0)) ;; Insert fn0 before fn1.
+(example :build (:sub fn1 subbed)) ;; Substitute fn1 with subbed.
+(example :build (:not fn1 fn2)) ;; Remove fn1 and fn2
+#+end_src
+
+- A list of substitution rules. Each rule is run in declared order and applied to the previous rule's results.
+#+begin_src emacs-lisp :lexical t
+;; All of the above in a single recipe.
+(example :build ((:after fn1 fn1.5)) (:before fn1 fn0) (:sub fn1 subbed) (:not fn1 fn2))
 #+end_src
 
 **** :inherit
@@ -321,33 +349,6 @@ This is a per-recipe way of setting =elpaca-menu-functions=.
            (:exclude ".git" "INSTALL.md" "screenshot.png" "start_emacs_test.sh"
                      "test-profile.el"))
           :source "NonGNU ELPA" :protocol https ...)
-#+end_src
-
-**** :pre-build
-:PROPERTIES:
-:CUSTOM_ID: recipe-keyword-pre-build
-:END:
-Commands and/or elisp evaluated prior to =:build= steps with the package repository as =default-directory=.
-Each command is either an elisp form or a list of strings executed in a shell context of the form:
-
-#+begin_src emacs-lisp :lexical t :eval never
-("executable" "argument"...)
-#+end_src
-
-For example:
-
-#+begin_src emacs-lisp :lexical t :eval never
-(elpaca (example :pre-build (("configure") ("make" "install"))))
-#+end_src
-
-**** :post-build
-:PROPERTIES:
-:CUSTOM_ID: recipe-keyword-post-build
-:END:
-The same as =:pre-build=, but run just before activating a package.
-
-#+begin_src emacs-lisp :lexical t :eval never
-(elpaca (example :post-build (message "activate next")))
 #+end_src
 
 **** :autoloads
