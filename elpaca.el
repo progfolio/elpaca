@@ -1044,6 +1044,42 @@ FILES and NOCONS are used recursively."
     (process-put process :loglen (length (elpaca<-log e)))
     (setf (elpaca<-process e) process)))
 
+(defcustom elpaca-with-emacs-env-form
+  '(setq gc-cons-percentage 1.0 print-level nil print-circle nil)
+  "Form evaluated by `elpaca-with-emacs' subprocesses.
+Used to modify the subprocess environment."
+  :type 'sexp)
+
+;;;###autoload
+(defmacro elpaca-with-emacs (e &optional args &rest forms)
+  "Execute E's FORMS in an async Emacs subprocess with ARGS.
+ARGS must be a plist including any of the following keywords value pairs:
+
+:name an expression evaluating to a string, used as the subprocess name.
+:args an expression evaluating to a list of Emacs subprocess command line args.
+:env a `let' VARLIST which is evaluated and injected in the subprocess."
+  (declare (indent 1) (debug t))
+  (let ((esym (make-symbol "e"))
+        (formsym (make-symbol "forms"))
+        (argsym (make-symbol "args"))
+        (namesym (make-symbol "name")))
+    `(let* ((,esym ,e)
+            (,formsym (backquote ,forms))
+            (,argsym (backquote ,args))
+            (,namesym (or (plist-get ,argsym :name)
+                          (concat "elpaca-with-emacs-" (elpaca<-package ,esym)))))
+       (unless (keywordp (car-safe ,argsym))
+         (setq ,formsym (append (list ,argsym) ,formsym) ,argsym nil))
+       (elpaca--make-process ,esym
+         :name ,namesym
+         :buffer ,namesym
+         :command (list (elpaca--emacs-path) "-Q" "--batch" ,@(plist-get args :args)
+                        "--eval" (format "%S" elpaca-with-emacs-env-form)
+                        "--eval" (format "%S" (macroexp-progn ,formsym)))
+         :sentinel
+         (lambda (process event)
+           (elpaca--process-sentinel (concat ,namesym " complete") nil process event))))))
+
 (defun elpaca--compile-info (e)
   "Compile E's .texi files."
   (elpaca--signal e "Compiling Info files" 'info)
@@ -1517,23 +1553,14 @@ This is the branch that would be checked out upon cloning."
   (if-let* ((recipe (elpaca<-recipe e))
             (autoloads (let ((member (plist-member recipe :autoloads)))
                          (if member (cadr member) t)))
-            (package (elpaca<-package  e))
             (default-directory (elpaca<-build-dir e))
-            (elpaca (expand-file-name "elpaca/" elpaca-repos-directory))
-            (program (let (print-level print-circle)
-                       (format "%S" `(progn (setq gc-cons-percentage 1.0
-                                                  ,@(when (stringp autoloads)
-                                                      `(generated-autoload-file ,autoloads)))
-                                            (elpaca-generate-autoloads
-                                             ,package ,default-directory))))))
+            (elpaca (expand-file-name "elpaca/" elpaca-repos-directory)))
       (progn
         (elpaca--signal e (concat "Generating autoloads: " default-directory) 'autoloads)
-        (elpaca--make-process e
-          :name "autoloads"
-          :command (list (elpaca--emacs-path) "-Q" "-L" elpaca
-                         "-l" (expand-file-name "elpaca.el" elpaca)
-                         "--batch" "--eval" program)
-          :sentinel (lambda (process event) (elpaca--process-sentinel "Autoloads Generated" nil process event))))
+        (elpaca-with-emacs e
+          (:name "autoloads" :args ("-L" elpaca "-l" (expand-file-name "elpaca.el" elpaca)))
+          ,@(when (stringp autoloads) `((setq generated-autoload-file ,autoloads)))
+          (elpaca-generate-autoloads ,(elpaca<-package e) ,default-directory)))
     (elpaca--continue-build e)))
 
 (defun elpaca--activate-package (e)
@@ -1584,27 +1611,20 @@ Loads or caches autoloads."
   ;; Assumes all dependencies are 'built
   (elpaca--signal e "Byte compiling" 'byte-compilation)
   (let* ((default-directory (elpaca<-build-dir e))
-         (emacs             (elpaca--emacs-path))
          (dependency-dirs
           (cl-loop for id in (elpaca-dependencies (elpaca<-id e) '(emacs))
                    for dep = (elpaca-get id)
                    for build-dir = (and dep (elpaca<-build-dir dep))
-                   when build-dir collect build-dir))
-         (program `(let ((gc-cons-percentage 1.0) ;; trade memory for gc speed
-                         ,@(when (boundp 'native-comp-eln-load-path)
-                             `((native-comp-eln-load-path ',native-comp-eln-load-path))))
-                     (dolist (dir ',(cons default-directory dependency-dirs))
-                       (let ((default-directory dir))
-                         (add-to-list 'load-path dir)
-                         (normal-top-level-add-subdirs-to-load-path)))
-                     (byte-recompile-directory ,default-directory 0 'force)))
-         (print-level nil)
-         (print-circle nil))
-    (elpaca--make-process e
-      :name "byte-compile"
-      :command  `(,emacs "-q" "--batch" "--eval" ,(format "%S" program))
-      :sentinel (lambda (process event)
-                  (elpaca--process-sentinel "Byte compilation complete" nil process event)))))
+                   when build-dir collect build-dir)))
+    (elpaca-with-emacs e
+      (:name "Byte compilation")
+      ,@(when (boundp 'native-comp-eln-load-path)
+          `((setq native-comp-eln-load-path ',native-comp-eln-load-path)))
+      (dolist (dir ',(cons default-directory dependency-dirs))
+        (let ((default-directory dir))
+          (add-to-list 'load-path dir)
+          (normal-top-level-add-subdirs-to-load-path)))
+      (byte-recompile-directory ,default-directory 0 'force))))
 
 ;;;###autoload
 (defun elpaca-dependencies (id &optional ignore interactive recurse)
