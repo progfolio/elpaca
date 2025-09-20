@@ -1498,7 +1498,7 @@ do not confirm before deleting package and DEPS."
       (user-error "Cannot delete %S unless dependents %S are deleted" id dependents))
     (when (or force (yes-or-no-p (format "Delete package %S? " id)))
       (cl-assert (not (member src-dir (list user-emacs-directory elpaca-builds-directory
-                                             elpaca-repos-directory))))
+                                            elpaca-repos-directory))))
       (when (file-exists-p src-dir) (delete-directory src-dir 'recursive))
       (when (file-exists-p build-dir)
         (setq load-path (delete build-dir load-path))
