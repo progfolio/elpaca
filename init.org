@@ -1651,7 +1651,7 @@ https://github.com/magit/forge
 #+begin_src emacs-lisp :lexical t
 (use-package transient :defer t) ;; Use MELPA until built-in version updated.
 (use-package forge
-  :ensure (:files (:defaults "docs/*"))
+  :ensure (:files (:defaults "docs/*" ".dir-locals.el"))
   :after magit
   :init (setq forge-add-default-bindings nil
               forge-display-in-status-buffer nil
