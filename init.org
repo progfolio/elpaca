@@ -849,8 +849,9 @@ https://github.com/emacs-evil/evil-collection
 #+end_quote
 #+begin_src emacs-lisp :lexical t
 (use-package evil-collection
-  :ensure (:remotes ("origin"
-                     ("fork" :repo "progfolio/evil-collection")))
+  :ensure ( :depth 1
+            :remotes ("origin"
+                      ("fork" :repo "progfolio/evil-collection")))
   :after (evil)
   :config
   (setq evil-collection-mode-list (remq 'elpaca evil-collection-mode-list))
