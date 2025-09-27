@@ -410,11 +410,10 @@ https://github.com/progfolio/elpaca
     ;;   (set-window-dedicated-p (selected-window) t))
     ;; (add-hook 'exwm-manage-finish-hook #'+exwm-new-window)
 
-    (setq exwm-manage-configurations
-          '(((string-match-p "Void.*Stranger" exwm-title) managed t)
-            ((string-match-p "UFO 50" exwm-title) floating nil)
-            (t char-mode t)))
-
+    (setopt exwm-manage-configurations
+            '(((string-match-p ".*Void.*Stranger.*" exwm-title) managed t floating nil tiling-mode-line nil fullscreen t)
+              ((string-match-p "UFO 50" exwm-title) floating nil)
+              (t char-mode t)))
     (require 'exwm-randr)
     (exwm-randr-mode)
     (exwm-wm-mode)
