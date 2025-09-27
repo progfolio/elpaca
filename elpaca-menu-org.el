@@ -75,8 +75,7 @@
                        :recipe
                        (list
                         :package "org"
-                        ;;"https://git.savannah.gnu.org/git/emacs/org-mode.git"
-                        :repo '("https://git.sr.ht/~bzg/org-mode" . "org")
+                        :repo '("https://github.com/emacsmirror/org" . "org")
                         :pre-build `(progn (require 'elpaca-menu-org)
                                            (setq elpaca-menu-org-make-manual ,elpaca-menu-org-make-manual)
                                            (elpaca-menu-org--build))
@@ -90,7 +89,7 @@
                        :recipe
                        (list
                         :package "org-contrib"
-                        :repo '("https://git.sr.ht/~bzg/org-contrib" . "org-contrib")
+                        :repo '("https://github.com/emacsmirror/org-contrib". "org-contrib")
                         :files '(:defaults))))))))
 
 (provide 'elpaca-menu-org)
