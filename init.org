@@ -385,7 +385,7 @@ https://github.com/progfolio/elpaca
               ([?\s-?] . (lambda () (interactive) (setq +exwm-split-side nil)))
               ([?\s-/] . (lambda () (interactive) (setq +exwm-split-side 'right)))
               ([?\s-d] . (lambda () (interactive)
-                           (kill-this-buffer)
+                           (kill-current-buffer)
                            (ignore-errors (delete-window))
                            (balance-windows)))
               ([?\s-\"] . +exwm-launch)
