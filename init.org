@@ -1920,8 +1920,8 @@ A package for miscellaneous functions.
 (use-package miscellany
   :ensure (miscellany
            :host github
-           :repo "progfolio/miscellany.el"
-           :local-repo "miscellany"
+           :repo ("progfolio/miscellany.el" . "miscellany")
+           :main "miscellany.el"
            :protocol ssh
            :branch "master"
            :pre-build ((require 'ob-tangle)
