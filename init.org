@@ -417,7 +417,7 @@ https://github.com/progfolio/elpaca
 
     (require 'exwm-randr)
     (exwm-randr-mode)
-    (exwm-enable)
+    (exwm-wm-mode)
     ;; So child processes don't inherit the variable
     (setenv "EXWM"))
   (with-eval-after-load 'general (exwm-input-set-key [?\s-\ ] #'+prefix-map))
