@@ -303,7 +303,7 @@ https://github.com/progfolio/elpaca
 
     (defun +exwm-launch (command)
       (interactive (list (progn (exwm-layout-unset-fullscreen) (read-shell-command "$ "))))
-      (start-process-shell-command command nil command) )
+      (start-process-shell-command command nil command))
     (defun +exwm-shell-command (var)
       "Execute environmental VAR as async shell command."
       (interactive)
