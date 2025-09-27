@@ -1692,15 +1692,16 @@ https://github.com/magit/forge
         gnus-ignored-newsgroups "^to\\.\\|^[0-9. ]+\\( \\|$\\)\\|^[\"]\"[#'()]")
   (require 'nnimap)
   (add-to-list 'gnus-secondary-select-methods '(nntp "news.gmane.io"))
-  (add-to-list 'gnus-secondary-select-methods
-               '(nnimap "gmail"
-                        (nnimap-address "imap.gmail.com")
-                        (nnimap-server-port "imaps")
-                        (nnimap-stream ssl)
-                        (nnir-search-engine imap)
-                        (gnus-topic-set-parameters "gmail" '((display . 200)))
-                        (nnmail-expiry-target "nnimap+gmail:[Gmail]/Trash")
-                        (nnmail-expiry-wait 90))))
+  ;; (add-to-list 'gnus-secondary-select-methods
+  ;;              '(nnimap "gmail"
+  ;;                       (nnimap-address "imap.gmail.com")
+  ;;                       (nnimap-server-port "imaps")
+  ;;                       (nnimap-stream ssl)
+  ;;                       (nnir-search-engine imap)
+  ;;                       (gnus-topic-set-parameters "gmail" '((display . 200)))
+  ;;                       (nnmail-expiry-target "nnimap+gmail:[Gmail]/Trash")
+  ;;                       (nnmail-expiry-wait 90)))
+  )
 #+end_src
 ** help
 #+begin_src emacs-lisp :lexical t
