@@ -1062,6 +1062,7 @@ Consulting completing-read
 #+begin_src emacs-lisp :lexical t
 (use-package consult
   :demand t
+  :custom (consult-buffer-list-function #'consult--frame-buffer-list)
   :config
   ;;Credit to @alphapapa
   (defun +consult-info-emacs ()
