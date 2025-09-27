@@ -363,6 +363,7 @@ https://github.com/progfolio/elpaca
         (setq-local mode-line-format hide-mode-line-format
                     hide-mode-line-format nil)))
     (defvar +exwm-split-side 'right)
+
     (setopt exwm-input-global-keys
             `(([?\s-l] . windmove-right)
               ([?\s-L] . +exwm-move-window-right)
