@@ -215,15 +215,21 @@ https://github.com/progfolio/elpaca
 *** Installer
 #+begin_src emacs-lisp :lexical t
 
-(defvar elpaca-installer-version 0.11)
+(defvar elpaca-installer-version 0.12)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
-(defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
+(defvar elpaca-repos-directory (expand-file-name "sources/" elpaca-directory))
 (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
-                              :pre-build ("git" "remote" "set-url" "origin" "git@github.com:progfolio/elpaca.git")
-                              :ref nil :depth 1 :inherit ignore
-                              :files (:defaults "elpaca-test.el" (:exclude "extensions"))
-                              :build (:not elpaca--activate-package)))
+                              :build
+                              ((:after elpaca-git--clone
+                                       (lambda (e)
+                                         (elpaca--call-with-log
+                                          e 0 "git" "remote" "set-url" "origin" "git@github.com:progfolio/elpaca.git")
+                                         (elpaca--continue-build e)))
+                               (:not elpaca-activate))
+                              :ref "feat/refactor" :depth 1 :inherit ignore
+                              :files (:defaults "elpaca-test.el" (:exclude "extensions"))))
+
 (let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
        (build (expand-file-name "elpaca/" elpaca-builds-directory))
        (order (cdr elpaca-order))
@@ -1918,15 +1924,22 @@ https://jblevins.org/projects/markdown-mode/
 A package for miscellaneous functions.
 #+begin_src emacs-lisp :lexical t
 (use-package miscellany
-  :ensure (miscellany
-           :host github
-           :repo ("progfolio/miscellany.el" . "miscellany")
-           :main "miscellany.el"
-           :protocol ssh
-           :branch "master"
-           :pre-build ((require 'ob-tangle)
+  :ensure `(miscellany
+            :host github
+            :repo ("progfolio/miscellany.el" . "miscellany")
+            :main "miscellany.el"
+            :protocol ssh
+            :build
+            (:after elpaca-source
+                    ,(elpaca-defscript +miscellany-tangle (:type elisp)
+                       (require 'ob-tangle)
+                       (message "injected state: %S" ,gc-cons-threshold)
                        (setq org-confirm-babel-evaluate nil)
-                       (org-babel-tangle-file "./miscellany.org")))
+                       (org-babel-tangle-file "./miscellany.org"))
+                    (lambda (e)
+                      (elpaca-with-dir e source
+                        (elpaca--call-with-log e 0 "git" "log" "--oneline" "-n" "1")
+                        (elpaca--continue-build e)))))
   :after (general)
   :commands (+alternate-buffer
              +change-theme
@@ -1972,16 +1985,17 @@ https://www.djcbsoftware.nl/code/mu/mu4e.html
 (use-package mu4e
   :ensure `(mu4e :host github :files ("mu4e/*.el" "build/mu4e/mu4e-meta.el" "build/mu4e/mu4e-config.el" "build/mu4e/mu4e.info") :repo "djcb/mu"
                  :main "mu4e/mu4e.el"
-                 :pre-build (("./autogen.sh" "-Dtests=disabled")
-                             ("ninja" "-C" "build")
-                             (make-symbolic-link (expand-file-name "./build/mu/mu")
-                                                 (expand-file-name "~/bin/mu") 'ok-if-exists))
-                 :build (:not elpaca--compile-info)
-                 :post-build (("mu" "init" "--quiet" "--maildir" ,(concat (getenv "HOME") "/Documents/emails")
-                               "--my-address=" ,(+email-address +email-personal)
-                               "--my-address=" ,(+email-address +email-work)
-                               "--my-address=" ,(+email-address +email-dev))
-                              ("mu" "index" "--quiet")))
+                 :build ((:before elpaca-check-version
+                                  ,(elpaca-defscript +mu4e-build-bianry (:type system)
+                                     ("bash" "-c" ". ./autogen.sh -Dtests=disabled")
+                                     ("ninja" "-C" "build")
+                                     ("ln" "-sf" ,(expand-file-name "./build/mu/mu") ,(expand-file-name "~/bin/mu"))
+                                     ("mu" "init" "--quiet" "--maildir" ,(concat (getenv "HOME") "/Documents/emails")
+                                      "--my-address=" ,(+email-address +email-personal)
+                                      "--my-address=" ,(+email-address +email-work)
+                                      "--my-address=" ,(+email-address +email-dev))
+                                     ("mu" "index" "--quiet")))
+                         (:not elpaca-build-compile)))
   :commands (mu4e mu4e-update-index)
   :custom
   (message-kill-buffer-on-exit t)
@@ -3276,7 +3290,12 @@ https://github.com/politza/pdf-tools#about-this-package
 This  allows me to customize the color of the generated pdf.
 #+begin_src emacs-lisp :lexical t
 (use-package pdf-tools
-  :ensure (pdf-tools :pre-build ("./server/autobuild") :files (:defaults "server/epdfinfo"))
+  :ensure `(pdf-tools :build (:after elpaca-git--checkout-ref
+                                     ,(elpaca-defscript +pdf-tools-build-server (:type system)
+                                        ("pwd")
+                                        (,(expand-file-name "./server/autobuild"))))
+
+                      :files (:defaults "server/epdfinfo"))
   :functions (pdf-isearch-batch-mode)
   :commands (pdf-tools-install pdf-view-mode)
   :custom (pdf-view-midnight-colors '("#AFA27C" . "#0F0E16"))
@@ -3407,7 +3426,11 @@ https://github.com/ternjs/tern
 (use-package joymacs
   :ensure (joymacs :host github :repo "skeeto/joymacs"
                    :main "joydemo.el"
-                   :pre-build ("make")
+                   :build (:after elpaca--git-checkout-ref
+                                  (lambda (e)
+                                    (elpaca-with-dir e source
+                                      (elpaca--call-with-log e 0 "make")
+                                      (elpaca--continue-build e))))
                    :files (:defaults "joymacs.c" "joymacs.so")
                    :remotes (("fork" :repo "progfolio/joymacs")
                              "origin"))
@@ -3719,7 +3742,7 @@ https://github.com/NicolasPetton/zerodark-theme
 #+begin_src emacs-lisp :lexical t
 (use-package helpa
   :defer t
-  :ensure (:host github :main nil :build (:not elpaca--generate-autoloads-async) :repo "progfolio/HELPA" :depth nil :protocol ssh))
+  :ensure (:host github :main nil :build (:not elpaca-build-autoloads) :repo "progfolio/HELPA" :depth nil :protocol ssh))
 #+end_src
 
 ** tunic
