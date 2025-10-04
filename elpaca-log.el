@@ -179,7 +179,7 @@ It must accept a package ID symbol and REF string as its first two arguments."
       (let ((displayp elpaca-log-update-mode))
         (with-current-buffer (get-buffer-create "*elpaca-diff*")
           (with-silent-modifications (erase-buffer) (insert diff))
-          (diff-mode)
+          (unless (derived-mode-p 'diff-mode) (diff-mode) (read-only-mode))
           (setq-local header-line-format (format "%s" id)
                       default-directory repo
                       diff-jump-to-old-file t)
