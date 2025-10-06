@@ -622,7 +622,7 @@ This is a per-recipe way of setting @samp{elpaca-menu-functions}.
 
 @anchor{recipe-inheritance-menu}
 @lisp
-(elpaca-recipe '(dracula-theme :inherit elpaca-menu-non-gnu-elpa))
+(elpaca-recipe '(dracula-theme :inherit elpaca-menu-nongnu-elpa))
 @end lisp
 
 @lisp
@@ -632,7 +632,7 @@ This is a per-recipe way of setting @samp{elpaca-menu-functions}.
            (:exclude ".git" "INSTALL.md" "screenshot.png" "start_emacs_test.sh"
                      "test-profile.el"))
           :source "NonGNU ELPA" :type git :protocol https :inherit
-          elpaca-menu-non-gnu-elpa :depth treeless)
+          elpaca-menu-nongnu-elpa :depth treeless)
 @end lisp
 
 @node autoloads

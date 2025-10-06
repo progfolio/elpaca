@@ -477,7 +477,7 @@ the Elpaca&rsquo;s MELPA menu provides the rest of the recipe.
 The value may also be a menu symbol or list of menu symbols. This is a per-recipe way of setting `elpaca-menu-functions`.
 
 ```emacs-lisp
-(elpaca-recipe '(dracula-theme :inherit elpaca-menu-non-gnu-elpa))
+(elpaca-recipe '(dracula-theme :inherit elpaca-menu-nongnu-elpa))
 ```
 
 ```emacs-lisp
@@ -487,7 +487,7 @@ The value may also be a menu symbol or list of menu symbols. This is a per-recip
            (:exclude ".git" "INSTALL.md" "screenshot.png" "start_emacs_test.sh"
                      "test-profile.el"))
           :source "NonGNU ELPA" :type git :protocol https :inherit
-          elpaca-menu-non-gnu-elpa :depth treeless)
+          elpaca-menu-nongnu-elpa :depth treeless)
 ```
 
 
