@@ -192,7 +192,7 @@ This is a per-recipe way of setting =elpaca-menu-functions=.
 
 #+name: recipe-inheritance-menu
 #+begin_src emacs-lisp :lexical t :results raw code :exports both
-(elpaca-recipe '(dracula-theme :inherit elpaca-menu-non-gnu-elpa))
+(elpaca-recipe '(dracula-theme :inherit elpaca-menu-nongnu-elpa))
 #+end_src
 
 #+RESULTS: recipe-inheritance-menu

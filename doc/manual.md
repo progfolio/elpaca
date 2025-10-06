@@ -344,17 +344,18 @@ the Elpaca&rsquo;s MELPA menu provides the rest of the recipe.
 The value may also be a menu symbol or list of menu symbols. This is a per-recipe way of setting `elpaca-menu-functions`.
 
 ```emacs-lisp
-(elpaca-recipe '(dracula-theme :inherit elpaca-menu-non-gnu-elpa))
+(elpaca-recipe '(dracula-theme :inherit elpaca-menu-nongnu-elpa))
 ```
 
 ```emacs-lisp
 (:package "dracula-theme" :repo
-          ("https://github.com/dracula/emacs" . "dracula-theme") :files
+          ("https://github.com/dracula/emacs" . "dracula-theme") :tar "1.8.3"
+          :host nongnu :files
           ("*"
            (:exclude ".git" "INSTALL.md" "screenshot.png" "start_emacs_test.sh"
                      "test-profile.el"))
           :source "NonGNU ELPA" :type git :protocol https :inherit
-          elpaca-menu-non-gnu-elpa :depth treeless)
+          elpaca-menu-nongnu-elpa :depth treeless)
 ```
 
 
