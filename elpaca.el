@@ -180,7 +180,7 @@ Simplified, faster version of `alist-get'."
 
 (defcustom elpaca-menu-functions
   '( elpaca-menu-lock-file elpaca-menu-extensions elpaca-menu-org elpaca-menu-melpa
-     elpaca-menu-non-gnu-elpa elpaca-menu-gnu-elpa elpaca-menu-declarations)
+     elpaca-menu-nongnu-elpa elpaca-menu-gnu-elpa elpaca-menu-declarations)
   "Abnormal hook to lookup packages in menus.
 Each function is passed a request, which may be any of the following symbols:
   - `index`
@@ -563,6 +563,7 @@ The first function, if any, which returns non-nil is used." :type 'hook)
                   t))))
 
 (defcustom elpaca-types '((git . elpaca-git)
+                          (tar . elpaca-tar)
                           (file . elpaca-file))
   "Alist of form ((SYM . LIBRARY)). SYM is a valid recipe :type symbol."
   :type 'alist)

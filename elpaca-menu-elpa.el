@@ -34,24 +34,26 @@
   :type 'boolean :group 'elpaca)
 
 (defvar elpaca-menu-elpas
-  `((gnu . ((name         . "GNU ELPA")
+  `((gnu . ((name . "GNU ELPA")
+            (id . gnu)
             (cache . ,(elpaca--read-file (expand-file-name "gnu-elpa.eld" elpaca-cache-directory)))
-            (cache-path   . ,(expand-file-name "gnu-elpa.eld" elpaca-cache-directory))
+            (cache-path . ,(expand-file-name "gnu-elpa.eld" elpaca-cache-directory))
             (packages-url . ,(if elpaca-menu-elpa-use-mirror
                                  "https://raw.githubusercontent.com/emacsmirror/gnu_elpa/refs/heads/main/elpa-packages"
                                "https://git.savannah.gnu.org/cgit/emacs/elpa.git/plain/elpa-packages"))
             (metadata-url . "https://elpa.gnu.org/packages/")
-            (remote       . ,(if elpaca-menu-elpa-use-mirror "https://github.com/emacsmirror/gnu_elpa"
+            (remote . ,(if elpaca-menu-elpa-use-mirror "https://github.com/emacsmirror/gnu_elpa"
                                "https://git.savannah.gnu.org/git/emacs/elpa.git"))
             (branch-prefix . "externals")))
-    (nongnu . ((name         . "NonGNU ELPA")
-               (cache-path   . ,(expand-file-name "non-gnu-elpa.eld" elpaca-cache-directory))
-               (cache . ,(elpaca--read-file (expand-file-name "non-gnu-elpa.eld" elpaca-cache-directory)))
+    (nongnu . ((name . "NonGNU ELPA")
+               (id . nongnu)
+               (cache-path . ,(expand-file-name "nongnu-elpa.eld" elpaca-cache-directory))
+               (cache . ,(elpaca--read-file (expand-file-name "nongnu-elpa.eld" elpaca-cache-directory)))
                (packages-url . ,(if elpaca-menu-elpa-use-mirror
                                     "https://raw.githubusercontent.com/emacsmirror/nongnu_elpa/refs/heads/main/elpa-packages"
                                   "https://git.savannah.gnu.org/cgit/emacs/nongnu.git/plain/elpa-packages"))
                (metadata-url . "https://elpa.nongnu.org/nongnu/")
-               (remote       . ,(if elpaca-menu-elpa-use-mirror
+               (remote . ,(if elpaca-menu-elpa-use-mirror
                                     "https://github.com/emacsmirror/nongnu_elpa"
                                   "https://git.savannah.gnu.org/git/emacs/nongnu.git"))
                (branch-prefix . "elpa")))))
@@ -82,9 +84,10 @@
         (pop rows) ;discard table headers
         (mapcar (lambda (row)
                   (let* ((s (split-string (dom-texts row) " " 'omit-nulls))
-                         (item (intern (pop s))))
-                    (pop s) ; Discard version info here and "Rank" column below
-                    (cons item (string-join (butlast s) " "))))
+                         (item (intern (pop s)))
+                         (version (pop s)))
+                    (cons item (list :description (string-join (butlast s) " ")
+                                     :tar version))))
                 rows)))))
 
 (defcustom elpaca-menu-elpa-ignored-url-regexp "\\(?:bzr::\\|hg::\\|dr-qubit\\)"
@@ -98,6 +101,7 @@
   (cl-loop
    with metadata      = (alist-get 'metadata-cache elpa)
    with elpa-name     = (alist-get 'name elpa)
+   with elpa-id       = (alist-get 'id elpa)
    ;;with devel-name    = (replace-regexp-in-string " \\(.*\\)" "-devel \\1" elpa-name t)
    with remote        = (alist-get 'remote elpa)
    with metadata-url  = (alist-get 'metadata-url elpa)
@@ -110,6 +114,7 @@
    when core do
    (setq core (mapcar (lambda (f) (if (equal f (file-name-as-directory f)) (concat f "*") f))
                       (if (listp core) core (list core))))
+   for info = (alist-get id metadata)
    for item =
    (when-let*
        ((name (symbol-name id))
@@ -119,7 +124,7 @@
                    (when (symbolp declared) ;; "sub-package" according to ELPA spec
                      (setq declared (or (plist-get (alist-get declared recipes) :url) remote)))
                    (if (string-match-p elpaca-menu-elpa-ignored-url-regexp declared) remote declared))))
-        (recipe `( :package ,name :repo (,url . ,name)
+        (recipe `( :package ,name :repo (,url . ,name) :tar ,(plist-get info :tar) :host ,elpa-id
                    ,@(or (and (or core (and url remote (eq url remote)))
                               `(:branch
                                 ,(if core "master" (concat branch-prefix (when releasep "-release") "/" name))))
@@ -130,7 +135,7 @@
                                  ,@(list (append '(:exclude ".git") (if (listp ignored) ignored (list ignored)))))))))
         (item-props (list :source elpa-name
                           :url (concat metadata-url name ".html")
-                          :description (or (alist-get id metadata) "n/a")
+                          :description (or (plist-get info :description) "n/a")
                           :recipe recipe)))
      (cons id item-props))
    when item collect item))
@@ -167,7 +172,7 @@ If REQUEST is `update`, update the NonGNU ELPA recipe cache."
   "Fulfill GNU ELPA menu `index` or `update` ITEM REQUEST."
   (elpaca-menu--elpa 'gnu request item))
 ;;;###autoload
-(defun elpaca-menu-non-gnu-elpa (request &optional item)
+(defun elpaca-menu-nongnu-elpa (request &optional item)
   "Fulfill menu NonGNU ELPA `index` or `update` ITEM REQUEST."
   (elpaca-menu--elpa 'nongnu request item))
 
