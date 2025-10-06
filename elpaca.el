@@ -413,7 +413,7 @@ If N is nil return a list of all queued elpacas."
   (if n (elpaca-q<-elpacas (nth n elpaca--queues))
     (cl-loop for queue in elpaca--queues append (elpaca-q<-elpacas queue))))
 
-(defcustom elpaca-build-step-functions '(elpaca-git-build-steps elpaca-local-file-build-steps)
+(defcustom elpaca-build-step-functions '(elpaca-git-build-steps elpaca-tar-build-steps elpaca-local-file-build-steps)
   "Abnormal hook to determine E's default build steps.
 Each function is passed E as its sole argument.
 The first non-nil return value is returned as E's build steps."
