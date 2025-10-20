@@ -49,10 +49,6 @@ Accepted key val pairs are:
 
 (defvar-local elpaca-ui--marked-packages nil "Aist of buffer's marked packages.")
 
-(defun elpaca-ui--tag-dirty (entries)
-  "Return ENTRIES for packages with a dirty worktree."
-  (cl-remove-if-not #'elpaca-worktree-dirty-p entries :key #'caar))
-
 (defun elpaca-ui--tag-declared (entries)
   "Return ENTRIES for packages declared during init."
   (cl-remove-if-not #'elpaca-declared-p entries :key #'caar))

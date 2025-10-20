@@ -81,13 +81,6 @@ Anaphoric bindings provided:
      (ignore result exit invoked success failure stdout stderr)
      ,@body))
 
-(defmacro elpaca--with-no-git-config (&rest body)
-  "Eval BODY with user Git config ignored."
-  `(let ((process-environment (append '("GIT_CONFIG_SYSTEM=/dev/null"
-                                        "GIT_CONFIG_GLOBAL=/dev/null")
-                                      process-environment)))
-     ,@body))
-
 (defmacro elpaca-with-process-call (args &rest body)
   "Evaluate BODY in `elpaca-with-process', applying `elpaca-process-call' to ARGS."
   (declare (indent 1) (debug 'form))

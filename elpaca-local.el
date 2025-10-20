@@ -34,21 +34,12 @@
   (setf (elpaca<-source-dir e) (file-name-directory (elpaca--main-file e)))
   (elpaca--continue-build e))
 
-;;;###autoload
-(defun elpaca-local-file-build-steps (e)
-  "Return a contextual list of build steps if E is :type file."
-  (when (equal (plist-get (elpaca<-recipe e) :type) 'file)
-    (cond ((or (not after-init-time) (eq this-command 'elpaca))
-           (if (file-exists-p (elpaca<-build-dir e))
-               elpaca--pre-built-steps
-             elpaca-local-file-default-build-steps))
-          ((eq this-command 'elpaca-rebuild)
-           (when (eq (elpaca--status e) 'finished)
-             ;;@MAYBE: remove Info/load-path entries?
-             (setf (elpaca<-build-steps e) elpaca-build-steps)))
-          ((eq this-command 'elpaca-delete)
-           (user-error "Refusing to delete local file %s" (elpaca--main-file e)))
-          (t (elpaca--fail e (format "%S command not implemented" this-command))))))
+(cl-defmethod elpaca-build-steps ((e (elpaca local)) &optional context)
+  "Return :type local E's build steps for CONTEXT."
+  (pcase context
+    ('nil `(:first ,@(if (elpaca<-builtp e)
+                         (list 'elpaca-local--set-src-dir)
+                         elpaca-local-file-default-build-steps)))))
 
 (provide 'elpaca-local)
 ;;; elpaca-local.el ends here

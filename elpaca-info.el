@@ -212,7 +212,7 @@
 (elpaca-info-defsection version
   (when-let* ((version (if-let* ((.e)
                                  (default-directory (elpaca<-source-dir .e))
-                                 (v (ignore-errors (or (elpaca--declared-version .e) (elpaca-latest-tag .e)))))
+                                 (v (ignore-errors (or (elpaca--version .e) (elpaca--version .e :alternative)))))
                            (concat (string-trim v) " "
                                    (ignore-errors
                                      (string-trim (elpaca-process-output "git" "rev-parse" "--short" "HEAD"))))

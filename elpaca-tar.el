@@ -35,19 +35,18 @@
   "Alist of form ((HOST . URL-TEMPLATE)...)."
   :type 'alist)
 
-(declare-function elpaca-git--repo-name "elpaca-git.el")
-(declare-function elpaca-git--repo-user "elpaca-git.el")
 (defun elpaca-tar--url (recipe)
   "Return URL from RECIPE."
   (or (plist-get recipe :url)
       (when-let* ((host (or (plist-get recipe :host) (plist-get recipe :fetcher)))
                   (repo (plist-get recipe :repo))
                   (template (alist-get host elpaca-tar-url-templates)))
-        (require 'elpaca-git)
         (when (consp repo) (setq repo (car repo)))
         (setq recipe (elpaca-merge-plists
-                      recipe (list :repo (elpaca-git--repo-name repo)
-                                   :user (elpaca-git--repo-user repo)
+                      recipe (list :repo
+                                   (substring repo (- (string-match-p "/" (reverse repo))))
+                                   :user
+                                   (substring repo 0 (string-match-p "/" repo))
                                    :ref (or
                                          (plist-get recipe :ref)
                                          (plist-get recipe :branch)
@@ -110,20 +109,25 @@ Remove subdir."
   "List of steps which are run when installing/building a package."
   :type '(repeat function))
 
-;;;###autoload
-(defun elpaca-tar-build-steps (e)
-  "Return a contextual list of build steps if E is a :type tar package."
-  (when (equal (plist-get (elpaca<-recipe e) :type) 'tar)
-    (cond
-     ((eq this-command 'elpaca)
-      (if (file-exists-p (elpaca<-build-dir e))
-          `(elpaca-tar--set-src-dir ,@elpaca--pre-built-steps)
-        elpaca-tar-default-build-steps))
-     ((eq this-command 'elpaca-try) elpaca-tar-default-build-steps)
-     ((eq this-command 'elpaca-rebuild)
-      (cl-set-difference elpaca-build-steps
-                         '(elpaca--queue-dependencies elpaca--activate-package)))
-     (t (elpaca--fail e (format "%S command not implemented" this-command))))))
+(cl-defmethod elpaca-build-steps ((e (elpaca tar)) &optional context)
+  "Return :type tar E's build steps for CONTEXT."
+  (pcase context
+    ('nil `(:first ,@(if (elpaca<-builtp e) (list 'elpaca-tar--set-src-dir)
+                       elpaca-tar-default-build-steps)))))
+
+(cl-defmethod elpaca--version ((e (elpaca tar)) &optional context)
+  "Return :type tar E's version given CONTEXT."
+  (cond ((eq context :alternative) (elpaca-ref e))))
+
+(cl-defmethod elpaca-ref ((e (elpaca tar)))
+  "Return :type tar E's ref"
+  (elpaca-with-dir e source
+    (when-let* ((header (expand-file-name "pax_global_header"))
+                (file-exists-p header))
+      (with-temp-buffer
+        (insert-file-contents-literally header)
+        (when (re-search-forward "comment=\\(.*\\)" nil t)
+          (match-string 1))))))
 
 (provide 'elpaca-tar)
 ;;; elpaca-tar.el ends here

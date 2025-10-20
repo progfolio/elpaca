@@ -42,13 +42,15 @@
         (let ((json-object-type 'alist))
           (json-read-from-string s))))))
 
+(declare-function elpaca-git--without-config "elpaca-git")
 (defun elpaca-menu-melpa--clone (path)
   "Clone MELPA recipes repo to PATH."
   (let ((default-directory path))
     (make-directory path t)
     (make-directory (expand-file-name ".git/info/" path) t)
     (message "Downloading MELPA recipes...")
-    (elpaca--with-no-git-config
+    (require 'elpaca-git)
+    (elpaca-git--without-config
      (let* ((processes
              (list
               (elpaca-process-call "git" "init")
