@@ -26,11 +26,10 @@
 (require 'elpaca)
 (declare-function url-filename "url-parse")
 (defgroup elpaca-git nil "Elpaca Git Repo Support." :group 'elpaca :prefix "elpaca-git-")
-(defcustom elpaca-git-default-build-steps `(elpaca-git--set-src-dir
+(defcustom elpaca-git-default-build-steps '(elpaca-git--set-src-dir
                                             elpaca-git--clone
                                             elpaca-git--congifure-remotes
-                                            elpaca-git--checkout-ref
-                                            ,@elpaca-build-steps)
+                                            elpaca-git--checkout-ref)
   "List of steps which are run when installing/building a package."
   :type '(repeat function))
 
@@ -263,20 +262,12 @@ This is the branch that would be checked out upon cloning."
         :name "clone" :command command :connection-type 'pty
         :sentinel #'elpaca-git--clone-process-sentinel))))
 
-;;;###autoload
-(defun elpaca-git-build-steps (e)
-  "Return a contextual list of build steps if E is a :type git package."
-  (when (equal (plist-get (elpaca<-recipe e) :type) 'git)
-    (cond
-     ((eq this-command 'elpaca)
-      (if (file-exists-p (elpaca<-build-dir e))
-          `(elpaca-git--set-src-dir ,@elpaca--pre-built-steps)
-        elpaca-git-default-build-steps))
-     ((eq this-command 'elpaca-try) elpaca-git-default-build-steps)
-     ((eq this-command 'elpaca-rebuild)
-      (cl-set-difference elpaca-build-steps
-                         '(elpaca--queue-dependencies elpaca--activate-package)))
-     (t (elpaca--fail e (format "%S command not implemented" this-command))))))
+(cl-defmethod elpaca-build-steps ((e (elpaca git)) &optional context)
+  "Return :type git E's build steps for CONTEXT."
+  (pcase context
+    ('nil `(:first ,@(if (elpaca<-builtp e)
+                         (list 'elpaca-git--set-src-dir)
+                         elpaca-git-default-build-steps)))))
 
 (provide 'elpaca-git)
 ;;; elpaca-git.el ends here

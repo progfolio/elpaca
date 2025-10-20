@@ -29,6 +29,7 @@
 ;;; Code:
 (eval-and-compile (require 'cl-lib))
 (eval-when-compile (require 'subr-x))
+(require 'cl-generic)
 (cl-declaim (optimize (safety 0) (speed 3)))
 (require 'elpaca-process)
 (declare-function autoload-rubric "autoload")
@@ -407,59 +408,85 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
   (init (not after-init-time))
   process log builtp)
 
+(cl-generic-define-generalizer elpaca--generic-derived-generalizer
+  70 (lambda (name &rest _) `(plist-get (elpaca<-recipe ,name) :type))
+  (lambda (tag &rest _) `((elpaca ,tag))))
+
+(cl-defmethod cl-generic-generalizers ((_specializer (head elpaca)))
+  "Support for (elpaca TYPE) specializers."
+  (list elpaca--generic-derived-generalizer))
+
 (defun elpaca--queued (&optional n)
   "Return list of elpacas from Nth queue.
 If N is nil return a list of all queued elpacas."
   (if n (elpaca-q<-elpacas (nth n elpaca--queues))
     (cl-loop for queue in elpaca--queues append (elpaca-q<-elpacas queue))))
 
-(defcustom elpaca-build-step-functions '(elpaca-git-build-steps elpaca-tar-build-steps elpaca-local-file-build-steps)
-  "Abnormal hook to determine E's default build steps.
-Each function is passed E as its sole argument.
-The first non-nil return value is returned as E's build steps."
-  :type 'hook)
+(defun elpaca-substitute-build-steps (steps &rest rules)
+  "Alter build STEPS via substituion RULES.
+RULES is a lists of specs of the form ((TYPE TARGET SUBSTITUTIONS...)...).
+RULES may also be a single substitution spec.
+The SUBSTITUTIONS are the function symbols which replace the TARGET.
+TYPE is one of the following keywords:
+  - :after places SUBSTITUTIONS after TARGET.
+  - :before places SUBSTITUTIONS before TARGET.
+  - :first places SUBSTITUTIONS at the beginning of the list.
+  - :last places SUBSTITUTIONS at the end of the list.
+  - :sub replaces TARGET with SUBSTITUTIONS.
+  - :not removes TARGET and SUBSTITUTIONS."
+  (cl-loop
+   with specs = (cl-loop with result for el in rules
+                         do (if (keywordp (car-safe el))
+                                (push el result)
+                              (cl-loop for spec in el do (push spec result)))
+                         finally return (nreverse result))
+   for (type target . subs) in specs do
+   (cl-loop named scanner initially do
+            (progn (pcase type
+                     (:not (setq subs (when target (cons target subs))
+                                 steps (cl-loop for step in steps
+                                                unless (memq step subs)
+                                                collect step)))
+                     (:before (setq subs (append subs (list target))))
+                     (:after (setq subs (cons target subs)))
+                     (:first (setq steps (append (cons target subs) steps)))
+                     (:last (setq steps (append steps (cons target subs))))
+                     (:sub (setq steps (cl-loop for step in steps
+                                                if (eq step target) append subs
+                                                else collect step)))
+                     (unknown (error "Unknown substituion rule: %S" unknown)))
+                   (unless (memq type '(:before :after)) (cl-return-from scanner)))
+            with i = 0 while (< i (length steps)) do
+            (if-let* ((step (nth i steps))
+                      ((eq step target)))
+                (progn (setf (nthcdr i steps)
+                             (append subs (nthcdr (1+ i) steps))
+                             i (+ i (length steps)))
+                       (cl-return-from scanner))
+              (cl-incf i)))
+   finally return steps))
 
-(defun elpaca-build-steps (e)
-  "Return E's build steps."
-  (if-let* ((recipe (elpaca<-recipe e))
-            (declared (plist-member recipe :build))
-            (val (cadr declared)))
-      (pcase val
-        ((pred functionp) (funcall val e))
-        ((guard (or (keywordp (car-safe val)) (keywordp (car-safe (car-safe val)))))
-         (cl-loop with contextual =
-                  (copy-tree
-                   (run-hook-with-args-until-success 'elpaca-build-step-functions e))
-                  with substitutions = (if (listp (car-safe val)) val (list val))
-                  initially do (unless contextual (cl-return nil))
-                  for (type target . steps) in substitutions do
-                  (cl-loop named scanner initially do
-                           (pcase type
-                             (:before (setq steps (append steps (list target))))
-                             (:after (setq steps (cons target steps)))
-                             (:not (setq steps (when target (cons target steps))))
-                             ((pred functionp) (setq steps (when target (cons target steps))
-                                                     target type type nil)))
-                           with i = 0
-                           if (eq type :not)
-                           do (setf contextual (cl-loop for step in contextual
-                                                        unless (memq step steps)
-                                                        collect step))
-                           (cl-return-from scanner)
-                           else
-                           while (< i (length contextual))
-                           do (if-let* ((step (nth i contextual))
-                                        ((eq step target)))
-                                  (progn (setf (nthcdr i contextual)
-                                               (append steps (nthcdr (1+ i) contextual))
-                                               i (+ i (length steps)))
-                                         (cl-return-from scanner))
-                                (cl-incf i)))
-                  finally return contextual))
-        ((pred listp) val)
-        (_ (error "Unable to determine build steps")))
-    (unless (and declared (not val))
-      (copy-tree (run-hook-with-args-until-success 'elpaca-build-step-functions e)))))
+;;@HACK: Wouldn't be necessary if cl-generic supported :most-specific-last
+(cl-defmethod cl-generic-combine-methods :around (generic methods)
+  "Combine GENERIC METHODS for function `elpaca-build-steps'."
+  (cl--generic-standard-method-combination
+   generic (if (equal (cl--generic-name generic) 'elpaca-build-steps)
+               (reverse methods) methods)))
+
+(cl-defgeneric elpaca-build-steps (e &optional context)
+  "Return E's build steps for CONTEXT."
+  (let* ((recipe (elpaca<-recipe e))
+         (declaration (plist-member recipe :build))
+         (val (cadr declaration)))
+    (unless (and declaration (not val)) ;; explicit nil
+      (elpaca-substitute-build-steps
+       (pcase context
+         ('nil (if (elpaca<-builtp e) elpaca--pre-built-steps elpaca-build-steps))
+         (:rebuild (cl-set-difference
+                    elpaca-build-steps
+                    (cons 'elpaca--add-info-path elpaca--pre-built-steps))))
+       (cl-call-next-method)
+       val))))
 
 (declare-function elpaca-log-defaults "elpaca-log")
 (declare-function elpaca-log-initial-queues "elpaca-log")
@@ -486,6 +513,12 @@ The first function, if any, which returns non-nil is used." :type 'hook)
                         (t (signal 'wrong-type-error `((stringp t) ,query))))
                   t))))
 
+(defcustom elpaca-types '((git . elpaca-git)
+                          (tar . elpaca-tar)
+                          (local . elpaca-local))
+  "Alist of form ((SYM . LIBRARY))."
+  :type 'alist)
+
 (defun elpaca<-create (order)
   "Create a new elpaca struct from ORDER."
   (let* ((status 'queued)
@@ -496,13 +529,14 @@ The first function, if any, which returns non-nil is used." :type 'hook)
                                   info (format "No recipe: %S" err))
                     nil)))
          (build-dir (and recipe (elpaca-build-dir recipe)))
-         (builtp (file-exists-p build-dir))
-         (blockers nil)
          (e (elpaca<--create
              :id id :package (symbol-name id) :order order :statuses (list status)
              :build-dir build-dir :props nil
-             :recipe recipe :builtp builtp :blockers blockers
+             :recipe recipe :builtp (file-exists-p build-dir) :blockers nil
              :log (list (list status nil info 0)))))
+    (when-let* ((recipe)
+                (registered (elpaca-alist-get (plist-get recipe :type) elpaca-types)))
+      (require registered))
     (condition-case err
         (setf (elpaca<-build-steps e) (elpaca-build-steps e))
       ((error) (setf status err)))
@@ -1155,7 +1189,6 @@ If RECACHE is non-nil, do not use cached dependencies."
   "Queue E's dependencies."
   (cl-loop
    initially (elpaca--signal e "Queueing Dependencies" 'blocked nil 1)
-   with this-command = 'elpaca
    with externals = (or (cl-loop for (id . _) in (elpaca--dependencies e)
                                  unless (memq id elpaca-ignored-dependencies) collect id)
                         (cl-return (elpaca--continue-build e "No external dependencies" 'unblocked)))
@@ -1394,7 +1427,6 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
   (when (memq (car-safe order) '(quote \`)) (setq order (eval order t)))
   (let* ((id (elpaca--first order))
          (q (or (and after-init-time (elpaca--q (elpaca-get id))) (car elpaca--queues)))
-         (this-command 'elpaca)
          (e (elpaca--queue order q)))
     (when body (setf (alist-get id (elpaca-q<-forms q)) body))
     (when after-init-time
@@ -1437,7 +1469,7 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
              (user-error "No menu item")))
          t))
   (if (not interactive)
-      (let ((this-command 'elpaca-try)) (elpaca--queue order))
+      (elpaca--queue order)
     (elpaca--maybe-log)
     (elpaca-queue (eval `(elpaca ,order) t))
     (elpaca--process-queue (nth 1 elpaca--queues)))
@@ -1555,7 +1587,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
   (let ((e (or (elpaca-get id) (user-error "Package %S is not queued" id))))
     (when (eq (elpaca--status e) 'finished)
       ;;@MAYBE: remove Info/load-path entries?
-      (setf (elpaca<-build-steps e) (elpaca-build-steps e)))
+      (setf (elpaca<-build-steps e) (elpaca-build-steps e :rebuild)))
     (elpaca--unprocess e)
     (elpaca--signal e "Rebuilding" 'queued)
     (setf elpaca-cache-autoloads nil (elpaca<-files e) nil)
