@@ -527,6 +527,48 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
       (when clonedp (setq steps (remq 'elpaca--clone steps)))
       steps)))
 
+(defsubst elpaca--status (e) "Return E's status." (car (elpaca<-statuses e)))
+
+(defcustom elpaca-log-command-queries
+  '(((elpaca-fetch elpaca-fetch-all elpaca-log-updates) . "#latest #update-log")
+    ((elpaca-try elpaca-rebuild) . "#latest #linked-errors")
+    (( elpaca-merge elpaca-merge-all elpaca-pull elpaca-pull-all
+       elpaca-update elpaca-update-all)
+     . "#latest #unique")
+    ((eval-buffer eval-region eval-defun eval-last-sexp org-ctrl-c-ctrl-c) . silent)
+    (elpaca-delete . (lambda () (if (equal (buffer-name) elpaca-log-buffer)
+                                    elpaca-ui-search-query 'silent)))
+    (elpaca-ui-execute-marks . elpaca-log--marked-query))
+  "Alist of form ((COMMAND-OR-COMMAND-LIST . QUERY-OR-FUNCTION)...).
+If query is a string it is used when logging for that command.
+If it is a function, it's return value is used."
+  :type 'alist :group 'elpaca-ui)
+
+(defun elpaca--log-find-command (val key)
+  "Return t if KEY VAL."
+  (or (eq key val) (and (listp val) (member key val))))
+
+(defun elpaca-log-command-query ()
+  "Return logging query matching `this-command' in `elpaca-log-command-queries'."
+  (when-let* ((found (alist-get this-command elpaca-log-command-queries
+                                nil nil #'elpaca--log-find-command)))
+    (if (functionp found) (funcall found) found)))
+
+(defun elpaca-log-initial-queues ()
+  "Return logging query if initial queues require building or order fails."
+  (unless elpaca-after-init-time
+    (cl-loop for (_ . e) in (elpaca--queued)
+             for query = (cond ((not (elpaca<-builtp e)) "#unique | !finished")
+                               ((eq (elpaca--status e) 'failed) "| failed"))
+             when query return
+             (prog1 query
+               (setq initial-buffer-choice
+                     (let ((ibc initial-buffer-choice))
+                       (lambda ()
+                         (add-hook 'elpaca-after-init-hook
+                                   (lambda () (setq initial-buffer-choice ibc)))
+                         (get-buffer-create "*elpaca-log*"))))))))
+
 (declare-function elpaca-log-defaults "elpaca-log")
 (declare-function elpaca-log-initial-queues "elpaca-log")
 (defcustom elpaca-log-functions '(elpaca-log-initial-queues elpaca-log-command-query)
@@ -585,8 +627,6 @@ The first function, if any, which returns non-nil is used." :type 'hook)
      :repo-dir repo-dir :build-dir build-dir :mono-repo mono-repo
      :build-steps build-steps :recipe recipe :builtp builtp :blockers blockers
      :log (list (list status nil info 0)))))
-
-(defsubst elpaca--status (e) "Return E's status." (car (elpaca<-statuses e)))
 
 (declare-function elpaca-ui--update-search-query "elpaca-ui")
 (defun elpaca--update-log-buffer ()
