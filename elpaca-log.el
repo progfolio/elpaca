@@ -41,21 +41,6 @@
   "Alist of search tags (see `elpaca-ui-search-tags') exclusive to the log buffer."
   :type '(alist :key-type symbol :value-type function) :group 'elpaca-ui)
 
-(defcustom elpaca-log-command-queries
-  '(((elpaca-fetch elpaca-fetch-all elpaca-log-updates) . "#latest #update-log")
-    ((elpaca-try elpaca-rebuild) . "#latest #linked-errors")
-    (( elpaca-merge elpaca-merge-all elpaca-pull elpaca-pull-all
-       elpaca-update elpaca-update-all)
-     . "#latest #unique")
-    ((eval-buffer eval-region eval-defun eval-last-sexp org-ctrl-c-ctrl-c) . silent)
-    (elpaca-delete . (lambda () (if (equal (buffer-name) elpaca-log-buffer)
-                                    elpaca-ui-search-query 'silent)))
-    (elpaca-ui-execute-marks . elpaca-log--marked-query))
-  "Alist of form ((COMMAND-OR-COMMAND-LIST . QUERY-OR-FUNCTION)...).
-If query is a string it is used when logging for that command.
-If it is a function, it's return value is used."
-  :type 'alist :group 'elpaca-ui)
-
 (defcustom elpaca-log-diff-function #'elpaca-log-diff
   "Function to display a diff from the update log.
 It must accept a package ID symbol and REF string as its first two arguments."
@@ -65,33 +50,6 @@ It must accept a package ID symbol and REF string as its first two arguments."
   "Return query for marked packages."
   (when (= (length (delete-dups (mapcar #'cadr elpaca-ui--marked-packages))) 1)
     (let ((this-command (cadar elpaca-ui--marked-packages))) (elpaca-log-command-query))))
-
-(defun elpaca-log--find-command (val key)
-  "Return t if KEY VAL."
-  (or (eq key val) (and (listp val) (member key val))))
-
-;;;###autoload
-(defun elpaca-log-command-query ()
-  "Return logging query matching `this-command' in `elpaca-log-command-queries'."
-  (when-let* ((found (alist-get this-command elpaca-log-command-queries
-                                nil nil #'elpaca-log--find-command)))
-    (if (functionp found) (funcall found) found)))
-
-;;;###autoload
-(defun elpaca-log-initial-queues ()
-  "Return logging query if initial queues require building or order fails."
-  (unless elpaca-after-init-time
-    (cl-loop for (_ . e) in (elpaca--queued)
-             for query = (cond ((not (elpaca<-builtp e)) "#unique | !finished")
-                               ((eq (elpaca--status e) 'failed) "| failed"))
-             when query return
-             (prog1 query
-               (setq initial-buffer-choice
-                     (let ((ibc initial-buffer-choice))
-                       (lambda ()
-                         (add-hook 'elpaca-after-init-hook
-                                   (lambda () (setq initial-buffer-choice ibc)))
-                         (get-buffer-create "*elpaca-log*"))))))))
 
 (defun elpaca-log--tag-latest (entries)
   "Log ENTRIES since most recent `elpaca-process-queues'."
