@@ -56,17 +56,14 @@
 ;;use the :wait recipe keyword to block until that package is installed/configured.
 ;;For example:
 ;;(use-package general :ensure (:wait t) :demand t)
-
 ;; Expands to: (elpaca evil (use-package evil :demand t))
 (use-package evil :ensure t :demand t)
-
 ;;Turns off elpaca-use-package-mode current declaration
 ;;Note this will cause evaluate the declaration immediately. It is not deferred.
 ;;Useful for configuring built-in emacs features.
 (use-package emacs :ensure nil :config (setq ring-bell-function #'ignore))
-
 ;; Local Variables:
-;; no-byte-compile: t
+(setq no-byte-compile t)
 ;; no-native-compile: t
 ;; no-update-autoloads: t
-;; End:
+;; This is the end of the file.

@@ -24,7 +24,6 @@ To export:
 :END:
 #+html: <p align="center"><img src="./images/elpaca.svg"/></p>
 #+html: <p align="center">"Chews data, spits packages."</p>
-
 #+include: "./common.org::introduction" :only-contents t
 
 Elpaca:
@@ -42,7 +41,6 @@ Users who wish to experiment with Elpaca may find the example [[./doc/init.el][i
 :PROPERTIES:
 :CUSTOM_ID: video-tour
 :END:
-
 #+html: <p align="center"><a href="https://www.youtube.com/watch?v=5Ud-TE3iIQY"><img src="./images/elpaca-manager-install.gif"/></a></p>
 
 #+include: "./common.org::installation"

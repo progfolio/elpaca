@@ -1,14 +1,12 @@
 EMACS ?= emacs
-
 .PHONY: all
-all: clean autoloads compile test
-
+all: clean autoloads byte-compile test
 .PHONY: clean
 clean: 
 	@echo "Removed: " *.elc elpaca-autoloads.el
 	@rm -f *.elc elpaca-autoloads.el
 
-.PHONY: compile
+.PHONY: byte-compile
 compile: *.el
 	$(EMACS) -Q --batch -L . -f batch-byte-compile *.el
 
