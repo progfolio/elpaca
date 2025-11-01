@@ -572,29 +572,18 @@ The first function, if any, which returns non-nil is used." :type 'hook)
 
 (defun elpaca<-create (order)
   "Create a new elpaca struct from ORDER."
-  (let* ((status 'queued)
-         (info "Package queued")
-         (id (elpaca--first order))
-         (recipe (condition-case-unless-debug err (elpaca-recipe order)
-                   ((error) (setq status 'struct-failed
-                                  info (format "No recipe: %S" err))
-                    nil)))
-         (build-dir (and recipe (elpaca-build-dir recipe)))
+  (let* ((id (elpaca--first order))
+         (recipe (elpaca-recipe order))
+         (build-dir (elpaca-build-dir recipe))
          (e (elpaca<--create
-             :id id :package (symbol-name id) :order order :statuses (list status)
-             :build-dir build-dir :props nil
-             :recipe recipe :builtp (and build-dir (file-exists-p build-dir))
-             :blockers nil
-             :log (list (list status nil info 0)))))
+             :id id :package (symbol-name id)
+             :order order :build-dir build-dir
+             :recipe recipe :builtp (and build-dir (file-exists-p build-dir)))))
     (when-let* ((recipe)
                 (registered (elpaca-alist-get (plist-get recipe :type) elpaca-types)))
       (require registered)) ;;@TODO: optimize lookup by tracking separate from `features'?
-    (condition-case err
-        (setf (elpaca<-source-dir e) (elpaca-source-dir e)
-              (elpaca<-build-steps e) (elpaca-build-steps e))
-      ((error) (setf status err)))
-    (when (memq id elpaca-ignored-dependencies)
-      (setq elpaca-ignored-dependencies (delq id elpaca-ignored-dependencies)))
+    (setf (elpaca<-source-dir e) (elpaca-source-dir e)
+          (elpaca<-build-steps e) (elpaca-build-steps e))
     e))
 
 (declare-function elpaca-ui--update-search-query "elpaca-ui")
@@ -706,8 +695,8 @@ Optional ARGS are passed to `elpaca--signal', which see."
   "Return E's log duration."
   (time-subtract (nth 1 (car (elpaca<-log e))) (elpaca<-queue-time e)))
 
-(defun elpaca--queue (order &optional queue)
-  "ADD ORDER to QUEUE or current queue.  Return E."
+(defun elpaca--enqueue (order &optional queue)
+  "ADD ORDER to QUEUE or current queue. Return E."
   (if-let* ((id (elpaca--first (or order (signal 'wrong-type-argument
                                                  '((or symbolp listp) nil)))))
             ((not after-init-time))
@@ -716,16 +705,13 @@ Optional ARGS are passed to `elpaca--signal', which see."
           (warn "%S previously queued as dependency of: %S" id dependents)
         (warn "Duplicate item ID queued: %S" id))
     (let* ((e (elpaca<-create order))
-           (log (pop (elpaca<-log e)))
-           (status (car log))
-           (info (nth 2 log))
            (q (or queue (car elpaca--queues))))
+      (when (memq id elpaca-ignored-dependencies)
+        (setq elpaca-ignored-dependencies (delq id elpaca-ignored-dependencies)))
       (when queue (setf (elpaca<-queue-id e) (elpaca-q<-id q)
                         (elpaca<-init e) (elpaca-q<-type q)))
       (setf (alist-get id (elpaca-q<-elpacas q)) e)
-      (if (eq status 'struct-failed)
-          (elpaca--fail e info)
-        (elpaca--signal e info status nil 1))
+      (elpaca--signal e nil 'queued)
       e)))
 
 ;;;###autoload
@@ -1215,18 +1201,18 @@ If RECACHE is non-nil, do not use cached dependencies."
                                     unless (memq id elpaca-ignored-dependencies) collect id)
                            (cl-return (elpaca--continue-build e "No external dependencies" 'unblocked)))
    with q = (elpaca--q e)
-   with qd = (elpaca--queued)
+   with enqueued = (elpaca--queued)
    with finished = 0
    with q-id = (elpaca<-queue-id e)
    with e-id = (elpaca<-id e)
-   with builtp = (elpaca<-builtp e)
+   with e-builtp = (elpaca<-builtp e)
    with pending
-   for dependency in externals
-   for queued = (elpaca-alist-get dependency qd)
-   for d = (or queued (elpaca--queue dependency q))
+   for dependency in dependencies
+   for queued-dependency = (elpaca-alist-get dependency enqueued)
+   for d = (or queued-dependency (elpaca--enqueue dependency q))
    for d-id = (elpaca<-id d)
    for d-status = (elpaca--status d)
-   do (and queued (> (elpaca<-queue-id d) q-id)
+   do (and queued-dependency (> (elpaca<-queue-id d) q-id)
            (cl-return (elpaca--fail d (format "dependent %S in past queue" e-id))))
    (cl-pushnew e-id (elpaca<-dependents d))
    (and e-builtp (not (elpaca<-builtp d))
@@ -1245,8 +1231,8 @@ If RECACHE is non-nil, do not use cached dependencies."
        (cl-incf finished)
      (cl-pushnew e-id (elpaca<-blocking d))
      (cl-pushnew d-id (elpaca<-blockers e)))
-   finally do (if (= (length externals) finished)
-                  (elpaca--continue-build e nil 'unblocked)
+   finally do (if (= (length dependencies) finished)
+                  (elpaca--continue-build e "Dependencies finished" 'unblocked)
                 (mapc #'elpaca--continue-dependency pending))))
 
 (defun elpaca--check-status (dependency e)
@@ -1492,7 +1478,7 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
              (user-error "No menu item")))
          t))
   (if (not interactive)
-      (elpaca--queue order)
+      (elpaca--enqueue order)
     (elpaca--maybe-log)
     (elpaca-queue (eval `(elpaca ,order) t))
     (elpaca--process-queue (nth 1 elpaca--queues)))
