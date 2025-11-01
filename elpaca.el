@@ -711,16 +711,16 @@ check (and possibly change) their statuses."
   "Return Nth calling function's name, skipping symbols in SKIP."
   (cl-loop with current = (backtrace-frame (1+ n)) ;; Skip this function call.
            with previous = nil
-           while (and (or (not (eq (car current) t))
-                          (memq (cadr current) skip))
-                      (setq previous current current (backtrace-frame (cl-incf n))))
+           while (or (null (car current)) (memq (cadr current) skip))
+           do (setq previous current current (backtrace-frame (cl-incf n)))
            finally return (cadr (or current previous))))
 
 (defun elpaca--continue-build (e &rest args)
   "Run E's next build step.
 Optional ARGS are passed to `elpaca--signal', which see."
   (elpaca--signal e (format "Continued by: %S"
-                            (elpaca--caller-name 2 'elpaca--process-sentinel 'apply))
+                            (elpaca--caller-name -1 'backtrace-frame 'elpaca--process-sentinel 'apply
+                                                 'elpaca--caller-name 'elpaca--continue-build))
                   nil nil 2)
   (when args (apply #'elpaca--signal e args))
   (unless (memq (elpaca--status e) elpaca--inactive-states)
