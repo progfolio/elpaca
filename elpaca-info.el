@@ -228,9 +228,9 @@
 (elpaca-info-defsection log
   (when-let* ((.e) (log (elpaca<-log .e)))
     (format "\n%s\n%s" (elpaca-info--header "log")
-            (cl-loop for (_ time info _) in (reverse log) concat
+            (cl-loop for (status time info _) in (reverse log) concat
                      (format "  %s %s\n" (propertize (format "[%s]" (format-time-string "%F %T" time))
-                                                     'face 'font-lock-comment-face)
+                                                     'face (alist-get status elpaca-status-faces 'font-lock-comment-face))
                              info)))))
 (defcustom elpaca-info-sections-hook
   '( elpaca-info-section--title elpaca-info-section--menu-buttons elpaca-info-section--description
