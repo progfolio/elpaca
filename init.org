@@ -1199,7 +1199,6 @@ Directory browsing commands
   (dired-mouse-drag-files t)
   (dired-listing-switches "-alh" "Human friendly file sizes.")
   (dired-kill-when-opening-new-dired-buffer t)
-  (dired-omit-files "\\(?:\\.+[^z-a]*\\)")
   :hook (dired-mode-hook . dired-omit-mode)
   :general
   (+general-global-application "d" 'dired))
