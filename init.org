@@ -375,7 +375,7 @@ https://github.com/progfolio/elpaca
               ([?\s-k] . windmove-up)
               ([?\s-K] . +exwm-move-window-up)
               ([?\s-i] . +exwm-edit)
-              ([?\s-r] . exwm-restart)
+              ([?\s-r] . restart-emacs)
               ([?\s-f] . +exwm-toggle-fullscreen)
               ([?\s-m] . hide-mode-line-mode)
               ([?\s-n] . tab-next)
