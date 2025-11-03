@@ -85,7 +85,7 @@
            (cons 'org-contrib
                  (list :source "Org"
                        :description "Contributed Org packages in search of new maintainers"
-                       :url "https://git.sr.ht/~bzg/org-contrib"
+                       :url "https://github.com/emacsmirror/org-contrib"
                        :recipe
                        (list
                         :package "org-contrib"
