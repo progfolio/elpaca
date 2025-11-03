@@ -75,10 +75,10 @@
                        :recipe
                        (list
                         :package "org"
-                        :repo '("https://github.com/emacsmirror/org" . "org")
                         :pre-build `(progn (require 'elpaca-menu-org)
                                            (setq elpaca-menu-org-make-manual ,elpaca-menu-org-make-manual)
                                            (elpaca-menu-org--build))
+                        :host 'github :repo "emacsmirror/org"
                         :autoloads "org-loaddefs.el" :depth 1
                         :build '(:not elpaca--generate-autoloads-async)
                         :files '(:defaults ("etc/styles/" "etc/styles/*" "doc/*.texi")))))
@@ -89,7 +89,7 @@
                        :recipe
                        (list
                         :package "org-contrib"
-                        :repo '("https://github.com/emacsmirror/org-contrib". "org-contrib")
+                        :host 'github :repo "emacsmirror/org-contrib"
                         :files '(:defaults))))))))
 
 (provide 'elpaca-menu-org)
