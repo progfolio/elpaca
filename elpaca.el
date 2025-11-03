@@ -152,7 +152,7 @@ is used in a `:files' directive.")
 (defcustom elpaca-order-functions '(elpaca-order-defaults)
   "Abnormal hook run to alter orders.
 Each element must be a unary function which accepts an order.
-An order may be nil, a symbol naming a package, or a plist.
+An order may be a symbol naming a package, or list of the form (ID . PROPS...).
 The function may return nil or a plist to be merged with the order.
 This hook is run via `run-hook-with-args-until-success'."
   :type 'hook)
