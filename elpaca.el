@@ -536,9 +536,9 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
        elpaca-update elpaca-update-all)
      . "#latest #unique")
     ((eval-buffer eval-region eval-defun eval-last-sexp org-ctrl-c-ctrl-c) . silent)
-    (elpaca-delete . (lambda () (if (equal (buffer-name) elpaca-log-buffer)
+    (elpaca-delete . (lambda () (if (derived-mode-p 'elpaca-ui-mode)
                                     elpaca-ui-search-query 'silent)))
-    (elpaca-ui-execute-marks . elpaca-log--marked-query))
+    (elpaca-ui-execute-marks . (lambda () (require 'elpaca-log) (elpaca-log--marked-query))))
   "Alist of form ((COMMAND-OR-COMMAND-LIST . QUERY-OR-FUNCTION)...).
 If query is a string it is used when logging for that command.
 If it is a function, it's return value is used."
