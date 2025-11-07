@@ -2135,7 +2135,7 @@ In addition, the ARGS `:dir` may specify the package `build` or `source` dir."
                   :recipe
                   ,(plist-put (copy-tree (elpaca<-recipe e))
                               :ref
-                              (elpaca-with-dir id repo
+                              (elpaca-with-dir e repo
                                 (elpaca-with-process-call ("git" "rev-parse" "HEAD")
                                   (if success (string-trim stdout)
                                     (error "Unable to write lock-file: %s %S" id stderr))))))
