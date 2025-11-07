@@ -61,7 +61,7 @@
   :type '(alist :key-type symbol :options (blocked finished failed busy) :value-type face))
 
 (defvar elpaca--pre-built-steps
-  '(elpaca--enqueue-dependencies elpaca--add-info-path elpaca--activate-package)
+  '(elpaca--enqueue-dependencies elpaca--activate-package)
   "List of steps for packages which are already built.")
 
 (defvar elpaca-after-init-time nil "`current-time' after processing all queues.")
@@ -122,7 +122,6 @@ Setting it too high causes prints fewer status updates."
                                         elpaca--byte-compile
                                         elpaca--compile-info
                                         elpaca--install-info
-                                        elpaca--add-info-path
                                         elpaca--activate-package)
   "List of steps which are run when installing/building a package."
   :type '(repeat function))
@@ -490,8 +489,7 @@ TYPE is one of the following keywords:
        (pcase context
          ('nil (if (elpaca<-builtp e) elpaca--pre-built-steps elpaca-default-build-steps))
          (:rebuild (cl-set-difference elpaca-default-build-steps
-                                      (append elpaca--pre-built-steps
-                                              (list 'elpaca--add-info-path 'elpaca-get)))))
+                                      (cons 'elpaca-get elpaca--pre-built-steps))))
        (condition-case err
            (cl-call-next-method)
          ((cl-no-next-method) nil)
@@ -735,7 +733,7 @@ Optional ARGS are passed to `elpaca--signal', which see."
 (defvar elpaca--post-queues-hook nil)
 (defun elpaca--finalize-queue (q)
   "Run Q's post installation functions:
-- load cached autoloads
+- load cached autoloads, add info path loading logic,
 - evaluate deferred package configuration forms
 - possibly run `elpaca-after-init-hook'."
   (when-let* ((autoloads (elpaca-q<-autoloads q)))
@@ -758,6 +756,14 @@ Optional ARGS are passed to `elpaca--signal', which see."
                 (not (eq (elpaca-q<-type q) 'init)) ; Already run.
                 (and next (eq (elpaca-q<-type next) 'init))) ; More init queues.
       (elpaca-split-queue)
+      (with-eval-after-load 'info
+        (info-initialize)
+        (cl-loop for (_id . e) in (elpaca--queued) do
+                 (when-let* ((build (elpaca<-build-dir e))
+                             (dir (expand-file-name "dir" build))
+                             ((file-exists-p dir))
+                             ((not (member build Info-directory-list))))
+                   (push build Info-directory-list))))
       (setq elpaca-after-init-time (current-time))
       (run-hooks 'elpaca-after-init-hook))
     (if (and next (elpaca-q<-elpacas next))
@@ -805,10 +811,6 @@ Optional ARGS are passed to `elpaca--signal', which see."
                 ((not (string-empty-p output))))
       (elpaca--signal e output nil nil verbosity))
     result))
-
-(defun elpaca--remove-build-steps (e spec)
-  "Remove each step in SPEC from E."
-  (setf (elpaca<-build-steps e) (cl-set-difference (elpaca<-build-steps e) spec)))
 
 (defun elpaca--files (e &optional files nocons)
   "Return alist of E :files to be symlinked: (PATH . TARGET PATH).
@@ -886,18 +888,6 @@ FILES and NOCONS are used recursively."
   (setf (elpaca<-builtp e) t)
   (elpaca--continue-build e "Build files linked"))
 
-(defun elpaca--add-info-path (e)
-  "Add the E's info to `Info-directory-list'."
-  (let ((build-dir (elpaca<-build-dir e)))
-    (if (file-exists-p (expand-file-name "dir" build-dir))
-        (progn
-          (elpaca--signal e "Adding Info path" 'info)
-          (with-eval-after-load 'info
-            (info-initialize)
-            (cl-pushnew build-dir Info-directory-list :test #'equal)))
-      (elpaca--signal e "No Info dir file found" 'info))
-    (elpaca--continue-build e)))
-
 (defvar elpaca--eol (if (memq system-type '(ms-dos windows-nt cygwin)) "\r\n" "\n"))
 (defun elpaca--process-filter (process output)
   "Filter PROCESS OUTPUT."
@@ -933,7 +923,7 @@ FILES and NOCONS are used recursively."
          (finished (equal event "finished\n")))
     (unless finished
       (setf (elpaca<-build-steps e)
-            (cl-set-difference (elpaca<-build-steps e) '(elpaca--install-info elpaca--add-info-path))))
+            (cl-remove 'elpaca--isntall-info (elpaca<-build-steps e))))
     (elpaca--propertize-subprocess process)
     (elpaca--continue-build
      e (if finished "Info compiled" (concat "Compilation failure: " (string-trim event))))))
@@ -1010,7 +1000,8 @@ ARGS must be a plist including any of the following keywords value pairs:
         :name "compile-info"
         :command `(,elpaca-makeinfo-executable ,@(apply #'append files))
         :sentinel #'elpaca--compile-info-process-sentinel)
-    (when no-info (elpaca--remove-build-steps e '(elpaca--install-info elpaca--add-info-path)))
+    (when no-info (setf (elpaca<-build-steps e)
+                        (cl-remove 'elpaca--install-info (elpaca<-build-steps e))))
     (elpaca--continue-build
      e (concat (if elpaca-makeinfo-executable "Info source files" "makeinfo") " not found"))))
 
