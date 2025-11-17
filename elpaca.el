@@ -2191,12 +2191,14 @@ This should only ever be used as the last element of `elpaca-menu-functions'."
   (if-let* ((found (or (elpaca-get id)
                        (alist-get id (cl-loop for menu in elpaca-menu-functions append (funcall menu 'index)))))
             (url (or (plist-get found :url)
-                     (file-name-sans-extension
-                      (elpaca--repo-uri (elpaca-merge-plists
-                                         (or (plist-get found :recipe)
-                                             (and (elpaca-p found) (elpaca<-recipe found))
-                                             (user-error "No URL associated with id %S" id))
-                                         '(:protocol https)))))))
+                     (funcall (lambda (uri) (if (string-equal (file-name-extension uri) "git")
+                                                (file-name-with-extension uri "git")
+                                              (file-name-sans-extension uri)))
+                              (elpaca--repo-uri (elpaca-merge-plists
+                                                 (or (plist-get found :recipe)
+                                                     (and (elpaca-p found) (elpaca<-recipe found))
+                                                     (user-error "No URL associated with id %S" id))
+                                                 '(:protocol https)))))))
       (browse-url url)))
 
 ;;;###autoload
