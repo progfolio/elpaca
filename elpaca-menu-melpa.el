@@ -1,6 +1,6 @@
 ;;; elpaca-menu-melpa.el --- Elpaca MELPA menu support -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2022-2025 Nicholas Vollmer
+;; Copyright (C) 2022-2026 Nicholas Vollmer
 
 ;; Author: Nicholas Vollmer
 ;; Keywords:

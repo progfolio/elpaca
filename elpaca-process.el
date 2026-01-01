@@ -1,6 +1,6 @@
 ;;; elpaca-process.el -- Functions for calling processes  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2022-2025 Nicholas Vollmer
+;; Copyright (C) 2022-2026 Nicholas Vollmer
 
 ;; Author: Nicholas Vollmer
 ;; Keywords:

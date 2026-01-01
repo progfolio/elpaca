@@ -30,7 +30,7 @@ It allows users to find@comma{} install@comma{} update@comma{} and remove third-
 It is a replacement for the built-in Emacs package manager@comma{} package.el.
 
 @quotation
-Copyright (C) 2022-2025 Nicholas Vollmer
+Copyright (C) 2022-2026 Nicholas Vollmer
 
 You can redistribute this document and/or modify it under the terms of the GNU
 General Public License as published by the Free Software Foundation@comma{} either

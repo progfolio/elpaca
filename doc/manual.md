@@ -41,7 +41,7 @@
 
 Elpaca is an elisp package manager. It allows users to find, install, update, and remove third-party packages for Emacs. It is a replacement for the built-in Emacs package manager, package.el.
 
-> Copyright (C) 2022-2025 Nicholas Vollmer
+> Copyright (C) 2022-2026 Nicholas Vollmer
 > 
 > You can redistribute this document and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 > 
