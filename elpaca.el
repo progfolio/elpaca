@@ -2031,16 +2031,17 @@ If HEAD is detached, create a branch and set upstream."
                "Branch created" 'branch-created process event))))))))
 
 ;;;###autoload
-(defun elpaca-merge (id &optional fetch interactive)
+(defun elpaca-merge (id &optional fetch interactive force)
   "Merge package commits associated with ID.
 If FETCH is non-nil, download package changes before merging.
-If INTERACTIVE is non-nil, the queued order is processed immediately."
+If INTERACTIVE is non-nil, the queued order is processed immediately.
+If FORCE is non-nil, ignore pinned status and update anyway."
   (interactive (list (elpaca--read-queued "Merge package: ") current-prefix-arg t))
   (let* ((e (or (elpaca-get id) (user-error "Package %S is not queued" id)))
          (recipe (elpaca<-recipe e)))
     (elpaca--unprocess e)
     (setf (elpaca<-build-steps e)
-          (if (elpaca-pinned-p e)
+          (if (and (not force) (elpaca-pinned-p e))
               (list #'elpaca--ensure-branch #'elpaca--announce-pin)
             `(,@(when fetch '(elpaca--fetch elpaca--ensure-branch
                                             elpaca--log-updates))
@@ -2058,18 +2059,27 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
       (elpaca--process e))))
 
 ;;;###autoload
-(defun elpaca-pull (id &optional interactive) ;;@MAYBE: optional REBUILD arg?
+(defun elpaca-pull (id &optional interactive force) ;;@MAYBE: optional REBUILD arg?
   "Fetch, merge, and rebuild package associated with ID.
-If INTERACTIVE is non-nil, process queues."
+If INTERACTIVE is non-nil, process queues.
+If FORCE is non-nil, ignore pinned status and update anyway."
   (interactive (list (elpaca--read-queued "Update package: ") t))
-  (elpaca-merge id 'fetch interactive))
+  (elpaca-merge id 'fetch interactive force))
 (defalias 'elpaca-update #'elpaca-pull)
 
 ;;;###autoload
-(defun elpaca-merge-all (&optional fetch interactive)
+(defun elpaca-force-update (id &optional interactive)
+  "Force update package ID, ignoring pinned status.
+If INTERACTIVE is non-nil, process queues."
+  (interactive (list (elpaca--read-queued "Force update package: ") t))
+  (elpaca-pull id interactive 'force))
+
+;;;###autoload
+(defun elpaca-merge-all (&optional fetch interactive force)
   "Merge and rebuild queued packages.
 If FETCH is non-nil fetch updates first.
-If INTERACTIVE is non-nil, process queues."
+If INTERACTIVE is non-nil, process queues.
+If FORCE is non-nil, ignore pinned status and update anyway."
   (interactive (list current-prefix-arg t))
   (cl-loop with (seen repos)
            with ignored = (remove 'elpaca elpaca-ignored-dependencies)
@@ -2078,7 +2088,7 @@ If INTERACTIVE is non-nil, process queues."
            (let* ((repo (elpaca<-repo-dir e))
                   (mono-repo (alist-get repo repos nil nil #'equal))
                   (deps (elpaca-dependencies id ignored)))
-             (elpaca-merge id fetch)
+             (elpaca-merge id fetch nil force)
              (if (not mono-repo)
                  (elpaca--signal e "Updating" (when (elpaca<-blockers e) 'blocked))
                (cl-pushnew id (elpaca<-blocking (elpaca-get mono-repo)))
@@ -2090,11 +2100,20 @@ If INTERACTIVE is non-nil, process queues."
   (when interactive (elpaca-process-queues)))
 
 ;;;###autoload
-(defun elpaca-pull-all (&optional interactive)
-  "Update all queued packages. If INTERACTIVE is non-nil, process queue."
+(defun elpaca-pull-all (&optional interactive force)
+  "Update all queued packages.
+If INTERACTIVE is non-nil, process queue.
+If FORCE is non-nil, ignore pinned status and update anyway."
   (interactive (list t))
-  (elpaca-merge-all 'fetch interactive))
+  (elpaca-merge-all 'fetch interactive force))
 (defalias 'elpaca-update-all #'elpaca-pull-all)
+
+;;;###autoload
+(defun elpaca-force-update-all (&optional interactive)
+  "Force update all queued packages, ignoring pinned status.
+If INTERACTIVE is non-nil, process queues."
+  (interactive (list t))
+  (elpaca-pull-all interactive 'force))
 
 ;;; Lockfiles
 (defun elpaca-declared-p (id)
