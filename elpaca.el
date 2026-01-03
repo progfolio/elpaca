@@ -1995,6 +1995,41 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
                  :elpaca-git-rev rev)
     (elpaca--signal e "Merging updates" 'merging)))
 
+(defun elpaca--ensure-branch (e)
+  "Ensure E's repo has a local branch with upstream tracking.
+If HEAD is detached, create a branch and set upstream."
+  (let* ((default-directory (elpaca<-repo-dir e))
+         (head (string-trim (elpaca-process-output
+                             "git" "rev-parse" "--abbrev-ref" "HEAD"))))
+    (if (not (equal head "HEAD"))
+        ;; Already on a branch, continue
+        (elpaca--continue-build e "Branch exists" 'branch-ok)
+      ;; Detached HEAD - fix it
+      (let* ((recipe (elpaca<-recipe e))
+             (remotes (plist-get recipe :remotes))
+             (remote (car remotes))
+             (remote-name (or (car-safe remote) elpaca-default-remote-name))
+             (ref (plist-get recipe :ref))
+             (branch (or (plist-get recipe :branch)
+                         (elpaca--remote-default-branch remote-name)))
+             (target (or ref
+                         (string-trim
+                          (elpaca-process-output "git" "rev-parse" "HEAD")))))
+        (elpaca--signal e (format "Fixing detached HEAD: creating %s" branch)
+                        'fixing-branch)
+        (elpaca--make-process e
+          :name "ensure-branch"
+          :command (list "git" "checkout" "-B" branch target)
+          :sentinel
+          (let ((upstream (concat remote-name "/" branch)))
+            (lambda (process event)
+              (when (equal event "finished\n")
+                (let ((default-directory (elpaca<-repo-dir e)))
+                  (elpaca--call-with-log
+                   e 1 "git" "branch" "--set-upstream-to" upstream)))
+              (elpaca--process-sentinel
+               "Branch created" 'branch-created process event))))))))
+
 ;;;###autoload
 (defun elpaca-merge (id &optional fetch interactive)
   "Merge package commits associated with ID.
@@ -2005,8 +2040,10 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
          (recipe (elpaca<-recipe e)))
     (elpaca--unprocess e)
     (setf (elpaca<-build-steps e)
-          (if (elpaca-pinned-p e) (list #'elpaca--announce-pin)
-            `(,@(when fetch '(elpaca--fetch elpaca--log-updates))
+          (if (elpaca-pinned-p e)
+              (list #'elpaca--ensure-branch #'elpaca--announce-pin)
+            `(,@(when fetch '(elpaca--fetch elpaca--ensure-branch
+                                            elpaca--log-updates))
               elpaca--merge
               ,@(cl-set-difference
                  (elpaca--build-steps recipe nil 'cloned (elpaca<-mono-repo e))
