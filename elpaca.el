@@ -1513,7 +1513,7 @@ This is the branch that would be checked out upon cloning."
                         ((eq depth 'blobless) '("--filter=blob:none"))))))
             ;;@FIX: allow override
             ,@(when-let* ((ref (or (plist-get recipe :branch) (plist-get recipe :tag))))
-                `("--single-branch" "--branch" ,ref))
+                `("--branch" ,ref))
             ,@(unless (or (null remote) (stringp remote)) '("--no-checkout"))
             ,URI ,repodir)))
     (elpaca--make-process e
