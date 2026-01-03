@@ -2115,6 +2115,94 @@ If INTERACTIVE is non-nil, process queues."
   (interactive (list t))
   (elpaca-pull-all interactive 'force))
 
+;;; Ensure Pinned
+(defun elpaca--check-pinned-ref (e)
+  "Check if E is at its pinned ref, skip remaining steps if so.
+For :ref, compare HEAD directly to the SHA.
+For :tag, resolve the tag and compare."
+  (let* ((default-directory (elpaca<-repo-dir e))
+         (recipe (elpaca<-recipe e))
+         (ref (plist-get recipe :ref))
+         (tag (plist-get recipe :tag))
+         (head (string-trim (elpaca-process-output "git" "rev-parse" "HEAD")))
+         (expected (cond
+                    (ref ref)
+                    (tag (string-trim
+                          (elpaca-process-output
+                           "git" "rev-parse" (concat "tags/" tag)))))))
+    (if (string-prefix-p expected head)
+        (progn
+          (setf (elpaca<-build-steps e) nil)
+          (elpaca--continue-build e "Already at pinned ref" 'up-to-date))
+      (elpaca--continue-build
+       e (format "Resetting to %s" (or ref (concat "tag " tag))) 'resetting))))
+
+(defun elpaca--warn-pin-only (e)
+  "Warn that E is pinned without a specific ref to ensure."
+  (elpaca--continue-build
+   e "Pinned without specific ref, cannot ensure version" 'pin-only))
+
+(defun elpaca--skip-not-pinned (e)
+  "Signal that E is not pinned and continue."
+  (elpaca--continue-build e "Not pinned" 'not-pinned))
+
+;;;###autoload
+(defun elpaca-ensure-pinned (id &optional interactive)
+  "Ensure pinned package ID is at its pinned ref.
+If the package has :ref or :tag, verify HEAD matches and reset if not.
+If the package is only pinned with :pin t, warn that no specific ref exists.
+If the package is not pinned, skip it.
+If INTERACTIVE is non-nil, process immediately."
+  (interactive (list (elpaca--read-queued "Ensure pinned package: ") t))
+  (let* ((e (or (elpaca-get id) (user-error "Package %S is not queued" id)))
+         (recipe (elpaca<-recipe e))
+         (pin-info (elpaca--pinned-p e))
+         (ref (plist-get recipe :ref))
+         (tag (plist-get recipe :tag)))
+    (elpaca--unprocess e)
+    (setf (elpaca<-build-steps e)
+          (cond
+           ;; Has :ref or :tag - check and reset if needed, then rebuild
+           ((or ref tag)
+            `(elpaca--check-pinned-ref
+              elpaca--checkout-ref
+              ,@(cl-set-difference
+                 (elpaca--build-steps recipe nil 'cloned (elpaca<-mono-repo e))
+                 '(elpaca--configure-remotes
+                   elpaca--fetch
+                   elpaca--checkout-ref
+                   elpaca--queue-dependencies
+                   elpaca--activate-package))))
+           ;; Pinned with :pin t only - warn
+           (pin-info
+            (list #'elpaca--warn-pin-only))
+           ;; Not pinned at all - skip
+           (t
+            (list #'elpaca--skip-not-pinned))))
+    (elpaca--signal e nil 'queued)
+    (when interactive
+      (elpaca--maybe-log)
+      (elpaca--process e))))
+
+;;;###autoload
+(defun elpaca-ensure-pinned-all (&optional interactive)
+  "Ensure all pinned packages are at their pinned refs.
+If INTERACTIVE is non-nil, process queues."
+  (interactive (list t))
+  (cl-loop with repos
+           for (id . e) in (reverse (elpaca--queued))
+           for repo = (elpaca<-repo-dir e)
+           for mono-repo = (alist-get repo repos nil nil #'equal)
+           do (if mono-repo
+                  (setf (elpaca<-build-steps e)
+                        `((lambda (e)
+                            (elpaca--continue-build
+                             e ,(format "Mono-repo handled by %s" mono-repo))))
+                        (elpaca<-statuses e) (list 'queued))
+                (elpaca-ensure-pinned id))
+           (unless mono-repo (push (cons (elpaca<-repo-dir e) id) repos)))
+  (when interactive (elpaca-process-queues)))
+
 ;;; Lockfiles
 (defun elpaca-declared-p (id)
   "Return t if ID is declared in user's init file, nil otherwise."
