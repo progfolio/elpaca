@@ -1419,6 +1419,7 @@ This is the branch that would be checked out upon cloning."
          (ref    (plist-get recipe :ref))
          (tag    (plist-get recipe :tag))
          (branch (plist-get recipe :branch))
+         (remote-name (or (car-safe remote) elpaca-default-remote-name))
          (target (or ref tag branch)))
     (when-let* ((name    (car-safe remote))
                 (default (elpaca-process-output "git" "rev-parse" "--abbrev-ref" "HEAD")))
@@ -1431,13 +1432,20 @@ This is the branch that would be checked out upon cloning."
                        (elpaca--remote-default-branch name)
                      (t (elpaca--fail e (format "Remote default branch err: %S" err))))))
         (setq branch default-branch target branch)))
+    ;; For :ref without explicit :branch, determine the default branch
+    (when (and ref (not branch))
+      (setq branch
+            (condition-case err
+                (elpaca--remote-default-branch remote-name)
+              (t (elpaca--fail e (format "Remote default branch err: %S" err))))))
     (if (null target)
         (unless (eq (elpaca--status e) 'failed)
           (elpaca--continue-build e nil 'ref-checked-out))
       (cond
-       ((and ref (or branch tag))
-        (elpaca--signal
-         e (format ":ref %S overriding %S %S" ref (if branch :branch :tag) (or branch tag))))
+       ((and ref tag)
+        (elpaca--signal e (format ":ref %S overriding :tag %S" ref tag)))
+       ((and ref branch)
+        (elpaca--signal e (format "Pinning %S to :ref %S" branch ref)))
        ((and tag branch)
         (elpaca--fail e (format "Ambiguous ref: :tag %S, :branch %S" tag branch))))
       (elpaca--signal e (concat "Checking out " target) 'checking-out-ref)
@@ -1445,16 +1453,31 @@ This is the branch that would be checked out upon cloning."
         (elpaca--make-process e
           :name "checkout-ref"
           :command
-          `("git" "-c" "advice.detachedHead=false" ;ref, tag may detach HEAD
+          `("git" "-c" "advice.detachedHead=false" ;tag may detach HEAD
             ,@(cond
-               (ref    (list "checkout" ref))
+               ;; For :ref, checkout branch at the specified commit to
+               ;; preserve branch structure for future updates.
+               (ref    (list "checkout" "-B" branch ref))
                (tag    (list "checkout" (concat "tags/" tag)))
-               (branch (list "checkout" "-B" branch ; "--no-guess"?
+               (branch (list "checkout" "-B" branch
                              (concat (or (elpaca--first remote)
                                          elpaca-default-remote-name)
                                      "/" branch)))))
-          :sentinel (lambda (process event)
-                      (elpaca--process-sentinel (concat target " checked out") 'ref-checked-out process event)))))))
+          :sentinel
+          (if ref
+              ;; When :ref is used, set upstream tracking after checkout so
+              ;; future updates can merge from the remote branch.
+              (let ((upstream (concat remote-name "/" branch)))
+                (lambda (process event)
+                  (when (equal event "finished\n")
+                    (let ((default-directory (elpaca<-repo-dir e)))
+                      (elpaca--call-with-log
+                       e 1 "git" "branch" "--set-upstream-to" upstream)))
+                  (elpaca--process-sentinel
+                   (concat target " checked out") 'ref-checked-out process event)))
+            (lambda (process event)
+              (elpaca--process-sentinel
+               (concat target " checked out") 'ref-checked-out process event))))))))
 
 (defun elpaca--check-status (dependency e)
   "Possibly change E's status depending on DEPENDENCY statuses."
