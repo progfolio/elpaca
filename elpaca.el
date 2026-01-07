@@ -2138,16 +2138,30 @@ If INTERACTIVE is non-nil, process queues."
     (not (string-empty-p (elpaca-process-output
                           "git" "-c" "status.branch=false" "status" "--short")))))
 
-(defcustom elpaca-lock-file nil "Path of `elpaca-menu-lock-file' cache." :type 'file)
+(defcustom elpaca-lock-file nil
+  "Path to lock file.
+When nil, defaults to `Elpaca.lock' in `user-emacs-directory'."
+  :type '(choice (const :tag "Default (Elpaca.lock)" nil)
+                 (file :tag "Custom path")))
+
+(defun elpaca--default-lock-file ()
+  "Return default lock file path."
+  (expand-file-name "Elpaca.lock" user-emacs-directory))
+
+(defun elpaca--lock-file-path ()
+  "Return effective lock file path.
+If `elpaca-lock-file' is set, return it.  Otherwise return default."
+  (or elpaca-lock-file (elpaca--default-lock-file)))
 
 (defvar elpaca-menu-lock-file--cache nil)
 (defun elpaca-menu-lock-file (request &optional item)
-  "If REQUEST is `index`, return `elpaca-lock-file' ITEM, otherwise update menu."
-  (when elpaca-lock-file
+  "If REQUEST is `index`, return lock file ITEM, otherwise update menu."
+  (let ((path (elpaca--lock-file-path)))
     (if-let* (((eq request 'index))
-              (cache (or elpaca-menu-lock-file--cache (elpaca-menu-lock-file 'update))))
+              (cache (or elpaca-menu-lock-file--cache
+                         (elpaca-menu-lock-file 'update))))
         (if item (alist-get item cache) cache)
-      (setq elpaca-menu-lock-file--cache (elpaca--read-file elpaca-lock-file)))))
+      (setq elpaca-menu-lock-file--cache (elpaca--read-file path)))))
 
 (defcustom elpaca-lock-file-functions (list #'elpaca<-init)
   "List of functions which take an E as a first argument.
@@ -2222,6 +2236,27 @@ In addition, the ARGS `:dir` may specify the package `build` or `source` dir."
           (push id seen))
      finally (message "wrote %d elpacas to %s" (length es) path)
      (pp (cl-sort es #'string< :key #'car)))))
+
+;;;###autoload
+(defun elpaca-lock-versions (&optional elpacas)
+  "Write current package versions to lock file.
+ELPACAS defaults to all queued packages."
+  (interactive)
+  (let ((path (elpaca--lock-file-path)))
+    (elpaca-write-lock-file path elpacas)
+    (setq elpaca-menu-lock-file--cache nil)))
+
+;;;###autoload
+(defun elpaca-unlock-versions ()
+  "Delete the lock file and unlock all package versions."
+  (interactive)
+  (let ((path (elpaca--lock-file-path)))
+    (if (not (file-exists-p path))
+        (message "No lock file to delete: %s" path)
+      (when (yes-or-no-p (format "Delete lock file %s? " path))
+        (delete-file path)
+        (setq elpaca-menu-lock-file--cache nil)
+        (message "Deleted lock file: %s" path)))))
 
 (declare-function elpaca-ui-current-package "elpaca-ui")
 ;;;###autoload
