@@ -1419,6 +1419,7 @@ This is the branch that would be checked out upon cloning."
          (ref    (plist-get recipe :ref))
          (tag    (plist-get recipe :tag))
          (branch (plist-get recipe :branch))
+         (remote-name (or (car-safe remote) elpaca-default-remote-name))
          (target (or ref tag branch)))
     (when-let* ((name    (car-safe remote))
                 (default (elpaca-process-output "git" "rev-parse" "--abbrev-ref" "HEAD")))
@@ -1431,13 +1432,20 @@ This is the branch that would be checked out upon cloning."
                        (elpaca--remote-default-branch name)
                      (t (elpaca--fail e (format "Remote default branch err: %S" err))))))
         (setq branch default-branch target branch)))
+    ;; For :ref without explicit :branch, determine the default branch
+    (when (and ref (not branch))
+      (setq branch
+            (condition-case err
+                (elpaca--remote-default-branch remote-name)
+              (t (elpaca--fail e (format "Remote default branch err: %S" err))))))
     (if (null target)
         (unless (eq (elpaca--status e) 'failed)
           (elpaca--continue-build e nil 'ref-checked-out))
       (cond
-       ((and ref (or branch tag))
-        (elpaca--signal
-         e (format ":ref %S overriding %S %S" ref (if branch :branch :tag) (or branch tag))))
+       ((and ref tag)
+        (elpaca--signal e (format ":ref %S overriding :tag %S" ref tag)))
+       ((and ref branch)
+        (elpaca--signal e (format "Pinning %S to :ref %S" branch ref)))
        ((and tag branch)
         (elpaca--fail e (format "Ambiguous ref: :tag %S, :branch %S" tag branch))))
       (elpaca--signal e (concat "Checking out " target) 'checking-out-ref)
@@ -1445,16 +1453,31 @@ This is the branch that would be checked out upon cloning."
         (elpaca--make-process e
           :name "checkout-ref"
           :command
-          `("git" "-c" "advice.detachedHead=false" ;ref, tag may detach HEAD
+          `("git" "-c" "advice.detachedHead=false" ;tag may detach HEAD
             ,@(cond
-               (ref    (list "checkout" ref))
+               ;; For :ref, checkout branch at the specified commit to
+               ;; preserve branch structure for future updates.
+               (ref    (list "checkout" "-B" branch ref))
                (tag    (list "checkout" (concat "tags/" tag)))
-               (branch (list "checkout" "-B" branch ; "--no-guess"?
+               (branch (list "checkout" "-B" branch
                              (concat (or (elpaca--first remote)
                                          elpaca-default-remote-name)
                                      "/" branch)))))
-          :sentinel (lambda (process event)
-                      (elpaca--process-sentinel (concat target " checked out") 'ref-checked-out process event)))))))
+          :sentinel
+          (if ref
+              ;; When :ref is used, set upstream tracking after checkout so
+              ;; future updates can merge from the remote branch.
+              (let ((upstream (concat remote-name "/" branch)))
+                (lambda (process event)
+                  (when (equal event "finished\n")
+                    (let ((default-directory (elpaca<-repo-dir e)))
+                      (elpaca--call-with-log
+                       e 1 "git" "branch" "--set-upstream-to" upstream)))
+                  (elpaca--process-sentinel
+                   (concat target " checked out") 'ref-checked-out process event)))
+            (lambda (process event)
+              (elpaca--process-sentinel
+               (concat target " checked out") 'ref-checked-out process event))))))))
 
 (defun elpaca--check-status (dependency e)
   "Possibly change E's status depending on DEPENDENCY statuses."
@@ -1972,18 +1995,56 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
                  :elpaca-git-rev rev)
     (elpaca--signal e "Merging updates" 'merging)))
 
+(defun elpaca--ensure-branch (e)
+  "Ensure E's repo has a local branch with upstream tracking.
+If HEAD is detached, create a branch and set upstream."
+  (let* ((default-directory (elpaca<-repo-dir e))
+         (head (string-trim (elpaca-process-output
+                             "git" "rev-parse" "--abbrev-ref" "HEAD"))))
+    (if (not (equal head "HEAD"))
+        ;; Already on a branch, continue
+        (elpaca--continue-build e "Branch exists" 'branch-ok)
+      ;; Detached HEAD - fix it
+      (let* ((recipe (elpaca<-recipe e))
+             (remotes (plist-get recipe :remotes))
+             (remote (car remotes))
+             (remote-name (or (car-safe remote) elpaca-default-remote-name))
+             (ref (plist-get recipe :ref))
+             (branch (or (plist-get recipe :branch)
+                         (elpaca--remote-default-branch remote-name)))
+             (target (or ref
+                         (string-trim
+                          (elpaca-process-output "git" "rev-parse" "HEAD")))))
+        (elpaca--signal e (format "Fixing detached HEAD: creating %s" branch)
+                        'fixing-branch)
+        (elpaca--make-process e
+          :name "ensure-branch"
+          :command (list "git" "checkout" "-B" branch target)
+          :sentinel
+          (let ((upstream (concat remote-name "/" branch)))
+            (lambda (process event)
+              (when (equal event "finished\n")
+                (let ((default-directory (elpaca<-repo-dir e)))
+                  (elpaca--call-with-log
+                   e 1 "git" "branch" "--set-upstream-to" upstream)))
+              (elpaca--process-sentinel
+               "Branch created" 'branch-created process event))))))))
+
 ;;;###autoload
-(defun elpaca-merge (id &optional fetch interactive)
+(defun elpaca-merge (id &optional fetch interactive force)
   "Merge package commits associated with ID.
 If FETCH is non-nil, download package changes before merging.
-If INTERACTIVE is non-nil, the queued order is processed immediately."
+If INTERACTIVE is non-nil, the queued order is processed immediately.
+If FORCE is non-nil, ignore pinned status and update anyway."
   (interactive (list (elpaca--read-queued "Merge package: ") current-prefix-arg t))
   (let* ((e (or (elpaca-get id) (user-error "Package %S is not queued" id)))
          (recipe (elpaca<-recipe e)))
     (elpaca--unprocess e)
     (setf (elpaca<-build-steps e)
-          (if (elpaca-pinned-p e) (list #'elpaca--announce-pin)
-            `(,@(when fetch '(elpaca--fetch elpaca--log-updates))
+          (if (and (not force) (elpaca-pinned-p e))
+              (list #'elpaca--ensure-branch #'elpaca--announce-pin)
+            `(,@(when fetch '(elpaca--fetch elpaca--ensure-branch
+                                            elpaca--log-updates))
               elpaca--merge
               ,@(cl-set-difference
                  (elpaca--build-steps recipe nil 'cloned (elpaca<-mono-repo e))
@@ -1998,18 +2059,27 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
       (elpaca--process e))))
 
 ;;;###autoload
-(defun elpaca-pull (id &optional interactive) ;;@MAYBE: optional REBUILD arg?
+(defun elpaca-pull (id &optional interactive force) ;;@MAYBE: optional REBUILD arg?
   "Fetch, merge, and rebuild package associated with ID.
-If INTERACTIVE is non-nil, process queues."
+If INTERACTIVE is non-nil, process queues.
+If FORCE is non-nil, ignore pinned status and update anyway."
   (interactive (list (elpaca--read-queued "Update package: ") t))
-  (elpaca-merge id 'fetch interactive))
+  (elpaca-merge id 'fetch interactive force))
 (defalias 'elpaca-update #'elpaca-pull)
 
 ;;;###autoload
-(defun elpaca-merge-all (&optional fetch interactive)
+(defun elpaca-force-update (id &optional interactive)
+  "Force update package ID, ignoring pinned status.
+If INTERACTIVE is non-nil, process queues."
+  (interactive (list (elpaca--read-queued "Force update package: ") t))
+  (elpaca-pull id interactive 'force))
+
+;;;###autoload
+(defun elpaca-merge-all (&optional fetch interactive force)
   "Merge and rebuild queued packages.
 If FETCH is non-nil fetch updates first.
-If INTERACTIVE is non-nil, process queues."
+If INTERACTIVE is non-nil, process queues.
+If FORCE is non-nil, ignore pinned status and update anyway."
   (interactive (list current-prefix-arg t))
   (cl-loop with (seen repos)
            with ignored = (remove 'elpaca elpaca-ignored-dependencies)
@@ -2018,7 +2088,7 @@ If INTERACTIVE is non-nil, process queues."
            (let* ((repo (elpaca<-repo-dir e))
                   (mono-repo (alist-get repo repos nil nil #'equal))
                   (deps (elpaca-dependencies id ignored)))
-             (elpaca-merge id fetch)
+             (elpaca-merge id fetch nil force)
              (if (not mono-repo)
                  (elpaca--signal e "Updating" (when (elpaca<-blockers e) 'blocked))
                (cl-pushnew id (elpaca<-blocking (elpaca-get mono-repo)))
@@ -2030,11 +2100,108 @@ If INTERACTIVE is non-nil, process queues."
   (when interactive (elpaca-process-queues)))
 
 ;;;###autoload
-(defun elpaca-pull-all (&optional interactive)
-  "Update all queued packages. If INTERACTIVE is non-nil, process queue."
+(defun elpaca-pull-all (&optional interactive force)
+  "Update all queued packages.
+If INTERACTIVE is non-nil, process queue.
+If FORCE is non-nil, ignore pinned status and update anyway."
   (interactive (list t))
-  (elpaca-merge-all 'fetch interactive))
+  (elpaca-merge-all 'fetch interactive force))
 (defalias 'elpaca-update-all #'elpaca-pull-all)
+
+;;;###autoload
+(defun elpaca-force-update-all (&optional interactive)
+  "Force update all queued packages, ignoring pinned status.
+If INTERACTIVE is non-nil, process queues."
+  (interactive (list t))
+  (elpaca-pull-all interactive 'force))
+
+;;; Ensure Pinned
+(defun elpaca--check-pinned-ref (e)
+  "Check if E is at its pinned ref, skip remaining steps if so.
+For :ref, compare HEAD directly to the SHA.
+For :tag, resolve the tag and compare."
+  (let* ((default-directory (elpaca<-repo-dir e))
+         (recipe (elpaca<-recipe e))
+         (ref (plist-get recipe :ref))
+         (tag (plist-get recipe :tag))
+         (head (string-trim (elpaca-process-output "git" "rev-parse" "HEAD")))
+         (expected (cond
+                    (ref ref)
+                    (tag (string-trim
+                          (elpaca-process-output
+                           "git" "rev-parse" (concat "tags/" tag)))))))
+    (if (string-prefix-p expected head)
+        (progn
+          (setf (elpaca<-build-steps e) nil)
+          (elpaca--continue-build e "Already at pinned ref" 'up-to-date))
+      (elpaca--continue-build
+       e (format "Resetting to %s" (or ref (concat "tag " tag))) 'resetting))))
+
+(defun elpaca--warn-pin-only (e)
+  "Warn that E is pinned without a specific ref to ensure."
+  (elpaca--continue-build
+   e "Pinned without specific ref, cannot ensure version" 'pin-only))
+
+(defun elpaca--skip-not-pinned (e)
+  "Signal that E is not pinned and continue."
+  (elpaca--continue-build e "Not pinned" 'not-pinned))
+
+;;;###autoload
+(defun elpaca-ensure-pinned (id &optional interactive)
+  "Ensure pinned package ID is at its pinned ref.
+If the package has :ref or :tag, verify HEAD matches and reset if not.
+If the package is only pinned with :pin t, warn that no specific ref exists.
+If the package is not pinned, skip it.
+If INTERACTIVE is non-nil, process immediately."
+  (interactive (list (elpaca--read-queued "Ensure pinned package: ") t))
+  (let* ((e (or (elpaca-get id) (user-error "Package %S is not queued" id)))
+         (recipe (elpaca<-recipe e))
+         (pin-info (elpaca--pinned-p e))
+         (ref (plist-get recipe :ref))
+         (tag (plist-get recipe :tag)))
+    (elpaca--unprocess e)
+    (setf (elpaca<-build-steps e)
+          (cond
+           ;; Has :ref or :tag - check and reset if needed, then rebuild
+           ((or ref tag)
+            `(elpaca--check-pinned-ref
+              elpaca--checkout-ref
+              ,@(cl-set-difference
+                 (elpaca--build-steps recipe nil 'cloned (elpaca<-mono-repo e))
+                 '(elpaca--configure-remotes
+                   elpaca--fetch
+                   elpaca--checkout-ref
+                   elpaca--queue-dependencies
+                   elpaca--activate-package))))
+           ;; Pinned with :pin t only - warn
+           (pin-info
+            (list #'elpaca--warn-pin-only))
+           ;; Not pinned at all - skip
+           (t
+            (list #'elpaca--skip-not-pinned))))
+    (elpaca--signal e nil 'queued)
+    (when interactive
+      (elpaca--maybe-log)
+      (elpaca--process e))))
+
+;;;###autoload
+(defun elpaca-ensure-pinned-all (&optional interactive)
+  "Ensure all pinned packages are at their pinned refs.
+If INTERACTIVE is non-nil, process queues."
+  (interactive (list t))
+  (cl-loop with repos
+           for (id . e) in (reverse (elpaca--queued))
+           for repo = (elpaca<-repo-dir e)
+           for mono-repo = (alist-get repo repos nil nil #'equal)
+           do (if mono-repo
+                  (setf (elpaca<-build-steps e)
+                        `((lambda (e)
+                            (elpaca--continue-build
+                             e ,(format "Mono-repo handled by %s" mono-repo))))
+                        (elpaca<-statuses e) (list 'queued))
+                (elpaca-ensure-pinned id))
+           (unless mono-repo (push (cons (elpaca<-repo-dir e) id) repos)))
+  (when interactive (elpaca-process-queues)))
 
 ;;; Lockfiles
 (defun elpaca-declared-p (id)
@@ -2059,16 +2226,30 @@ If INTERACTIVE is non-nil, process queues."
     (not (string-empty-p (elpaca-process-output
                           "git" "-c" "status.branch=false" "status" "--short")))))
 
-(defcustom elpaca-lock-file nil "Path of `elpaca-menu-lock-file' cache." :type 'file)
+(defcustom elpaca-lock-file nil
+  "Path to lock file.
+When nil, defaults to `Elpaca.lock' in `user-emacs-directory'."
+  :type '(choice (const :tag "Default (Elpaca.lock)" nil)
+                 (file :tag "Custom path")))
+
+(defun elpaca--default-lock-file ()
+  "Return default lock file path."
+  (expand-file-name "Elpaca.lock" user-emacs-directory))
+
+(defun elpaca--lock-file-path ()
+  "Return effective lock file path.
+If `elpaca-lock-file' is set, return it.  Otherwise return default."
+  (or elpaca-lock-file (elpaca--default-lock-file)))
 
 (defvar elpaca-menu-lock-file--cache nil)
 (defun elpaca-menu-lock-file (request &optional item)
-  "If REQUEST is `index`, return `elpaca-lock-file' ITEM, otherwise update menu."
-  (when elpaca-lock-file
+  "If REQUEST is `index`, return lock file ITEM, otherwise update menu."
+  (let ((path (elpaca--lock-file-path)))
     (if-let* (((eq request 'index))
-              (cache (or elpaca-menu-lock-file--cache (elpaca-menu-lock-file 'update))))
+              (cache (or elpaca-menu-lock-file--cache
+                         (elpaca-menu-lock-file 'update))))
         (if item (alist-get item cache) cache)
-      (setq elpaca-menu-lock-file--cache (elpaca--read-file elpaca-lock-file)))))
+      (setq elpaca-menu-lock-file--cache (elpaca--read-file path)))))
 
 (defcustom elpaca-lock-file-functions (list #'elpaca<-init)
   "List of functions which take an E as a first argument.
@@ -2143,6 +2324,27 @@ In addition, the ARGS `:dir` may specify the package `build` or `source` dir."
           (push id seen))
      finally (message "wrote %d elpacas to %s" (length es) path)
      (pp (cl-sort es #'string< :key #'car)))))
+
+;;;###autoload
+(defun elpaca-lock-versions (&optional elpacas)
+  "Write current package versions to lock file.
+ELPACAS defaults to all queued packages."
+  (interactive)
+  (let ((path (elpaca--lock-file-path)))
+    (elpaca-write-lock-file path elpacas)
+    (setq elpaca-menu-lock-file--cache nil)))
+
+;;;###autoload
+(defun elpaca-unlock-versions ()
+  "Delete the lock file and unlock all package versions."
+  (interactive)
+  (let ((path (elpaca--lock-file-path)))
+    (if (not (file-exists-p path))
+        (message "No lock file to delete: %s" path)
+      (when (yes-or-no-p (format "Delete lock file %s? " path))
+        (delete-file path)
+        (setq elpaca-menu-lock-file--cache nil)
+        (message "Deleted lock file: %s" path)))))
 
 (declare-function elpaca-ui-current-package "elpaca-ui")
 ;;;###autoload

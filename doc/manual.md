@@ -28,12 +28,15 @@
       - [elpaca-recipe-functions](#elpaca-recipe-functions)
     - [Menus](#menus)
       - [elpaca-menu-functions](#elpaca-menu-functions)
-      - [Updating menus](#orga583e10)
+      - [Updating menus](#updating-menus)
     - [Orders](#orders)
       - [elpaca-order-functions](#elpaca-order-functions)
     - [Queues](#queues)
     - [Installing Packages](#installing-packages)
     - [Lock Files](#lock-files)
+      - [Writing and Loading Lock Files](#writing-and-loading-lock-files)
+      - [Force Updating Pinned Packages](#force-updating-pinned-packages)
+      - [Ensuring Pinned Versions](#ensuring-pinned-versions)
   - [use-package Integration](#use-package-integration)
 - [UI](#ui)
   - [Searching](#searching)
@@ -141,7 +144,7 @@ And remove anything related to package.el in your init file. e.g. calls to `(pac
 | Trying Packages (for current session) | `i` `x`                             | `elpaca-try`                           |
 | Fetching Package Updates              | `f` `x`                             | `elpaca-fetch` or `elpaca-fetch-all`   |
 | Merging Updates                       | `m` `x`                             | `elpaca-merge` or `elpaca-merge-all`   |
-| Updating Packages<sup>\*</sup>        | `p` `x`                             | `elpaca-update` or `elpaca-update-all` |
+| Updating Packages^\*                  | `p` `x`                             | `elpaca-update` or `elpaca-update-all` |
 | Rebuilding Packages                   | `r` `x`                             | `elpaca-rebuild`                       |
 | Deleting Packages                     | `d` `x`                             | `elpaca-delete`                        |
 | View Package Logs                     | `g` `l`                             | `elpaca-log`                           |
@@ -443,11 +446,10 @@ With inheritance enabled:
 ```emacs-lisp
 (:package "dracula-theme" :fetcher github :repo "dracula/emacs" :files
           ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
-           "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el" "docs/dir"
-           "docs/*.info" "docs/*.texi" "docs/*.texinfo"
+           "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
            (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
                      "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
-          :source "MELPA" :protocol https :inherit t :depth treeless)
+          :source "MELPA" :protocol https :inherit t :depth 1)
 ```
 
 the Elpaca&rsquo;s MELPA menu provides the rest of the recipe.
@@ -464,8 +466,7 @@ The value may also be a menu symbol or list of menu symbols. This is a per-recip
           ("*"
            (:exclude ".git" "INSTALL.md" "screenshot.png" "start_emacs_test.sh"
                      "test-profile.el"))
-          :source "NonGNU ELPA" :protocol https :inherit
-          elpaca-menu-non-gnu-elpa :depth treeless)
+          :source "NonGNU ELPA" :protocol https ...)
 ```
 
 
@@ -583,8 +584,7 @@ This is useful if you want to guarantee the values of certain keywords despite a
 ```
 
 ```emacs-lisp
-(:source nil :protocol https :inherit t :depth treeless :package "burger"
-         :cheese extra)
+(:source nil :protocol https :inherit t :depth 1 :package "burger" :cheese extra)
 ```
 
 
@@ -640,7 +640,7 @@ The `elpaca-menu-functions` variable contains menu functions for the following p
 Menus are checked in order until one returns the requested menu item or the menu list is exhausted.
 
 
-<a id="orga583e10"></a>
+<a id="updating-menus"></a>
 
 #### Updating menus
 
@@ -738,7 +738,38 @@ Interactively evaluating an `elpaca` declaration will re-process the order. This
 
 A lock file is a collection of recipes for the exact versions of installed packages. They can be used to build different versions of an Emacs configuration when combined with init file package declarations.
 
-The `elpaca-write-lock-file` command is used to write a lock file to disk. Setting the `elpaca-lock-file` variable to that file&rsquo;s path will cause Elpaca to use those versions of the recipes when installing packages assuming the `elpaca-menu-lock-file` is the first menu in `elpaca-menu-functions`.
+
+<a id="writing-and-loading-lock-files"></a>
+
+#### Writing and Loading Lock Files
+
+The `elpaca-write-lock-file` command writes a lock file to a specified path. The `elpaca-lock-versions` command is a convenience wrapper that writes to the path specified by `elpaca-lock-file`, which defaults to `Elpaca.lock` in `user-emacs-directory`.
+
+Setting `elpaca-lock-file` to a lock file&rsquo;s path will cause Elpaca to use those versions when installing packages, assuming `elpaca-menu-lock-file` is the first menu in `elpaca-menu-functions`.
+
+The `elpaca-unlock-versions` command deletes the lock file and clears the cache, allowing packages to be installed from their upstream sources again.
+
+
+<a id="force-updating-pinned-packages"></a>
+
+#### Force Updating Pinned Packages
+
+Packages with `:pin t`, `:ref`, or `:tag` in their recipes are normally excluded from update operations. The following commands bypass this:
+
+-   **elpaca-force-update:** Force update a single package, ignoring pin status.
+-   **elpaca-force-update-all:** Force update all packages, ignoring pin status.
+
+
+<a id="ensuring-pinned-versions"></a>
+
+#### Ensuring Pinned Versions
+
+To verify that pinned packages are at their declared versions:
+
+-   **elpaca-ensure-pinned:** Check if a package is at its `:ref` or `:tag`; reset if not.
+-   **elpaca-ensure-pinned-all:** Check all pinned packages and reset any that have drifted.
+
+For packages with only `:pin t` (no specific ref), these commands warn that no version can be ensured. For unpinned packages, they are skipped.
 
 
 <a id="use-package-integration"></a>
@@ -801,29 +832,29 @@ Elpaca has a UI mode available for managing packages. The main entry points to t
 
 The following commands are available in the `elpaca-ui-mode`:
 
-| Command                    | Binding | Description                                                                 |
-|-------------------------- |------- |--------------------------------------------------------------------------- |
-| elpaca-ui-send-input       | !       | Send input string to current process.                                       |
-| elpaca-ui-show-hidden-rows | +       | Append rows up to N times ‘elpaca-ui-row-limit’.                            |
-| elpaca-ui-info             | RET     | Show info for current package.                                              |
-| elpaca-ui-browse-package   | b       | Browse current package’s URL via ‘browse-url’.                              |
-| elpaca-ui-mark-delete      | d       | Mark package at point for ‘elpaca-delete’.                                  |
-| elpaca-ui-mark-fetch       | f       | Mark package at point for ‘elpaca-fetch’.                                   |
-| elpaca-ui-search-marked    | g a     | Search for &ldquo;#unique #marked&rdquo;                                    |
-| elpaca-ui-search-installed | g i     | Search for &ldquo;#unique #installed&rdquo;                                 |
-| elpaca-log                 | g l     | When INTERACTIVE is non-nil, Display ‘elpaca-log-buffer’ filtered by QUERY. |
-| elpaca-manager             | g m     | Display Elpaca’s package management UI.                                     |
-| elpaca-ui-search-orphaned  | g o     | Search for &ldquo;#unique #orphan&rdquo;                                    |
-| elpaca-ui-search-refresh   | g r     | Rerun the current search for BUFFER.                                        |
-| elpaca-ui-search-tried     | g t     | Search for &ldquo;#unique #installed !#declared&rdquo;                      |
-| elpaca-ui-mark-try         | i       | Mark package at point for ‘elpaca-try’.                                     |
-| elpaca-ui-mark-merge       | m       | Mark package at point for ‘elpaca-merge’.                                   |
-| elpaca-ui-mark-pull        | p       | Mark package at point for ‘elpaca-pull’.                                    |
-| elpaca-ui-mark-rebuild     | r       | Mark package at point for ‘elpaca-rebuild’.                                 |
-| elpaca-ui-search           | s       | Filter current buffer by QUERY. If QUERY is nil, prompt for it.             |
-| elpaca-ui-unmark           | u       | Unmark current package or packages in active region.                        |
-| elpaca-ui-visit            | v       | Visit current package’s repo or BUILD directory.                            |
-| elpaca-ui-execute-marks    | x       | Execute each mark in ‘elpaca-ui-marked-packages’.                           |
+| Command                    | Binding | Description                                                     |
+|-------------------------- |------- |--------------------------------------------------------------- |
+| elpaca-ui-send-input       | !       | Send input string to current process.                           |
+| elpaca-ui-show-hidden-rows | +       | Append rows up to N times ‘elpaca-ui-row-limit’.                |
+| elpaca-ui-info             | RET     | Show info for current package.                                  |
+| elpaca-ui-browse-package   | b       | Browse current package’s URL via ‘browse-url’.                  |
+| elpaca-ui-mark-delete      | d       | Mark package at point for ‘elpaca-delete’.                      |
+| elpaca-ui-mark-fetch       | f       | Mark package at point for ‘elpaca-fetch’.                       |
+| elpaca-ui-search-marked    | g a     | Search for &ldquo;#unique #marked&rdquo;                        |
+| elpaca-ui-search-installed | g i     | Search for &ldquo;#unique #installed&rdquo;                     |
+| elpaca-log                 | g l     | Display ‘elpaca-log-buffer’ filtered by QUERY.                  |
+| elpaca-manager             | g m     | Display Elpaca’s package management UI.                         |
+| elpaca-ui-search-orphaned  | g o     | Search for &ldquo;#unique #orphan&rdquo;                        |
+| elpaca-ui-search-refresh   | g r     | Rerun the current search for BUFFER.                            |
+| elpaca-ui-search-tried     | g t     | Search for &ldquo;#unique #installed !#declared&rdquo;          |
+| elpaca-ui-mark-try         | i       | Mark package at point for ‘elpaca-try’.                         |
+| elpaca-ui-mark-merge       | m       | Mark package at point for ‘elpaca-merge’.                       |
+| elpaca-ui-mark-pull        | p       | Mark package at point for ‘elpaca-pull’.                        |
+| elpaca-ui-mark-rebuild     | r       | Mark package at point for ‘elpaca-rebuild’.                     |
+| elpaca-ui-search           | s       | Filter current buffer by QUERY. If QUERY is nil, prompt for it. |
+| elpaca-ui-unmark           | u       | Unmark current package.                                         |
+| elpaca-ui-visit            | v       | Visit current package’s repo or BUILD directory.                |
+| elpaca-ui-execute-marks    | x       | Execute each mark in ‘elpaca-ui-marked-packages’.               |
 
 -   **Function: elpaca-manager `&optional recache`:** Display packages registered with Elpaca. Packages can searched for, installed, updated, rebuilt, and deleted from this interface. When `RECACHE` is non-nil, via lisp or interactively via the `universal-argument`, recompute Elpaca&rsquo;s menu item cache before display.
 
