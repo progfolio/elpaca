@@ -507,6 +507,9 @@ The =elpaca-menu-functions= variable contains menu functions for the following p
 Menus are checked in order until one returns the requested menu item or the menu list is exhausted.
 
 **** Updating menus
+:PROPERTIES:
+:CUSTOM_ID: updating-menus
+:END:
 Menus can be updated via the =elpaca-update-menus= command.
 Doing so will fetch the latest recipes from the menu source and overwrite the menu item cache for the updated menus.
 
@@ -615,8 +618,41 @@ It's best to restart Emacs after a successful rebuild if you wish to have the ch
 A lock file is a collection of recipes for the exact versions of installed packages.
 They can be used to build different versions of an Emacs configuration when combined with init file package declarations.
 
-The =elpaca-write-lock-file= command is used to write a lock file to disk.
-Setting the =elpaca-lock-file= variable to that file's path will cause Elpaca to use those versions of the recipes when installing packages assuming the =elpaca-menu-lock-file= is the first menu in =elpaca-menu-functions=.
+**** Writing and Loading Lock Files
+:PROPERTIES:
+:CUSTOM_ID: writing-and-loading-lock-files
+:END:
+
+The =elpaca-write-lock-file= command writes a lock file to a specified path.
+The =elpaca-lock-versions= command is a convenience wrapper that writes to the path specified by =elpaca-lock-file=, which defaults to =Elpaca.lock= in =user-emacs-directory=.
+
+Setting =elpaca-lock-file= to a lock file's path will cause Elpaca to use those versions when installing packages, assuming =elpaca-menu-lock-file= is the first menu in =elpaca-menu-functions=.
+
+The =elpaca-unlock-versions= command deletes the lock file and clears the cache, allowing packages to be installed from their upstream sources again.
+
+**** Force Updating Pinned Packages
+:PROPERTIES:
+:CUSTOM_ID: force-updating-pinned-packages
+:END:
+
+Packages with =:pin t=, =:ref=, or =:tag= in their recipes are normally excluded from update operations.
+The following commands bypass this:
+
+- elpaca-force-update :: Force update a single package, ignoring pin status.
+- elpaca-force-update-all :: Force update all packages, ignoring pin status.
+
+**** Ensuring Pinned Versions
+:PROPERTIES:
+:CUSTOM_ID: ensuring-pinned-versions
+:END:
+
+To verify that pinned packages are at their declared versions:
+
+- elpaca-ensure-pinned :: Check if a package is at its =:ref= or =:tag=; reset if not.
+- elpaca-ensure-pinned-all :: Check all pinned packages and reset any that have drifted.
+
+For packages with only =:pin t= (no specific ref), these commands warn that no version can be ensured.
+For unpinned packages, they are skipped.
 
 
 ** use-package Integration
