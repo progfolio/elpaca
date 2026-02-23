@@ -26,25 +26,27 @@
 ;;; Code:
 (require 'use-package)
 
-(defun elpaca-use-package--handler (name keyword ensure rest state)
-  "See `use-package-handler/:ensure'for NAME KEYWORD ENSURE REST STATE."
-  (when (memq keyword '(:straight :elpaca)) ;;@COMPAT
-    (lwarn '(elpaca-use-package-compat) :warning
-           "%s: %s use-package declaration's %S keyword converted to :ensure"
-           (or load-file-name (buffer-name)) name keyword)
-    (plist-put rest :ensure nil))
+(defun elpaca-use-package--normalizer (_name keyword args)
+  "Return ARGS passed to an Elpaca-handled use-package KEYWORD."
+  (if (or args (eq keyword :vc)) (car (last args)) t))
+
+(defun elpaca-use-package--handler (name _keyword ensure rest state)
+  "Handle an Elpaca-managed use-package keyword.
+NAME, ENSURE, REST, STATE as per `use-package' handler conventions.
+ENSURE may be:
+  - t or nil: install/skip as feature NAME
+  - SYMBOL: install under that package name
+  - (ID . PROPS...): Elpaca order with explicit ID
+  - (PROPS...): plist recipe; NAME is prepended as the ID."
   (let ((processed (use-package-process-keywords name rest state)))
     (when (memq (car-safe ensure) '(quote \`)) (setq ensure (eval ensure t)))
-    (cond ((null ensure) processed) ; :ensure nil = no Elpaca integration
-          ;; :ensure t or `use-package-always-ensure' non-nil = (elpaca NAME ...)
-          ((or (eq ensure t) (equal ensure '(t))) (setq ensure name))
-          ;; Handle ID/NAME mismatch
-          ((and (consp ensure) (keywordp (car ensure))) (push name ensure)))
-    (if ensure `((elpaca ,ensure ,@processed)) processed)))
-
-(defun elpaca-use-package--normalizer (_name _keyword args)
-  "Return first arg of ARGS passed to use-package's :ensure function."
-  (if args (car (last args)) t)) ; Bare :ensure implies t in vanilla use-package.
+    (if-let* ((order (cond
+                      ((null ensure) nil)
+                      ((or (eq ensure t) (eq (car-safe ensure) t)) name)
+                      ((and (consp ensure) (keywordp (car ensure))) (cons name ensure))
+                      (t ensure))))
+        `((elpaca ,order ,@processed))
+      processed)))
 
 ;;;###autoload
 (define-minor-mode elpaca-use-package-mode
@@ -57,14 +59,34 @@
     (advice-remove #'use-package-handler/:ensure #'elpaca-use-package--handler)
     (advice-remove #'use-package-normalize/:ensure #'elpaca-use-package--normalizer)))
 
-;;@COMPAT: Remove :elpaca/:straight keywords support eventually.
-(define-obsolete-variable-alias 'elpaca-use-package-by-default 'use-package-always-ensure "2024-02-08")
-(defalias 'use-package-handler/:straight #'use-package-handler/:ensure)
-(defalias 'use-package-handler/:elpaca #'use-package-handler/:ensure)
-(defalias 'use-package-normalize/:straight #'elpaca-use-package--normalizer)
+(defun elpaca-use-package--vc-to-order (name spec)
+  "Convert a package-vc SPEC plist for package NAME into an Elpaca recipe.
+Keys with no Elpaca equivalent are silently ignored."
+  (let ((recipe (list :package (symbol-name name)
+                      :repo (plist-get spec :url))))
+    (when-let* ((branch (plist-get spec :branch)))
+      (setq recipe (plist-put recipe :branch branch)))
+    (when-let* ((main (plist-get spec :main-file)))
+      (setq recipe (plist-put recipe :main main)))
+    (when-let* ((lisp-dir (plist-get spec :lisp-dir)))
+      (setq recipe (plist-put recipe :files
+                              (list (concat (file-name-as-directory lisp-dir) "*.el")
+                                    :defaults))))
+    (cons name recipe)))
+
+(defun use-package-handler/:vc (name _keyword spec rest state)
+  "Convert and install the package-vc SPEC for NAME into an Elpaca."
+  `((elpaca ,(elpaca-use-package--vc-to-order name spec)
+            ,@(use-package-process-keywords name rest state))))
+
+(defalias 'use-package-normalize/:vc #'elpaca-use-package--normalizer)
+(defalias 'use-package-handler/:elpaca #'elpaca-use-package--handler)
+(defalias 'use-package-handler/:straight #'elpaca-use-package--handler)
 (defalias 'use-package-normalize/:elpaca #'elpaca-use-package--normalizer)
-(add-to-list 'use-package-keywords :straight)
+(defalias 'use-package-normalize/:straight #'elpaca-use-package--normalizer)
+(add-to-list 'use-package-keywords :vc)
 (add-to-list 'use-package-keywords :elpaca)
+(add-to-list 'use-package-keywords :straight)
 
 (provide 'elpaca-use-package)
 ;;; elpaca-use-package.el ends here
