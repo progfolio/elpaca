@@ -70,7 +70,7 @@
   (let ((default-directory (expand-file-name "melpa/" elpaca-cache-directory)))
     (message "Downloading MELPA...")
     (elpaca-with-process-call ("git" "pull")
-      (message "%s" (if success "Downloading MELPA...100%%" stderr)))))
+      (message "%s" (if success "Downloading MELPA...100%" stderr)))))
 
 (defun elpaca-menu-melpa--convert (file metadata)
   "Return menu item candidate for FILE's MELPA recipe and METADATA."
