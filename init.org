@@ -2992,8 +2992,9 @@ https://github.com/harrybournis/org-fancy-priorities
 :END:
 
 #+begin_src emacs-lisp :lexical t
-(org-habit-today-glyph #x1f4c5)
-(org-habit-completed-glyph #x2713)
+;;@TODO: fix bug in org-habit so we can use unibyte chars
+;; (org-habit-today-glyph #x1f4c5)
+;; (org-habit-completed-glyph #x2713)
 (org-habit-preceding-days 29)
 (org-habit-following-days 1)
 (org-habit-graph-column 3)
