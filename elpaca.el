@@ -1015,7 +1015,7 @@ FILES and NOCONS are used recursively."
             ((and (equal event "finished\n") (not (eq (elpaca--status e) 'failed)))))
       (progn (elpaca--propertize-subprocess process)
              (elpaca--continue-build e info status))
-    (elpaca--fail e (format "Subprocess error (see previous log entries)"))))
+    (elpaca--fail e "Subprocess error (see previous log entries)")))
 
 (defun elpaca--compile-info-process-sentinel (process event)
   "Sentinel for info compilation PROCESS EVENT."
