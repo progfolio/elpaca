@@ -1071,9 +1071,9 @@ Consulting completing-read
     (consult-info "emacs" "efaq" "elisp" "cl"))
   (consult-customize
    consult-recent-file
-   consult--source-recent-file
-   consult--source-buffer
-   consult--source-bookmark
+   consult-source-recent-file
+   consult-source-buffer
+   consult-source-bookmark
    consult-buffer
    :preview-key nil)
 
