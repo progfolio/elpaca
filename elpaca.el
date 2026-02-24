@@ -147,14 +147,14 @@ is used in a `:files' directive.")
 Each element must be a unary function which accepts an order.
 An order may be a symbol naming a package, or list of the form (ID . PROPS...).
 The function may return nil or a plist to be merged with the order.
-This hook is run via `run-hook-with-args-until-success'."
+This hook is run via `elpaca-run-hooks-with-reduce'."
   :type 'hook)
 
 (defcustom elpaca-recipe-functions nil
   "Abnormal hook run to alter recipes.
 Each element must be a unary function which accepts an recipe plist.
 The function may return nil or a plist to be merged with the recipe.
-This hook is run via `run-hook-with-args-until-success'."
+This hook is run via `elpaca-run-hooks-with-reduce'."
   :type 'hook)
 
 (defsubst elpaca-alist-get (key alist &optional default)
@@ -329,18 +329,54 @@ When called interactively with \\[universal-argument] update all menus."
   (let ((elpaca-menu-functions (or menus elpaca-menu-functions)))
     (run-hook-with-args 'elpaca-menu-functions 'update)))
 
-(defsubst elpaca--nonheritable-p (obj)
-  "Return t if OBJ has explicitly nil :inherit key, nil otherwise."
-  (when-let* (((listp obj))
-              (member (plist-member obj :inherit)))
-    (not (cadr member))))
-
 (defun elpaca--order (&optional err)
   "Prompt for order. User ERR is messaged when no order selected."
   (if-let* ((elpaca-overriding-prompt (or elpaca-overriding-prompt "Order: "))
             (item (elpaca-menu-item)))
       (cons (car item) (plist-get (cdr item) :recipe))
     (user-error (or err "No order selected"))))
+
+(defun elpaca-run-hook-with-reduce (object hooks)
+  "Run HOOKS against OBJECT. Return merged non-nil results."
+  (cl-loop with modifications for hook in (if (functionp hooks) (list hooks) hooks)
+           do (setq modifications (funcall hook object))
+           (when modifications (setq object (elpaca-merge-plists object modifications)))
+           finally return object))
+
+(defun elpaca--normalize-order (order)
+  "Return proper plist from ORDER."
+  (unless (keywordp (car-safe order))
+    (setq order `( :package ,(symbol-name (elpaca--first order))
+                   :id ,@(if (listp order) order (list order)))))
+  (condition-case err
+      (if-let* ((declared (plist-member order :inherit))
+                ((not (cadr declared))))
+          order
+        (elpaca-merge-plists (elpaca-run-hook-with-reduce order elpaca-order-functions)
+                             order))
+    (error (signal 'elpaca-order-error (cons order err)))))
+
+(defun elpaca--normalize-recipe (order &optional item-resolved)
+  "Return recipe for normalized ORDER plist.
+Skip menu item lookup when ITEM-RESOLVED is non-nil."
+  (let* ((inherit (or (plist-member order :inherit) '(t))) ;; Implicitly inheritable
+         (inheritance (cadr inherit))
+         (item (let ((elpaca-menu-functions
+                      (unless (or item-resolved (null inheritance))
+                        (if-let* ((menus inheritance)
+                                  ((not (eq menus t))))
+                            (if (listp menus) menus (list menus))
+                          elpaca-menu-functions))))
+                 (elpaca-menu-item (plist-get order :id))))
+         (item-recipe (plist-put (plist-get item :recipe) :source (plist-get item :source)))
+         (recipe (if-let* ((r (elpaca-merge-plists item-recipe order))
+                           (inheritance))
+                     (elpaca-run-hook-with-reduce r elpaca-recipe-functions)
+                   r)))
+    (when-let* ((remotes (plist-get recipe :remotes)) ;; Normalize :remotes to list of specs
+                ((not (ignore-errors (mapc #'length remotes)))))
+      (setq recipe (plist-put recipe :remotes (list remotes))))
+    recipe))
 
 ;;;###autoload
 (defun elpaca-recipe (&optional order interactive)
@@ -351,39 +387,13 @@ ORDER is any of the following values:
   - an order list of the form: \\='(ID . PROPS).
 When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
   (interactive (list (elpaca--order) t))
-  (let* ((order (or order (elpaca--order)))
-         (id (elpaca--first order))
-         (props (let ((it (cdr-safe order)))
-                  (unless (zerop (logand (length it) 1))
-                    (user-error "Uneven property list for order %S %s" id it))
-                  it))
-         (nonheritable-p (elpaca--nonheritable-p props))
-         (mods (unless nonheritable-p (run-hook-with-args-until-success
-                                       'elpaca-order-functions order)))
-         (inherit (plist-member props :inherit))
-         (item (let ((elpaca-menu-functions
-                      (unless (or interactive ;; we already queried for this.
-                                  (elpaca--nonheritable-p (elpaca-merge-plists mods inherit)))
-                        (if-let* ((menus (cadr inherit))
-                                  ((not (eq menus t))))
-                            (if (listp menus) menus (list menus))
-                          elpaca-menu-functions))))
-                 (elpaca-menu-item id)))
-         (item-recipe (plist-put (plist-get item :recipe) :source (plist-get item :source)))
-         (r (elpaca-merge-plists item-recipe mods props)))
-    (unless (plist-get r :package) (setq r (plist-put r :package (symbol-name id))))
-    (when-let* ((recipe-mods (run-hook-with-args-until-success 'elpaca-recipe-functions r)))
-      (setq r (elpaca-merge-plists r recipe-mods)))
-    (when-let* ((remotes (plist-get r :remotes)) ;; Normalize :remotes to list of specs
-                ((not (ignore-errors (mapc #'length remotes)))))
-      (setq r (plist-put r :remotes (list remotes))))
+  (let* ((prompted (null order))
+         (order (elpaca--normalize-order (or order (elpaca--order))))
+         (recipe (elpaca--normalize-recipe order (or interactive prompted))))
     (when interactive
-      (setq r (elpaca-merge-plists (append (list :package (symbol-name (car-safe id)))
-                                           (cdr-safe id))
-                                   r))
-      (kill-new (format "%S" r))
-      (message "%S recipe copied to kill-ring:\n%S" (plist-get r :package) r))
-    r))
+      (kill-new (format "%S" recipe))
+      (message "%S recipe copied to kill-ring:\n%S" (plist-get recipe :package) recipe))
+    recipe))
 
 (defsubst elpaca--emacs-path ()
   "Return path to running Emacs."
