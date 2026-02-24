@@ -57,7 +57,7 @@
                  (setq template (replace-regexp-in-string
                                  (symbol-name key) (format "%s" val) template nil t))
                  finally return template))
-      (error "Unable to determine URL from recipe %s" recipe)))
+      (signal 'elpaca-url-error recipe)))
 
 (defvar url-http-response-status)
 (defvar url-http-end-of-headers)
