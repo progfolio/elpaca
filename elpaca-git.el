@@ -67,7 +67,7 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
          (user nil)
          (info (concat url (or remote repo) hostname))
          (key (or (and info (> (length info) 0) (intern info))
-                  (error "Cannot determine URL from recipe: %S" recipe)))
+                  (signal 'elpaca-url-error recipe)))
          (mono-repo (elpaca-alist-get key elpaca--source-dirs))
          (dirs (and (not mono-repo) (mapcar #'cdr elpaca--source-dirs)))
          (name (cond
@@ -104,7 +104,7 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
                                (repo url) &allow-other-keys)
       recipe
     (when (consp repo) (setq repo (car repo))) ; Handle :repo rename
-    (pcase (elpaca-git--repo-type (or repo (error "Unable to determine recipe URL")))
+    (pcase (elpaca-git--repo-type (or repo (signal 'elpaca-url-error recipe)))
       ('remote repo)
       ('local  (expand-file-name repo))
       (_ (let ((p (pcase protocol
@@ -348,8 +348,9 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
 
 (cl-defmethod elpaca-source-dir ((e (elpaca git)))
   "Return source directory for :type `git` E."
-  (or (elpaca-git-repo-dir (elpaca<-recipe e))
-      (error "Unable to determine source dir for %S" (elpaca<-id e))))
+  (condition-case err
+      (elpaca-git-repo-dir (elpaca<-recipe e))
+    (elpaca-error (signal 'elpaca-error (list e err)))))
 
 (cl-defmethod elpaca-ref ((e (elpaca git)))
   "Return :ref for :type git E."

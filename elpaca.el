@@ -407,7 +407,7 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
 (cl-defstruct (elpaca (:constructor elpaca<--create) (:type list) (:named)
                       (:conc-name elpaca<-))
   "Order for queued processing."
-  id package props order statuses
+  id package declaration order statuses
   build-dir source-dir main
   files build-steps recipe blocking blockers
   dependencies dependents
@@ -582,21 +582,27 @@ The first function, if any, which returns non-nil is used." :type 'hook)
   "Return E's source directory."
   (expand-file-name (elpaca<-package e) elpaca-sources-directory))
 
-(defun elpaca<-create (order)
-  "Create a new elpaca struct from ORDER."
-  (let* ((id (elpaca--first order))
-         (recipe (elpaca-recipe order))
-         (build-dir (elpaca-build-dir recipe))
-         (e (elpaca<--create
-             :id id :package (symbol-name id)
-             :order order :build-dir build-dir
-             :recipe recipe :builtp (and build-dir (file-exists-p build-dir)))))
-    (when-let* ((recipe)
-                (registered (elpaca-alist-get (plist-get recipe :type) elpaca-types)))
-      (require registered)) ;;@TODO: optimize lookup by tracking separate from `features'?
-    (setf (elpaca<-source-dir e) (elpaca-source-dir e)
-          (elpaca<-build-steps e) (elpaca-build-steps e))
-    e))
+(defun elpaca<-create (declaration)
+  "Create a new elpaca struct from DECLARATION."
+  (let* ((id (elpaca--first declaration))
+         (e (elpaca<--create :id id :package (symbol-name id) :declaration declaration)))
+    (condition-case err
+        (progn
+          (setf (elpaca<-order e) (elpaca--normalize-order declaration)
+                (elpaca<-recipe e) (elpaca--normalize-recipe (elpaca<-order e))
+                (elpaca<-build-dir e) (elpaca-build-dir (elpaca<-recipe e))
+                (elpaca<-builtp e) (when-let* ((build-dir (elpaca<-build-dir e)))
+                                     (file-exists-p build-dir)))
+          (when-let* ((recipe (elpaca<-recipe e))
+                      (registered (elpaca-alist-get (plist-get recipe :type) elpaca-types)))
+            (require registered)) ;;@TODO: optimize lookup by tracking separate from `features'?
+          (setf (elpaca<-source-dir e) (elpaca-source-dir e)
+                (elpaca<-build-steps e) (elpaca-build-steps e))
+          e)
+      (elpaca-error
+       (if (run-hook-with-args-until-success 'elpaca-error-functions e err)
+           (throw 'elpaca-abort nil)
+         (signal (car err) (cdr err)))))))
 
 (declare-function elpaca-ui--update-search-query "elpaca-ui")
 (defun elpaca--update-log-buffer ()
@@ -1466,13 +1472,19 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
            (setq elpaca--interactive-timer
                  (run-at-time elpaca-interactive-interval nil #'elpaca-process-queues))))))
 
+(defcustom elpaca-error-functions nil
+  "Abnormal hook to catch top-level `elpaca-error' signals.
+Each element is a function accepting an E struct and error object.
+The first to return non-nil suppresses the error."
+  :type 'hook)
+
 ;;;###autoload
 (defmacro elpaca (order &rest body)
   "Queue ORDER for asynchronous installation/activation.
 Evaluate BODY forms synchronously once ORDER's queue is processed.
 See Info node `(elpaca) Basic Concepts'."
   (declare (indent 1) (debug form))
-  `(elpaca--expand-declaration ',order ',body))
+  `(catch 'elpaca-abort (elpaca--expand-declaration ',order ',body)))
 
 (defvar elpaca--try-package-history nil "History for `elpaca-try'.")
 ;;;###autoload
