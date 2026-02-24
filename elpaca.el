@@ -640,19 +640,20 @@ check (and possibly change) their statuses."
               (and info (run-at-time elpaca-log-interval nil #'elpaca--update-log-buffer))))))
   nil)
 
-;;@TODO: Should this cause a non-local exit? Signal custom error type or just `throw'?
 ;;@MAYBE: UI command to manually fail an order?
+(define-error 'elpaca-error "Elpaca error")
+(define-error 'elpaca-order-error "Elpaca order error" 'elpaca-error)
+(define-error 'elpaca-recipe-error "Elpaca recipe error" 'elpaca-error)
+(define-error 'elpaca-url-error "Unable to determine recipe URL" 'elpaca-recipe-error)
+(define-error 'elpaca-build-error "Elpaca build error" 'elpaca-error)
+
 (defun elpaca--fail (e &optional reason)
-  "Fail E for REASON."
-  (unless (eq (elpaca--status e) 'failed)
-    (let ((q (elpaca--q e)))
-      (setf (elpaca-q<-forms q) (assq-delete-all (elpaca<-id e) (elpaca-q<-forms q))))
-    (when-let* ((p (elpaca<-process e)))
-      (when-let* ((entry (car (last (elpaca<-log e) (process-get p :loglen)))))
-        (setf (nth 2 entry) (propertize (nth 2 entry) 'face 'elpaca-failed)))
-      (when (process-live-p p) (kill-process p)))
-    (elpaca--signal e reason 'failed)
-    (elpaca--finalize e)))
+  "Fail E for REASON, signaling an elpaca-build-error."
+  (when-let* ((p (elpaca<-process e))
+              (entry (car (last (elpaca<-log e) (process-get p :loglen)))))
+    (setf (nth 2 entry) (propertize (nth 2 entry) 'face 'elpaca-failed)))
+  (elpaca--signal e reason 'failed)
+  (signal 'elpaca-build-error (list e reason)))
 
 (defun elpaca-get (id)
   "Return queued E associated with ID."
@@ -665,6 +666,14 @@ check (and possibly change) their statuses."
            while (or (null (car current)) (memq (cadr current) skip))
            do (setq previous current current (backtrace-frame (cl-incf n)))
            finally return (cadr (or current previous))))
+
+(defun elpaca--handle-build-error (e err)
+  "Handle ERR for E, invoking :on-error handler or propagating."
+  (when-let* ((process (elpaca<-process e)))
+    (delete-process process))
+  (let ((handler (plist-get (elpaca<-recipe e) :on-error)))
+    (unless (and handler (funcall handler e err))
+      (signal (car err) (cdr err)))))
 
 (defun elpaca--continue-build (e &rest args)
   "Run E's next build step.
@@ -685,13 +694,13 @@ Optional ARGS are passed to `elpaca--signal', which see."
           (push 'queue-throttled (elpaca<-statuses e))
           (elpaca--signal e "elpaca-queue-limit exceeded" 'blocked nil 1))
       (let ((step (or (pop (elpaca<-build-steps e)) #'elpaca--finalize)))
-        (condition-case-unless-debug err ;;@TODO: signal/catch custom error types
+        (condition-case err
             (if-let* ((vars (plist-get (elpaca<-recipe e) :vars))
-                      (fn `(lambda (elpaca elpaca-build-step)
-                             (let* (,@vars) (funcall elpaca-build-step elpaca)))))
-                (funcall fn e step)
+                      (closure `(lambda (elpaca elpaca-build-step)
+                                  (let* (,@vars) (funcall elpaca-build-step elpaca)))))
+                (funcall closure e step)
               (funcall step e))
-          ((error) (elpaca--fail e (format "%s: %S" step err))))))))
+          (elpaca-build-error (elpaca--handle-build-error e err)))))))
 
 (defun elpaca--log-duration (e)
   "Return E's log duration."
@@ -938,7 +947,11 @@ FILES and NOCONS are used recursively."
                    :connection-type (or (plist-get spec :connection-type) 'pipe)
                    :command command
                    :filter (or (plist-get spec :filter) #'elpaca--process-filter)
-                   :sentinel (plist-get spec :sentinel))))
+                   :sentinel
+                   (lambda (process event)
+                     (condition-case err
+                         (funcall (plist-get spec :sentinel) process event)
+                       (elpaca-build-error (elpaca--handle-build-error e err)))))))
     (process-put process :elpaca e)
     (process-put process :loglen (length (elpaca<-log e)))
     (setf (elpaca<-process e) process)))
