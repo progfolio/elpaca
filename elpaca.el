@@ -930,7 +930,8 @@ FILES and NOCONS are used recursively."
       (setq lines (butlast lines)))
     (dolist (line lines)
       (unless (string-empty-p line)
-        (elpaca--signal e (concat "  " (car (last (split-string line "\r" t)))))))))
+        (let ((escaped (replace-regexp-in-string "\033\\[[0-9;]*[a-zA-Z]" "" line)))
+          (elpaca--signal e (concat "  " (car (last (split-string escaped "\r" t))))))))))
 
 (defun elpaca--process-sentinel (&optional info status process event)
   "Update E's INFO and STATUS when PROCESS EVENT is finished."
