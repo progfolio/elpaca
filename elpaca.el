@@ -7,7 +7,7 @@
 ;; Created: Jan 1, 2022
 ;; Keywords: tools, convenience, lisp
 ;; Package-Requires: ((emacs "27.1"))
-;; Version: 0.1.0
+;; Version: 0.1.1
 
 ;; This file is not part of GNU Emacs.
 

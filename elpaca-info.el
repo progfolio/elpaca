@@ -85,24 +85,23 @@
          (id (intern (plist-get item-recipe :package)))
          (e (elpaca-get id))
          (order (if e (elpaca<-order e) id))
-         (declared (cdr-safe order)))
+         (declared (let ((raw (elpaca<-declaration e)))
+                     (if (keywordp (car-safe raw)) raw (cdr-safe raw)))))
     (with-temp-buffer
       (delay-mode-hooks (emacs-lisp-mode) (auto-fill-mode))
       (cl-loop
        with ordered = '( nil elpaca-recipe-functions declaration
                          elpaca-order-functions elpaca-menu-item)
-       with order-mods = (run-hook-with-args-until-success 'elpaca-order-functions order)
-       with recipe-mods =
-       (run-hook-with-args-until-success
-        'elpaca-recipe-functions (elpaca-merge-plists item-recipe order-mods declared))
-       with recipe = (elpaca-merge-plists item-recipe order-mods declared recipe-mods
-                                          `(:package ,(plist-get item-recipe :package)))
-       with lookup = `((nil ,(format "(:package %S " (plist-get recipe :package))))
-       with sources = `((elpaca-recipe-functions . ,recipe-mods) (declaration . ,declared)
+       with order-mods = (elpaca--normalize-order order)
+       with recipe = (let ((elpaca-menu-functions (lambda (&rest _) item)))
+                       (elpaca--normalize-recipe order))
+       with lookup = `((nil ,(format "(:package %S :id %S" (plist-get recipe :package) id)))
+       with sources = `((declaration . ,declared)
                         (elpaca-order-functions .  ,order-mods)
-                        (elpaca-menu-item . ,item-recipe))
-       for (prop val) on recipe by #'cddr
-       unless (or (eq prop :package) (and (eq prop :source) (null val)))
+                        (elpaca-menu-item . ,item-recipe)
+                        (elpaca-recipe-functions . ,recipe))
+       for (val prop) on (reverse recipe) by #'cddr
+       unless (or (memq prop '(:package :id)) (and (eq prop :source) (null val)))
        do (push (format " %s %S" prop
                         (if (equal val elpaca-default-files-directive) '(:defaults) val))
                 (alist-get (cl-loop for source in sources thereis
@@ -113,9 +112,7 @@
        finally return
        (elpaca-info--format-recipe
         (concat (cl-loop for source in ordered for vals = (alist-get source lookup)
-                         when (and source vals
-                                   (not (and (eq source 'elpaca-menu-item)
-                                             (equal (plist-get item :source) "Init file"))))
+                         when (and source vals)
                          concat (format "\n;; Inherited from %s.\n" source)
                          when vals concat (string-join vals "\n"))
                 ")"))))))
