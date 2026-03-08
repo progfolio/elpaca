@@ -149,7 +149,7 @@
     (with-temp-buffer
       (setf elpaca-info-alist
             `((id . ,id) (menus . ,menus) (menu .  ,menu) (item . ,item)
-              (on-disk-p ,(elpaca--on-disk-p id)) (e . , (elpaca-get id)) (indentation . "\n  ")))
+              (on-disk-p ,(elpaca--on-disk-p id)) (e . ,(elpaca-get id)) (indentation . "\n  ")))
       (run-hooks 'elpaca-info-sections-hook)
       (buffer-string))))
 
