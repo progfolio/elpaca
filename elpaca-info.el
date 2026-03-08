@@ -217,6 +217,12 @@
 (elpaca-info-defsection statuses
   (when-let* ((.e) (statuses (elpaca<-statuses .e)))
     (format "\n%s\n  %S" (elpaca-info--header "statuses") statuses)))
+(elpaca-info-defsection blockers
+  (when-let* ((.e) (blockers (elpaca<-blockers .e)))
+    (format "\n%s\n  %S" (elpaca-info--header "blockers") blockers)))
+(elpaca-info-defsection blocking
+  (when-let* ((.e) (blocking (elpaca<-blocking .e)))
+    (format "\n%s\n  %S" (elpaca-info--header "blocking") blocking)))
 (elpaca-info-defsection files
   (when-let* ((.e) (files (ignore-errors (elpaca--files .e))))
     (format "\n%s\n  %s" (elpaca-info--header "files") (string-join (elpaca-info--files files) .indentation))))
@@ -232,6 +238,7 @@
      elpaca-info-section--source elpaca-info-section--url elpaca-info-section--menu-item
      elpaca-info-section--recipe elpaca-info-section--pin-status elpaca-info-section--dependencies
      elpaca-info-section--dependents elpaca-info-section--version elpaca-info-section--statuses
+     elpaca-info-section--blockers elpaca-info-section--blocking
      elpaca-info-section--files elpaca-info-section--log)
   "Hook run to layout info buffer." :type 'hook :group 'elpaca)
 
