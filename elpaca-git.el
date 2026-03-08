@@ -37,7 +37,8 @@
   "Return previously queued E with REPO other than ID."
   (cl-loop for (_ . e) in (reverse (elpaca--queued)) thereis
            (and (not (eq (elpaca<-id e) id))
-                (equal repo (elpaca<-source-dir e)))))
+                (equal repo (elpaca<-source-dir e))
+                e)))
 
 (defsubst elpaca-git--repo-name (string)
   "Return repo name portion of STRING."
@@ -367,9 +368,15 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
 
 (cl-defmethod elpaca-source ((e (elpaca git)))
   "Populate source files for E :type `git'."
-  (setf (elpaca<-build-steps e)
-        (append elpaca-git-default-build-steps (elpaca<-build-steps e)))
-  (elpaca--continue-build e))
+  (if-let* ((mono (elpaca-git--mono-repo (elpaca<-id e) (elpaca<-source-dir e)))
+            ((not (memq (elpaca<-id mono) (elpaca<-blocking e)))))
+      (progn
+        (push (elpaca<-id mono) (elpaca<-blockers e))
+        (push (elpaca<-id e) (elpaca<-blocking mono))
+        (setf (elpaca<-statuses e) (list 'blocked 'queued)))
+    (setf (elpaca<-build-steps e)
+          (append elpaca-git-default-build-steps (elpaca<-build-steps e)))
+    (elpaca--continue-build e)))
 
 (cl-defmethod elpaca-build-steps ((e (elpaca git)) &optional context)
   "Return build steps for :type `git` E in CONTEXT."
