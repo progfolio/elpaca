@@ -7,7 +7,7 @@
 ;; Created: Jan 1, 2022
 ;; Keywords: tools, convenience, lisp
 ;; Package-Requires: ((emacs "27.1"))
-;; Version: 0.1.2
+;; Version: 0.1.3
 
 ;; This file is not part of GNU Emacs.
 
@@ -1093,14 +1093,13 @@ ARGS must be a plist including any of the following keywords value pairs:
                      (default-directory src)
                      (package (file-name-sans-extension (elpaca<-package e)))
                      (name (concat "\\(?:" (regexp-quote package) "\\(?:-pkg\\)?\\.el\\)\\'")))
-                (or (file-exists-p src) (error "Non-existant source dir: %S" src))
-                (or
-
-                 (car (directory-files src nil (concat "\\`" name)))
-                 (car (cl-remove-if-not
-                       (lambda (f) (string-match-p (concat "[/\\]" name) f))
-                       (elpaca--directory-files-recursively src (concat "\\`[^.z-a]*" name))))
-                 (error "Unable to find main elisp file for %S" package)))))))
+                (or (file-exists-p src)
+                    (signal 'elpaca-error (list e (format "Non-existant source dir: %S" src))))
+                (or (car (directory-files src nil (concat "\\`" name)))
+                    (car (cl-remove-if-not
+                          (lambda (f) (string-match-p (concat "[/\\]" name) f))
+                          (elpaca--directory-files-recursively src (concat "\\`[^.z-a]*" name))))
+                    (signal 'elpaca-error (list e (format "Unable to find main elisp file for %S" package)))))))))
 
 (defun elpaca--parse-version (file)
   "Parse FILE's version via package header or pkg file data."
