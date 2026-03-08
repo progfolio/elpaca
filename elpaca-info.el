@@ -94,7 +94,7 @@
                          elpaca-order-functions elpaca-menu-item)
        with order-mods = (elpaca--normalize-order order)
        with recipe = (let ((elpaca-menu-functions (lambda (&rest _) item)))
-                       (elpaca--normalize-recipe order))
+                       (elpaca--normalize-recipe order-mods))
        with lookup = `((nil ,(format "(:package %S :id %S" (plist-get recipe :package) id)))
        with sources = `((declaration . ,declared)
                         (elpaca-order-functions .  ,order-mods)
