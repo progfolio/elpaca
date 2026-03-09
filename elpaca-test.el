@@ -121,9 +121,11 @@ If INSTALLERP is non-nil, stop after Elpaca installer."
   "Write init.el FILE with FORMS in test environment.
 If FILE is nil, use upstream INSTALLER file.
 For DEPTH, REPO, REF, FORMS see `elpaca-test' keyword args."
-  (let ((contents (if file (with-temp-buffer (insert-file-contents (expand-file-name file))
-                                             (buffer-string))
-                    (elpaca-test--upstream-init installer))))
+  (let ((contents (cond ((and file (file-exists-p file))
+                         (with-temp-buffer (insert-file-contents (expand-file-name file))
+                                           (buffer-string)))
+                        (file file)
+                        (t (elpaca-test--upstream-init installer)))))
     (elpaca--write-file (expand-file-name "./init.el")
       (emacs-lisp-mode)
       (insert (elpaca-test--init contents `(:ref ,(unless (eq ref 'local) ref) :depth ,depth ,@(when repo `(:repo ,repo))) forms))
@@ -243,6 +245,14 @@ BATCH, TIMEOUT, and EARLY match :interactive, :timeout, :early-init keys."
   (process-put (make-process :name name :buffer buffer :command command
                              :sentinel #'elpaca-test--sentinel)
                :vars vars))
+
+(defmacro elpaca-test-insert (file point &rest body)
+  "Return contents of FILE with BODY inserted at POINT."
+  `(with-temp-buffer
+     (insert-file-contents ,file)
+     (goto-char ,point)
+     (insert (prin1-to-string (macroexp-progn ',body)))
+     (buffer-substring-no-properties (point-min) (point-max))))
 
 ;;;###autoload
 (defmacro elpaca-test (&rest body)
