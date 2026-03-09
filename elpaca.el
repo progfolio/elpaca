@@ -293,8 +293,9 @@ Values for each key are that of the right-most plist containing that key."
 ;;;###autoload
 (defun elpaca-menu-item (&optional id interactive)
   "Return menu item matching ID in `elpaca-menu-functions'.
-If ID is nil, prompt for item. If INTERACTIVE is non-nil, copy to `kill-ring'."
-  (interactive (list nil t))
+If ID is nil, prompt for item. If INTERACTIVE is non-nil, copy to `kill-ring'.
+When INTERACTIVE equals \\[universal-argument], copy as an order declaration."
+  (interactive (list nil (or current-prefix-arg t)))
   (let ((item
          (if id (run-hook-with-args-until-success 'elpaca-menu-functions 'index id) ;; Depth first search
            (cl-loop
@@ -313,6 +314,7 @@ If ID is nil, prompt for item. If INTERACTIVE is non-nil, copy to `kill-ring'."
                            nil t)))
               (alist-get choice candidates nil nil #'equal))))))
     (when interactive
+      (when (consp interactive) (setq item (cons (car item) (plist-get (cdr item) :recipe))))
       (message "menu-item copied to kill-ring:\n%S" item)
       (kill-new (format "%S" item)))
     item))
@@ -385,13 +387,15 @@ ORDER is any of the following values:
   - an ID symbol, looked up in ITEMS or `elpaca-menu-functions' cache.
   - an order list of the form: \\='(ID . PROPS).
 When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
-  (interactive (list (elpaca--order) t))
+  (interactive (list (elpaca--order) (or current-prefix-arg t)))
   (let* ((prompted (null order))
          (order (elpaca--normalize-order (or order (elpaca--order))))
-         (recipe (elpaca--normalize-recipe order (or interactive prompted))))
+         (recipe (elpaca--normalize-recipe order (or interactive prompted)))
+         (id (plist-get order :id)))
     (when interactive
+      (unless (listp interactive) (setq recipe (cons id recipe)))
       (kill-new (format "%S" recipe))
-      (message "%S recipe copied to kill-ring:\n%S" (plist-get recipe :package) recipe))
+      (message "%S recipe copied to kill-ring:\n%S" id recipe))
     recipe))
 
 (defsubst elpaca--emacs-path ()
