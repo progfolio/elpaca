@@ -370,7 +370,9 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
   "Populate source files for E :type `git'."
   (if-let* ((mono (elpaca-git--mono-repo (elpaca<-id e) (elpaca<-source-dir e)))
             ((not (memq (elpaca<-id mono) (elpaca<-blocking e)))))
-      (progn
+      (if (eq (elpaca--status mono) 'finished)
+          ;; Source already on disk; skip git steps, proceed to build.
+          (elpaca--continue-build e)
         (push (elpaca<-id mono) (elpaca<-blockers e))
         (push (elpaca<-id e) (elpaca<-blocking mono))
         (setf (elpaca<-statuses e) (list 'blocked 'queued)))
