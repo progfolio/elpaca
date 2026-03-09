@@ -433,6 +433,13 @@ If N is nil return a list of all queued elpacas."
   (if n (elpaca-q<-elpacas (nth n elpaca--queues))
     (cl-loop for queue in elpaca--queues append (elpaca-q<-elpacas queue))))
 
+(defun elpaca--shared-source-dir (id dir)
+  "Return previously queued E same source DIR as ID."
+  (cl-loop for (_ . e) in (reverse (elpaca--queued)) thereis
+           (and (not (eq (elpaca<-id e) id))
+                (equal dir (elpaca<-source-dir e))
+                e)))
+
 (defun elpaca-substitute-build-steps (steps &rest rules)
   "Alter build STEPS via substituion RULES.
 RULES is a lists of specs of the form ((TYPE TARGET SUBSTITUTIONS...)...).

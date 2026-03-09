@@ -33,13 +33,6 @@
   "List of steps which are run when installing/building a package."
   :type '(repeat function))
 
-(defsubst elpaca-git--mono-repo (id repo)
-  "Return previously queued E with REPO other than ID."
-  (cl-loop for (_ . e) in (reverse (elpaca--queued)) thereis
-           (and (not (eq (elpaca<-id e) id))
-                (equal repo (elpaca<-source-dir e))
-                e)))
-
 (defsubst elpaca-git--repo-name (string)
   "Return repo name portion of STRING."
   (setq string (directory-file-name string)) ;; remove external :repo trailing slash
@@ -368,8 +361,9 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
 
 (cl-defmethod elpaca-source ((e (elpaca git)))
   "Populate source files for E :type `git'."
-  (if-let* ((mono (elpaca-git--mono-repo (elpaca<-id e) (elpaca<-source-dir e)))
-            ((not (memq (elpaca<-id mono) (elpaca<-blocking e)))))
+  (if-let* ((mono (elpaca--shared-source-dir (elpaca<-id e) (elpaca<-source-dir e)))
+            ((not (or (memq (elpaca<-id mono) (elpaca<-blocking e))
+                      (file-exists-p (elpaca<-source-dir e))))))
       (progn
         (push (elpaca<-id mono) (elpaca<-blockers e))
         (push (elpaca<-id e) (elpaca<-blocking mono))
