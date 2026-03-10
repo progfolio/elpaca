@@ -363,7 +363,7 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
   "Populate source files for E :type `git'."
   (if-let* ((mono (elpaca--shared-source-dir (elpaca<-id e) (elpaca<-source-dir e)))
             ((not (or (memq (elpaca<-id mono) (elpaca<-blocking e))
-                      (file-exists-p (elpaca<-source-dir e))))))
+                      (elpaca<-builtp mono)))))
       (progn
         (push (elpaca<-id mono) (elpaca<-blockers e))
         (push (elpaca<-id e) (elpaca<-blocking mono))
