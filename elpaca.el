@@ -434,11 +434,16 @@ If N is nil return a list of all queued elpacas."
     (cl-loop for queue in elpaca--queues append (elpaca-q<-elpacas queue))))
 
 (defun elpaca--shared-source-dir (id dir)
-  "Return previously queued E same source DIR as ID."
-  (cl-loop for (_ . e) in (reverse (elpaca--queued)) thereis
-           (and (not (eq (elpaca<-id e) id))
-                (equal dir (elpaca<-source-dir e))
-                e)))
+  "Return most recent previously queued E same source DIR as ID."
+  (cl-loop with queued = (elpaca--queued)
+           with index = (or (cl-loop for i from 0 to (length queued)
+                                     when (eq (car (nth i queued)) id) return i)
+                            (cl-return nil))
+           for i from (1- index) downto 0
+           for e = (cdr (nth i queued))
+           when (and e
+                     (equal dir (elpaca<-source-dir e)))
+           return e))
 
 (defun elpaca-substitute-build-steps (steps &rest rules)
   "Alter build STEPS via substituion RULES.
