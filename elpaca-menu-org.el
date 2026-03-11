@@ -79,13 +79,10 @@
                        :recipe
                        (list
                         :package "org"
-                        :pre-build `(progn (require 'elpaca-menu-org)
-                                           (setq elpaca-menu-org-make-manual ,elpaca-menu-org-make-manual)
-                                           (elpaca-menu-org--build))
                         :host 'github :repo "emacsmirror/org"
                         :autoloads "org-loaddefs.el" :depth 1
-                        :build '((:not (elpaca-build-autoloads))
-                                 (:after elpaca-git--checkout-ref elpaca-menu-org--build))
+                        :build '((:not elpaca-build-autoloads)
+                                 (:before elpaca-build-link elpaca-menu-org--build))
                         :files '(:defaults ("etc/styles/" "etc/styles/*" "doc/*.texi")))))
            (cons 'org-contrib
                  (list :source "Org"
