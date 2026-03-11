@@ -155,7 +155,8 @@
 
 (defmacro elpaca-info-defsection (name &rest body)
   "Define section function with NAME which evals BODY to return section string."
-  (declare (indent 1))
+  (declare (indent 1)
+           (debug (symbolp body)))
   `(defun ,(intern (format "elpaca-info-section--%s" name)) ()
      ,(format "Insert package's %s." name)
      (let-alist elpaca-info-alist
