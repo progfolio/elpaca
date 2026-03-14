@@ -36,7 +36,6 @@
     (elpaca-fetch   :prefix "‍🐕‍🦺" :face elpaca-ui-marked-fetch)
     (elpaca-merge   :prefix "🤝" :face elpaca-ui-marked-merge :args (id prefix-arg))
     (elpaca-pull    :prefix "⬆️" :face elpaca-ui-marked-pull :args (id prefix-arg)))
-
   "List of marks which can be applied to packages `elpaca-ui-mode' buffers.
 Each element is of the form (COMMAND :KEY VAL...).
 Accepted key val pairs are:
@@ -55,7 +54,7 @@ Accepted key val pairs are:
 
 (defun elpaca-ui--tag-orphan (_)
   "Return entires for packages not temporarlily installed or declared."
-  (let ((sources (nthcdr 2 ; Discard "." ".."
+  (let ((sources (nthcdr 2
                          (mapcar #'file-name-as-directory
                                  (directory-files elpaca-sources-directory t)))))
     (mapcar (lambda (dir)
@@ -88,9 +87,9 @@ Accepted key val pairs are:
 
 (defun elpaca-ui--tag-unique (entries)
   "Return last occurrence of each entry in ENTRIES."
-  (cl-loop with seen for entry in entries
-           for id = (caar entry) unless (memq id seen)
-           collect (progn (push id seen) entry)))
+  (nreverse (cl-loop with seen for entry in (reverse entries)
+                     for id = (caar entry) unless (memq id seen)
+                     collect (progn (push id seen) entry))))
 
 (defcustom elpaca-ui-search-tags '((dirty     . elpaca-ui--tag-dirty)
                                    (declared  . elpaca-ui--tag-declared)
@@ -126,7 +125,6 @@ exclamation point to it. e.g. !#installed."
 
 (defalias 'elpaca-ui--buttonize
   (with-no-warnings (cond
-                     ;;API for Emacs 27 requires allocating temp buffers. Not worth it.
                      ((< emacs-major-version 28) #'elpaca-ui--button-noop)
                      ((< emacs-major-version 29) #'button-buttonize)
                      (t #'buttonize))))
@@ -360,13 +358,13 @@ Called in `jit-lock-functions', which see."
    with (fns column)
    with i = (caar tokens)
    for (col token negated) in tokens
-   when token do ;; guard against empty sexp, #()
-   (cond ((stringp token) ;; string query
+   when token do
+   (cond ((stringp token)
           (unless (or (= col i) (> col -1))
             (setq fns (cons (elpaca-ui--col-search i column) fns) i col column nil))
           (let ((query `(string-match-p ,token ,(if (= -1 col) 'data `(aref data ,col)))))
             (push (if negated `(not ,query) query) column)))
-         ((or (consp token) (symbolp token)) ;; elisp or tag
+         ((or (consp token) (symbolp token))
           (when column (setq fns (cons (elpaca-ui--col-search i column) fns) column nil))
           (let* ((sym (or (car-safe token) token))
                  (fn (if (eq sym 'lambda)
@@ -620,7 +618,7 @@ If ADVANCEP is non-nil, move `forward-line'."
         (funcall elpaca-ui-entries-function))
       (elpaca-ui-search-refresh buffer))))
 
-(defun elpaca-ui-execute-marks () ;;@TODO: make more flexible with regard to :args, :prefix-arg
+(defun elpaca-ui-execute-marks ()
   "Execute each mark in `elpaca-ui-marked-packages'."
   (interactive nil elpaca-ui-mode)
   (when (null elpaca-ui--marked-packages) (user-error "No marked packages"))

@@ -215,30 +215,29 @@
                            (concat (mapconcat #'number-to-string builtin ".") " (builtin)")))))
     (format "\n%s %s" (elpaca-info--header "installed version") version)))
 (elpaca-info-defsection statuses
-  (when-let* ((.e) (statuses (elpaca<-statuses .e)))
-    (format "\n%s\n  %S" (elpaca-info--header "statuses") statuses)))
-(elpaca-info-defsection blockers
-  (when-let* ((.e) (blockers (elpaca<-blockers .e)))
-    (format "\n%s\n  %S" (elpaca-info--header "blockers") blockers)))
-(elpaca-info-defsection blocking
-  (when-let* ((.e) (blocking (elpaca<-blocking .e)))
-    (format "\n%s\n  %S" (elpaca-info--header "blocking") blocking)))
+  (when-let* ((.e) (status (elpaca<-status .e)))
+    (format "\n%s\n  %S" (elpaca-info--header "status") status)))
 (elpaca-info-defsection files
   (when-let* ((.e) (files (ignore-errors (elpaca--files .e))))
     (format "\n%s\n  %s" (elpaca-info--header "files") (string-join (elpaca-info--files files) .indentation))))
 (elpaca-info-defsection log
-  (when-let* ((.e) (log (elpaca<-log .e)))
-    (format "\n%s\n%s" (elpaca-info--header "log")
-            (cl-loop for (status time info _) in (reverse log) concat
-                     (format "  %s %s\n" (propertize (format "[%s]" (format-time-string "%F %T" time))
-                                                     'face (alist-get status elpaca-status-faces 'font-lock-comment-face))
-                             info)))))
+  (when-let* ((.e) (log (elpaca-event-log (elpaca<-id .e))))
+    (concat (format "\n%s\n" (elpaca-info--header "log"))
+            (cl-loop for event in (reverse log)
+                     for type = (elpaca-event<-type event)
+                     for payload = (elpaca-event<-payload event)
+                     for info = (or (plist-get payload :info) (plist-get payload :output))
+                     when info concat
+                     (propertize
+                      (format "[%s] %s\n"
+                              (format-time-string "%F %T" (elpaca-event<-time event))
+                              info)
+                      'face (plist-get payload :face))))))
 (defcustom elpaca-info-sections-hook
   '( elpaca-info-section--title elpaca-info-section--menu-buttons elpaca-info-section--description
      elpaca-info-section--source elpaca-info-section--url elpaca-info-section--menu-item
      elpaca-info-section--recipe elpaca-info-section--pin-status elpaca-info-section--dependencies
      elpaca-info-section--dependents elpaca-info-section--version elpaca-info-section--statuses
-     elpaca-info-section--blockers elpaca-info-section--blocking
      elpaca-info-section--files elpaca-info-section--log)
   "Hook run to layout info buffer." :type 'hook :group 'elpaca)
 
