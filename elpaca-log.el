@@ -209,26 +209,55 @@ It must accept a package ID symbol and REF string as its first two arguments."
   (cl-loop
    with queue-time = (elpaca-q<-time (car (last elpaca--queues)))
    for (id . e) in (elpaca--queued)
-   for log = (elpaca<-log e)
    for package = (elpaca<-package e)
+   for events = (reverse (gethash id elpaca--event-index))
    append
-   (cl-loop for (status time info verbosity) in log
-            for i below (length log)
-            for entry =
-            (when-let* (((<= verbosity elpaca-verbosity))
-                        (next (if (= i 0) (current-time) (nth 1 (nth (1- i) log))))
-                        (delta (format-time-string "%02s.%6N" (time-subtract time queue-time))))
-              (when (and (not (memq status '(finished failed blocked)))
-                         (time-less-p (time-add time elpaca-busy-interval) next))
-                (setq status 'busy))
-              (list (list id) (vector (propertize package 'elpaca-status status)
-                                      (symbol-name status) info (propertize delta 'time time))))
-            when entry collect entry)))
+   (cl-loop
+    with current-status = nil
+    for event in events
+    for type = (elpaca-event<-type event)
+    for time = (elpaca-event<-time event)
+    for payload = (elpaca-event<-payload event)
+    for busyp = (eq type 'busy)
+    for face = (plist-get payload :face)
+    do (when (and type (not (eq type 'package-info))) (setq current-status type))
+    for entry =
+    (when-let* ((info (or (plist-get payload :info) (when busyp "busy")))
+                ((or busyp (<= (or (plist-get payload :verbosity) 0) elpaca-verbosity)))
+                (delta (format-time-string "%02s.%6N" (time-subtract time queue-time))))
+      (let ((display-status (if (and busyp (not (memq current-status '(finished failed blocked))))
+                                'busy
+                              current-status)))
+        (list (list id)
+              (vector (propertize package 'elpaca-status display-status)
+                      (or (symbol-name display-status) "")
+                      (if face (propertize info 'face face) info)
+                      (propertize delta 'time time)))))
+    when entry collect entry)))
 
 (defun elpaca-log--sort-chronologically (a b)
   "Sort entries A and B chronologically."
   (< (string-to-number (aref (cadr a) 3))
      (string-to-number (aref (cadr b) 3))))
+
+(defvar elpaca-log--update-timer nil "Debounce timer for log buffer updates.")
+
+(defun elpaca-log--subscribe ()
+  "Set up log buffer subscriptions."
+  (elpaca-subscribe 'package-info #'elpaca-log--on-event)
+  (elpaca-subscribe 'busy  #'elpaca-log--on-event)
+  (elpaca-subscribe 'elpaca-status-changed #'elpaca-log--on-event))
+
+(defun elpaca-log--on-event (_event)
+  "Refresh log buffer after EVENT, debounced."
+  (when (buffer-live-p (get-buffer elpaca-log-buffer))
+    (when elpaca-log--update-timer (cancel-timer elpaca-log--update-timer))
+    (if elpaca--waiting
+        (elpaca--update-log-buffer)
+      (setq elpaca-log--update-timer
+            (run-at-time elpaca-log-interval nil #'elpaca--update-log-buffer)))))
+
+(elpaca-log--subscribe)
 
 (defvar elpaca-log-mode-map
   (let ((m (make-sparse-keymap)))

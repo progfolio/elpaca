@@ -36,7 +36,6 @@
     (elpaca-fetch   :prefix "‍🐕‍🦺" :face elpaca-ui-marked-fetch)
     (elpaca-merge   :prefix "🤝" :face elpaca-ui-marked-merge :args (id prefix-arg))
     (elpaca-pull    :prefix "⬆️" :face elpaca-ui-marked-pull :args (id prefix-arg)))
-
   "List of marks which can be applied to packages `elpaca-ui-mode' buffers.
 Each element is of the form (COMMAND :KEY VAL...).
 Accepted key val pairs are:
@@ -88,9 +87,9 @@ Accepted key val pairs are:
 
 (defun elpaca-ui--tag-unique (entries)
   "Return last occurrence of each entry in ENTRIES."
-  (cl-loop with seen for entry in entries
-           for id = (caar entry) unless (memq id seen)
-           collect (progn (push id seen) entry)))
+  (nreverse (cl-loop with seen for entry in (reverse entries)
+                     for id = (caar entry) unless (memq id seen)
+                     collect (progn (push id seen) entry))))
 
 (defcustom elpaca-ui-search-tags '((dirty     . elpaca-ui--tag-dirty)
                                    (declared  . elpaca-ui--tag-declared)

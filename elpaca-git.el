@@ -152,14 +152,14 @@ This is the branch that would be checked out upon cloning."
         (setq branch default-branch target branch)))
     (if (null target)
         (unless (eq (elpaca--status e) 'failed)
-          (elpaca--continue-build e nil 'ref-checked-out))
+          (elpaca--continue-build e 'ref-checked-out))
       (cond
        ((and ref (or branch tag))
-        (elpaca--signal
-         e (format ":ref %S overriding %S %S" ref (if branch :branch :tag) (or branch tag))))
+        (elpaca-publish 'package-info
+                        e (format ":ref %S overriding %S %S" ref (if branch :branch :tag) (or branch tag))))
        ((and tag branch)
         (elpaca--fail e (format "Ambiguous ref: :tag %S, :branch %S" tag branch))))
-      (elpaca--signal e (concat "Checking out " target) 'checking-out-ref)
+      (elpaca-publish e 'checking-out-ref (concat "Checking out " target))
       (unless (eq (elpaca--status e) 'failed)
         (elpaca--make-process e
           :name "checkout-ref"
@@ -196,7 +196,7 @@ This is the branch that would be checked out upon cloning."
 (defun elpaca-git--fetch (e &rest command)
   "Fetch E's remotes' commits.
 COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
-  (elpaca--signal e "Fetching remotes" 'fetching-remotes)
+  (elpaca-publish e 'package-info "Fetching remotes")
   (let ((default-directory (elpaca<-source-dir e)))
     (elpaca--make-process e
       :name "fetch"
@@ -227,7 +227,7 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
                    :command  '("git" "merge" "--ff-only")
                    :sentinel #'elpaca-git--merge-process-sentinel)
                  :elpaca-git-rev rev)
-    (elpaca--signal e "Merging updates" 'merging)))
+    (elpaca-publish e 'package-info "Merging updates")))
 
 (defun elpaca-git--initial-fetch (e)
   "Perform initial fetch for E, respecting :remotes recipe inheritance."
@@ -250,11 +250,12 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
     (when-let* ((default-directory (elpaca<-source-dir e))
                 (recipe            (elpaca<-recipe   e))
                 (remotes           (plist-get recipe :remotes)))
-      (elpaca--signal e "Configuring Remotes" 'adding-remotes)
+      (elpaca-publish e 'adding-remotes "Configuring Remotes")
       (cl-loop with renamed for spec in remotes do
                (if (stringp spec)
                    (if renamed
-                       (elpaca--signal e (format "ignoring :remotes rename %S" spec))
+                       (elpaca-publish e 'package-info
+                                       (format "ignoring :remotes rename %S" spec))
                      (unless (equal spec elpaca-default-remote-name)
                        (elpaca--call-with-log
                         e 1 "git" "remote" "rename" elpaca-default-remote-name spec))
@@ -266,28 +267,32 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
                    (setq fetchp t)
                    (elpaca-with-process
                        (elpaca--call-with-log e 1 "git" "remote" "add" remote URI)
-                     (unless success (elpaca--fail e stderr)))))))
-    (when fetchp (push #'elpaca-git--initial-fetch (elpaca<-build-steps e))))
-  (elpaca--continue-build e))
+                     (unless success (elpaca--fail e stderr)))))
+               (when fetchp (push #'elpaca-git--initial-fetch (elpaca<-build-steps e)))))
+    (elpaca--continue-build e)))
 
 (defun elpaca-git--clone-process-sentinel (process _event)
   "Sentinel for clone PROCESS."
   (if-let* ((e (process-get process :elpaca))
             (success (= (process-exit-status process) 0)))
       (progn (elpaca--propertize-subprocess process)
+             (elpaca-satisfy 'source-dir-exists (elpaca<-source-dir e))
              (elpaca--continue-build e))
     (if (or (process-get process :reclone)
             (not (plist-get (elpaca<-recipe e) :depth)))
-        (elpaca--fail e (nth 2 (car (elpaca<-log e))))
+        (progn
+          (elpaca-satisfy-failed 'source-dir-exists (elpaca<-source-dir e)
+                                 (format "%S clone failed" (elpaca<-id e)))
+          (elpaca--fail e (let ((events (gethash (elpaca<-id e) elpaca--event-index)))
+                            (plist-get (elpaca-event<-payload (car events)) :info))))
       (setf (elpaca<-recipe e) (plist-put (elpaca<-recipe e) :depth nil))
-      (elpaca--signal e "Re-cloning with recipe :depth nil")
+      (elpaca-publish 'package-info e "Re-cloning with recipe :depth nil")
       (push (lambda (e) (process-put (elpaca-git--clone e) :reclone t))
             (elpaca<-build-steps e))
       (elpaca--continue-build e))))
 
 (defun elpaca-git--clone (e)
   "Clone E's repo to `elpaca-directory'."
-  (elpaca--signal e "Cloning" 'cloning)
   (let* ((recipe  (elpaca<-recipe   e))
          (remotes (plist-get recipe :remotes))
          (remote  (and remotes (car remotes)))
@@ -299,12 +304,15 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
             ;;@TODO: Some refs will need a full clone or specific branch.
             ,@(when-let* ((depth (plist-get recipe :depth)))
                 (cond
-                 ((plist-get recipe :ref) (elpaca--signal e "Ignoring :depth in favor of :ref"))
+                 ((plist-get recipe :ref) (elpaca-publish e 'package-info
+                                                          "Ignoring :depth in favor of :ref"))
                  ((numberp depth) `("--depth" ,(number-to-string depth)))
                  ((memq depth '(treeless blobless))
                   (cond ((consp remote)
                          (setf (elpaca<-recipe e) (plist-put recipe :depth nil))
-                         (elpaca--signal e ":remotes incompatible with treeless, blobless clones; using :depth nil"))
+                         (elpaca-publish e 'package-info
+                                         ":remotes incompatible with treeless, blobless clones; using :depth nil"
+                                         0 :face 'warning))
                         ((eq depth 'treeless) '("--filter=tree:0"))
                         ((eq depth 'blobless) '("--filter=blob:none"))))))
             ;;@FIX: allow override
@@ -313,7 +321,8 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
             ,@(unless (or (null remote) (stringp remote)) '("--no-checkout"))
             ,URI ,repodir)))
     (if (file-exists-p repodir)
-        (progn (elpaca--signal e (format "%s exists. Skipping clone." repodir))
+        (progn (elpaca-publish e 'package-info (format "%s exists. Skipping clone." repodir))
+               (elpaca-satisfy 'source-dir-exists repodir)
                (elpaca--continue-build e))
       (elpaca--make-process e
         :name "clone" :command command :connection-type 'pty
@@ -361,17 +370,18 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
 
 (cl-defmethod elpaca-source ((e (elpaca git)))
   "Populate source files for E :type `git'."
-  (if-let* (((not (file-exists-p (elpaca<-source-dir e))))
-            (mono (elpaca--shared-source-dir (elpaca<-id e) (elpaca<-source-dir e)))
-            ((not (or (memq (elpaca<-id mono) (elpaca<-blocking e))
-                      (elpaca<-builtp mono)))))
-      (progn
-        (push (elpaca<-id mono) (elpaca<-blockers e))
-        (push (elpaca<-id e) (elpaca<-blocking mono))
-        (setf (elpaca<-statuses e) (list 'blocked 'queued)))
-    (setf (elpaca<-build-steps e)
-          (append elpaca-git-default-build-steps (elpaca<-build-steps e)))
-    (elpaca--continue-build e)))
+  (let ((source-dir (elpaca<-source-dir e)))
+    (if (file-exists-p source-dir)
+        (progn
+          (setf (elpaca<-build-steps e)
+                (append elpaca-git-default-build-steps (elpaca<-build-steps e)))
+          (elpaca--continue-build e))
+      (if-let* ((shared (elpaca--shared-source-dir (elpaca<-id e) source-dir))
+                ((not (elpaca<-builtp shared))))
+          (elpaca-wait-for e 'source-dir-exists source-dir)
+        (setf (elpaca<-build-steps e)
+              (append elpaca-git-default-build-steps (elpaca<-build-steps e)))
+        (elpaca--continue-build e)))))
 
 (cl-defmethod elpaca-build-steps ((e (elpaca git)) &optional context)
   "Return build steps for :type `git` E in CONTEXT."
@@ -382,7 +392,7 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
 
 (cl-defmethod elpaca--log-updates ((e (elpaca git)))
   "Log updates for :type `git` E."
-  (elpaca--signal e nil 'update-log)
+  (elpaca-publish e 'update-log)
   (let* ((default-directory (elpaca<-source-dir e))
          (date (string-trim (elpaca-process-output "git" "show" "-s" "--format=%ci"))))
     (elpaca--make-process e

@@ -92,7 +92,7 @@ Remove subdir."
 (defun elpaca-tar-extract (e)
   "Extract E's tarball."
   (let ((src (elpaca<-source-dir e)))
-    (elpaca--signal e (format "Downloading and extracting tar to %s" src) 'extracting)
+    (elpaca-publish e 'package-info (format "Downloading and extracting tar to %s" src))
     (elpaca-with-emacs e
       (:args ("-L" (elpaca<-source-dir (elpaca-get 'elpaca))))
       (require 'elpaca-tar)
