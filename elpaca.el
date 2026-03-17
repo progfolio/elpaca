@@ -963,7 +963,7 @@ FILES and NOCONS are used recursively."
          (finished (equal event "finished\n")))
     (unless finished
       (setf (elpaca<-build-steps e)
-            (cl-remove 'elpaca--isntall-info (elpaca<-build-steps e))))
+            (cl-remove 'elpaca--install-info (elpaca<-build-steps e))))
     (elpaca--propertize-subprocess process)
     (elpaca--continue-build
      e (if finished "Info compiled" (concat "Compilation failure: " (string-trim event))))))
