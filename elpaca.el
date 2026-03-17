@@ -1571,7 +1571,7 @@ FILTER must be a unary function which accepts and returns a queue list."
     (or (when-let* ((src (elpaca<-source-dir e))) (file-exists-p src))
         (when-let* ((build (elpaca<-build-dir e))) (file-exists-p build)))))
 
-(cl-defmethod elpaca-source-dir ((e (elpaca oprhan)))
+(cl-defmethod elpaca-source-dir ((e (elpaca orphan)))
   "Return source dir for :type `orphan` E."
   (plist-get (elpaca<-recipe e) :main))
 
