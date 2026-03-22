@@ -37,7 +37,8 @@
   '((verbosity . elpaca-log--verbosity)
     (latest . elpaca-log--tag-latest)
     (linked-errors . elpaca-log--byte-comp-warnings)
-    (update-log . elpaca-log--updates))
+    (update-log . elpaca-log--updates)
+    (progress . elpaca-log--tag-progress))
   "Alist of search tags (see `elpaca-ui-search-tags') exclusive to the log buffer."
   :type '(alist :key-type symbol :value-type function) :group 'elpaca-ui)
 
@@ -50,6 +51,87 @@ It must accept a package ID symbol and REF string as its first two arguments."
   "Return query for marked packages."
   (when (= (length (delete-dups (mapcar #'cadr elpaca-ui--marked-packages))) 1)
     (let ((this-command (cadar elpaca-ui--marked-packages))) (elpaca-log-command-query))))
+
+(defcustom elpaca-log-progress-steps
+  '(elpaca-source
+    elpaca-queue-dependencies
+    elpaca-check-version
+    elpaca-build-link
+    elpaca-build-autoloads
+    elpaca-build-compile
+    elpaca-build-docs
+    elpaca-activate)
+  "Ordered list of build steps shown in the `#progress' log filter bar."
+  :type '(repeat symbol) :group 'elpaca-ui)
+
+(defun elpaca-log--progress-bar (id col-width)
+  "Return a progress bar string for package ID filling COL-WIDTH characters.
+Each segment corresponds to a build step and carries a `help-echo' tooltip
+with the step name, status, and duration."
+  (let* ((events     (reverse (elpaca-event-log id)))
+         (step-count (length elpaca-log-progress-steps))
+         (seg-width  (max 3 (/ col-width (max 1 step-count))))
+         (step-starts (make-hash-table :test #'eq))
+         (step-data   (make-hash-table :test #'eq)))
+    (dolist (event events)
+      (let* ((payload (elpaca-event<-payload event))
+             (info    (plist-get payload :info))
+             (status  (plist-get payload :status))
+             (time    (float-time (elpaca-event<-time event))))
+        (when info
+          (cond
+           ((string-match "^step \\(.+\\) started$" info)
+            (puthash (intern (match-string 1 info)) time step-starts))
+           ((string-match "^step \\(.+\\) completed$" info)
+            (let* ((step  (intern (match-string 1 info)))
+                   (start (gethash step step-starts)))
+              (when start
+                (puthash step (list (or status 'finished) start time)
+                         step-data))))))))
+    ;; Mark in-progress steps
+    (maphash (lambda (step start)
+               (unless (gethash step step-data)
+                 (puthash step (list 'active start nil) step-data)))
+             step-starts)
+    ;; Build bar string
+    (let ((bar (cl-loop
+                for step in elpaca-log-progress-steps
+                for data = (gethash step step-data)
+                for status = (car data)
+                for face   = (or (alist-get status elpaca-status-faces)
+                                 (when data 'default))
+                for duration = (when (and data (cadr data) (caddr data))
+                                 (format "%.3fs" (- (caddr data) (cadr data))))
+                for tooltip = (concat (symbol-name step)
+                                      (if status (format " [%s]" status) " [skipped]")
+                                      (if duration (format " %s" duration) ""))
+                for inner = (if data
+                                (let* ((label (if (eq status 'active) "…"
+                                               (or duration "")))
+                                       (padded (string-pad
+                                                (truncate-string-to-width
+                                                 label (- seg-width 2))
+                                                (- seg-width 2))))
+                                  (concat " " padded " "))
+                              (make-string seg-width ?\s))
+                concat (propertize inner
+                                   'face (when face `(:inherit ,face :inverse-video t))
+                                   'help-echo tooltip
+                                   'help-echo-inhibit-substitution t))))
+      (string-pad (truncate-string-to-width bar col-width) col-width))))
+
+(defun elpaca-log--tag-progress (entries)
+  "Replace the Info column with a live progress bar for each package.
+Intended for use with #unique: \"#unique #progress\"."
+  ;; Info is column index 2; tabulated-list-format entries are lists.
+  (let ((col-width (nth 1 (aref tabulated-list-format 2))))
+    (mapcar
+     (lambda (entry)
+       (let* ((copy (list (car entry) (copy-sequence (cadr entry))))
+              (id   (caar entry)))
+         (aset (cadr copy) 2 (elpaca-log--progress-bar id col-width))
+         copy))
+     entries)))
 
 (defun elpaca-log--tag-latest (entries)
   "Log ENTRIES since most recent `elpaca-process-queues'."
@@ -213,23 +295,24 @@ It must accept a package ID symbol and REF string as its first two arguments."
    for events = (reverse (elpaca-event-log id))
    append
    (cl-loop
+    with current-status = nil
     for event in events
     for type = (elpaca-event<-type event)
     for time = (elpaca-event<-time event)
     for payload = (elpaca-event<-payload event)
     for busyp = (eq type 'busy)
-    for status = (plist-get payload :status)
     for face = (plist-get payload :face)
+    do (when (and type (not (eq type 'info))) (setq current-status type))
     for entry =
-    (when-let* ((info (or (plist-get payload :info) (plist-get payload :output) (when busyp "busy")))
+    (when-let* ((info (or (plist-get payload :info) (when busyp "busy")))
                 ((or busyp (<= (or (plist-get payload :verbosity) 0) elpaca-verbosity)))
                 (delta (format-time-string "%02s.%6N" (time-subtract time queue-time))))
-      (let ((display-status (if (and busyp (not (memq status '(finished failed blocked))))
+      (let ((display-status (if (and busyp (not (memq current-status '(finished failed blocked))))
                                 'busy
-                              status)))
+                              current-status)))
         (list (list id)
               (vector (propertize package 'elpaca-status display-status)
-                      (or (and display-status (symbol-name display-status)) "")
+                      (or (symbol-name display-status) "")
                       (if face (propertize info 'face face) info)
                       (propertize delta 'time time)))))
     when entry collect entry)))
