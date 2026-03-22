@@ -912,7 +912,7 @@ FILES and NOCONS are used recursively."
   (let* ((build-dir (elpaca<-build-dir e))
          (files (or (elpaca<-files e)
                     (setf (elpaca<-files e) (elpaca--files e)))))
-    (when (file-exists-p build-dir) (delete-directory build-dir 'recusrive))
+    (when (file-exists-p build-dir) (delete-directory build-dir 'recursive))
     (make-directory build-dir 'parents)
     (dolist (spec files)
       (when-let* ((file   (car spec))
