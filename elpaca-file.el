@@ -32,8 +32,8 @@
 ;;@MAYBE: remote file support? Security implications...
 (cl-defmethod elpaca-source ((e (elpaca file)))
   "Populate source directory for :type `file` E."
-  (elpaca--signal e (format "Skipping local file %S" (elpaca<-main e)) 'getting)
-  (elpaca--continue-build e))
+  (elpaca-note e (format "Skipping local file %S" (elpaca<-main e)))
+  (elpaca-continue e))
 
 (cl-defmethod elpaca--delete ((e (elpaca file)))
   "Delete :type `file` E. Does not delete source directory."
