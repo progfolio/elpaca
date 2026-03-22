@@ -219,7 +219,7 @@ It receives one argument, the parsed search query list.")
   "Return string indicating state of queues."
   (cl-loop
    with counts = nil with total = 0 with finalized = 0
-   for s in '(finished blocked failed other)
+   for s in (sort (mapcar #'car elpaca--status-counts))
    for plen = (elpaca-alist-get s elpaca--status-counts 0)
    for count = (propertize (number-to-string plen)
                            'face (elpaca-alist-get s elpaca-status-faces '(:weight bold))
