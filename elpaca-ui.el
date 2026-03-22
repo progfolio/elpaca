@@ -88,9 +88,10 @@ Accepted key val pairs are:
 
 (defun elpaca-ui--tag-unique (entries)
   "Return last occurrence of each entry in ENTRIES."
-  (cl-loop with seen for entry in entries
-           for id = (caar entry) unless (memq id seen)
-           collect (progn (push id seen) entry)))
+  (nreverse
+   (cl-loop with seen for entry in (reverse entries)
+            for id = (caar entry) unless (memq id seen)
+            collect (progn (push id seen) entry))))
 
 (defcustom elpaca-ui-search-tags '((dirty     . elpaca-ui--tag-dirty)
                                    (declared  . elpaca-ui--tag-declared)
