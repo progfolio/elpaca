@@ -92,7 +92,7 @@ Remove subdir."
 (defun elpaca-tar-extract (e)
   "Extract E's tarball."
   (let ((src (elpaca<-source-dir e)))
-    (elpaca--signal e (format "Downloading and extracting tar to %s" src) 'extracting)
+    (elpaca-note e (format "Downloading and extracting tar to %s" src))
     (elpaca-with-emacs e
       (:args ("-L" (elpaca<-source-dir (elpaca-get 'elpaca))))
       (require 'elpaca-tar)
@@ -107,7 +107,7 @@ Remove subdir."
   "Download and extract E's :type `tar' source files."
   (setf (elpaca<-build-steps e)
         (append elpaca-tar-default-build-steps (elpaca<-build-steps e)))
-  (elpaca--continue-build e))
+  (elpaca-continue e))
 
 (cl-defmethod elpaca-source-dir ((e (elpaca tar)))
   "Return source directory for E :type `tar`."
