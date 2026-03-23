@@ -114,8 +114,7 @@ exclamation point to it. e.g. !#installed."
 
 (defmacro elpaca-defsearch (name query)
   "Return search command with NAME for QUERY."
-  (declare (indent 1)
-           (debug (symbolp s stringp)))
+  (declare (indent 1) (debug (symbolp s stringp)))
   `(defun ,(intern (format "elpaca-ui-search-%s" name)) ()
      ,(format "Search for %S" query)
      (interactive nil elpaca-ui-mode)
@@ -576,8 +575,7 @@ If ADVANCEP is non-nil, move `forward-line'."
 
 (defmacro elpaca-ui-defmark (name test)
   "Define a marking command with NAME and TEST."
-  (declare (indent 1)
-           (debug (symbolp form)))
+  (declare (indent 1) (debug (symbolp form)))
   `(defun ,(intern (format "elpaca-ui-mark-%s"
                            (replace-regexp-in-string "^elpaca-" "" (symbol-name name))))
        () ,(format "Mark package at point for `%s'." name)
