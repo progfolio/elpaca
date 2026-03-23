@@ -26,7 +26,8 @@
 (eval-when-compile (require 'subr-x))
 
 (defvar elpaca-process-newline-regexp "[
-]"
+
+]"
   "Regexp matching return or newline in process output.")
 
 (defconst elpaca-process--stderr
@@ -69,8 +70,7 @@ Anaphoric bindings provided:
   failure: t if process did not invoke or exited with a nonzero code
   stdout: output of stdout
   stderr: output of stderr"
-  (declare (indent 1)
-           (debug t))
+  (declare (indent 1) (debug t))
   `(let* ((result ,result)
           (exit (car result))
           (invoked (numberp exit))
@@ -84,14 +84,12 @@ Anaphoric bindings provided:
 
 (defmacro elpaca-with-process-call (args &rest body)
   "Evaluate BODY in `elpaca-with-process', applying `elpaca-process-call' to ARGS."
-  (declare (indent 1)
-           (debug (sexp &rest (&rest form))))
+  (declare (indent 1) (debug (sexp &rest (&rest form))))
   `(elpaca-with-process (elpaca-process-call ,@(if (listp args) args (list args))) ,@body))
 
 (defmacro elpaca-process-cond (args &rest conditions)
   "Eval CONDITIONS in context of `elpaca-with-process-call' with ARGS."
-  (declare (indent 1)
-           (debug (sexp &rest (&rest form))))
+  (declare (indent 1) (debug (sexp &rest (&rest form))))
   `(elpaca-with-process-call ,args (cond ,@conditions)))
 
 (defun elpaca-process-output (program &rest args)
