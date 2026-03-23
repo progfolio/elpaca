@@ -227,7 +227,8 @@ Each function must also accept an optional ITEM as a second argument."
   "Write FILE using BODY.
 `standard-output' and print variables are lexically bound for convenience.
 e.g. elisp forms may be printed via `prin1'."
-  (declare (indent 1) (debug t))
+  (declare (indent 1)
+           (debug t))
   `(let ((coding-system-for-write 'utf-8))
      (with-temp-file ,file
        (let* ((standard-output (current-buffer))
@@ -1002,7 +1003,8 @@ ARGS must be a plist including any of the following keywords value pairs:
 :name an expression evaluating to a string, used as the subprocess name.
 :args an expression evaluating to a list of Emacs subprocess command line args.
 :env a `let' VARLIST which is evaluated and injected in the subprocess."
-  (declare (indent 1) (debug t))
+  (declare (indent 1)
+           (debug (form [&optional sexp] body)))
   (let ((esym (make-symbol "e"))
         (formsym (make-symbol "forms"))
         (argsym (make-symbol "args"))
@@ -1498,7 +1500,8 @@ The first to return non-nil suppresses the error."
   "Queue ORDER for asynchronous installation/activation.
 Evaluate BODY forms synchronously once ORDER's queue is processed.
 See Info node `(elpaca) Basic Concepts'."
-  (declare (indent 1) (debug form))
+  (declare (indent 1)
+           (debug (sexp body)))
   `(catch 'elpaca-abort (elpaca--expand-declaration ',order ',body)))
 
 (defvar elpaca--try-package-history nil "History for `elpaca-try'.")
@@ -1790,7 +1793,8 @@ Any function returning nil will prevent the E from being written to the file."
 (defmacro elpaca-with-dir (e type &rest body)
   "Evaluate BODY with E's `default-directory' bound.
 TYPE is either `source` or `build`, for source or build directory."
-  (declare (indent 2) (debug (symbolp symbolp &rest form)))
+  (declare (indent 2)
+           (debug (symbolp symbolp &rest form)))
   `(let ((default-directory (,(intern (format "elpaca<-%s-dir" (symbol-name type))) ,e)))
      ,@body))
 
@@ -1802,7 +1806,8 @@ The ARGS plist must contain one of the following values for the :type key:
    ARGS are passed to `elpaca-with-emacs', which see.
 - `system`: each form in BODY is interepreted as (PROGRAM [ARGS...]).
 In addition, the ARGS `:dir` may specify the package `build` or `source` dir."
-  (declare (indent defun))
+  (declare (indent defun)
+           (debug (symbolp sexp body)))
   (if-let* ((type (plist-get args :type))
             ((memq type '(elisp system))))
       `(defun ,name (e)
