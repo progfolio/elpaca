@@ -667,7 +667,7 @@ If it is a function, it's return value is used."
   (unless elpaca-after-init-time
     (cl-loop for (_ . e) in (elpaca--queued)
              for query = (cond ((not (elpaca<-builtp e)) "#unique | !finished")
-                               ((eq (elpaca--status e) 'failed) "| failed"))
+                               ((eq (elpaca--status e) 'failed) "#unique | failed"))
              when query return
              (prog1 query
                (setq initial-buffer-choice
@@ -727,12 +727,15 @@ The first function, if any, which returns non-nil is used." :type 'hook)
                       (registered (elpaca-alist-get (plist-get recipe :type) elpaca-types)))
             (require registered)) ;;@TODO: optimize lookup by tracking separate from `features'?
           (setf (elpaca<-source-dir e) (elpaca-source-dir e)
-                (elpaca<-build-steps e) (elpaca-build-steps e))
-          e)
+                (elpaca<-build-steps e) (elpaca-build-steps e)))
       (elpaca-error
        (if (run-hook-with-args-until-success 'elpaca-error-functions e err)
            (throw 'elpaca-abort nil)
-         (signal (car err) (cdr err)))))))
+         (condition-case err2
+             (elpaca--fail e (format "%s %s" (get (car err) 'error-message) (cdr err)))
+           (elpaca-build-error nil)
+           (error (signal (car err2) (cdr err2)))))))
+    e))
 
 (declare-function elpaca-ui--update-search-query "elpaca-ui")
 (defun elpaca--update-log-buffer ()
@@ -757,11 +760,12 @@ The first function, if any, which returns non-nil is used." :type 'hook)
 
 (defun elpaca--fail (e &optional reason)
   "Fail E for REASON, signaling an elpaca-build-error."
-  (when-let* ((p (elpaca<-process e)))
-    (delete-process p))
-  (when reason (elpaca-note e reason :face 'elpaca-failed))
-  (elpaca--set-status e 'failed)
-  (signal 'elpaca-build-error (list e reason)))
+  (unless (eq (elpaca<-status e) 'failed)
+    (when-let* ((p (elpaca<-process e)))
+      (delete-process p))
+    (when reason (elpaca-note e reason :face 'elpaca-failed))
+    (elpaca--set-status e 'failed)
+    (signal 'elpaca-build-error (list e reason))))
 
 (defun elpaca-get (id)
   "Return queued E associated with ID."
@@ -772,8 +776,8 @@ The first function, if any, which returns non-nil is used." :type 'hook)
   (when-let* ((process (elpaca<-process e)))
     (delete-process process))
   (let ((handler (plist-get (elpaca<-recipe e) :on-error)))
-    (unless (and handler (funcall handler e err))
-      (signal (car err) (cdr err)))))
+    (unless (or (and handler (funcall handler e err)))
+      (elpaca--fail e (format "Unhandled build error: %S" (cdr err))))))
 
 (defun elpaca-continue (e)
   "Advance E to its next build step.
@@ -810,7 +814,7 @@ E is throttled until a slot opens."
            (elpaca-note e (format "step %s failed" step) :face 'elpaca-failed)
            (elpaca--handle-build-error e err))
           (error
-           (elpaca-note e (format "step %s error: %S" step err) :face 'elpaca-failed)
+           (elpaca-note e (format "step %s error: %S" step (cdr err)) :face 'elpaca-failed)
            (elpaca--fail e (format "Unhandled error in %s: %S" step err))))))))
 
 (define-obsolete-function-alias 'elpaca--continue-build 'elpaca-continue "0.2.0")
@@ -838,7 +842,7 @@ E is throttled until a slot opens."
       (when queue (setf (elpaca<-queue-id e) (elpaca-q<-id q)
                         (elpaca<-init e) (elpaca-q<-type q)))
       (setf (alist-get id (elpaca-q<-elpacas q)) e)
-      (elpaca--set-status e 'queued)
+      (unless (elpaca<-status e) (elpaca--set-status e 'queued))
       e)))
 
 ;;;###autoload
