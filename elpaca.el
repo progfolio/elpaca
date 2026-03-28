@@ -512,8 +512,9 @@ TYPE is one of the following keywords:
       (elpaca-substitute-build-steps
        (pcase context
          ('nil (if (elpaca<-builtp e) elpaca--pre-built-steps elpaca-default-build-steps))
-         (:rebuild (cl-set-difference elpaca-default-build-steps
-                                      (cons 'elpaca-source elpaca--pre-built-steps))))
+         ((or :rebuild :merge)
+          (cl-set-difference elpaca-default-build-steps
+                             (cons 'elpaca-source elpaca--pre-built-steps))))
        (condition-case err
            (cl-call-next-method)
          ((cl-no-next-method) nil)
