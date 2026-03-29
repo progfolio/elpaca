@@ -107,7 +107,7 @@ Results in faster start-up time." :type 'boolean)
 (defcustom elpaca-log-interval 0.02
   "Number of idle seconds to wait before updating log buffer.
 Setting this to too low may cause the status buffer to block more.
-Setting it too high causes prints fewer status updates."
+Setting it higher causes fewer log updates."
   :type 'number)
 
 (defcustom elpaca-busy-interval 60
