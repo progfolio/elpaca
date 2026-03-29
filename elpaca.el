@@ -551,10 +551,11 @@ If N is nil return a list of all queued elpacas."
 (defun elpaca--shared-source-dir (id dir)
   "Return most recently queued E with same source DIR, queued before ID."
   (cl-loop with queued = (elpaca--queued)
-           with index = (or (cl-loop for i from 0 to (length queued)
+           with limit = (length queued)
+           with index = (or (cl-loop for i from 0 to limit
                                      when (eq (car (nth i queued)) id) return i)
                             (cl-return nil))
-           for i from (1- index) downto 0
+           for i from (1+ index) to limit
            for e = (cdr (nth i queued))
            when (and e (equal dir (elpaca<-source-dir e)))
            return e))
