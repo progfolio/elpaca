@@ -54,7 +54,8 @@
 (defface elpaca-blocked '((t (:inherit warning))) "Indicates an order is blocked.")
 (defface elpaca-failed '((t (:inherit error))) "Indicates an order has failed.")
 
-(defcustom elpaca-status-faces '((blocked  . elpaca-blocked)
+(defcustom elpaca-status-faces '((active   . default)
+                                 (blocked  . elpaca-blocked)
                                  (finished . elpaca-finished)
                                  (failed   . elpaca-failed)
                                  (busy     . elpaca-busy))
