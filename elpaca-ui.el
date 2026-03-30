@@ -93,8 +93,7 @@ Accepted key val pairs are:
             for id = (caar entry) unless (memq id seen)
             collect (progn (push id seen) entry))))
 
-(defcustom elpaca-ui-search-tags '((dirty     . elpaca-ui--tag-dirty)
-                                   (declared  . elpaca-ui--tag-declared)
+(defcustom elpaca-ui-search-tags '((declared  . elpaca-ui--tag-declared)
                                    (orphan    . elpaca-ui--tag-orphan)
                                    (unique    . elpaca-ui--tag-unique)
                                    (random    . elpaca-ui--tag-random)
