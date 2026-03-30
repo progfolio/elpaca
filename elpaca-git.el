@@ -402,11 +402,10 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
 
 (defvar elpaca-ui-search-tags)
 (with-eval-after-load 'elpaca-ui
-  (defun elpaca-ui--tag-dirty (entries)
+  (defun elpaca-git--tag-dirty (entries)
     "Return ENTRIES for packages with a dirty worktree."
     (cl-remove-if-not #'elpaca-git-worktree-dirty-p entries :key #'caar))
-  (unless (alist-get 'dirty elpaca-ui-search-tags)
-    (setf (alist-get 'dirty elpaca-ui-search-tags) 'elpaca-ui--tag-dirty)))
+  (add-to-list 'elpaca-ui-search-tags (cons 'dirty 'elpaca-git--tag-dirty)))
 
 (provide 'elpaca-git)
 ;;; elpaca-git.el ends here
