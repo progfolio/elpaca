@@ -257,7 +257,7 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
     (when-let* ((e (elpaca-get id)))
       (put-text-property
        beg (+ beg namelen) 'face
-       (or (elpaca-alist-get (get-text-property (point) 'elpaca-status) elpaca-status-faces)
+       (or (elpaca-alist-get (get-text-property beg 'elpaca-status) elpaca-status-faces)
            (if (or (derived-mode-p 'elpaca-log-mode)
                    (equal (plist-get (elpaca<-recipe e) :source)
                           (unless (equal source "Init file") source)))
