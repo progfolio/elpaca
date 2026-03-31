@@ -147,14 +147,14 @@ is used in a `:files' directive.")
   "Abnormal hook run to alter orders.
 Each element must be a unary function which accepts an order plist.
 The function may return nil or a plist to be merged with the order.
-This hook is run via `elpaca-run-hooks-with-reduce'."
+This hook is run via `elpaca-run-hook-with-reduce'."
   :type 'hook)
 
 (defcustom elpaca-recipe-functions nil
   "Abnormal hook run to alter recipes.
 Each element must be a unary function which accepts an recipe plist.
 The function may return nil or a plist to be merged with the recipe.
-This hook is run via `elpaca-run-hooks-with-reduce'."
+This hook is run via `elpaca-run-hook-with-reduce'."
   :type 'hook)
 
 (defsubst elpaca-alist-get (key alist &optional default)
