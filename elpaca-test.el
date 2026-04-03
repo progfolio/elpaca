@@ -142,13 +142,17 @@ For DEPTH, REPO, REF, FORMS see `elpaca-test' keyword args."
 
 (defun elpaca-test--copy-local-store ()
   "Copy host `elpaca-directory' store to test env."
-  (cl-loop with env = (expand-file-name "./elpaca/")
-           for path in '("./sources/elpaca" "./cache/")
-           do (when-let* ((local (expand-file-name path elpaca-directory))
-                          ((file-exists-p local))
-                          (destination (expand-file-name path env)))
-                (copy-directory local destination nil 'parents 'copy-conents)
-                (mapc #'delete-file (directory-files-recursively destination "\\.elc")))))
+  (let* ((env (expand-file-name "./elpaca/"))
+         (cache-local (expand-file-name "./cache/" elpaca-directory))
+         (cache-destination (expand-file-name "./cache/" env))
+         (elpaca-local (expand-file-name "elpaca" elpaca-sources-directory))
+         (elpaca-destination (expand-file-name "./sources/elpaca" env)))
+    (when (file-exists-p cache-local)
+      (copy-directory cache-local cache-destination nil 'parents 'copy-conents)
+      (mapc #'delete-file (directory-files-recursively cache-destination "\\.elc")))
+    (when (file-exists-p elpaca-local)
+      (copy-directory elpaca-local elpaca-destination nil 'parents 'copy-conents)
+      (mapc #'delete-file (directory-files-recursively elpaca-destination "\\.elc")))))
 
 (defun elpaca-test--display (vars)
   "Display test with VARS when test finished and Emacs idle."
@@ -303,7 +307,8 @@ The following keys are recognized:
                            (when localp (user-error "Cannot use :ref local with :init (:file ...)"))
                            (eval (cadar init) t))
                           ((eq (car-safe init) 'user) (locate-user-emacs-file "./init.el"))
-                          (localp (expand-file-name "./sources/elpaca/doc/init.el" elpaca-directory))))
+                          (localp (expand-file-name "doc/init.el"
+                                                    (expand-file-name "elpaca" elpaca-sources-directory)))))
          (early (plist-get args :early-init))
          (early-file (cond ((eq (car-safe (car-safe early)) :file) (eval (cadar early) t))
                            ((eq (car-safe early) 'user) (locate-user-emacs-file "./early-init.el"))))
