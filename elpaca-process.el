@@ -69,7 +69,7 @@ Anaphoric bindings provided:
   failure: t if process did not invoke or exited with a nonzero code
   stdout: output of stdout
   stderr: output of stderr"
-  (declare (indent 1) (debug t))
+  (declare (indent 1) (debug (form body)))
   `(let* ((result ,result)
           (exit (car result))
           (invoked (numberp exit))
@@ -88,7 +88,7 @@ Anaphoric bindings provided:
 
 (defmacro elpaca-process-cond (args &rest conditions)
   "Eval CONDITIONS in context of `elpaca-with-process-call' with ARGS."
-  (declare (indent 1) (debug (sexp body)))
+  (declare (indent 1) (debug (sexp &rest (form body))))
   `(elpaca-with-process-call ,args (cond ,@conditions)))
 
 (defun elpaca-process-output (program &rest args)
