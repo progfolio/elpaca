@@ -141,14 +141,13 @@ For DEPTH, REPO, REF, FORMS see `elpaca-test' keyword args."
       (elisp-enable-lexical-binding))))
 
 (defun elpaca-test--copy-local-store ()
-  "Copy host `elpaca-directory' store to test env."
+  "Copy host Elpaca installation and `elpaca-cache-directory' to test env."
   (cl-loop with env = (expand-file-name "./elpaca/")
-           for path in '("./sources/elpaca" "./cache/")
-           do (when-let* ((local (expand-file-name path elpaca-directory))
-                          ((file-exists-p local))
-                          (destination (expand-file-name path env)))
-                (copy-directory local destination nil 'parents 'copy-conents)
-                (mapc #'delete-file (directory-files-recursively destination "\\.elc")))))
+           with paths = `((,(expand-file-name "./elpaca/" elpaca-sources-directory) . "./sources/")
+                          (,elpaca-cache-directory . "./"))
+           for (path . dest) in paths when (file-exists-p path) do
+           (copy-directory path (expand-file-name dest env) nil 'parents)
+           finally (mapc #'delete-file (directory-files-recursively env "\\.elc"))))
 
 (defun elpaca-test--display (vars)
   "Display test with VARS when test finished and Emacs idle."
