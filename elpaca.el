@@ -1791,7 +1791,7 @@ Any function returning nil will prevent the E from being written to the file."
 (defmacro elpaca-with-dir (e type &rest body)
   "Evaluate BODY with E's `default-directory' bound.
 TYPE is either `source` or `build`, for source or build directory."
-  (declare (indent 2) (debug (symbolp symbolp &rest form)))
+  (declare (indent 2) (debug (symbolp symbolp body)))
   `(let ((default-directory (,(intern (format "elpaca<-%s-dir" (symbol-name type))) ,e)))
      ,@body))
 
@@ -1803,7 +1803,7 @@ The ARGS plist must contain one of the following values for the :type key:
    ARGS are passed to `elpaca-with-emacs', which see.
 - `system`: each form in BODY is interepreted as (PROGRAM [ARGS...]).
 In addition, the ARGS `:dir` may specify the package `build` or `source` dir."
-  (declare (indent defun) (debug (symbolp sexp body)))
+  (declare (indent defun) (debug (symbolp sexp def-body)))
   (if-let* ((type (plist-get args :type))
             ((memq type '(elisp system))))
       `(defun ,name (e)

@@ -114,7 +114,7 @@ exclamation point to it. e.g. !#installed."
 
 (defmacro elpaca-defsearch (name query)
   "Return search command with NAME for QUERY."
-  (declare (indent 1) (debug (symbolp s stringp)))
+  (declare (indent 1) (debug (symbolp stringp)))
   `(defun ,(intern (format "elpaca-ui-search-%s" name)) ()
      ,(format "Search for %S" query)
      (interactive nil elpaca-ui-mode)
