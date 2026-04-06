@@ -247,6 +247,7 @@ BATCH, TIMEOUT, and EARLY match :interactive, :timeout, :early-init keys."
 
 (defmacro elpaca-test-insert (file point &rest body)
   "Return contents of FILE with BODY inserted at POINT."
+  (declare (debug (stringp form &rest body)))
   `(with-temp-buffer
      (insert-file-contents ,file)
      (goto-char ,point)
@@ -287,7 +288,7 @@ The following keys are recognized:
   :timeout N. A number or seconds to wait for package installations to complete.
               Pending orders are failed after this time.
   :buffer STRING. Name of the process buffer. Ignored when :interactive."
-  (declare (indent 0))
+  (declare (indent 0) (debug t))
   (unless lexical-binding (user-error "Lexical binding required for elpaca-test"))
   (let* ((args (elpaca-test--args body))
          (batchp (not (car (plist-get args :interactive))))
