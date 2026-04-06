@@ -813,7 +813,8 @@ E is throttled until a slot opens."
                 (funcall closure e step)
               (funcall step e))
           (elpaca-build-error
-           (elpaca-note e (format "step %s failed" step) :face 'elpaca-failed)
+           (unless (eq (elpaca--status e) 'failed)
+             (elpaca-note e (format "step %s failed" step) :face 'elpaca-failed))
            (elpaca--handle-build-error e err))
           (error
            (elpaca-note e (format "step %s error: %S" step (cdr err)) :face 'elpaca-failed)
