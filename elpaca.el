@@ -1355,6 +1355,8 @@ If RECACHE is non-nil, do not use cached dependencies."
           (let* ((queued-dep (elpaca-alist-get dep-id enqueued))
                  (d (or queued-dep (elpaca--enqueue dep-id q)))
                  (d-status (elpaca--status d)))
+            (when (eq d-status 'failed)
+              (elpaca--fail e (format "failed dependency: %s" dep-id)))
             (when (and queued-dep (> (elpaca<-queue-id d) q-id))
               (elpaca--fail d (format "dependent %S in past queue" e-id)))
             (cl-pushnew e-id (elpaca<-dependents d))
