@@ -735,7 +735,7 @@ The first function, if any, which returns non-nil is used." :type 'hook)
            (throw 'elpaca-abort nil)
          (condition-case err2
              (elpaca--fail e (format "%s %s" (get (car err) 'error-message) (cdr err)))
-           (elpaca-build-error nil)
+           (elpaca-error nil)
            (error (signal (car err2) (cdr err2)))))))
     e))
 
