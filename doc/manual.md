@@ -329,7 +329,7 @@ When non-nil, inherit *PROPS* from `elpaca-order-functions` and possibly `elpaca
 returns the recipe as declared:
 
 ```emacs-lisp
-(:source nil :inherit nil :package "doct")
+(:source nil :package "doct" :id doct :inherit nil)
 ```
 
 With inheritance enabled:
@@ -345,7 +345,8 @@ With inheritance enabled:
            "docs/*.info" "docs/*.texi" "docs/*.texinfo"
            (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
                      "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
-          :source "MELPA" :type git :protocol https :inherit t :depth treeless)
+          :source "MELPA" :id dracula-theme :inherit t :type git :protocol https
+          :depth treeless)
 ```
 
 the Elpaca&rsquo;s MELPA menu provides the rest of the recipe.
@@ -363,8 +364,8 @@ The value may also be a menu symbol or list of menu symbols. This is a per-recip
           ("*"
            (:exclude ".git" "INSTALL.md" "screenshot.png" "start_emacs_test.sh"
                      "test-profile.el"))
-          :source "NonGNU ELPA" :type git :protocol https :inherit
-          elpaca-menu-nongnu-elpa :depth treeless)
+          :source "NonGNU ELPA" :id dracula-theme :inherit
+          elpaca-menu-nongnu-elpa :type git :protocol https :depth treeless)
 ```
 
 
@@ -617,8 +618,8 @@ This is useful if you want to guarantee the values of certain keywords despite a
 ```
 
 ```emacs-lisp
-(:source nil :type git :protocol https :inherit t :depth treeless :package
-         "burger" :cheese extra)
+(:source nil :package "burger" :id burger :type git :protocol https :inherit t
+         :depth treeless :cheese extra)
 ```
 
 
@@ -713,7 +714,7 @@ This is useful for declaring default order properties. For example, the followin
 ```
 
 ```emacs-lisp
-(:source nil :inherit nil :package "burger")
+(:source nil :package "burger" :id burger :inherit nil)
 ```
 
 

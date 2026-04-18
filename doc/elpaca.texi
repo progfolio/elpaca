@@ -466,7 +466,7 @@ For example@comma{} without inheritance:
 returns the recipe as declared:
 
 @lisp
-(:source nil :inherit nil :package "doct")
+(:source nil :package "doct" :id doct :inherit nil)
 @end lisp
 
 With inheritance enabled:
@@ -483,7 +483,8 @@ With inheritance enabled:
            "docs/*.info" "docs/*.texi" "docs/*.texinfo"
            (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
                      "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
-          :source "MELPA" :type git :protocol https :inherit t :depth treeless)
+          :source "MELPA" :id dracula-theme :inherit t :type git :protocol https
+          :depth treeless)
 @end lisp
 
 the Elpaca's MELPA menu provides the rest of the recipe.
@@ -503,8 +504,8 @@ This is a per-recipe way of setting @samp{elpaca-menu-functions}.
           ("*"
            (:exclude ".git" "INSTALL.md" "screenshot.png" "start_emacs_test.sh"
                      "test-profile.el"))
-          :source "NonGNU ELPA" :type git :protocol https :inherit
-          elpaca-menu-nongnu-elpa :depth treeless)
+          :source "NonGNU ELPA" :id dracula-theme :inherit
+          elpaca-menu-nongnu-elpa :type git :protocol https :depth treeless)
 @end lisp
 
 @item
@@ -764,8 +765,8 @@ This is useful if you want to guarantee the values of certain keywords despite a
 @end lisp
 
 @lisp
-(:source nil :type git :protocol https :inherit t :depth treeless :package
-         "burger" :cheese extra)
+(:source nil :package "burger" :id burger :type git :protocol https :inherit t
+         :depth treeless :cheese extra)
 @end lisp
 
 @node Menus
@@ -886,7 +887,7 @@ For example@comma{} the following function disables recipe inheritance by defaul
 @end lisp
 
 @lisp
-(:source nil :inherit nil :package "burger")
+(:source nil :package "burger" :id burger :inherit nil)
 @end lisp
 
 @node Queues
