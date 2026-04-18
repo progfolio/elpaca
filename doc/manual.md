@@ -5,8 +5,8 @@
   - [Quick Start](#quick-start)
   - [Basic concepts](#basic-concepts)
     - [Recipes](#recipes)
-      - [Package types](#org373a788)
-      - [General recipe keywords](#org3eac1e6)
+      - [Package types](#package types)
+      - [General recipe keywords](#general recipe keywords)
         - [:autoloads](#recipe-keyword-autoloads)
         - [:build](#recipe-keyword-build)
         - [:files](#recipe-keyword-files)
@@ -16,7 +16,7 @@
         - [:vars](#recipe-keyword-vars)
         - [:version](#recipe-keyword-version)
         - [:wait](#recipe-keyword-wait)
-      - [Repository recipe keywords](#org4f2c855)
+      - [Repository recipe keywords](#repository recipe keywords)
         - [:branch](#recipe-keyword-branch)
         - [:depth](#recipe-keyword-depth)
         - [:host | :fetcher](#recipe-keyword-host)
@@ -29,7 +29,7 @@
       - [elpaca-recipe-functions](#elpaca-recipe-functions)
     - [Menus](#menus)
       - [elpaca-menu-functions](#elpaca-menu-functions)
-      - [Updating menus](#org727a782)
+      - [Updating menus](#updating menus)
     - [Orders](#orders)
       - [elpaca-order-functions](#elpaca-order-functions)
     - [Queues](#queues)
@@ -227,7 +227,7 @@ A recipe provides Elpaca with the metadata necessary to build and install a pack
 *ID* is a symbol uniquely identifying the package. *PROPS* is a plist with any of the following recipe keywords:
 
 
-<a id="org373a788"></a>
+<a id="package types"></a>
 
 #### Package types
 
@@ -240,7 +240,7 @@ The `:type` recipe keyword allows specifying a symbol representing the type of p
 Different package types may interpret recipe keywords differently or ignore them altogether.
 
 
-<a id="org3eac1e6"></a>
+<a id="general recipe keywords"></a>
 
 #### General recipe keywords
 
@@ -422,7 +422,7 @@ When non-nil, process all queued orders immediately before continuing. e.g.
 ```
 
 
-<a id="org4f2c855"></a>
+<a id="repository recipe keywords"></a>
 
 #### Repository recipe keywords
 
@@ -665,7 +665,7 @@ The `elpaca-menu-functions` variable contains menu functions for the following p
 Menus are checked in order until one returns the requested menu item or the menu list is exhausted.
 
 
-<a id="org727a782"></a>
+<a id="updating menus"></a>
 
 #### Updating menus
 

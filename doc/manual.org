@@ -80,6 +80,9 @@ It is a list of the form:
 /PROPS/ is a plist with any of the following recipe keywords:
 
 **** Package types
+:PROPERTIES:
+:CUSTOM_ID: package types
+:END:
 The =:type= recipe keyword allows specifying a symbol representing the type of package to install.
 Elpaca searches for a matching =elpaca-types= entry to load a library supporting the type if necessary.
 The default supported types are:
@@ -90,6 +93,9 @@ The default supported types are:
 Different package types may interpret recipe keywords differently or ignore them altogether.
 
 **** General recipe keywords
+:PROPERTIES:
+:CUSTOM_ID: general recipe keywords
+:END:
 The following recipe keywords apply to all the default package types. 
 ***** :autoloads
 :PROPERTIES:
@@ -275,6 +281,10 @@ e.g.
 #+end_src
 
 **** Repository recipe keywords
+:PROPERTIES:
+:CUSTOM_ID: repository recipe keywords
+:END:
+
 The following recipe keywords apply to =:type =git= packages.
 ***** :branch
 :PROPERTIES:
@@ -514,6 +524,10 @@ The =elpaca-menu-functions= variable contains menu functions for the following p
 Menus are checked in order until one returns the requested menu item or the menu list is exhausted.
 
 **** Updating menus
+:PROPERTIES:
+:CUSTOM_ID: updating menus
+:END:
+
 Menus can be updated via the =elpaca-update-menus= command.
 Doing so will fetch the latest recipes from the menu source and overwrite the menu item cache for the updated menus.
 
