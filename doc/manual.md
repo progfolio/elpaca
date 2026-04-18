@@ -288,6 +288,15 @@ A list of build steps executed in order. Accepted values are:
 (example :build ((:after fn1 fn1.5)) (:before fn1 fn0) (:sub fn1 subbed) (:not fn1 fn2))
 ```
 
+A typical build recipe for an elisp package involves:
+
+1.  Getting the source files on disk.
+2.  Byte-compiling the package&rsquo;s elisp and generating package autoloads.
+3.  Building and installing package documentation.
+4.  Activating the package (adding the package `load-path`, loading autoloads).
+
+The `elpaca-default-build-steps` variable contains the default build steps.
+
 
 <a id="recipe-keyword-files"></a>
 

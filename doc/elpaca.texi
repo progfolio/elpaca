@@ -416,6 +416,20 @@ A list of substitution rules. Each rule is run in declared order and applied to 
 (example :build ((:after fn1 fn1.5)) (:before fn1 fn0) (:sub fn1 subbed) (:not fn1 fn2))
 @end lisp
 
+A typical build recipe for an elisp package involves:
+@enumerate
+@item
+Getting the source files on disk.
+@item
+Byte-compiling the package's elisp and generating package autoloads.
+@item
+Building and installing package documentation.
+@item
+Activating the package (adding the package @samp{load-path}@comma{} loading autoloads).
+@end enumerate
+
+The @samp{elpaca-default-build-steps} variable contains the default build steps.
+
 @item
 @anchor{files}:files
 
