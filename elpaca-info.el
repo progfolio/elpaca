@@ -85,8 +85,8 @@
          (id (intern (plist-get item-recipe :package)))
          (e (elpaca-get id))
          (order (if e (elpaca<-order e) id))
-         (declared (let ((raw (elpaca<-declaration e)))
-                     (if (keywordp (car-safe raw)) raw (cdr-safe raw)))))
+         (declared (when e (let ((raw (elpaca<-declaration e)))
+                             (if (keywordp (car-safe raw)) raw (cdr-safe raw))))))
     (with-temp-buffer
       (delay-mode-hooks (emacs-lisp-mode) (auto-fill-mode))
       (cl-loop
