@@ -952,6 +952,8 @@ FILES and NOCONS are used recursively."
 
 (defun elpaca--process-sentinel (&optional info status process event)
   "Update E's INFO and STATUS when PROCESS EVENT is finished."
+  (when-let* ((timer (process-get process :timer)))
+    (cancel-timer timer))
   (if-let* ((e (process-get process :elpaca))
             ((and (equal event "finished\n") (not (eq (elpaca--status e) 'failed)))))
       (progn (elpaca--propertize-subprocess process)
