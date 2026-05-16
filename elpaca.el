@@ -750,7 +750,9 @@ without throttling."
     (when elpaca--update-log-timer
       (cancel-timer elpaca--update-log-timer)
       (setq elpaca--update-log-timer nil))
-    (when-let* ((log (bound-and-true-p elpaca-log-buffer)))
+    (when-let* ((log (bound-and-true-p elpaca-log-buffer))
+                (log (get-buffer log))
+                ((buffer-live-p log)))
       (with-current-buffer log
         (remove-hook 'window-buffer-change-functions 'elpaca--update-log-buffer t)
         (if (get-buffer-window log t)  ;; log buffer visible
