@@ -35,7 +35,8 @@
     (elpaca-rebuild :prefix "♻️️" :face elpaca-ui-marked-rebuild)
     (elpaca-fetch   :prefix "‍🐕‍🦺" :face elpaca-ui-marked-fetch)
     (elpaca-merge   :prefix "🤝" :face elpaca-ui-marked-merge :args (id prefix-arg))
-    (elpaca-pull    :prefix "⬆️" :face elpaca-ui-marked-pull :args (id prefix-arg)))
+    (elpaca-pull    :prefix "⬆️" :face elpaca-ui-marked-pull :args (id prefix-arg))
+    (elpaca-merge-to :prefix "📌" :face elpaca-ui-marked-merge :args (id prefix-arg)))
 
   "List of marks which can be applied to packages `elpaca-ui-mode' buffers.
 Each element is of the form (COMMAND :KEY VAL...).
@@ -265,7 +266,10 @@ If PREFIX is non-nil it is displayed before the rest of the header-line."
              (progn (setq noconflict nil) 'elpaca-ui-conflicting))
            '(:weight bold))))
     (if-let* ((noconflict)
-              (marked (cl-find id elpaca-ui--marked-packages :key #'car)))
+              (marked (cl-find id elpaca-ui--marked-packages :key #'car))
+              ((or (not (eq (cadr marked) 'elpaca-merge-to))
+                   (when-let* ((commit (plist-get (nthcdr 2 marked) :prefix-arg)))
+                     (string-prefix-p commit (substring-no-properties (aref entry 2)))))))
         (if (memq id elpaca-ui--marked)
             (add-text-properties beg (+ beg namelen)
                                  (list 'display (propertize name 'face 'elpaca-ui-conflicting)
@@ -593,6 +597,18 @@ If ADVANCEP is non-nil, move `forward-line'."
 (elpaca-ui-defmark elpaca-fetch #'elpaca-ui--ensure-installed)
 (elpaca-ui-defmark elpaca-merge #'elpaca-ui--ensure-installed)
 (elpaca-ui-defmark elpaca-pull  #'elpaca-ui--ensure-installed)
+
+(defun elpaca-ui-mark-merge-to ()
+  "Mark package at point for `elpaca-merge-to' using commit hash from current log entry."
+  (interactive nil elpaca-ui-mode)
+  (let* ((entry (tabulated-list-get-entry))
+         (status (and entry (aref entry 1)))
+         (_ (unless (equal status "update-log")
+              (user-error "Not an update-log entry")))
+         (info (substring-no-properties (aref entry 2)))
+         (commit (car (split-string info " " 'omit-nulls)))
+         (current-prefix-arg commit))
+    (elpaca-ui-mark :region 'elpaca-merge-to #'elpaca-ui--ensure-installed 'advance)))
 
 (elpaca-ui-defmark elpaca-try
   (lambda (p) (when (elpaca-installed-p p) (user-error "Package %S already installed" p))))
