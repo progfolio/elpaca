@@ -1277,7 +1277,8 @@ ARGS must be a plist including any of the following keywords value pairs:
 - `:date`: integer list representing date (see `current-time').
 - `:alternative`: version string stored by alternative means (e.g. repo tags)."
   (cond ((memq context '(nil :declared)) (elpaca--declared-version e))
-        ((memq context '(:date :alternative)) (cl-call-next-method))))
+        ((memq context '(:date :alternative))
+         (condition-case err (cl-call-next-method) ((cl-no-next-method) nil)))))
 
 (defun elpaca-check-version (e)
   "Ensure E's dependency versions are met."
