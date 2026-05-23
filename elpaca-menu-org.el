@@ -59,10 +59,10 @@
           (org-make-org-version orgversion gitversion))
         (if (not ,elpaca-menu-org-make-manual)
             (message "Skipping manaual generation")
-          (when (fboundp 'org-make-manual))
-          (cd "../doc")
-          (message "Making manual")
-          (org-make-manual))))))
+          (when (fboundp 'org-make-manual)
+            (cd "../doc")
+            (message "Making manual")
+            (org-make-manual)))))))
 
 ;;;###autoload
 (defun elpaca-menu-org (request &optional item)
