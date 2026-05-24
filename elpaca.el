@@ -1279,7 +1279,9 @@ ARGS must be a plist including any of the following keywords value pairs:
 - `:alternative`: version string stored by alternative means (e.g. repo tags)."
   (cond ((memq context '(nil :declared)) (elpaca--declared-version e))
         ((memq context '(:date :alternative))
-         (condition-case err (cl-call-next-method) ((cl-no-next-method) nil)))))
+         (condition-case err (cl-call-next-method)
+           ((cl-no-next-method) nil)
+           (error (signal (car err) (cdr err)))))))
 
 (defun elpaca-check-version (e)
   "Ensure E's dependency versions are met."
