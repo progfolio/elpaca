@@ -151,7 +151,7 @@ This is the branch that would be checked out upon cloning."
                      (t (elpaca--fail e (format "Remote default branch err: %S" err))))))
         (setq branch default-branch target branch)))
     (if (null target)
-        (unless (eq (elpaca--status e) 'failed)
+        (unless (eq (elpaca<-status e) 'failed)
           (elpaca-note e "ref checked out")
           (elpaca-continue e))
       (cond
@@ -160,7 +160,7 @@ This is the branch that would be checked out upon cloning."
        ((and tag branch)
         (elpaca--fail e (format "Ambiguous ref: :tag %S, :branch %S" tag branch))))
       (elpaca-note e (concat "Checking out " target))
-      (unless (eq (elpaca--status e) 'failed)
+      (unless (eq (elpaca<-status e) 'failed)
         (elpaca--make-process e
           :name "checkout-ref"
           :command

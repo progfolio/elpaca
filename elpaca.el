@@ -640,8 +640,6 @@ TYPE is one of the following keywords:
          ((error) (signal (car err) (cdr err))))
        val))))
 
-(defsubst elpaca--status (e) "Return E's status." (elpaca<-status e))
-
 (defcustom elpaca-log-command-queries
   '(((elpaca-fetch elpaca-fetch-all elpaca-log-updates) . "#latest #update-log")
     ((elpaca-try elpaca-rebuild) . "#latest #linked-errors")
@@ -672,7 +670,7 @@ If it is a function, it's return value is used."
   (unless elpaca-after-init-time
     (cl-loop for (_ . e) in (elpaca--queued)
              for query = (cond ((not (elpaca<-builtp e)) "#unique | !finished")
-                               ((eq (elpaca--status e) 'failed) "#unique | failed"))
+                               ((eq (elpaca<-status e) 'failed) "#unique | failed"))
              when query return
              (prog1 query
                (setq initial-buffer-choice
@@ -754,7 +752,7 @@ The first function, if any, which returns non-nil is used." :type 'hook)
   "Return alist of status symbol to count across all queues."
   (cl-loop with counts for q in elpaca--queues
            do (cl-loop for (_ . e) in (elpaca-q<-elpacas q)
-                       do (cl-incf (alist-get (elpaca--status e) counts 0)))
+                       do (cl-incf (alist-get (elpaca<-status e) counts 0)))
            finally return counts))
 
 (define-error 'elpaca-error "Elpaca error")
@@ -791,18 +789,18 @@ E is throttled until a slot opens."
   (when-let* ((p (elpaca<-process e))
               (timer (process-get p :timer)))
     (cancel-timer timer))
-  (unless (memq (elpaca--status e) '(finished failed))
+  (unless (memq (elpaca<-status e) '(finished failed))
     (if-let* ((elpaca-queue-limit)
               ((not (elpaca<-builtp e)))
               ;; Count only packages actively building — not queued or blocked.
               (active (cl-loop for (_ . e) in (elpaca-q<-elpacas (elpaca--q e))
-                               count (not (memq (elpaca--status e)
+                               count (not (memq (elpaca<-status e)
                                                 '(queued blocked finished failed)))))
               ((> active elpaca-queue-limit)))
         ;; Use queue-id (stable integer) not the queue object (mutable list)
         ;; as the condition value so equal-based lookup always succeeds.
         (elpaca-block-until e 'package-throttled (elpaca-q<-id (elpaca--q e)))
-      (unless (memq (elpaca--status e) '(active busy))
+      (unless (memq (elpaca<-status e) '(active busy))
         (elpaca--set-status e 'active))
       (when-let* ((last (elpaca<-current-step e)))
         (elpaca-note e (format "step %s completed" last) :face 'elpaca-finished))
@@ -816,7 +814,7 @@ E is throttled until a slot opens."
                 (funcall closure e step)
               (funcall step e))
           (elpaca-build-error
-           (unless (eq (elpaca--status e) 'failed)
+           (unless (eq (elpaca<-status e) 'failed)
              (elpaca-note e (format "step %s failed" step) :face 'elpaca-failed))
            (elpaca--handle-build-error e err))
           (error
@@ -914,7 +912,7 @@ Each function receives the queue struct as its sole argument." :type 'hook)
 
 (defun elpaca--finalize (e)
   "Declare E finished."
-  (let* ((failed (eq (elpaca--status e) 'failed))
+  (let* ((failed (eq (elpaca<-status e) 'failed))
          (duration (condition-case _
                        (format-time-string "%s.%3N" (elpaca--log-duration e))
                      (error "?")))
@@ -1031,10 +1029,10 @@ FILES and NOCONS are used recursively."
          (lines   (split-string chunk elpaca--eol))
          (linep   (string-empty-p (car (last lines)))))
     (when timer (cancel-timer timer))
-    (unless (memq (elpaca--status e) '(finished failed))
+    (unless (memq (elpaca<-status e) '(finished failed))
       (process-put process :timer
                    (run-at-time elpaca-busy-interval nil
-                                (lambda () (unless (memq (elpaca--status e) '(finished failed))
+                                (lambda () (unless (memq (elpaca<-status e) '(finished failed))
                                              (elpaca--set-status e 'busy))))))
     (unless linep
       (process-put process :parsed (car (last lines)))
@@ -1064,7 +1062,7 @@ FILES and NOCONS are used recursively."
   "Advance E's build when PROCESS exits successfully, logging INFO."
   (when-let* (((memq (process-status process) '(exit signal)))
               (e (process-get process :elpaca))
-              ((not (memq (elpaca--status e) '(finished failed)))))
+              ((not (memq (elpaca<-status e) '(finished failed)))))
     (elpaca--propertize-subprocess process)
     (if (= (process-exit-status process) 0)
         (progn
@@ -1077,7 +1075,7 @@ FILES and NOCONS are used recursively."
   "Sentinel for info compilation PROCESS EVENT."
   (let* ((e (process-get process :elpaca))
          (finished (equal event "finished\n")))
-    (unless (memq (elpaca--status e) '(finished failed))
+    (unless (memq (elpaca<-status e) '(finished failed))
       (unless finished
         (setf (elpaca<-build-steps e)
               (cl-remove 'elpaca--install-info (elpaca<-build-steps e))))
@@ -1171,7 +1169,7 @@ ARGS must be a plist including any of the following keywords value pairs:
 (defun elpaca--install-info-process-sentinel (process event)
   "Sentinel for info installation PROCESS EVENT."
   (let ((e (process-get process :elpaca)))
-    (unless (memq (elpaca--status e) '(finished failed))
+    (unless (memq (elpaca<-status e) '(finished failed))
       (elpaca--propertize-subprocess process)
       (elpaca-note e (if (equal event "finished\n") "Info installed"
                        (concat "Failed to install Info: " (string-trim event))))
@@ -1353,7 +1351,7 @@ If RECACHE is non-nil, do not use cached dependencies."
 
 (defun elpaca--process (e)
   "Process E."
-  (when (eq (elpaca--status e) 'queued) (elpaca-continue e)))
+  (when (eq (elpaca<-status e) 'queued) (elpaca-continue e)))
 
 (defun elpaca-queue-dependencies (e)
   "Queue E's dependencies."
@@ -1372,7 +1370,7 @@ If RECACHE is non-nil, do not use cached dependencies."
         (dolist (dep-id dependencies)
           (let* ((queued-dep (elpaca-alist-get dep-id enqueued))
                  (d (or queued-dep (elpaca--enqueue dep-id q)))
-                 (d-status (elpaca--status d)))
+                 (d-status (elpaca<-status d)))
             (when (eq d-status 'failed)
               (elpaca--fail e (format "failed dependency: %s" dep-id)))
             (when (and queued-dep (> (elpaca<-queue-id d) q-id))
@@ -1544,7 +1542,7 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
          (q (car elpaca--queues))
          (pending (when (and q (cl-loop for cq in queues
                                         thereis (cl-loop for (_ . e) in (elpaca-q<-elpacas cq)
-                                                         thereis (not (memq (elpaca--status e)
+                                                         thereis (not (memq (elpaca<-status e)
                                                                             '(finished failed))))))
                     (nconc (cl-loop for cq in queues collect cq until (eq cq q)) (list q)))))
     (when pending
@@ -1553,13 +1551,13 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
       (condition-case nil
           (while (cl-loop for pq in pending
                           thereis (cl-loop for (_ . e) in (elpaca-q<-elpacas pq)
-                                           thereis (not (memq (elpaca--status e)
+                                           thereis (not (memq (elpaca<-status e)
                                                               '(finished failed)))))
             (discard-input)
             (sit-for elpaca-wait-interval))
         (quit (cl-loop for pq in pending do
                        (cl-loop for (_ . e) in (elpaca-q<-elpacas pq) do
-                                (or (eq (elpaca--status e) 'finished)
+                                (or (eq (elpaca<-status e) 'finished)
                                     (elpaca--fail e "User quit"))))))
       (elpaca-split-queue)
       (setq elpaca--waiting nil mode-line-process nil)
@@ -1584,7 +1582,7 @@ When quit with \\[keyboard-quit], running sub-processes are not stopped."
     (when body (setf (alist-get id (elpaca-q<-forms q)) body))
     (when after-init-time
       (elpaca--maybe-log)
-      (unless (eq (elpaca--status e) 'failed)
+      (unless (eq (elpaca<-status e) 'failed)
         (elpaca--unprocess e)
         (elpaca--set-status e 'queued)))
     (cond ((plist-get (elpaca<-recipe e) :wait) (elpaca-wait))
@@ -1638,7 +1636,7 @@ When INTERACTIVE is non-nil, immediately process ORDER, otherwise queue ORDER."
   "Process elpacas in Q."
   (cond
    ((cl-loop for (_ . e) in (elpaca-q<-elpacas q)
-             always (memq (elpaca--status e) '(finished failed)))
+             always (memq (elpaca<-status e) '(finished failed)))
     (when-let* ((next (nth (1+ (elpaca-q<-id q)) (reverse elpaca--queues))))
       (elpaca--process-queue next)))
    (t (mapc #'elpaca--process (reverse (mapcar #'cdr (elpaca-q<-elpacas q)))))))
@@ -1652,7 +1650,7 @@ FILTER must be a unary function which accepts and returns a queue list."
                   (reverse elpaca--queues))))
     (if-let* ((incomplete (cl-loop for q in queues
                                    unless (cl-loop for (_ . e) in (elpaca-q<-elpacas q)
-                                                   always (memq (elpaca--status e)
+                                                   always (memq (elpaca<-status e)
                                                                 '(finished failed)))
                                    when (elpaca-q<-elpacas q) return q)))
         (progn (elpaca--maybe-log)
@@ -1737,7 +1735,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
                          (elpaca--read-queued "Rebuild package: "))
                      t))
   (let ((e (or (elpaca-get id) (user-error "Package %S is not queued" id))))
-    (when (eq (elpaca--status e) 'finished)
+    (when (eq (elpaca<-status e) 'finished)
       ;;@MAYBE: remove Info/load-path entries?
       (setf (elpaca<-build-steps e) (elpaca-build-steps e :rebuild)))
     (elpaca--unprocess e)
@@ -2059,7 +2057,7 @@ opened by a package finishing or blocking on deps is immediately filled."
               (q-id (elpaca-q<-id q))
               (key (cons 'package-throttled q-id)))
     (let ((active (cl-loop for (_ . qe) in (elpaca-q<-elpacas q)
-                           count (not (memq (elpaca--status qe)
+                           count (not (memq (elpaca<-status qe)
                                             '(queued blocked finished failed))))))
       (cl-loop repeat (max 0 (- (or elpaca-queue-limit 0) active))
                for waiters = (gethash key elpaca--conditions)
@@ -2082,7 +2080,7 @@ opened by a package finishing or blocking on deps is immediately filled."
   "Finalize E's queue and run hooks when all packages reach a terminal status."
   (when-let* ((q (elpaca--q e))
               ((cl-loop for (_ . qe) in (elpaca-q<-elpacas q)
-                        always (memq (elpaca--status qe) '(finished failed)))))
+                        always (memq (elpaca<-status qe) '(finished failed)))))
     (elpaca--finalize-queue q)))
 
 (defun elpaca--log-update-on-info (_e)
