@@ -7,6 +7,7 @@ In order to export after saving changes, evaluate the following source blocks:
 
 #+begin_src emacs-lisp :lexical t :results silent
 (require 'ox-gfm)
+(require 'elpaca-ui)
 (defun +elpaca-export-readme ()
   (with-current-buffer (find-file-noselect "./readme.org")
     (org-export-to-file 'gfm "../README.md")))
