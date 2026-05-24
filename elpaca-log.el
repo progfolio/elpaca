@@ -71,7 +71,6 @@ It must accept a package ID symbol and REF string as its first two arguments."
     (mapcar
      (lambda (entry)
        (if-let* ((cols (cadr entry))
-                 ((equal (aref cols 1) "byte-compilation"))
                  (copy (copy-tree entry))
                  (info (string-trim (aref (cadr copy) 2)))
                  (name (aref (cadr copy) 0))
