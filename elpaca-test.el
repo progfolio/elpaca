@@ -218,7 +218,7 @@ If DELETE is non-nil, delete test environment."
 (defun elpaca-test-timeout ()
   "Cancel pending orders."
   (dolist (e (mapcar #'cdr (elpaca--queued)))
-    (unless (memq (elpaca--status e) '(finished failed)) (elpaca--fail e "Test timeout"))))
+    (unless (memq (elpaca<-status e) '(finished failed)) (elpaca--fail e "Test timeout"))))
 
 (defun elpaca-test--command (&optional args batch timeout early)
   "Return process command list with ARGS.
