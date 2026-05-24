@@ -40,7 +40,7 @@
 (defconst elpaca--inactive-states '(finished failed)
   "Terminal or waiting statuses that do not represent active build work.")
 (defvar elpaca-installer-version -1)
-(or noninteractive (= elpaca-installer-version 0.12)
+(or noninteractive (= elpaca-installer-version 0.13)
     (lwarn '(elpaca installer) :warning "%s installer version does not match %s."
            (or (symbol-file 'elpaca-installer-version 'defvar) "Init")
            (expand-file-name "./doc/installer.el" (file-name-directory (or load-file-name (buffer-file-name))))))
