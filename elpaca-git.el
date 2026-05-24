@@ -254,8 +254,7 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
       (cl-loop with renamed for spec in remotes do
                (if (stringp spec)
                    (if renamed
-                       (elpaca-note e
-                                    (format "ignoring :remotes rename %S" spec))
+                       (elpaca-note e (format "ignoring :remotes rename %S" spec))
                      (unless (equal spec elpaca-default-remote-name)
                        (elpaca--call-with-log
                         e 1 "git" "remote" "rename" elpaca-default-remote-name spec))
@@ -266,7 +265,11 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
                              (URI       (elpaca-git--repo-uri inherited)))
                    (setq fetchp t)
                    (elpaca-with-process
-                       (elpaca--call-with-log e 1 "git" "remote" "add" remote URI)
+                       (elpaca--call-with-log
+                        e 1 "git" "remote"
+                        (if (zerop (car (elpaca-process-call "git" "remote" "get-url" remote)))
+                            "set-url" "add")
+                        remote URI)
                      (unless success (elpaca--fail e stderr)))))
                (when fetchp (push #'elpaca-git--initial-fetch (elpaca<-build-steps e)))))
     (elpaca-continue e)))
