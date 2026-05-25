@@ -1986,13 +1986,11 @@ This should only ever be used as the last element of `elpaca-menu-functions'."
 
 ;;;###autoload
 (defun elpaca-browse (id)
-  "Browse menu item with ID's :url." ;;@Doc: we also fall back to recipe :url
+  "Browse menu item with ID's :url."
   (interactive (list (let* ((elpaca-overriding-prompt "Browse package: ")
-                            ;;@TODO: include init file packages
                             (recipe (elpaca-recipe)))
                        (intern (plist-get recipe :package)))))
-  (if-let* ((found (or (elpaca-get id)
-                       (alist-get id (cl-loop for menu in elpaca-menu-functions append (funcall menu 'index)))))
+  (if-let* ((found (alist-get id (cl-loop for menu in elpaca-menu-functions append (funcall menu 'index))))
             (url (plist-get found :url)))
       (browse-url url)
     (user-error "No URL associated with id %S" id)))
