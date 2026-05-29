@@ -41,17 +41,18 @@
                           keys))
               (cdr plists))))
 
-(defun elpaca-tests-menu (request)
-  "A test menu. REQUEST RECIPE."
+(defun elpaca-tests-menu (request &optional item)
+  "A test menu. REQUEST and optional ITEM."
   (let ((recipes '((:package "a" :host gitlab :repo "a/a")
                    ( :package "elpaca" :host github :repo "progfolio/elpaca"
                      :pre-build ("./pre-build")))))
     (pcase request
-      ('index  (mapcar (lambda (recipe) (cons
-                                         (intern-soft (plist-get recipe :package))
-                                         (list :source "test-menu"
-                                               :recipe recipe)))
-                       recipes))
+      ('index  (let ((items (mapcar (lambda (recipe) (cons
+                                                     (intern-soft (plist-get recipe :package))
+                                                     (list :source "test-menu"
+                                                           :recipe recipe)))
+                                   recipes)))
+                 (if item (alist-get item items) items)))
       (_ (user-error "Unimplmented request method: %S" request)))))
 
 (ert-deftest elpaca-merge-plists ()
@@ -72,15 +73,15 @@
 (ert-deftest elpaca-menu-item ()
   "Return menu item from MENUS."
   (should
-   (let ((elpaca-menu-functions '(elpaca-tests-menu))
+     (let ((elpaca-menu-functions '(elpaca-tests-menu))
          elpaca--menu-cache)
-     (elpaca-tests--plist-equal-p
-      '(elpaca :source "test-menu"
-               :recipe (:package "elpaca"
-                                 :host github
-                                 :repo "progfolio/elpaca"
-                                 :pre-build
-                                 ("./pre-build")))
+       (elpaca-tests--plist-equal-p
+      '(:source "test-menu"
+                :recipe (:package "elpaca"
+                                  :host github
+                                  :repo "progfolio/elpaca"
+                                  :pre-build
+                                  ("./pre-build")))
       (elpaca-menu-item 'elpaca))))
   (should-not (let ((elpaca-menu-functions '(ignore))
                     elpaca--menu-cache)
@@ -90,18 +91,22 @@
   "Turn off ORDER inheritance."
   '(:inherit nil))
 
+(defun elpaca-tests--make-init-queue (&optional elpacas)
+  "Return an init queue containing ELPACAS."
+  (elpaca-q<-create :type 'init :id 0 :elpacas elpacas))
+
 (ert-deftest elpaca-recipe ()
   "Compute recipe from ORDER."
   (let ((elpaca-recipe-functions nil))
     ;; no inheritance, full spec
     (should (elpaca-tests--plist-equal-p
-             (elpaca-recipe '(elpaca :host github :repo "progfolio/elpaca" :inherit nil))
-             '(:package "elpaca" :host github :repo "progfolio/elpaca" :inherit nil)))
+             '(:package "elpaca" :host github :repo "progfolio/elpaca" :inherit nil)
+             (elpaca-recipe '(elpaca :host github :repo "progfolio/elpaca" :inherit nil))))
     ;; basic default inheritance
     (let ((elpaca-order-functions '(elpaca-tests--no-inheritance)))
       (should (elpaca-tests--plist-equal-p
-               (elpaca-recipe '(elpaca :host github :repo "progfolio/elpaca"))
-               '(:package "elpaca" :host github :repo "progfolio/elpaca" :inherit nil))))
+               '(:package "elpaca" :host github :repo "progfolio/elpaca" :inherit nil)
+               (elpaca-recipe '(elpaca :host github :repo "progfolio/elpaca")))))
     ;; basic menu lookup
     (let ((elpaca-order-functions '(elpaca-tests--no-inheritance))
           (elpaca-menu-functions '(elpaca-tests-menu))
@@ -119,6 +124,56 @@
                   :inherit t
                   :pre-build ("./pre-build"))
                (elpaca-recipe '(elpaca :inherit t)))))))
+
+(ert-deftest elpaca-resolve-resumes-pre-step-waiters ()
+  "Resolving the last condition should continue pre-step waiters."
+  (let* ((key '(finished . elpaca))
+         (elpaca--conditions (make-hash-table :test #'equal))
+         (continued nil)
+         (status-changes nil)
+         (e (elpaca<--create :id 'elpaca :conditions (list key))))
+    (puthash key (list e) elpaca--conditions)
+    (cl-letf (((symbol-function 'elpaca-continue)
+               (lambda (waiter) (setq continued waiter)))
+              ((symbol-function 'elpaca--set-status)
+               (lambda (waiter status) (push (cons waiter status) status-changes)))
+              ((symbol-function 'elpaca-note) #'ignore))
+      (elpaca-resolve 'finished 'elpaca))
+    (should (eq continued e))
+    (should-not status-changes)
+    (should-not (elpaca<-conditions e))
+    (should-not (gethash key elpaca--conditions))))
+
+(ert-deftest elpaca-finalize-queue-defers-after-init-until-emacs-finishes-init ()
+  "Do not run `elpaca-after-init-hook' before Emacs sets `after-init-time'."
+  (let* ((after-init-time nil)
+         (elpaca-after-init-time nil)
+         (elpaca--waiting nil)
+         (elpaca-post-queue-hook nil)
+         (elpaca--post-queues-hook nil)
+         (elpaca-queue-start-functions nil)
+         (elpaca-queue-finish-functions nil)
+         (hook-ran nil)
+         (elpaca-after-init-hook (list (lambda () (setq hook-ran t))))
+         (q (elpaca-tests--make-init-queue)))
+    (let ((elpaca--queues (list q)))
+      (elpaca--finalize-queue q))
+    (should-not hook-ran)
+    (should-not elpaca-after-init-time)))
+
+(ert-deftest elpaca-process-queues-defers-after-init-until-emacs-finishes-init ()
+  "Do not run `elpaca-after-init-hook' from the fallback path before init ends."
+  (let* ((after-init-time nil)
+         (elpaca-after-init-time nil)
+         (elpaca--waiting nil)
+         (elpaca--debug-init nil)
+         (elpaca--post-queues-hook nil)
+         (hook-ran nil)
+         (elpaca-after-init-hook (list (lambda () (setq hook-ran t))))
+         (elpaca--queues (list (elpaca-tests--make-init-queue))))
+    (elpaca-process-queues)
+    (should-not hook-ran)
+    (should-not elpaca-after-init-time)))
 
 (provide 'elpaca-tests)
 ;; Local Variables:

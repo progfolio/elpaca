@@ -375,7 +375,9 @@ waiting Es are failed.  Otherwise all waiting Es are unblocked."
           (elpaca-note e (format "Condition (%S . %S) satisfied" type value)
                        :face 'elpaca-finished)
           (unless (elpaca<-conditions e)
-            (elpaca--set-status e 'active)))))))
+            (if (elpaca<-current-step e)
+                (elpaca--set-status e 'active)
+              (elpaca-continue e))))))))
 
 (defun elpaca-merge-plists (&rest plists)
   "Return plist with set of unique keys from PLISTS.
@@ -888,6 +890,8 @@ Each function receives the queue struct as its sole argument." :type 'hook)
     (run-hooks 'elpaca-post-queue-hook))
   (let ((next (nth (1+ (elpaca-q<-id q)) (reverse elpaca--queues))))
     (unless (or elpaca-after-init-time
+                elpaca--waiting
+                (not after-init-time)
                 (not (eq (elpaca-q<-type q) 'init))
                 (and next (eq (elpaca-q<-type next) 'init)))
       (elpaca-split-queue)
@@ -1650,7 +1654,7 @@ FILTER must be a unary function which accepts and returns a queue list."
                                    when (elpaca-q<-elpacas q) return q)))
         (progn (elpaca--maybe-log)
                (elpaca--process-queue incomplete))
-      (unless elpaca-after-init-time
+      (unless (or elpaca-after-init-time elpaca--waiting (not after-init-time))
         (setq elpaca-after-init-time (current-time))
         (run-hooks 'elpaca-after-init-hook))
       (run-hooks 'elpaca--post-queues-hook))))
