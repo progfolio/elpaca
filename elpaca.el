@@ -1314,8 +1314,9 @@ ARGS must be a plist including any of the following keywords value pairs:
                            ((setq version (version-to-list alt))))
                      (version-list-< version min)
                    (null alt))))
-   do (cl-return (elpaca--fail e (format "%s installed version %s lower than min required %s"
-                                         id version need))))
+   do (cl-return
+       (elpaca--fail e (format "Outdated dependency. %s version %s installed, %s required"
+                               id (mapconcat #'number-to-string version ".") need))))
   (elpaca-continue e))
 
 (defun elpaca--dependencies (e &optional recache)
