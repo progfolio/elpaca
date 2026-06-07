@@ -41,17 +41,18 @@
                           keys))
               (cdr plists))))
 
-(defun elpaca-tests-menu (request)
-  "A test menu. REQUEST RECIPE."
+(defun elpaca-tests-menu (request &optional item)
+  "A test menu. REQUEST and optional ITEM."
   (let ((recipes '((:package "a" :host gitlab :repo "a/a")
                    ( :package "elpaca" :host github :repo "progfolio/elpaca"
                      :pre-build ("./pre-build")))))
     (pcase request
-      ('index  (mapcar (lambda (recipe) (cons
-                                         (intern-soft (plist-get recipe :package))
-                                         (list :source "test-menu"
-                                               :recipe recipe)))
-                       recipes))
+      ('index  (let ((items (mapcar (lambda (recipe) (cons
+                                                     (intern-soft (plist-get recipe :package))
+                                                     (list :source "test-menu"
+                                                           :recipe recipe)))
+                                   recipes)))
+                 (if item (alist-get item items) items)))
       (_ (user-error "Unimplmented request method: %S" request)))))
 
 (ert-deftest elpaca-merge-plists ()
@@ -72,15 +73,15 @@
 (ert-deftest elpaca-menu-item ()
   "Return menu item from MENUS."
   (should
-   (let ((elpaca-menu-functions '(elpaca-tests-menu))
+     (let ((elpaca-menu-functions '(elpaca-tests-menu))
          elpaca--menu-cache)
-     (elpaca-tests--plist-equal-p
-      '(elpaca :source "test-menu"
-               :recipe (:package "elpaca"
-                                 :host github
-                                 :repo "progfolio/elpaca"
-                                 :pre-build
-                                 ("./pre-build")))
+       (elpaca-tests--plist-equal-p
+      '(:source "test-menu"
+                :recipe (:package "elpaca"
+                                  :host github
+                                  :repo "progfolio/elpaca"
+                                  :pre-build
+                                  ("./pre-build")))
       (elpaca-menu-item 'elpaca))))
   (should-not (let ((elpaca-menu-functions '(ignore))
                     elpaca--menu-cache)
@@ -95,13 +96,13 @@
   (let ((elpaca-recipe-functions nil))
     ;; no inheritance, full spec
     (should (elpaca-tests--plist-equal-p
-             (elpaca-recipe '(elpaca :host github :repo "progfolio/elpaca" :inherit nil))
-             '(:package "elpaca" :host github :repo "progfolio/elpaca" :inherit nil)))
+             '(:package "elpaca" :host github :repo "progfolio/elpaca" :inherit nil)
+             (elpaca-recipe '(elpaca :host github :repo "progfolio/elpaca" :inherit nil))))
     ;; basic default inheritance
     (let ((elpaca-order-functions '(elpaca-tests--no-inheritance)))
       (should (elpaca-tests--plist-equal-p
-               (elpaca-recipe '(elpaca :host github :repo "progfolio/elpaca"))
-               '(:package "elpaca" :host github :repo "progfolio/elpaca" :inherit nil))))
+               '(:package "elpaca" :host github :repo "progfolio/elpaca" :inherit nil)
+               (elpaca-recipe '(elpaca :host github :repo "progfolio/elpaca")))))
     ;; basic menu lookup
     (let ((elpaca-order-functions '(elpaca-tests--no-inheritance))
           (elpaca-menu-functions '(elpaca-tests-menu))
