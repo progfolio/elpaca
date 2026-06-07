@@ -91,6 +91,10 @@
   "Turn off ORDER inheritance."
   '(:inherit nil))
 
+(defun elpaca-tests--make-init-queue (&optional elpacas)
+  "Return an init queue containing ELPACAS."
+  (elpaca-q<-create :type 'init :id 0 :elpacas elpacas))
+
 (ert-deftest elpaca-recipe ()
   "Compute recipe from ORDER."
   (let ((elpaca-recipe-functions nil))
@@ -120,6 +124,56 @@
                   :inherit t
                   :pre-build ("./pre-build"))
                (elpaca-recipe '(elpaca :inherit t)))))))
+
+(ert-deftest elpaca-resolve-resumes-pre-step-waiters ()
+  "Resolving the last condition should continue pre-step waiters."
+  (let* ((key '(finished . elpaca))
+         (elpaca--conditions (make-hash-table :test #'equal))
+         (continued nil)
+         (status-changes nil)
+         (e (elpaca<--create :id 'elpaca :conditions (list key))))
+    (puthash key (list e) elpaca--conditions)
+    (cl-letf (((symbol-function 'elpaca-continue)
+               (lambda (waiter) (setq continued waiter)))
+              ((symbol-function 'elpaca--set-status)
+               (lambda (waiter status) (push (cons waiter status) status-changes)))
+              ((symbol-function 'elpaca-note) #'ignore))
+      (elpaca-resolve 'finished 'elpaca))
+    (should (eq continued e))
+    (should-not status-changes)
+    (should-not (elpaca<-conditions e))
+    (should-not (gethash key elpaca--conditions))))
+
+(ert-deftest elpaca-finalize-queue-defers-after-init-until-emacs-finishes-init ()
+  "Do not run `elpaca-after-init-hook' before Emacs sets `after-init-time'."
+  (let* ((after-init-time nil)
+         (elpaca-after-init-time nil)
+         (elpaca--waiting nil)
+         (elpaca-post-queue-hook nil)
+         (elpaca--post-queues-hook nil)
+         (elpaca-queue-start-functions nil)
+         (elpaca-queue-finish-functions nil)
+         (hook-ran nil)
+         (elpaca-after-init-hook (list (lambda () (setq hook-ran t))))
+         (q (elpaca-tests--make-init-queue)))
+    (let ((elpaca--queues (list q)))
+      (elpaca--finalize-queue q))
+    (should-not hook-ran)
+    (should-not elpaca-after-init-time)))
+
+(ert-deftest elpaca-process-queues-defers-after-init-until-emacs-finishes-init ()
+  "Do not run `elpaca-after-init-hook' from the fallback path before init ends."
+  (let* ((after-init-time nil)
+         (elpaca-after-init-time nil)
+         (elpaca--waiting nil)
+         (elpaca--debug-init nil)
+         (elpaca--post-queues-hook nil)
+         (hook-ran nil)
+         (elpaca-after-init-hook (list (lambda () (setq hook-ran t))))
+         (elpaca--queues (list (elpaca-tests--make-init-queue))))
+    (elpaca-process-queues)
+    (should-not hook-ran)
+    (should-not elpaca-after-init-time)))
 
 (provide 'elpaca-tests)
 ;; Local Variables:
