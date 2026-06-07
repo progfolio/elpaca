@@ -206,7 +206,9 @@ Each function must also accept an optional ITEM as a second argument."
   (add-to-list 'package--builtin-versions
                (cons 'transient (alist-get emacs-version transient-versions
                                            nil nil #'string-prefix-p))))
-(defcustom elpaca-ignored-dependencies (mapcar #'car package--builtin-versions)
+
+;; Compat exempted to reduce upstream package maintaner issues.
+(defcustom elpaca-ignored-dependencies (delq 'compat (mapcar #'car package--builtin-versions))
   "List of IDs which are not installed unless the user explicitly requests them."
   :type '(repeat symbol))
 
