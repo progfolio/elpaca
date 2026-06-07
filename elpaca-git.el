@@ -400,6 +400,12 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
                      "--pretty=%h %s (%ch)" "..@{u}")
       :sentinel (lambda (process event) (elpaca--process-sentinel nil process event)))))
 
+(cl-defmethod elpaca--url ((e (elpaca git)))
+  "Return :repo URL if possible."
+  (when-let* ((recipe (elpaca-merge-plists (elpaca<-recipe e) '(:protocol https)))
+              (uri (replace-regexp-in-string "\\.git$" "" (elpaca-git--repo-uri recipe))))
+    uri))
+
 (defvar elpaca-ui-search-tags)
 (with-eval-after-load 'elpaca-ui
   (defun elpaca-git--tag-dirty (entries)

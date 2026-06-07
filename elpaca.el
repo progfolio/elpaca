@@ -1991,16 +1991,20 @@ This should only ever be used as the last element of `elpaca-menu-functions'."
                            :description (concat "Declared " (if (elpaca<-init e) "in Init file" "by user")))
              into items finally return (if item (elpaca-alist-get item items) items))))
 
+(cl-defgeneric elpaca--url (_e) "Return browsable URL for E." nil)
+
 ;;;###autoload
 (defun elpaca-browse (id)
   "Browse menu item with ID's :url."
   (interactive (list (let* ((elpaca-overriding-prompt "Browse package: ")
                             (recipe (elpaca-recipe)))
                        (intern (plist-get recipe :package)))))
-  (if-let* ((found (alist-get id (cl-loop for menu in elpaca-menu-functions append (funcall menu 'index))))
-            (url (plist-get found :url)))
+  (if-let* ((url (or (plist-get (alist-get id (cl-loop for menu in elpaca-menu-functions
+                                                       append (funcall menu 'index)))
+                                :url)
+                     (when-let* ((e (elpaca-get id))) (elpaca--url e)))))
       (browse-url url)
-    (user-error "No URL associated with id %S" id)))
+    (user-error "No URL associated with %S" id)))
 
 ;;;###autoload
 (defun elpaca-version (&optional output)
