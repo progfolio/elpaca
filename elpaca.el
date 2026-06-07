@@ -1737,9 +1737,7 @@ With a prefix argument, rebuild current file's package or prompt if none found."
                          (elpaca--read-queued "Rebuild package: "))
                      t))
   (let ((e (or (elpaca-get id) (user-error "Package %S is not queued" id))))
-    (when (eq (elpaca--status e) 'finished)
-      ;;@MAYBE: remove Info/load-path entries?
-      (setf (elpaca<-build-steps e) (elpaca-build-steps e :rebuild)))
+    (setf (elpaca<-build-steps e) (elpaca-build-steps e :rebuild))
     (elpaca--unprocess e)
     (elpaca--set-status e 'queued)
     (elpaca-note e "Rebuilding")
