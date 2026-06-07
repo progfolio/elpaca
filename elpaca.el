@@ -2091,8 +2091,16 @@ opened by a package finishing or blocking on deps is immediately filled."
     (setq elpaca--log-debounce-timer
           (run-at-time elpaca-log-interval nil #'elpaca--update-log-buffer))))
 
+(defun elpaca--delete-failed-build (e)
+  "Delete E's build-dir when E is failed."
+  (when-let* ((build-dir (elpaca<-build-dir e))
+              ((file-exists-p build-dir)))
+    (delete-directory build-dir t)
+    (elpaca-note e (format "Transactional rollback: removed %s" build-dir))))
+
 (defun elpaca--subscribe ()
   "Wire up core status subscribers."
+  (elpaca-subscribe 'failed   #'elpaca--delete-failed-build)
   (elpaca-subscribe 'failed   #'elpaca--maybe-log-on-failure)
   (elpaca-subscribe 'finished #'elpaca--resolve-finished)
   (elpaca-subscribe 'failed   #'elpaca--resolve-failed)
