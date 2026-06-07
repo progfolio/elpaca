@@ -768,7 +768,7 @@ The first function, if any, which returns non-nil is used." :type 'hook)
       (delete-process p))
     (elpaca--set-status e 'failed)
     (when reason (elpaca-note e reason :face 'elpaca-failed))
-    (signal 'elpaca-build-error (list e reason))))
+    (signal 'elpaca-build-error (list (elpaca<-id e) reason))))
 
 (defun elpaca-get (id)
   "Return queued E associated with ID."
