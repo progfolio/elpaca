@@ -533,10 +533,19 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
   (concat invocation-directory invocation-name))
 
 (defvar elpaca--source-dirs nil "List of registered repository directories.")
+(defun elpaca--build-hash (recipe)
+  (substring (secure-hash 'md5
+                          (format "%S" (list (plist-get recipe :files)
+                                             (plist-get recipe :build)
+                                             (plist-get recipe :main)
+                                             (plist-get recipe :vars))))
+             0 8))
+
 (defun elpaca-build-dir (recipe)
   "Return RECIPE's build dir."
-  (expand-file-name (plist-get recipe :package) elpaca-builds-directory))
-
+  (expand-file-name
+   (concat (plist-get recipe :package) "/" (elpaca--build-hash recipe))
+   elpaca-builds-directory))
 
 (cl-generic-define-generalizer elpaca--generic-derived-generalizer
   70 (lambda (name &rest _) `(plist-get (elpaca<-recipe ,name) :type))
