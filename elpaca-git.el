@@ -33,62 +33,6 @@
   "List of steps which are run when installing/building a package."
   :type '(repeat function))
 
-(defsubst elpaca-git--repo-name (string)
-  "Return repo name portion of STRING."
-  (setq string (directory-file-name string)) ;; remove external :repo trailing slash
-  (file-name-base (substring string (- (or (string-match-p "/" (reverse string))
-                                           (error "Invalid repo name %S" string))))))
-
-(defsubst elpaca-git--repo-user (string)
-  "Return user name portion of STRING."
-  (substring string 0 (string-match-p "/" string)))
-
-(defun elpaca-git--repo-type (string)
-  "Return type of :repo STRING.
-Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
-  (cond ((string-match-p "^[/~]" string) 'local)
-        ((string-match-p ":" string) 'remote)))
-
-(defun elpaca-git-repo-dir (recipe)
-  "Return path to repo given RECIPE."
-  (let* ((url (plist-get recipe :url))
-         (repo (plist-get recipe :repo))
-         (remote (car-safe repo))
-         (local (cdr-safe repo))
-         (pkg (plist-get recipe :package))
-         (host (or (plist-get recipe :host) (plist-get recipe :fetcher)))
-         (hostname (and host (prin1-to-string host 'noescape)))
-         (user nil)
-         (info (concat url (or remote repo) hostname))
-         (key (or (and info (> (length info) 0) (intern info))
-                  (signal 'elpaca-url-error recipe)))
-         (mono-repo (elpaca-alist-get key elpaca--source-dirs))
-         (dirs (and (not mono-repo) (mapcar #'cdr elpaca--source-dirs)))
-         (name (cond
-                (local
-                 (if-let* ((owner (assoc local dirs)))
-                     (error "Local repo %S owned by %s" local (cdr owner))
-                   local))
-                (mono-repo (car mono-repo))
-                (url
-                 (unless (featurep 'url-parse) (require 'url-parse))
-                 (file-name-base (directory-file-name (url-filename
-                                                       (url-generic-parse-url url)))))
-                (repo (if-let* ((r (or remote repo))
-                                ((eq (elpaca-git--repo-type r) 'local)))
-                          (if local
-                              (file-name-base (directory-file-name local))
-                            r)
-                        (when host (setq user (elpaca-git--repo-user r)))
-                        (elpaca-git--repo-name (or local r))))
-                (pkg pkg)
-                (t (error "Unable to determine repo name"))))
-         (dir (if (assoc name dirs)
-                  (string-join (list name hostname user) ".")
-                (and name (replace-regexp-in-string "\\.el$" "" name)))))
-    (unless mono-repo (push (cons key (cons dir pkg)) elpaca--source-dirs))
-    (file-name-as-directory (expand-file-name dir elpaca-sources-directory))))
-
 (defun elpaca-git--repo-uri (recipe)
   "Return repo URI from RECIPE."
   (cl-destructuring-bind (&key (protocol 'https)
@@ -98,24 +42,31 @@ Type is `local' for a local filesystem path, `remote' for a remote URL, or nil."
                                (repo url) &allow-other-keys)
       recipe
     (when (consp repo) (setq repo (car repo))) ; Handle :repo rename
-    (pcase (elpaca-git--repo-type (or repo (signal 'elpaca-url-error recipe)))
-      ('remote repo)
-      ('local  (expand-file-name repo))
-      (_ (let ((p (pcase protocol
-                    ('https '("https://" . "/"))
-                    ('ssh   '("git@" . ":"))
-                    (_      (signal 'wrong-type-argument `((https ssh) ,protocol)))))
-               (h (pcase host
-                    ('github       "github.com")
-                    ('gitlab       "gitlab.com")
-                    ('codeberg     "codeberg.org")
-                    ('sourcehut    "git.sr.ht")
-                    ((pred stringp) host)
-                    (_ (signal 'wrong-type-argument
-                               `(:host (github gitlab codeberg sourcehut stringp)
-                                       ,host ,recipe))))))
-           (concat (car p) h (cdr p) (when (eq host 'sourcehut) "~") repo
-                   (unless (eq host 'sourcehut) ".git")))))))
+    (unless repo (signal 'elpaca-url-error recipe))
+    (cond
+     ((string-match-p ":" repo) repo)
+     ((string-match-p "^[/~]" repo) (expand-file-name repo)) ;; local repo
+     (t (let ((p (pcase protocol
+                   ('https '("https://" . "/"))
+                   ('ssh   '("git@" . ":"))
+                   (_      (signal 'wrong-type-argument `((https ssh) ,protocol)))))
+              (h (pcase host
+                   ('github       "github.com")
+                   ('gitlab       "gitlab.com")
+                   ('codeberg     "codeberg.org")
+                   ('sourcehut    "git.sr.ht")
+                   ((pred stringp) host)
+                   (_ (signal 'wrong-type-argument
+                              `(:host (github gitlab codeberg sourcehut stringp)
+                                      ,host ,recipe))))))
+          (concat (car p) h (cdr p) (when (eq host 'sourcehut) "~") repo
+                  (unless (eq host 'sourcehut) ".git")))))))
+
+(defun elpaca-git--source-hash (recipe)
+  "Return a hash identifying the remote source of RECIPE."
+  (substring (secure-hash 'md5 (elpaca-git--repo-uri
+                                (plist-put (copy-sequence recipe) :protocol 'https)))
+             0 8))
 
 (defun elpaca-git--remote-default-branch (remote)
   "Return REMOTE's \"default\" branch.
@@ -355,7 +306,8 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
 (cl-defmethod elpaca-source-dir ((e (elpaca git)))
   "Return source directory for :type `git` E."
   (condition-case err
-      (elpaca-git-repo-dir (elpaca<-recipe e))
+      (expand-file-name (elpaca-git--source-hash (elpaca<-recipe e))
+                        elpaca-sources-directory)
     (elpaca-error (signal (car err) (cdr err)))))
 
 (cl-defmethod elpaca-ref ((e (elpaca git)))
