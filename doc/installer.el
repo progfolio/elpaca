@@ -1,6 +1,5 @@
 ;; Elpaca Installer -*- lexical-binding: t; -*-
 ;; Copy below this line into your init.el
-;; Elpaca Installer -- Copy below into your init.el  -*- lexical-binding: t; -*-
 (defvar elpaca-installer-version 0.14)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name (format "builds-%s/" emacs-version) elpaca-directory))
@@ -30,7 +29,9 @@
                            (load (expand-file-name "elpaca-autoloads" bdir))))
                        (elpaca elpaca)
                        nil)))
-    (mapc #'unload-feature '(elpaca-autoloads elpaca-process elpaca-git elpaca))
+    (mapc (lambda (f) (unload-feature f t))
+          '(elpaca-git elpaca elpaca-autoloads elpaca-process))
     (add-to-list 'load-path build)
-    (require 'elpaca-autoloads))
+    (require 'elpaca-autoloads)
+    (elpaca elpaca))
   (add-hook 'after-init-hook #'elpaca-process-queues))
