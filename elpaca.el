@@ -194,7 +194,7 @@ Simplified, faster version of `alist-get'."
                                           :repo "https://github.com/progfolio/elpaca.git"
                                           :files '("extensions/elpaca-use-package.el")
                                           :main "extensions/elpaca-use-package.el"
-                                          :build '(:not elpaca-source elpaca-build-docs))))))))
+                                          :build '(:not elpaca-build-docs))))))))
 
 (defcustom elpaca-menu-functions
   '( elpaca-menu-lock-file elpaca-menu-extensions elpaca-menu-org elpaca-menu-melpa
