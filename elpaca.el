@@ -1445,7 +1445,7 @@ If RECACHE is non-nil, do not use cached dependencies."
             (autoloads (let ((member (plist-member recipe :autoloads)))
                          (if member (cadr member) t)))
             (default-directory (elpaca<-build-dir e))
-            (elpaca (expand-file-name "elpaca/" elpaca-sources-directory)))
+            (elpaca (elpaca<-source-dir (elpaca-get 'elpaca))))
       (progn
         (elpaca-note e (concat "Generating autoloads: " default-directory))
         (elpaca-with-emacs e
