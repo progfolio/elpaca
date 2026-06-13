@@ -26,6 +26,7 @@
 
 ;;; Commentary:
 
+(message "THE FUTURE")
 ;;; Code:
 (eval-and-compile (require 'cl-lib))
 (eval-when-compile (require 'subr-x))
