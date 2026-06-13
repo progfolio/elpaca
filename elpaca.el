@@ -163,8 +163,8 @@ Simplified, faster version of `alist-get'."
   (or (cdr (assq key alist)) default))
 
 (defun elpaca--bootstrap-handoff (e)
-  "Swap bootstrap Elpaca for built version E."
   (let ((bdir (expand-file-name "elpaca-bootstrap/" elpaca-sources-directory)))
+    (mapc #'unload-feature '(elpaca-autoloads elpaca-git elpaca elpaca-process))
     (setq load-path (delete bdir load-path))
     (add-to-list 'load-path (elpaca<-build-dir e))
     (require 'elpaca-autoloads)
