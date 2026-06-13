@@ -241,40 +241,46 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
 
 (defun elpaca-git--clone (e)
   "Clone E's repo to `elpaca-directory'."
-  (let* ((recipe  (elpaca<-recipe   e))
-         (remotes (plist-get recipe :remotes))
-         (remote  (and remotes (car remotes)))
-         (repodir (elpaca<-source-dir e))
-         (URI     (elpaca-git--repo-uri recipe))
+  (let* ((recipe   (elpaca<-recipe e))
+         (remotes  (plist-get recipe :remotes))
+         (remote   (and remotes (car remotes)))
+         (repodir  (elpaca<-source-dir e))
+         (URI      (elpaca-git--repo-uri recipe))
          (default-directory elpaca-directory)
-         (command
-          `("git" "clone"
-            ;;@TODO: Some refs will need a full clone or specific branch.
-            ,@(when-let* ((depth (plist-get recipe :depth)))
-                (cond
-                 ((plist-get recipe :ref) (elpaca-note e
-                                                       "Ignoring :depth in favor of :ref"))
-                 ((numberp depth) `("--depth" ,(number-to-string depth)))
-                 ((memq depth '(treeless blobless))
-                  (cond ((consp remote)
-                         (setf (elpaca<-recipe e) (plist-put recipe :depth nil))
-                         (elpaca-note e
-                                      ":remotes incompatible with treeless, blobless clones; using :depth nil"
-                                      :face 'warning))
-                        ((eq depth 'treeless) '("--filter=tree:0"))
-                        ((eq depth 'blobless) '("--filter=blob:none"))))))
-            ;;@FIX: allow override
-            ,@(when-let* ((ref (or (plist-get recipe :branch) (plist-get recipe :tag))))
-                `("--single-branch" "--branch" ,ref))
-            ,@(unless (or (null remote) (stringp remote)) '("--no-checkout"))
-            ,URI ,repodir)))
-    (if (file-exists-p repodir)
-        (progn (elpaca-note e (format "%s exists. Skipping clone." repodir))
-               (elpaca-resolve 'source-dir-exists repodir)
-               (elpaca-continue e))
+         (clone-dir (file-name-parent-directory repodir)))
+    (cond
+     ((file-exists-p repodir)
+      (elpaca-note e (format "%s exists. Skipping clone." repodir))
+      (elpaca-resolve 'source-dir-exists repodir)
+      (elpaca-continue e))
+     ((file-exists-p clone-dir)
+      (elpaca-note e (format "Local clone exists. Cloning from %s" clone-dir))
       (elpaca--make-process e
-        :name "clone" :command command :connection-type 'pty
-        :sentinel #'elpaca-git--clone-process-sentinel))))
+        :name "clone"
+        :command `("git" "clone" ,clone-dir ,repodir)
+        :connection-type 'pty
+        :sentinel #'elpaca-git--clone-process-sentinel))
+     (t
+      (elpaca--make-process e
+        :name "clone"
+        :command `("git" "clone"
+                   ,@(when-let* ((depth (plist-get recipe :depth)))
+                       (cond
+                        ((plist-get recipe :ref) (elpaca-note e "Ignoring :depth in favor of :ref"))
+                        ((numberp depth) `("--depth" ,(number-to-string depth)))
+                        ((memq depth '(treeless blobless))
+                         (cond ((consp remote)
+                                (setf (elpaca<-recipe e) (plist-put recipe :depth nil))
+                                (elpaca-note e ":remotes incompatible with treeless, blobless clones; using :depth nil"
+                                             :face 'warning))
+                               ((eq depth 'treeless) '("--filter=tree:0"))
+                               ((eq depth 'blobless) '("--filter=blob:none"))))))
+                   ,@(when-let* ((ref (or (plist-get recipe :branch) (plist-get recipe :tag))))
+                       `("--single-branch" "--branch" ,ref))
+                   ,@(unless (or (null remote) (stringp remote)) '("--no-checkout"))
+                   ,URI ,repodir)
+        :connection-type 'pty
+        :sentinel #'elpaca-git--clone-process-sentinel)))))
 
 (defun elpaca-git-worktree-dirty-p (id)
   "Return t if ID's associated repository has a dirty worktree, nil otherwise."
