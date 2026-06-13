@@ -62,12 +62,6 @@
           (concat (car p) h (cdr p) (when (eq host 'sourcehut) "~") repo
                   (unless (eq host 'sourcehut) ".git")))))))
 
-(defun elpaca-git--source-hash (recipe)
-  "Return a hash identifying the remote source of RECIPE."
-  (substring (secure-hash 'md5 (elpaca-git--repo-uri
-                                (plist-put (copy-sequence recipe) :protocol 'https)))
-             0 8))
-
 (defun elpaca-git--remote-default-branch (remote)
   "Return REMOTE's \"default\" branch.
 This is the branch that would be checked out upon cloning."
@@ -303,10 +297,23 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
     (cl-loop for tag in tags when (string-match regexp tag)
              return (or (match-string 1 tag) (match-string 0 tag)))))
 
+(cl-defmethod elpaca--source-hash ((e (elpaca git)))
+  "Return a hash identifying the remote source of E for :type git."
+  (elpaca--hash (elpaca-git--repo-uri
+                 (plist-put (copy-sequence (elpaca<-recipe e)) :protocol 'https))))
+
+(defun elpaca-git--fetch-hash (e)
+  "Return a hash identifying E's fetch status."
+  (let ((recipe (elpaca<-recipe e)))
+    (elpaca--hash (plist-get recipe :branch)
+                  (plist-get recipe :ref)
+                  (plist-get recipe :tag)
+                  (plist-get recipe :remotes))))
+
 (cl-defmethod elpaca-source-dir ((e (elpaca git)))
   "Return source directory for :type `git` E."
   (condition-case err
-      (expand-file-name (elpaca-git--source-hash (elpaca<-recipe e))
+      (expand-file-name (concat (elpaca--source-hash e) "/" (elpaca-git--fetch-hash e))
                         elpaca-sources-directory)
     (elpaca-error (signal (car err) (cdr err)))))
 
