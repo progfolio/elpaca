@@ -183,7 +183,7 @@ Simplified, faster version of `alist-get'."
                             :recipe '(:package "elpaca" :host github :repo "progfolio/elpaca"
                                       :ref nil :depth 1 :inherit ignore :wait t
                                       :files (:defaults "elpaca-test.el" (:exclude "extensions"))
-                                      :build (:sub (elpaca-activate elpaca--bootstrap-handoff)))))
+                                      :build (:sub elpaca-activate elpaca--bootstrap-handoff))))
                 (cons 'elpaca-use-package
                       (list :source "Elpaca extensions"
                             :description "Elpaca use-package support."
