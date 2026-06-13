@@ -72,7 +72,6 @@ It then builds and activates Elpaca.
       (condition-case err
           (if (and (zerop (call-process "git" nil t t "clone" "--depth=1" "--no-single-branch"
                                         "https://github.com/progfolio/elpaca.git" bdir))
-                   (zerop (call-process "git" nil t t "checkout" "feat/cas"))
                    (zerop (call-process (concat invocation-directory invocation-name)
                                         nil t nil "-Q" "-L" "." "--batch"
                                         "--eval" "(byte-recompile-directory \".\" 0 'force)")))
@@ -80,13 +79,19 @@ It then builds and activates Elpaca.
             (pop-to-buffer (current-buffer))
             (error "Elpaca bootstrap failed"))
         ((error) (delete-directory bdir 'recursive) (signal (car err) (cdr err))))))
-  (add-to-list 'load-path bdir)
-  (unless (require 'elpaca-autoloads nil t)
-    (require 'elpaca)
-    (elpaca-generate-autoloads "elpaca" bdir)
-    (let ((load-source-file-function nil)) (load (expand-file-name "elpaca-autoloads" bdir)))))
-(add-hook 'after-init-hook #'elpaca-process-queues)
-(elpaca elpaca)
+  (when-let* ((build (catch 'elpaca-bootstrap
+                       (add-to-list 'load-path bdir)
+                       (unless (require 'elpaca-autoloads nil t)
+                         (require 'elpaca)
+                         (elpaca-generate-autoloads "elpaca" bdir)
+                         (let ((load-source-file-function nil))
+                           (load (expand-file-name "elpaca-autoloads" bdir))))
+                       (elpaca elpaca)
+                       nil)))
+    (mapc #'unload-feature '(elpaca-autoloads elpaca-process elpaca-git elpaca))
+    (add-to-list 'load-path build)
+    (require 'elpaca-autoloads))
+  (add-hook 'after-init-hook #'elpaca-process-queues))
 #+end_src
 
 #+begin_src emacs-lisp :lexical t :eval never-export :tangle "./init.el" :exports none :noweb tangle
