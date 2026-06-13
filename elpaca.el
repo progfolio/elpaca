@@ -2047,7 +2047,7 @@ OUTPUT may be any of the following:
   - `string' Return formmatted string.
   - `message' (used when called interactively) to message formatted string."
   (interactive '(message))
-  (let* ((default-directory (expand-file-name "elpaca/" elpaca-sources-directory))
+  (let* ((default-directory (elpaca<-source-dir (elpaca-get 'elpaca)))
          (git  (string-trim (elpaca-process-output "git" "--version")))
          (repo (string-trim (elpaca-process-output "git" "log" "--pretty=%h %D" "-1")))
          (info (list (cons 'elpaca repo) (cons 'installer elpaca-installer-version)
