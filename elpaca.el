@@ -40,7 +40,7 @@
 (defconst elpaca--inactive-states '(finished failed)
   "Terminal or waiting statuses that do not represent active build work.")
 (defvar elpaca-installer-version -1)
-(or noninteractive (= elpaca-installer-version 0.13)
+(or noninteractive (= elpaca-installer-version 0.14)
     (lwarn '(elpaca installer) :warning "%s installer version does not match %s."
            (or (symbol-file 'elpaca-installer-version 'defvar) "Init")
            (expand-file-name "./doc/installer.el" (file-name-directory (or load-file-name (buffer-file-name))))))
@@ -162,6 +162,14 @@ This hook is run via `elpaca-run-hook-with-reduce'."
 Simplified, faster version of `alist-get'."
   (or (cdr (assq key alist)) default))
 
+(defun elpaca--bootstrap-handoff (e)
+  "Swap bootstrap Elpaca for built version E."
+  (let ((bdir (expand-file-name "elpaca-bootstrap/" elpaca-sources-directory)))
+    (setq load-path (delete bdir load-path))
+    (add-to-list 'load-path (elpaca<-build-dir e))
+    (require 'elpaca-autoloads)
+    (elpaca-continue e)))
+
 (defvar elpaca-menu-extensions--cache nil "Cache for `elpaca-menu-extenions' items.")
 (defun elpaca-menu-extensions (request &optional item)
   "Return menu ITEM REQUEST."
@@ -169,7 +177,14 @@ Simplified, faster version of `alist-get'."
             (cache (or elpaca-menu-extensions--cache (elpaca-menu-extensions 'update))))
       (if item (elpaca-alist-get item cache) cache)
     (setq elpaca-menu-extensions--cache
-          (list (cons 'elpaca-use-package
+          (list (cons 'elpaca
+                      (list :source "Elpaca extensions"
+                            :description "Elpaca package manager."
+                            :recipe '(:package "elpaca" :host github :repo "progfolio/elpaca"
+                                      :ref nil :depth 1 :inherit ignore :wait t
+                                      :files (:defaults "elpaca-test.el" (:exclude "extensions"))
+                                      :build (:sub (elpaca-activate elpaca--bootstrap-handoff)))))
+                (cons 'elpaca-use-package
                       (list :source "Elpaca extensions"
                             :description "Elpaca use-package support."
                             :recipe (list :package "elpaca-use-package" :wait t

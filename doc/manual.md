@@ -71,44 +71,33 @@ Elpaca requires:
 To install Elpaca, add the following elisp to your init.el. It must come before any calls to other Elpaca functions/macros. This will clone Elpaca into your `user-emacs-directory` under the `elpaca` subdirectory. It then builds and activates Elpaca.
 
 ```emacs-lisp
-(defvar elpaca-installer-version 0.13)
+;; Elpaca Installer -- Copy below into your init.el  -*- lexical-binding: t; -*-
+(defvar elpaca-installer-version 0.14)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name (format "builds-%s/" emacs-version) elpaca-directory))
 (defvar elpaca-sources-directory (expand-file-name "sources/" elpaca-directory))
-(defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
-                              :ref nil :depth 1 :inherit ignore
-                              :files (:defaults "elpaca-test.el" (:exclude "extensions"))
-                              :build (:not elpaca-activate)))
-(let* ((repo  (expand-file-name "elpaca/" elpaca-sources-directory))
-       (build (expand-file-name "elpaca/" elpaca-builds-directory))
-       (order (cdr elpaca-order))
-       (default-directory repo))
-  (add-to-list 'load-path (if (file-exists-p build) build repo))
-  (unless (file-exists-p repo)
-    (make-directory repo t)
-    (when (<= emacs-major-version 28) (require 'subr-x))
-    (condition-case-unless-debug err
-        (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
-                  ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
-                                                  ,@(when-let* ((depth (plist-get order :depth)))
-                                                      (list (format "--depth=%d" depth) "--no-single-branch"))
-                                                  ,(plist-get order :repo) ,repo))))
-                  ((zerop (call-process "git" nil buffer t "checkout"
-                                        (or (plist-get order :ref) "--"))))
-                  (emacs (concat invocation-directory invocation-name))
-                  ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+(let* ((bdir (expand-file-name "elpaca-bootstrap/" elpaca-sources-directory))
+       (default-directory bdir))
+  (unless (file-exists-p bdir)
+    (make-directory bdir t)
+    (with-current-buffer (get-buffer-create "*elpaca-bootstrap*")
+      (condition-case err
+          (if (and (zerop (call-process "git" nil t t "clone" "--depth=1" "--no-single-branch"
+                                        "https://github.com/progfolio/elpaca.git" bdir))
+                   (zerop (call-process (concat invocation-directory invocation-name)
+                                        nil t nil "-Q" "-L" "." "--batch"
                                         "--eval" "(byte-recompile-directory \".\" 0 'force)")))
-                  ((require 'elpaca))
-                  ((elpaca-generate-autoloads "elpaca" repo)))
-            (progn (message "%s" (buffer-string)) (kill-buffer buffer))
-          (error "%s" (with-current-buffer buffer (buffer-string))))
-      ((error) (warn "%s" err) (delete-directory repo 'recursive))))
+              (kill-buffer)
+            (pop-to-buffer (current-buffer))
+            (error "Elpaca bootstrap failed"))
+        ((error) (delete-directory bdir 'recursive) (signal (car err) (cdr err))))))
+  (add-to-list 'load-path bdir)
   (unless (require 'elpaca-autoloads nil t)
     (require 'elpaca)
-    (elpaca-generate-autoloads "elpaca" repo)
-    (let ((load-source-file-function nil)) (load "./elpaca-autoloads"))))
+    (elpaca-generate-autoloads "elpaca" bdir)
+    (let ((load-source-file-function nil)) (load (expand-file-name "elpaca-autoloads" bdir)))))
 (add-hook 'after-init-hook #'elpaca-process-queues)
-(elpaca `(,@elpaca-order))
+(elpaca elpaca)
 ```
 
 -   Windows users must be able to create symlinks<sup><a id="fnr.-0-1" class="footref" href="#fn.-0-1" role="doc-backlink">1</a></sup>, or enable `elpaca-no-symlink-mode`
