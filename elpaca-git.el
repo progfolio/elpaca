@@ -308,7 +308,8 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
     (elpaca--hash (plist-get recipe :branch)
                   (plist-get recipe :ref)
                   (plist-get recipe :tag)
-                  (plist-get recipe :remotes))))
+                  (plist-get recipe :remotes)
+                  (plist-get recipe :depth)))
 
 (cl-defmethod elpaca-source-dir ((e (elpaca git)))
   "Return source directory for :type `git` E."
