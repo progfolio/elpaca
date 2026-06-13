@@ -241,23 +241,25 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
 
 (defun elpaca-git--clone (e)
   "Clone E's repo to `elpaca-directory'."
-  (let* ((recipe   (elpaca<-recipe e))
-         (remotes  (plist-get recipe :remotes))
-         (remote   (and remotes (car remotes)))
-         (repodir  (elpaca<-source-dir e))
-         (URI      (elpaca-git--repo-uri recipe))
+  (let* ((recipe    (elpaca<-recipe e))
+         (remotes   (plist-get recipe :remotes))
+         (remote    (and remotes (car remotes)))
+         (repodir   (elpaca<-source-dir e))
+         (URI       (elpaca-git--repo-uri recipe))
          (default-directory elpaca-directory)
-         (clone-dir (file-name-parent-directory repodir)))
+         (clone-dir (file-name-parent-directory repodir))
+         (existing-fetch (when (file-exists-p clone-dir)
+                           (car (directory-files clone-dir t "\\`[^.]" t)))))
     (cond
      ((file-exists-p repodir)
       (elpaca-note e (format "%s exists. Skipping clone." repodir))
       (elpaca-resolve 'source-dir-exists repodir)
       (elpaca-continue e))
-     ((file-exists-p clone-dir)
-      (elpaca-note e (format "Local clone exists. Cloning from %s" clone-dir))
+     (existing-fetch
+      (elpaca-note e (format "Local clone exists. Cloning from %s" existing-fetch))
       (elpaca--make-process e
         :name "clone"
-        :command `("git" "clone" ,clone-dir ,repodir)
+        :command `("git" "clone" ,existing-fetch ,repodir)
         :connection-type 'pty
         :sentinel #'elpaca-git--clone-process-sentinel))
      (t
