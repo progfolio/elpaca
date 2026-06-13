@@ -277,7 +277,7 @@ e.g. elisp forms may be printed via `prin1'."
   (queue-id (1- (length elpaca--queues)))
   (queue-time (current-time))
   (init (not after-init-time))
-  process builtp)
+  process builtp sourcedp)
 
 (defvar elpaca--status-counts nil "Status counts for UI progress bar.")
 
@@ -654,7 +654,8 @@ TYPE is one of the following keywords:
     (unless (and declaration (not val)) ;; explicit nil
       (elpaca-substitute-build-steps
        (pcase context
-         ('nil (if (elpaca<-builtp e) elpaca--pre-built-steps elpaca-default-build-steps))
+         ('nil (if (and (elpaca<-builtp e) (elpaca<-sourcedp e))
+                   elpaca--pre-built-steps elpaca-default-build-steps))
          ((or :rebuild :merge)
           (cl-set-difference elpaca-default-build-steps
                              (cons 'elpaca-source elpaca--pre-built-steps))))
@@ -754,6 +755,8 @@ The first function, if any, which returns non-nil is used." :type 'hook)
                       (registered (elpaca-alist-get (plist-get recipe :type) elpaca-types)))
             (require registered)) ;;@TODO: optimize lookup by tracking separate from `features'?
           (setf (elpaca<-source-dir e) (elpaca-source-dir e)
+                (elpaca<-sourcedp e) (when-let* ((source-dir (elpaca<-source-dir e)))
+                                       (file-exists-p source-dir))
                 (elpaca<-build-steps e) (elpaca-build-steps e)))
       (elpaca-error
        (if (run-hook-with-args-until-success 'elpaca-error-functions e err)

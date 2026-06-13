@@ -325,7 +325,7 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
 
 (cl-defmethod elpaca-source ((e (elpaca git)))
   "Populate source files for E :type `git'."
-  (if-let* (((not (elpaca<-builtp e)))
+  (if-let* (((not (elpaca<-sourcedp e)))
             (source-dir (elpaca<-source-dir e))
             (shared (elpaca--shared-source-dir (elpaca<-id e) source-dir))
             ((or (gethash (cons 'source-dir-exists source-dir) elpaca--conditions)
