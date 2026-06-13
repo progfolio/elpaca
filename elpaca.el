@@ -555,8 +555,9 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
   "Return hash string for OBJECTS."
   (substring (secure-hash 'md5 (format "%S" objects)) 0 8))
 
-(cl-defgeneric elpaca--source-hash (e) nil)
+(cl-defgeneric elpaca--source-hash (_e) "Return E's source hash." nil)
 (cl-defgeneric elpaca--build-hash (e)
+  "Return E's build hash."
   (let ((recipe (elpaca<-recipe e)))
     (elpaca--hash (elpaca--source-hash e)
                   (plist-get recipe :files)
