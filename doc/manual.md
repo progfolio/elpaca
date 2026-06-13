@@ -83,6 +83,7 @@ To install Elpaca, add the following elisp to your init.el. It must come before 
       (condition-case err
           (if (and (zerop (call-process "git" nil t t "clone" "--depth=1" "--no-single-branch"
                                         "https://github.com/progfolio/elpaca.git" bdir))
+                   (zerop (call-process "git" nil t t "checkout" "feat/cas"))
                    (zerop (call-process (concat invocation-directory invocation-name)
                                         nil t nil "-Q" "-L" "." "--batch"
                                         "--eval" "(byte-recompile-directory \".\" 0 'force)")))
