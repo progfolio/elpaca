@@ -92,13 +92,19 @@ To install Elpaca, add the following elisp to your init.el. It must come before 
             (pop-to-buffer (current-buffer))
             (error "Elpaca bootstrap failed"))
         ((error) (delete-directory bdir 'recursive) (signal (car err) (cdr err))))))
-  (add-to-list 'load-path bdir)
-  (unless (require 'elpaca-autoloads nil t)
-    (require 'elpaca)
-    (elpaca-generate-autoloads "elpaca" bdir)
-    (let ((load-source-file-function nil)) (load (expand-file-name "elpaca-autoloads" bdir)))))
-(add-hook 'after-init-hook #'elpaca-process-queues)
-(elpaca elpaca)
+  (when-let* ((build (catch 'elpaca-bootstrap
+                       (add-to-list 'load-path bdir)
+                       (unless (require 'elpaca-autoloads nil t)
+                         (require 'elpaca)
+                         (elpaca-generate-autoloads "elpaca" bdir)
+                         (let ((load-source-file-function nil))
+                           (load (expand-file-name "elpaca-autoloads" bdir))))
+                       (elpaca elpaca)
+                       nil)))
+    (mapc #'unload-feature '(elpaca-autoloads elpaca-process elpaca-git elpaca))
+    (add-to-list 'load-path build)
+    (require 'elpaca-autoloads))
+  (add-hook 'after-init-hook #'elpaca-process-queues))
 ```
 
 -   Windows users must be able to create symlinks<sup><a id="fnr.-0-1" class="footref" href="#fn.-0-1" role="doc-backlink">1</a></sup>, or enable `elpaca-no-symlink-mode`
