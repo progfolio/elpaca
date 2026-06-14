@@ -37,6 +37,7 @@
                     (pop-to-buffer (current-buffer))
                     (error "Elpaca bootstrap subprocess failed"))
                   (prog1 (buffer-string) (kill-buffer))))
+         (message "BUILD: %S" build)
          (load-path (cons build load-path)))
     (require 'elpaca-autoloads))
   (add-hook 'after-init-hook #'elpaca-process-queues))
