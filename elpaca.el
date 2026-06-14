@@ -26,7 +26,6 @@
 
 ;;; Commentary:
 
-(message "THE FUTURE")
 ;;; Code:
 (eval-and-compile (require 'cl-lib))
 (eval-when-compile (require 'subr-x))
@@ -163,10 +162,10 @@ This hook is run via `elpaca-run-hook-with-reduce'."
 Simplified, faster version of `alist-get'."
   (or (cdr (assq key alist)) default))
 
-(defun elpaca-bootstrap ()
-  "Return build directory for Elpaca, building if necessary.
+(defun elpaca--bootstrap (declaration)
+  "Return build directory for Elpaca DECLARATION, building if necessary.
 Intended for use in the bootstrap subprocess."
-  (elpaca-try elpaca-recipe)
+  (elpaca-try declaration)
   (elpaca-wait)
   (elpaca<-build-dir (elpaca-get 'elpaca)))
 
@@ -182,8 +181,8 @@ Intended for use in the bootstrap subprocess."
                             :description "Elpaca package manager."
                             :recipe '(:package "elpaca" :host github :repo "progfolio/elpaca"
                                                :depth 1 :inherit ignore :wait t
-                                               :files (:defaults "elpaca-test.el" (:exclude "extensions"))
-                                               :build (:sub elpaca-activate elpaca--bootstrap-handoff))))
+                                               :build (:not elpaca-activate)
+                                               :files (:defaults "elpaca-test.el" (:exclude "extensions")))))
                 (cons 'elpaca-use-package
                       (list :source "Elpaca extensions"
                             :description "Elpaca use-package support."

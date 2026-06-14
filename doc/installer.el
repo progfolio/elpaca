@@ -1,5 +1,4 @@
-;; Elpaca Installer -*- lexical-binding: t; -*-
-;; Copy below this line into your init.el
+;; Elpaca Installer. Copy below this line into your init.el -*- lexical-binding: t; -*-
 (defvar elpaca-installer-version 0.14)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name (format "builds-%s/" emacs-version) elpaca-directory))
@@ -21,24 +20,24 @@
             (pop-to-buffer (current-buffer))
             (error "Elpaca bootstrap failed"))
         ((error) (delete-directory bdir 'recursive) (signal (car err) (cdr err))))))
-  (let* ((build (with-current-buffer (generate-new-buffer " *elpaca-bootstrap*")
-                  (unless (zerop
-                           (call-process emacs nil t nil
-                                         "-Q" "-L" bdir "--batch"
-                                         "--eval" (format "(setq elpaca-directory %S
+  (setq elpaca-installation
+        (with-current-buffer (get-buffer-create "*elpaca-bootstrap*")
+          (erase-buffer)
+          (unless (zerop (call-process emacs nil t nil
+                                       "-Q" "-L" bdir "--batch"
+                                       "--eval" (format "(setq elpaca-directory %S
                                                                  elpaca-builds-directory %S
-                                                                 elpaca-sources-directory %S
-                                                                 elpaca-recipe '%S)"
-                                                          elpaca-directory
-                                                          elpaca-builds-directory
-                                                          elpaca-sources-directory
-                                                          elpaca-recipe)
-                                         "--eval" "(require 'elpaca)"
-                                         "--eval" "(princ (elpaca-bootstrap))"))
-                    (pop-to-buffer (current-buffer))
-                    (error "Elpaca bootstrap subprocess failed"))
-                  (prog1 (buffer-string) (kill-buffer))))
-         (message "BUILD: %S" build)
-         (load-path (cons build load-path)))
-    (require 'elpaca-autoloads))
-  (add-hook 'after-init-hook #'elpaca-process-queues))
+                                                                 elpaca-sources-directory %S)"
+                                                        elpaca-directory
+                                                        elpaca-builds-directory
+                                                        elpaca-sources-directory)
+                                       "--eval" "(require 'elpaca)"
+                                       "--eval" (format "(princ (elpaca--bootstrap '%S))" elpaca-recipe)))
+            (pop-to-buffer (current-buffer))
+            (error "Elpaca bootstrap subprocess failed"))
+          (prog1 (buffer-string) (kill-buffer)))))
+(if (file-exists-p elpaca-installation)
+    (add-to-list 'load-path elpaca-installation)
+  (error "Malformed Elpaca bootstrap result: %S" elpaca-installation))
+(require 'elpaca-autoloads)
+(add-hook 'after-init-hook #'elpaca-process-queues)
