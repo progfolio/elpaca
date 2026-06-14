@@ -167,7 +167,8 @@ Simplified, faster version of `alist-get'."
 Intended for use in the bootstrap subprocess."
   (elpaca-try declaration)
   (elpaca-wait)
-  (elpaca<-build-dir (elpaca-get 'elpaca)))
+  (write-region (elpaca<-build-dir (elpaca-get 'elpaca))
+                nil (expand-file-name "elpaca-bootstrap.eld" elpaca-cache-directory)))
 
 (defvar elpaca-menu-extensions--cache nil "Cache for `elpaca-menu-extenions' items.")
 (defun elpaca-menu-extensions (request &optional item)
