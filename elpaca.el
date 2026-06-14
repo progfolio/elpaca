@@ -163,16 +163,12 @@ This hook is run via `elpaca-run-hook-with-reduce'."
 Simplified, faster version of `alist-get'."
   (or (cdr (assq key alist)) default))
 
-(defun elpaca--bootstrap-handoff (e)
-  "Swap bootstrap Elpaca for built version E."
-  (let* ((bdir  (expand-file-name "elpaca-bootstrap/" elpaca-sources-directory))
-         (build (elpaca<-build-dir e))
-         (load-prefer-newer t))
-    (setq load-path (delete bdir load-path))
-    (add-to-list 'load-path build)
-    (mapc (lambda (feature) (load (symbol-name feature) nil 'nomessage))
-          '(elpaca-process elpaca elpaca-git elpaca-autoloads))
-    (elpaca-continue e)))
+(defun elpaca-bootstrap ()
+  "Return build directory for Elpaca, building if necessary.
+Intended for use in the bootstrap subprocess."
+  (elpaca-try elpaca-recipe)
+  (elpaca-wait)
+  (elpaca<-build-dir (elpaca-get 'elpaca)))
 
 (defvar elpaca-menu-extensions--cache nil "Cache for `elpaca-menu-extenions' items.")
 (defun elpaca-menu-extensions (request &optional item)
@@ -185,7 +181,7 @@ Simplified, faster version of `alist-get'."
                       (list :source "Elpaca extensions"
                             :description "Elpaca package manager."
                             :recipe '(:package "elpaca" :host github :repo "progfolio/elpaca"
-                                               :ref "feat/cas" :depth 1 :inherit ignore :wait t
+                                               :depth 1 :inherit ignore :wait t
                                                :files (:defaults "elpaca-test.el" (:exclude "extensions"))
                                                :build (:sub elpaca-activate elpaca--bootstrap-handoff))))
                 (cons 'elpaca-use-package
