@@ -18,6 +18,7 @@
           (pop-to-buffer-same-window (current-buffer))
           (unless (and (funcall calledp "git" "clone" "--depth=1" "--no-single-branch"
                                 "https://github.com/progfolio/elpaca.git" bdir)
+                       (funcall calledp "git" "checkout" "feat/future")
                        (funcall calledp emacs "-Q" "-L" "." "--batch"
                                 "--eval" "(byte-recompile-directory \".\" 0 'force)"))
             (error "Elpaca bootstrap clone failed")))
