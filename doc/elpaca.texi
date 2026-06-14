@@ -141,6 +141,7 @@ It then builds and activates Elpaca.
       (condition-case err
           (if (and (zerop (call-process "git" nil t t "clone" "--depth=1" "--no-single-branch"
                                         "https://github.com/progfolio/elpaca.git" bdir))
+                   (zerop (call-process "git" nil t nil "checkout" "feat/future"))
                    (zerop (call-process emacs nil t nil "-Q" "-L" "." "--batch"
                                         "--eval" "(byte-recompile-directory \".\" 0 'force)")))
               (kill-buffer)
