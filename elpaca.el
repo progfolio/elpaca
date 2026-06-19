@@ -40,7 +40,7 @@
 (defconst elpaca--inactive-states '(finished failed)
   "Terminal or waiting statuses that do not represent active build work.")
 (defvar elpaca-installer-version -1)
-(or noninteractive (= elpaca-installer-version 0.13)
+(or noninteractive (= elpaca-installer-version 0.14)
     (lwarn '(elpaca installer) :warning "%s installer version does not match %s."
            (or (symbol-file 'elpaca-installer-version 'defvar) "Init")
            (expand-file-name "./doc/installer.el" (file-name-directory (or load-file-name (buffer-file-name))))))
@@ -162,6 +162,16 @@ This hook is run via `elpaca-run-hook-with-reduce'."
 Simplified, faster version of `alist-get'."
   (or (cdr (assq key alist)) default))
 
+(defun elpaca--bootstrap (declaration env-hash)
+  "Write build directory for Elpaca DECLARATION to cache, building if necessary.
+ENV-HASH is used to validate the cache on subsequent startups."
+  (elpaca-try declaration)
+  (let* ((build (elpaca<-build-dir (elpaca-get 'elpaca)))
+         (cache (expand-file-name "elpaca-bootstrap.eld" elpaca-cache-directory)))
+    (unless (file-exists-p build) (elpaca-wait))
+    (make-directory elpaca-cache-directory t)
+    (write-region (format "%S" (list env-hash build)) nil cache)))
+
 (defvar elpaca-menu-extensions--cache nil "Cache for `elpaca-menu-extenions' items.")
 (defun elpaca-menu-extensions (request &optional item)
   "Return menu ITEM REQUEST."
@@ -169,14 +179,21 @@ Simplified, faster version of `alist-get'."
             (cache (or elpaca-menu-extensions--cache (elpaca-menu-extensions 'update))))
       (if item (elpaca-alist-get item cache) cache)
     (setq elpaca-menu-extensions--cache
-          (list (cons 'elpaca-use-package
+          (list (cons 'elpaca
+                      (list :source "Elpaca extensions"
+                            :description "Elpaca package manager."
+                            :recipe '(:package "elpaca" :host github :repo "progfolio/elpaca"
+                                               :ref "feat/cas" :depth 1 :inherit ignore
+                                               :files (:defaults "elpaca-test.el" (:exclude "extensions"))
+                                               :build (:not elpaca-activate))))
+                (cons 'elpaca-use-package
                       (list :source "Elpaca extensions"
                             :description "Elpaca use-package support."
                             :recipe (list :package "elpaca-use-package" :wait t
                                           :repo "https://github.com/progfolio/elpaca.git"
                                           :files '("extensions/elpaca-use-package.el")
                                           :main "extensions/elpaca-use-package.el"
-                                          :build '(:not elpaca-source elpaca-build-docs))))))))
+                                          :build '(:not elpaca-build-docs))))))))
 
 (defcustom elpaca-menu-functions
   '( elpaca-menu-lock-file elpaca-menu-extensions elpaca-menu-org elpaca-menu-melpa
@@ -262,7 +279,7 @@ e.g. elisp forms may be printed via `prin1'."
   (queue-id (1- (length elpaca--queues)))
   (queue-time (current-time))
   (init (not after-init-time))
-  process builtp)
+  process builtp sourcedp)
 
 (defvar elpaca--status-counts nil "Status counts for UI progress bar.")
 
@@ -532,11 +549,24 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
   "Return path to running Emacs."
   (concat invocation-directory invocation-name))
 
-(defvar elpaca--source-dirs nil "List of registered repository directories.")
-(defun elpaca-build-dir (recipe)
-  "Return RECIPE's build dir."
-  (expand-file-name (plist-get recipe :package) elpaca-builds-directory))
+(defun elpaca--hash (&rest objects)
+  "Return hash string for OBJECTS."
+  (substring (secure-hash 'md5 (format "%S" objects)) 0 8))
 
+(cl-defgeneric elpaca--source-hash (_e) "Return E's source hash." nil)
+(cl-defgeneric elpaca--build-hash (e)
+  "Return E's build hash."
+  (let ((recipe (elpaca<-recipe e)))
+    (elpaca--hash (elpaca--source-hash e)
+                  (plist-get recipe :files)
+                  (plist-get recipe :build)
+                  (plist-get recipe :main)
+                  (plist-get recipe :vars))))
+
+(defun elpaca-build-dir (e)
+  "Return E's build dir."
+  (expand-file-name (concat (elpaca<-package e) "/" (elpaca--build-hash e))
+                    elpaca-builds-directory))
 
 (cl-generic-define-generalizer elpaca--generic-derived-generalizer
   70 (lambda (name &rest _) `(plist-get (elpaca<-recipe ,name) :type))
@@ -630,7 +660,8 @@ TYPE is one of the following keywords:
     (unless (and declaration (not val)) ;; explicit nil
       (elpaca-substitute-build-steps
        (pcase context
-         ('nil (if (elpaca<-builtp e) elpaca--pre-built-steps elpaca-default-build-steps))
+         ('nil (if (and (elpaca<-builtp e) (elpaca<-sourcedp e))
+                   elpaca--pre-built-steps elpaca-default-build-steps))
          ((or :rebuild :merge)
           (cl-set-difference elpaca-default-build-steps
                              (cons 'elpaca-source elpaca--pre-built-steps))))
@@ -723,13 +754,15 @@ The first function, if any, which returns non-nil is used." :type 'hook)
         (progn
           (setf (elpaca<-order e) (elpaca--normalize-order declaration)
                 (elpaca<-recipe e) (elpaca--normalize-recipe (elpaca<-order e))
-                (elpaca<-build-dir e) (elpaca-build-dir (elpaca<-recipe e))
+                (elpaca<-build-dir e) (elpaca-build-dir e)
                 (elpaca<-builtp e) (when-let* ((build-dir (elpaca<-build-dir e)))
                                      (file-exists-p build-dir)))
           (when-let* ((recipe (elpaca<-recipe e))
                       (registered (elpaca-alist-get (plist-get recipe :type) elpaca-types)))
             (require registered)) ;;@TODO: optimize lookup by tracking separate from `features'?
           (setf (elpaca<-source-dir e) (elpaca-source-dir e)
+                (elpaca<-sourcedp e) (when-let* ((source-dir (elpaca<-source-dir e)))
+                                       (file-exists-p source-dir))
                 (elpaca<-build-steps e) (elpaca-build-steps e)))
       (elpaca-error
        (if (run-hook-with-args-until-success 'elpaca-error-functions e err)
@@ -1422,7 +1455,7 @@ If RECACHE is non-nil, do not use cached dependencies."
             (autoloads (let ((member (plist-member recipe :autoloads)))
                          (if member (cadr member) t)))
             (default-directory (elpaca<-build-dir e))
-            (elpaca (expand-file-name "elpaca/" elpaca-sources-directory)))
+            (elpaca (elpaca<-source-dir (elpaca-get 'elpaca))))
       (progn
         (elpaca-note e (concat "Generating autoloads: " default-directory))
         (elpaca-with-emacs e
@@ -1671,7 +1704,7 @@ FILTER must be a unary function which accepts and returns a queue list."
   "Return source dir for :type `orphan` E."
   (plist-get (elpaca<-recipe e) :main))
 
-(cl-defgeneric elpaca--delete (e)
+(cl-defgeneric elpaca--delete (e) ;;@TODO: deleteing mono-repos?
   "Delete E's build, source dir. Remove from elpaca queue, `load-path'."
   (let* ((source (elpaca<-source-dir e))
          (build (elpaca<-build-dir e))
@@ -1687,10 +1720,6 @@ FILTER must be a unary function which accepts and returns a queue list."
         (delete-directory build 'recursive))
       (dolist (q elpaca--queues) (setf (elpaca-q<-elpacas q)
                                        (cl-remove id (elpaca-q<-elpacas q) :key #'car)))
-      (setf (alist-get (car (cl-find (file-name-base (directory-file-name source))
-                                     elpaca--source-dirs :key #'cadr :test #'equal))
-                       elpaca--source-dirs nil t)
-            nil)
       (message "Deleted package %S" id))))
 
 ;;@MAYBE: Should this delete user's declared package if it is a dependency?
@@ -2013,7 +2042,7 @@ OUTPUT may be any of the following:
   - `string' Return formmatted string.
   - `message' (used when called interactively) to message formatted string."
   (interactive '(message))
-  (let* ((default-directory (expand-file-name "elpaca/" elpaca-sources-directory))
+  (let* ((default-directory (elpaca<-source-dir (elpaca-get 'elpaca)))
          (git  (string-trim (elpaca-process-output "git" "--version")))
          (repo (string-trim (elpaca-process-output "git" "log" "--pretty=%h %D" "-1")))
          (info (list (cons 'elpaca repo) (cons 'installer elpaca-installer-version)
@@ -2104,6 +2133,42 @@ opened by a package finishing or blocking on deps is immediately filled."
   (elpaca-subscribe 'failed   #'elpaca--check-queue-completion)
   (elpaca-subscribe 'info     #'elpaca--log-update-on-info)
   (elpaca-subscribe 'busy     #'elpaca--log-update-on-info))
+
+(declare-function dired-get-filename "dired")
+(declare-function dired-move-to-filename "dired")
+
+(defun elpaca--sources-overlay-refresh ()
+  "Add package name overlays after `dired-mode' package store directories."
+  (remove-overlays (point-min) (point-max) 'elpaca-sources-overlay t)
+  (when-let* ((rows (cl-loop for (_ . e) in (reverse (elpaca--queued)) collect
+                             (cons (directory-file-name (elpaca<-source-dir e)) (elpaca<-package e)))))
+    (save-excursion
+      (goto-char (point-min))
+      (while (not (eobp))
+        (when-let* ((file (dired-get-filename nil t))
+                    ((file-directory-p file))
+                    (dir (directory-file-name file))
+                    (prefix (file-name-as-directory dir))
+                    (names (cl-loop  for (source . pkg) in rows
+                                     for sourcedir = (file-name-as-directory source)
+                                     when (or (equal source dir) (string-prefix-p prefix sourcedir)) collect pkg))
+                    ((dired-move-to-filename))
+                    (ov (make-overlay (line-beginning-position) (line-end-position))))
+          (overlay-put ov 'elpaca-sources-overlay t)
+          (overlay-put ov 'after-string (propertize (format "  %s" (string-join names ", "))
+                                                    'face 'font-lock-doc-face)))
+        (forward-line 1)))))
+
+;;;###autoload
+(define-minor-mode elpaca-sources-overlay-mode
+  "Display package names over hash-keyed directories in Dired."
+  :lighter " Elpaca-Sources"
+  (if elpaca-sources-overlay-mode
+      (progn (require 'dired)
+             (add-hook 'dired-after-readin-hook #'elpaca--sources-overlay-refresh nil t)
+             (elpaca--sources-overlay-refresh))
+    (remove-hook 'dired-after-readin-hook #'elpaca--sources-overlay-refresh t)
+    (remove-overlays (point-min) (point-max) 'elpaca-sources-overlay t)))
 
 (add-hook 'elpaca-queue-start-functions #'elpaca--process-queue)
 
