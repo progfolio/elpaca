@@ -89,7 +89,7 @@ Creates a temporary dir if NAME is nil."
 (defvar url-http-end-of-headers)
 (defvar url-http-response-status)
 (defconst elpaca-test--installer
-  "https://raw.githubusercontent.com/progfolio/elpaca/master/doc/init.el")
+  "https://raw.githubusercontent.com/progfolio/elpaca/%s/doc/init.el")
 
 (defun elpaca-test--init (string order &optional installerp)
   "Return modified init.el STRING according to ORDER.
@@ -108,9 +108,9 @@ If INSTALLERP is non-nil, stop after Elpaca installer."
       ((error) (error (car err) (cdr err))))
     (mapconcat #'pp-to-string (nreverse body) "")))
 
-(defun elpaca-test--upstream-init (&optional installer)
+(defun elpaca-test--upstream-init (&optional installer ref)
   "Return upstream INSTALLER file."
-  (let ((url (or installer elpaca-test--installer)))
+  (let ((url (format (or installer elpaca-test--installer) (or ref "master"))))
     (with-current-buffer (url-retrieve-synchronously url 'silent 'inhibit-cookies)
       (unless (equal url-http-response-status 200)
         (error "Unable to download %S %S" url url-http-response-status))
@@ -125,7 +125,7 @@ For DEPTH, REPO, REF, FORMS see `elpaca-test' keyword args."
                          (with-temp-buffer (insert-file-contents (expand-file-name file))
                                            (buffer-string)))
                         (file file)
-                        (t (elpaca-test--upstream-init installer)))))
+                        (t (elpaca-test--upstream-init installer ref)))))
     (elpaca--write-file (expand-file-name "./init.el")
       (emacs-lisp-mode)
       (insert (elpaca-test--init contents `(:ref ,(unless (eq ref 'local) ref) :depth ,depth ,@(when repo `(:repo ,repo))) forms))
