@@ -224,6 +224,60 @@
 (elpaca-info-defsection conditions
   (when-let* ((.e) (conditions (elpaca<-conditions .e)))
     (format "\n%s\n  %S" (elpaca-info--header "conditions") conditions)))
+(defun elpaca-info--recipe-diff (old new)
+  "Return a one-line summary of plist keys that differ between OLD and NEW."
+  (let (changed)
+    (cl-loop for (key val) on old by #'cddr
+             unless (equal val (plist-get new key))
+             do (push (format "%s %S → %S" key val (plist-get new key)) changed))
+    (cl-loop for (key val) on new by #'cddr
+             unless (plist-member old key)
+             do (push (format "%s nil → %S" key val) changed))
+    (if changed (string-join (nreverse changed) ", ") "current")))
+
+(defun elpaca-info--delete-build (dir)
+  "Delete build DIR after confirmation, then refresh the info buffer."
+  (when (yes-or-no-p (format "Delete %s? " dir))
+    (delete-directory dir 'recursive)
+    (when (fboundp 'revert-buffer) (revert-buffer))))
+
+(defun elpaca-info--build-rows (id)
+  "Return list of (DIR . RECIPE-OR-NIL) for every on-disk build of ID."
+  (let ((prefix (expand-file-name (symbol-name id) elpaca-builds-directory)))
+    (when (file-directory-p prefix)
+      (cl-loop for dir in (directory-files prefix t "\\`[^.]")
+               when (file-directory-p dir)
+               collect (cons dir
+                             (when-let* ((recipe-file (expand-file-name ".elpaca-recipe" dir))
+                                         ((file-exists-p recipe-file)))
+                               (car (read-from-string
+                                     (with-temp-buffer
+                                       (insert-file-contents recipe-file)
+                                       (buffer-string))))))))))
+
+(elpaca-info-defsection build-history
+  (when-let* ((rows (elpaca-info--build-rows .id)))
+    (let ((current-dir (and .e (elpaca<-build-dir .e)))
+          (current-recipe (and .e (elpaca<-recipe .e))))
+      (format "\n%s\n%s" (elpaca-info--header "build history")
+              (string-join
+               (cl-loop for (dir . recipe) in rows
+                        collect
+                        (string-trim-right
+                         (concat "  "
+                                 (file-name-nondirectory dir)
+                                 "  "
+                                 (cond
+                                  ((equal dir current-dir) (propertize "current" 'face 'success))
+                                  ((null recipe) (propertize "unknown recipe" 'face 'warning))
+                                  (current-recipe (elpaca-info--recipe-diff recipe current-recipe))
+                                  (t "recipe unknown (package not declared)"))
+                                 "  "
+                                 (elpaca-ui--buttonize "copy" (lambda (r) (kill-new (format "%S" r)) (message "Recipe copied")) recipe)
+                                 (unless (equal dir current-dir)
+                                   (concat " " (elpaca-ui--buttonize "delete" #'elpaca-info--delete-build dir))))))
+               .indentation)))))
+
 (elpaca-info-defsection files
   (when-let* ((.e) (files (ignore-errors (elpaca--files .e))))
     (format "\n%s\n  %s" (elpaca-info--header "files") (string-join (elpaca-info--files files) .indentation))))
@@ -250,7 +304,7 @@
      elpaca-info-section--recipe elpaca-info-section--pin-status elpaca-info-section--dependencies
      elpaca-info-section--dependents elpaca-info-section--version elpaca-info-section--statuses
      elpaca-info-section--conditions
-     elpaca-info-section--files elpaca-info-section--log)
+     elpaca-info-section--files elpaca-info-section--build-history elpaca-info-section--log)
   "Hook run to layout info buffer." :type 'hook :group 'elpaca)
 
 ;;;###autoload

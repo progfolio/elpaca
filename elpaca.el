@@ -1062,6 +1062,8 @@ FILES and NOCONS are used recursively."
                 (copy-directory file link nil 'parents 'recursive)
               (copy-file file link 'overwrite))
           (make-symbolic-link file link 'overwrite))))
+    (elpaca--write-file (expand-file-name ".elpaca-recipe" build-dir)
+      (prin1 (elpaca<-recipe e)))
     (when (plist-get (elpaca<-recipe e) :watch)
       (elpaca--write-file (expand-file-name ".elpaca-watch" build-dir)
         (prin1 (mapcar (lambda (pair)
