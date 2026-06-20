@@ -89,7 +89,7 @@ Creates a temporary dir if NAME is nil."
 (defvar url-http-end-of-headers)
 (defvar url-http-response-status)
 (defconst elpaca-test--installer
-  "https://raw.githubusercontent.com/progfolio/elpaca/%s/doc/init.el")
+  "https://raw.githubusercontent.com/progfolio/elpaca/%s/doc/installer.el")
 
 (defun elpaca-test--init (string order &optional installerp)
   "Return modified init.el STRING according to ORDER.
