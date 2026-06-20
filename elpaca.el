@@ -1075,6 +1075,74 @@ FILES and NOCONS are used recursively."
   (elpaca-continue e))
 
 (defvar elpaca--eol (if (memq system-type '(ms-dos windows-nt cygwin)) "\r\n" "\n"))
+
+(defun elpaca--gc-read-recipe (build-dir)
+  "Return the recipe snapshot for BUILD-DIR, or nil if it has none."
+  (when-let* ((recipe-file (expand-file-name ".elpaca-recipe" build-dir))
+              ((file-exists-p recipe-file)))
+    (ignore-errors
+      (car (read-from-string (with-temp-buffer
+                               (insert-file-contents recipe-file)
+                               (buffer-string)))))))
+
+(defun elpaca--gc-source-dir-for-recipe (recipe)
+  "Return the source directory RECIPE would resolve to, or nil on error."
+  (when recipe
+    (ignore-errors (elpaca-source-dir (elpaca<--create :recipe recipe)))))
+
+(defun elpaca--gc-candidates ()
+  "Return (BUILD-CANDIDATES . SOURCE-CANDIDATES), each a list of directories.
+A build directory is a candidate when it is not the active build dir
+of any currently queued package. A source directory is a candidate
+when neither a currently queued package nor any in-use build's
+recorded recipe resolves to it."
+  (let* ((queued (elpaca--queued))
+         (active-builds (cl-loop for (_ . e) in queued
+                                 when (elpaca<-build-dir e) collect it))
+         (active-sources (cl-loop for (_ . e) in queued
+                                  when (elpaca<-source-dir e) collect it))
+         (all-builds (when (file-directory-p elpaca-builds-directory)
+                      (cl-loop for pkg-dir in (directory-files elpaca-builds-directory t "\\`[^.]")
+                               when (file-directory-p pkg-dir) append
+                               (cl-loop for build-dir in (directory-files pkg-dir t "\\`[^.]")
+                                        when (file-directory-p build-dir) collect build-dir))))
+         (build-candidates (cl-remove-if (lambda (d) (member d active-builds)) all-builds))
+         (in-use-builds (cl-set-difference all-builds build-candidates :test #'equal))
+         (in-use-source-dirs
+          (delete-dups
+           (append active-sources
+                   (delq nil (mapcar (lambda (d) (elpaca--gc-source-dir-for-recipe (elpaca--gc-read-recipe d)))
+                                     in-use-builds)))))
+         (all-sources (when (file-directory-p elpaca-sources-directory)
+                       (cl-loop for source-hash-dir in (directory-files elpaca-sources-directory t "\\`[^.]")
+                                when (file-directory-p source-hash-dir) append
+                                (cl-loop for fetch-hash-dir in (directory-files source-hash-dir t "\\`[^.]")
+                                         when (file-directory-p fetch-hash-dir) collect fetch-hash-dir))))
+         (source-candidates (cl-remove-if (lambda (d) (member d in-use-source-dirs)) all-sources)))
+    (cons build-candidates source-candidates)))
+
+;;;###autoload
+(defun elpaca-gc (&optional force)
+  "Delete orphaned build and source directories.
+A confirmation prompt lists every candidate before anything is
+deleted, unless FORCE is non-nil (e.g. when called from Lisp with
+deletions already confirmed by some other means)."
+  (interactive)
+  (let* ((candidates (elpaca--gc-candidates))
+         (builds (car candidates))
+         (sources (cdr candidates)))
+    (if (and (null builds) (null sources))
+        (message "Elpaca GC: nothing to remove.")
+      (when (or force
+               (yes-or-no-p
+                (format "Delete %d orphaned build dir(s) and %d orphaned source dir(s)?\n%s"
+                        (length builds) (length sources)
+                        (mapconcat (lambda (d) (concat "  " d)) (append builds sources) "\n"))))
+        (dolist (dir (append builds sources))
+          (when (file-exists-p dir) (delete-directory dir 'recursive)))
+        (message "Elpaca GC: removed %d build dir(s), %d source dir(s)."
+                 (length builds) (length sources))))))
+
 (defun elpaca--process-filter (process output)
   "Filter PROCESS OUTPUT."
   (process-put process :raw-output (concat (process-get process :raw-output) output))
