@@ -98,10 +98,16 @@ If INSTALLERP is non-nil, stop after Elpaca installer."
     (condition-case err
         (while (setq sexp (read-from-string string (or (cdr sexp) 0))
                      form (car (push (car sexp) body)))
-          (cond ((and (eq (car-safe form) 'defvar)
-                      (eq (car (cdr-safe form)) 'elpaca-order))
-                 (setf (nth 2 form)
-                       `'(elpaca ,@(elpaca-merge-plists (cdr (eval (nth 2 form) t)) order))))
+          (cond ((and (eq (car-safe form) 'elpaca)
+                      (eq (car-safe (cadr form)) 'elpaca))
+                 ;; (elpaca (elpaca :key val ...)) — merge order into existing recipe
+                 (setf (nth 1 form)
+                       `(elpaca ,@(elpaca-merge-plists (cdr (nth 1 form)) order))))
+                ((and (eq (car-safe form) 'elpaca)
+                      (eq (cadr form) 'elpaca))
+                 ;; (elpaca elpaca) — no recipe, inject one
+                 (setf (nth 1 form)
+                       `(elpaca ,@order)))
                 ((and installerp (eq (car-safe form) 'elpaca))
                  (signal 'end-of-file nil))))
       ((end-of-file) nil)

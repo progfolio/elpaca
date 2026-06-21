@@ -59,44 +59,50 @@ It then builds and activates Elpaca.
 
 #+name: installation-script
 #+begin_src emacs-lisp :lexical t :eval never-export
-(defvar elpaca-installer-version 0.13)
+(defvar elpaca-installer-version 0.14)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name (format "builds-%s/" emacs-version) elpaca-directory))
 (defvar elpaca-sources-directory (expand-file-name "sources/" elpaca-directory))
-(defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
-                              :ref nil :depth 1 :inherit ignore
-                              :files (:defaults "elpaca-test.el" (:exclude "extensions"))
-                              :build (:not elpaca-activate)))
-(let* ((repo  (expand-file-name "elpaca/" elpaca-sources-directory))
-       (build (expand-file-name "elpaca/" elpaca-builds-directory))
-       (order (cdr elpaca-order))
-       (default-directory repo))
-  (add-to-list 'load-path (if (file-exists-p build) build repo))
-  (unless (file-exists-p repo)
-    (make-directory repo t)
-    (when (<= emacs-major-version 28) (require 'subr-x))
-    (condition-case-unless-debug err
-        (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
-                  ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
-                                                  ,@(when-let* ((depth (plist-get order :depth)))
-                                                      (list (format "--depth=%d" depth) "--no-single-branch"))
-                                                  ,(plist-get order :repo) ,repo))))
-                  ((zerop (call-process "git" nil buffer t "checkout"
-                                        (or (plist-get order :ref) "--"))))
-                  (emacs (concat invocation-directory invocation-name))
-                  ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
-                                        "--eval" "(byte-recompile-directory \".\" 0 'force)")))
-                  ((require 'elpaca))
-                  ((elpaca-generate-autoloads "elpaca" repo)))
-            (progn (message "%s" (buffer-string)) (kill-buffer buffer))
-          (error "%s" (with-current-buffer buffer (buffer-string))))
-      ((error) (warn "%s" err) (delete-directory repo 'recursive))))
-  (unless (require 'elpaca-autoloads nil t)
-    (require 'elpaca)
-    (elpaca-generate-autoloads "elpaca" repo)
-    (let ((load-source-file-function nil)) (load "./elpaca-autoloads"))))
+(defvar elpaca-cache-directory (expand-file-name "cache/" elpaca-directory))
+(defvar elpaca-recipe '(elpaca) "Recipe for Elpaca itself.")
+(let* ((cache (expand-file-name "elpaca-bootstrap.eld" elpaca-cache-directory))
+       (emacs (concat invocation-directory invocation-name))
+       (slurp (lambda (f) (and (file-exists-p f) (with-temp-buffer (insert-file-contents f) (read (current-buffer))))))
+       (calledp (lambda (&rest args) (zerop (apply #'call-process (car args) nil t t (cdr args)))))
+       (bdir (expand-file-name "elpaca-bootstrap/" elpaca-sources-directory))
+       (default-directory bdir)
+       (env (let (symbols)
+              (mapatoms (lambda (symbol)
+                          (when (string-prefix-p "elpaca-" (symbol-name symbol))
+                            (push (cons symbol (symbol-value symbol)) symbols))))
+              (sort symbols (lambda (a b) (string< (car a) (car b))))))
+       (env-hash (secure-hash 'md5 (format "%S" env)))
+       (cached (funcall slurp cache))
+       (build (and cached (string= (car cached) env-hash) (cadr cached))))
+  (condition-case err
+      (with-current-buffer (get-buffer-create "*elpaca-bootstrap*")
+        (unless (file-exists-p (expand-file-name "elpaca.el"))
+          (make-directory default-directory t)
+          (pop-to-buffer-same-window (current-buffer))
+          (unless (and (funcall calledp "git" "clone" "--depth=1" "--no-single-branch"
+                                "https://github.com/progfolio/elpaca.git" bdir)
+                       (funcall calledp emacs "-Q" "-L" "." "--batch"
+                                "--eval" "(byte-recompile-directory \".\" 0 'force)"))
+            (error "Elpaca bootstrap clone failed")))
+        (add-to-list 'load-path
+                     (or (and build (file-exists-p build) build)
+                         (if (funcall calledp emacs
+                                      "-Q" "-L" "." "--batch" "--eval"
+                                      (format "(mapc (lambda (pair) (set (car pair) (cdr pair))) '%S)" env)
+                                      "--eval" (format "(and (require 'elpaca) (elpaca--bootstrap elpaca-recipe %S))" env-hash))
+                             (cadr (funcall slurp cache))
+                           (error "Elpaca bootstrap subprocess failed"))))
+        (kill-buffer))
+    ((error) (when (file-exists-p bdir) (delete-directory bdir 'recursive))
+     (signal (car err) (cdr err)))))
+(require 'elpaca-autoloads)
 (add-hook 'after-init-hook #'elpaca-process-queues)
-(elpaca `(,@elpaca-order))
+(elpaca `(,@elpaca-recipe))
 #+end_src
 
 #+begin_src emacs-lisp :lexical t :eval never-export :tangle "./init.el" :exports none :noweb tangle
