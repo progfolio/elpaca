@@ -283,11 +283,9 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
              (elpaca-continue e))
     (if (or (process-get process :reclone)
             (not (plist-get (elpaca<-recipe e) :depth)))
-        (progn
-          (elpaca-resolve 'source-dir-exists (elpaca<-source-dir e)
-                          (format "%S clone failed" (elpaca<-id e)))
-          (elpaca--fail e (plist-get (elpaca-event<-payload
-                                      (car (elpaca-event-log (elpaca<-id e)))) :info)))
+        (progn (elpaca-resolve 'source-dir-exists (elpaca<-source-dir e)
+                               (format "%S clone failed" (elpaca<-id e)))
+               (elpaca--fail e "Clone failure (see previous log entries)"))
       (setf (elpaca<-recipe e) (plist-put (elpaca<-recipe e) :depth nil))
       (elpaca-note e "Re-cloning with recipe :depth nil")
       (push (lambda (e) (process-put (elpaca-git--clone e) :reclone t))
