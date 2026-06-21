@@ -108,6 +108,10 @@ It then builds and activates Elpaca.
 ;; Elpaca Installer -*- lexical-binding: t; -*-
 ;; Copy below this line into your init.el
 <<installation-script>>
+
+;; Local Variables:
+;; no-byte-compile: t
+;; End:
 #+end_src
 
 - Windows users must be able to create symlinks[fn:1], or enable =elpaca-no-symlink-mode=
