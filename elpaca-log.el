@@ -238,16 +238,9 @@ It must accept a package ID symbol and REF string as its first two arguments."
   (< (string-to-number (aref (cadr a) 3))
      (string-to-number (aref (cadr b) 3))))
 
-(defvar elpaca-log--update-timer nil "Debounce timer for log buffer updates.")
-
 (defun elpaca-log--on-status-change (_e)
   "Refresh log buffer when any package status changes."
-  (when (buffer-live-p (get-buffer elpaca-log-buffer))
-    (when elpaca-log--update-timer (cancel-timer elpaca-log--update-timer))
-    (if elpaca--waiting
-        (elpaca--update-log-buffer)
-      (setq elpaca-log--update-timer
-            (run-at-time elpaca-log-interval nil #'elpaca--update-log-buffer)))))
+  (elpaca--update-log-buffer))
 
 (defun elpaca-log--subscribe ()
   "Set up log buffer subscriptions."

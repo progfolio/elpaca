@@ -741,13 +741,31 @@ The first function, if any, which returns non-nil is used." :type 'hook)
     e))
 
 (declare-function elpaca-ui--update-search-query "elpaca-ui")
-(defun elpaca--update-log-buffer ()
-  "Update views in `elpaca-log-buffer'."
-  (when-let* ((log (bound-and-true-p elpaca-log-buffer))
-              ((get-buffer-window log t))) ;; log buffer visible
-    (with-current-buffer log (elpaca-ui--update-search-query log))))
-
+(defvar elpaca--update-log-timer nil "Debounce timer for log buffer updates.")
 (defvar elpaca--waiting nil "Non-nil when `elpaca-wait' is polling.")
+(defun elpaca--update-log-buffer (&optional immediate)
+  "Update views in `elpaca-log-buffer'.
+When IMMEDIATE is non-nil, update `elpaca-log-buffer' immediately
+without throttling."
+  (cond
+   ((or immediate elpaca--waiting)
+    (when elpaca--update-log-timer
+      (cancel-timer elpaca--update-log-timer)
+      (setq elpaca--update-log-timer nil))
+    (when-let* ((log (bound-and-true-p elpaca-log-buffer))
+                (log (get-buffer log))
+                ((buffer-live-p log)))
+      (with-current-buffer log
+        (remove-hook 'window-buffer-change-functions 'elpaca--update-log-buffer t)
+        (if (get-buffer-window log t)  ;; log buffer visible
+            (elpaca-ui--update-search-query log)
+          (add-hook 'window-buffer-change-functions
+                    'elpaca--update-log-buffer nil 'local)))))
+   ((not elpaca--update-log-timer)
+    (setq elpaca--update-log-timer (run-at-time elpaca-log-interval nil
+                                         #'elpaca--update-log-buffer
+                                         'immediate)))))
+
 (defun elpaca--count-statuses ()
   "Return alist of status symbol to count across all queues."
   (cl-loop with counts for q in elpaca--queues
@@ -2024,8 +2042,6 @@ OUTPUT may be any of the following:
 
 ;;; Status subscribers
 
-(defvar elpaca--log-debounce-timer nil "Timer to debounce log buffer updates.")
-
 (defun elpaca--maybe-log-on-failure (e)
   "Open log if E failed during init."
   (ignore e)
@@ -2085,11 +2101,7 @@ opened by a package finishing or blocking on deps is immediately filled."
 
 (defun elpaca--log-update-on-info (_e)
   "Debounce log buffer update after E emits an info event."
-  (when elpaca--log-debounce-timer (cancel-timer elpaca--log-debounce-timer))
-  (if elpaca--waiting
-      (elpaca--update-log-buffer)
-    (setq elpaca--log-debounce-timer
-          (run-at-time elpaca-log-interval nil #'elpaca--update-log-buffer))))
+  (elpaca--update-log-buffer))
 
 (defun elpaca--subscribe ()
   "Wire up core status subscribers."
