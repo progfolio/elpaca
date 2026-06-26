@@ -186,7 +186,7 @@ It must accept a package ID symbol and REF string as its first two arguments."
             (setf (aref (cadr copy) 2) (concat button " " info " " date))
             (push copy compact))
         (when (eq (plist-get payload :status) 'failed) (push entry compact)))
-   finally return compact))
+   finally return (nreverse compact)))
 
 (defun elpaca-log--verbosity (_ &optional limit)
   "Filter log entries according to `elpaca-verbosity' LIMIT."
@@ -235,8 +235,8 @@ It must accept a package ID symbol and REF string as its first two arguments."
 
 (defun elpaca-log--sort-chronologically (a b)
   "Sort entries A and B chronologically."
-  (< (string-to-number (aref (cadr a) 3))
-     (string-to-number (aref (cadr b) 3))))
+  (time-less-p (get-text-property 0 'time (aref (cadr a) 3))
+               (get-text-property 0 'time (aref (cadr b) 3))))
 
 (defvar elpaca-log--update-timer nil "Debounce timer for log buffer updates.")
 
