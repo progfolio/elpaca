@@ -207,7 +207,7 @@ Each function must also accept an optional ITEM as a second argument."
                (cons 'transient (alist-get emacs-version transient-versions
                                            nil nil #'string-prefix-p))))
 
-;; Compat exempted to reduce upstream package maintaner issues.
+;; Compat exempted to reduce upstream package maintainer issues.
 (defcustom elpaca-ignored-dependencies (delq 'compat (mapcar #'car package--builtin-versions))
   "List of IDs which are not installed unless the user explicitly requests them."
   :type '(repeat symbol))
@@ -565,7 +565,7 @@ If N is nil return a list of all queued elpacas."
            return e))
 
 (defun elpaca-substitute-build-steps (steps &rest rules)
-  "Alter build STEPS via substituion RULES.
+  "Alter build STEPS via substitution RULES.
 RULES is a lists of specs of the form ((TYPE TARGET SUBSTITUTIONS...)...).
 RULES may also be a single substitution spec.
 The SUBSTITUTIONS are the function symbols which replace the TARGET.
@@ -597,7 +597,7 @@ TYPE is one of the following keywords:
                      (:sub (setq steps (cl-loop for step in steps
                                                 if (eq step target) append subs
                                                 else collect step)))
-                     (unknown (error "Unknown substituion rule: %S" unknown)))
+                     (unknown (error "Unknown substitution rule: %S" unknown)))
                    (unless (memq type '(:before :after)) (cl-return-from scanner)))
             with i = 0 while (< i (length steps)) do
             (if-let* ((step (nth i steps))
@@ -1230,7 +1230,7 @@ ARGS must be a plist including any of the following keywords value pairs:
                      (package (file-name-sans-extension (elpaca<-package e)))
                      (name (concat "\\(?:" (regexp-quote package) "\\(?:-pkg\\)?\\.el\\)\\'")))
                 (or (file-exists-p src)
-                    (signal 'elpaca-error (list e (format "Non-existant source dir: %S" src))))
+                    (signal 'elpaca-error (list e (format "Non-existent source dir: %S" src))))
                 (or (car (directory-files src nil (concat "\\`" name)))
                     (car (cl-remove-if-not
                           (lambda (f) (string-match-p (concat "[/\\]" name) f))
@@ -1901,7 +1901,7 @@ TYPE is either `source` or `build`, for source or build directory."
 The ARGS plist must contain one of the following values for the :type key:
 - `elisp`: run BODY in an Emacs subprocess.
    ARGS are passed to `elpaca-with-emacs', which see.
-- `system`: each form in BODY is interepreted as (PROGRAM [ARGS...]).
+- `system`: each form in BODY is interpreted as (PROGRAM [ARGS...]).
 In addition, the ARGS `:dir` may specify the package `build` or `source` dir."
   (declare (indent defun) (debug (symbolp sexp def-body)))
   (if-let* ((type (plist-get args :type))
@@ -2010,7 +2010,7 @@ This should only ever be used as the last element of `elpaca-menu-functions'."
   "Return Elpaca version information string.
 OUTPUT may be any of the following:
   - nil Return raw alist of form ((category . info) ...)
-  - `string' Return formmatted string.
+  - `string' Return formatted string.
   - `message' (used when called interactively) to message formatted string."
   (interactive '(message))
   (let* ((default-directory (expand-file-name "elpaca/" elpaca-sources-directory))

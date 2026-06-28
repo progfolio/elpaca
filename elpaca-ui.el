@@ -54,7 +54,7 @@ Accepted key val pairs are:
   (cl-remove-if-not #'elpaca-declared-p entries :key #'caar))
 
 (defun elpaca-ui--tag-orphan (_)
-  "Return entires for packages not temporarlily installed or declared."
+  "Return entries for packages not temporarlily installed or declared."
   (let ((sources (nthcdr 2 ; Discard "." ".."
                          (mapcar #'file-name-as-directory
                                  (directory-files elpaca-sources-directory t)))))
@@ -587,7 +587,7 @@ If ADVANCEP is non-nil, move `forward-line'."
                  (user-error "Package %S is not installed" id))))
 
 (defun elpaca-ui--ensure-installed (id)
-  "Throw user error if package associted with ID is not installed."
+  "Throw user error if package associated with ID is not installed."
   (unless (elpaca-installed-p id) (user-error "Package %S is not installed" id)))
 
 (elpaca-ui-defmark elpaca-fetch #'elpaca-ui--ensure-installed)
