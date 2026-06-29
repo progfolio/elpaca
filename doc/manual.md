@@ -193,7 +193,7 @@ Elpaca installs and activates packages asynchronously. Elpaca processes its pack
 (elpaca-process-queues) ; Process queue: First messaged, Third messaged.
 ```
 
-&ldquo;Second&rdquo; will be message *before* &ldquo;First&rdquo; and &ldquo;Third&rdquo;. If a form should be evaluated after a package is installed/activated, put it in that package declaration&rsquo;s *BODY*. Declaration *BODY* forms are evaluated synchronously in declared order. e.g.
+&ldquo;Second&rdquo; will be messaged *before* &ldquo;First&rdquo; and &ldquo;Third&rdquo;. If a form should be evaluated after a package is installed/activated, put it in that package declaration&rsquo;s *BODY*. Declaration *BODY* forms are evaluated synchronously in declared order. e.g.
 
 ```emacs-lisp
 (elpaca package-a (message "First") (message "Second"))  ; Queue First, Second

@@ -215,7 +215,7 @@ Consider the following example:
 (elpaca-process-queues) ; Process queue: First messaged, Third messaged.
 #+end_src
 
-"Second" will be message /before/ "First" and "Third".
+"Second" will be messaged /before/ "First" and "Third".
 If a form should be evaluated after a package is installed/activated, put it in that package declaration's /BODY/.
 Declaration /BODY/ forms are evaluated synchronously in declared order.
 e.g.

@@ -282,7 +282,7 @@ Consider the following example:
 (elpaca-process-queues) ; Process queue: First messaged@comma{} Third messaged.
 @end lisp
 
-``Second'' will be message @emph{before} ``First'' and ``Third''.
+``Second'' will be messaged @emph{before} ``First'' and ``Third''.
 If a form should be evaluated after a package is installed/activated@comma{} put it in that package declaration's @emph{BODY}.
 Declaration @emph{BODY} forms are evaluated synchronously in declared order.
 e.g.
