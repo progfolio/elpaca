@@ -33,6 +33,10 @@
   "List of steps which are run when installing/building a package."
   :type '(repeat function))
 
+(defcustom elpaca-git-log-updates-include-tags nil
+  "When non-nil, include Git tag decorations in update log entries."
+  :type 'boolean)
+
 (defsubst elpaca-git--repo-name (string)
   "Return repo name portion of STRING."
   (setq string (directory-file-name string)) ;; remove external :repo trailing slash
@@ -397,8 +401,11 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
     (elpaca--make-process e
       :name "log-updates"
       ;; Pager breaks pipe process.
-      :command (list "git" "--no-pager" "log" "--reverse" (concat "--since=" date)
-                     "--pretty=%h %s (%ch)" "..@{u}")
+      :command (append (list "git" "--no-pager" "log" "--reverse" (concat "--since=" date)
+                             (if elpaca-git-log-updates-include-tags "--pretty=%h%d %s (%ch)"
+                               "--pretty=%h %s (%ch)"))
+                       (when elpaca-git-log-updates-include-tags '("--decorate-refs=tags"))
+                       (list "..@{u}"))
       :sentinel (lambda (process event) (elpaca--process-sentinel nil process event)))))
 
 (cl-defmethod elpaca--url ((e (elpaca git)))
