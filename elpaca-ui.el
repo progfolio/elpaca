@@ -563,13 +563,20 @@ If ADVANCEP is non-nil, move `forward-line'."
         (elpaca-ui-mark targets command test)
         (deactivate-mark))
     (when (eq target :region) (setq target (elpaca-ui-current-package)))
-    (cl-loop for id in (if (consp target) target (list target)) do
-             (when test (funcall test id))
-             (setf (alist-get id elpaca-ui--marked-packages nil t)
-                   (when-let* ((found (assoc command elpaca-ui-marks))
-                               ((not (eq (car (alist-get id elpaca-ui--marked-packages))
-                                         command))))
-                     (append found (list :prefix-arg current-prefix-arg)))))
+    (cl-loop with targets = (if (listp target) target (list target))
+             with e = (elpaca-get target)
+             with source = (elpaca<-source-dir e)
+             for (id . e) in (elpaca--queued) do
+             (when (and (not (eq id target)) (equal (elpaca<-source-dir e) source))
+               (push id targets))
+             finally do
+             (cl-loop for id in targets do
+                      (when test (funcall test id))
+                      (setf (alist-get id elpaca-ui--marked-packages nil t)
+                            (when-let* ((found (assoc command elpaca-ui-marks))
+                                        ((not (eq (car (alist-get id elpaca-ui--marked-packages))
+                                                  command))))
+                              (append found (list :prefix-arg current-prefix-arg))))))
     (jit-lock-refontify)
     (when advancep (forward-line))))
 
