@@ -643,7 +643,7 @@ TYPE is one of the following keywords:
 (defcustom elpaca-log-command-queries
   '(((elpaca-fetch elpaca-fetch-all elpaca-log-updates) . "#latest #update-log")
     ((elpaca-try elpaca-rebuild) . "#latest #linked-errors")
-    (( elpaca-merge elpaca-merge-all elpaca-pull elpaca-pull-all
+    (( elpaca-merge elpaca-merge-all elpaca-merge-to elpaca-pull elpaca-pull-all
        elpaca-update elpaca-update-all)
      . "#latest #unique")
     ((eval-buffer eval-region eval-defun eval-last-sexp org-ctrl-c-ctrl-c) . silent)
@@ -1803,6 +1803,23 @@ If INTERACTIVE is non-nil immediately process, otherwise queue."
   "Install E's fetched updates."
   (error "No merge method for :type %S" (plist-get (elpaca<-recipe e) :type)))
 
+(defvar elpaca--merge-to-targets nil "Alist of package ID to target commit hash.")
+
+(defun elpaca--merge-to (e)
+  "Merge E's repo to a specific commit."
+  (let* ((id (elpaca<-id e))
+         (commit (or (alist-get id elpaca--merge-to-targets)
+                     (error "No merge-to target for %S" id)))
+         (default-directory (elpaca<-source-dir e))
+         (rev (elpaca-process-output "git" "rev-parse" "HEAD")))
+    (process-put (elpaca--make-process e
+                   :name "merge-to"
+                   :command (list "git" "merge" "--ff-only" commit)
+                   :sentinel #'elpaca-git--merge-process-sentinel)
+                 :elpaca-git-rev rev)
+    (setf (alist-get id elpaca--merge-to-targets nil 'remove) nil)
+    (elpaca-note e (format "Merging to %s" commit))))
+
 ;;;###autoload
 (defun elpaca-merge (id &optional fetch interactive)
   "Install package updates associated with ID.
@@ -1813,6 +1830,22 @@ If INTERACTIVE is non-nil, the queued order is processed immediately."
     (elpaca--unprocess e)
     (setf (elpaca<-build-steps e)
           (elpaca-build-steps e (if fetch :pull :merge)))
+    (elpaca--set-status e 'queued)
+    (when interactive
+      (elpaca--maybe-log)
+      (elpaca--process e))))
+
+;;;###autoload
+(defun elpaca-merge-to (id commit &optional interactive)
+  "Merge package associated with ID to specific COMMIT and rebuild.
+If INTERACTIVE is non-nil, the queued order is processed immediately."
+  (interactive (list (elpaca--read-queued "Merge-to package: ") nil t))
+  (let* ((e (or (elpaca-get id) (user-error "Package %S is not queued" id))))
+    (when commit (setf (alist-get id elpaca--merge-to-targets) commit))
+    (elpaca--unprocess e)
+    (setf (elpaca<-build-steps e)
+          (if (elpaca-pinned-p e) (list #'elpaca--announce-pin)
+            (cons #'elpaca--merge-to (cdr (elpaca-build-steps e :merge)))))
     (elpaca--set-status e 'queued)
     (when interactive
       (elpaca--maybe-log)
