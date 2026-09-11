@@ -499,7 +499,9 @@ Skip menu item lookup when ITEM-RESOLVED is non-nil."
                             (if (listp menus) menus (list menus))
                           elpaca-menu-functions))))
                  (elpaca-menu-item (plist-get order :id))))
-         (item-recipe (plist-put (plist-get item :recipe) :source (plist-get item :source)))
+         (item-recipe (plist-put (plist-get item :recipe) :source
+                                 (or (plist-get item :source)
+                                     (if after-init-time "User Declaration" "Init file"))))
          (recipe (if-let* ((r (elpaca-merge-plists item-recipe order))
                            (inheritance))
                      (elpaca-run-hook-with-reduce r elpaca-recipe-functions)
