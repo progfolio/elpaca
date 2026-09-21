@@ -1875,10 +1875,29 @@ If INTERACTIVE is non-nil, process queues."
 
 (defcustom elpaca-lock-file nil "Path of `elpaca-menu-lock-file' cache." :type 'file)
 
+;;;###autoload
+(define-minor-mode elpaca-lock-file-mode
+  "Use the recipes in the lock file at `elpaca-lock-file' as package pins.
+When enabled, `elpaca-menu-lock-file' returns the pinned recipes recorded
+in `elpaca-lock-file' and packages with a recorded `:ref', `:tag', or `:pin'
+skip `elpaca-fetch'. When disabled, `elpaca-menu-lock-file' is a no-op
+and recipes resolve as usual. Packages already queued keep the recipe they
+were queued with; to update one, turn the mode off, delete it, re-add it
+and let it update, then turn the mode back on and run
+`elpaca-write-lock-file' to record the new state.
+No-op when `elpaca-lock-file' is nil."
+  :global t
+  :lighter " lockfile"
+  (when (and elpaca-lock-file-mode (not elpaca-lock-file))
+    (lwarn '(elpaca lock-file) :warn
+           "elpaca-lock-file-mode is on but `elpaca-lock-file' is nil; the lock-file menu has no effect until you set `elpaca-lock-file'")))
+
 (defvar elpaca-menu-lock-file--cache nil)
 (defun elpaca-menu-lock-file (request &optional item)
-  "If REQUEST is `index`, return `elpaca-lock-file' ITEM, otherwise update menu."
-  (when elpaca-lock-file
+  "Return `elpaca-lock-file' ITEM when `elpaca-lock-file-mode' is on.
+No-op (returns nil) when `elpaca-lock-file-mode' is off or `elpaca-lock-file'
+is nil."
+  (when (and elpaca-lock-file-mode elpaca-lock-file)
     (if-let* (((eq request 'index))
               (cache (or elpaca-menu-lock-file--cache (elpaca-menu-lock-file 'update))))
         (if item (alist-get item cache) cache)

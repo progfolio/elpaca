@@ -175,6 +175,25 @@
     (should-not hook-ran)
     (should-not elpaca-after-init-time)))
 
+(ert-deftest elpaca-menu-lock-file-mode-predicate ()
+  "`elpaca-menu-lock-file' is a no-op when `elpaca-lock-file-mode' is off
+or `elpaca-lock-file' is nil; returns the cached recipe when both are set."
+  (let ((elpaca-lock-file (expand-file-name "fake.eld" temporary-file-directory))
+        (elpaca-menu-lock-file--cache
+         (list (cons 'foo (list :source "elpaca-menu-lock-file"
+                                :recipe '(:package "foo" :ref "abc" :type "git"))))))
+    (should (null (let ((elpaca-lock-file-mode nil))
+                    (elpaca-menu-lock-file 'index 'foo))))
+    (should (null (let ((elpaca-lock-file nil) (elpaca-lock-file-mode t))
+                    (elpaca-menu-lock-file 'index 'foo))))
+    (let ((elpaca-lock-file-mode t)
+          index entry)
+      (setq index (elpaca-menu-lock-file 'index))
+      (setq entry (assoc 'foo index))
+      (should (plist-get (cdr entry) :recipe))
+      (should (equal (plist-get (plist-get (cdr entry) :recipe) :ref) "abc")))))
+
+
 (provide 'elpaca-tests)
 ;; Local Variables:
 ;; no-byte-compile: t

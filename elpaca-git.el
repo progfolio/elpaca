@@ -224,6 +224,33 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
                                     (elpaca-resolve 'elpaca-git--unlocked ,default-directory))))
                    :elpaca-git-lock t))))
 
+(defun elpaca-git--merge-target (e)
+  "Return the ref E should fast-forward to, or nil if on a branch.
+When E's HEAD is detached (as for a locked package checked out at a pinned
+SHA), there is no branch to `git merge' against, so return an explicit `REMOTE/BRANCH' target instead.
+`REMOTE' is the first of the recipe's :remotes or `elpaca-default-remote-name'.
+`BRANCH' is the recipe's :branch, else the remote's default (HEAD) branch."
+  (let* ((recipe    (elpaca<-recipe   e))
+         (detached  (string= "HEAD" (string-trim
+                                     (elpaca-process-output "git" "rev-parse" "--abbrev-ref" "HEAD"))))
+         (remotes   (plist-get recipe :remotes))
+         (remote    (car-safe remotes))
+         (remote    (if (listp remote) (car remote) remote))
+         (remote    (or remote elpaca-default-remote-name)))
+    (when detached
+      (let ((branch (plist-get recipe :branch))
+            (default (ignore-errors
+                       (string-trim
+                        (elpaca-process-output "git" "symbolic-ref" "--short"
+                                                (format "refs/remotes/%s/HEAD" remote))))))
+        (or branch
+            (and (string-prefix-p (format "%s/" remote) default)
+                 (substring (length (format "%s/" remote)) default))
+            (condition-case err
+                (elpaca-git--remote-default-branch remote)
+              (error               (error "Unable to determine merge target for %s: %S"
+                            (elpaca<-id e) err))))))))
+
 (defun elpaca-git--merge-process-sentinel (process _event)
   "Handle PROCESS EVENT."
   (if-let* ((e (process-get process :elpaca))
@@ -238,10 +265,12 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
   (if-let* ((blocker (elpaca-git--blocker e)))
       (elpaca-git--await-unlock e blocker #'elpaca-git--merge)
     (elpaca-with-dir e source
-      (process-put (elpaca--make-process e :name "merge"
-                                         :command  '("git" "merge" "--ff-only")
-                                         :sentinel #'elpaca-git--merge-process-sentinel)
-                   :elpaca-git-lock t))
+      (let ((target (elpaca-git--merge-target e)))
+        (process-put (elpaca--make-process e :name "merge"
+                                           :command  `("git" "merge" "--ff-only"
+                                                      ,@(when target (list target)))
+                                           :sentinel #'elpaca-git--merge-process-sentinel)
+                     :elpaca-git-lock t)))
     (elpaca-note e "Merging updates")))
 
 (defun elpaca-git--initial-fetch (e)

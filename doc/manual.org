@@ -647,6 +647,38 @@ They can be used to build different versions of an Emacs configuration when comb
 The =elpaca-write-lock-file= command is used to write a lock file to disk.
 Setting the =elpaca-lock-file= variable to that file's path will cause Elpaca to use those versions of the recipes when installing packages assuming the =elpaca-menu-lock-file= is the first menu in =elpaca-menu-functions=.
 
+Lock files pin each package to the recorded revision (a =:ref=, =:tag=, or =:pin=).
+=elpaca-fetch=, =elpaca-merge=, and =elpaca-update= skip pinned packages it rather than applying updates.
+This is intentional: the lock file records a known-good set of versions, and updates should be applied deliberately.
+
+Lock-file pinning is controlled by the global minor mode =elpaca-lock-file-mode=.
+When enabled, the =elpaca-menu-lock-file= menu returns the recipes recorded in the lock file, so new packages inherit their pinned revisions (keeping =elpaca-menu-lock-file= first in =elpaca-menu-functions=).
+When disabled, =elpaca-menu-lock-file= does nothing and recipes resolve as usual from your declarations and the other menus.
+
+#+begin_src emacs-lisp :lexical t
+;; in your init file:
+(setq elpaca-lock-file (expand-file-name "elpaca-lock.eld" user-emacs-directory))
+(elpaca-lock-file-mode 1)      ;; start with the lock file active
+#+end_src
+
+**** Updating locked packages
+
+To update packages while a lock file is set, turn the mode off for the session so that =elpaca-menu-lock-file= stops supplying pinned revisions, update as usual, then re-record the new state and turn the mode back on:
+
+#+begin_src emacs-lisp :lexical t
+(elpaca-lock-file-mode -1)                  ;; stop using the lock file
+(elpaca-fetch-all)                          ;; fetch, review changes
+(elpaca-merge-all)                          ;; merge desired changes
+(elpaca-write-lock-file elpaca-lock-file)   ;; record the new versions
+(elpaca-lock-file-mode 1)                   ;; re-apply the pins
+#+end_src
+
+Note that updating a package does not automatically modify the lock file.
+The lock file on disk is only changed by =elpaca-write-lock-file=, which lets you review updates before recording them.
+
+Packages that were already queued keep the recipe they were queued with, so turning the mode off does not retroactively change them.
+If you need to update an already-queued package while the lock file is present, remove it and let it be re-added (e.g. =elpaca-delete= then reinstall, or add it to the queue again) with the mode off.
+
 
 ** use-package Integration
 :PROPERTIES:
