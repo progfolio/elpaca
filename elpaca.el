@@ -795,7 +795,6 @@ E is throttled until a slot opens."
   (unless (memq (elpaca<-status e) '(finished failed))
     (if-let* ((elpaca-queue-limit)
               ((not (elpaca<-builtp e)))
-              ;; Count only packages actively building — not queued or blocked.
               (active (cl-loop for (_ . e) in (elpaca-q<-elpacas (elpaca--q e))
                                count (not (memq (elpaca<-status e)
                                                 '(queued blocked finished failed)))))
