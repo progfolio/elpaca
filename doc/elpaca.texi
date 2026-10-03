@@ -429,6 +429,22 @@ Activating the package (adding the package @samp{load-path}@comma{} loading auto
 @end enumerate
 
 The @samp{elpaca-default-build-steps} variable contains the default build steps.
+The @samp{elpaca-defscript} macro is available to conveniently define custom build steps.
+For example@comma{} the following build step tangles an Org file to elisp based on a custom @samp{:literate-file} recipe keyword:
+
+@lisp
+(elpaca-defscript +elpaca-tangle-org-file (:type elisp)
+  "Tangle E's :literate-file."
+  (require 'ob-tangle)
+  (setq org-confirm-babel-evaluate nil)
+  (org-babel-tangle-file @comma{}(plist-get (elpaca<-recipe e) :literate-file)))
+@end lisp
+
+And the following recipe illustrates how to use the @samp{:build} keyword to use it:
+
+@lisp
+(example :literate-file "example.org" :build (:after elpaca-source +elpaca-tangle-org-file))
+@end lisp
 
 @item
 @anchor{files}:files

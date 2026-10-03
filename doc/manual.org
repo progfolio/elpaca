@@ -146,6 +146,22 @@ A typical build recipe for an elisp package involves:
 4. Activating the package (adding the package =load-path=, loading autoloads).
 
 The =elpaca-default-build-steps= variable contains the default build steps.
+The =elpaca-defscript= macro is available to conveniently define custom build steps.
+For example, the following build step tangles an Org file to elisp based on a custom =:literate-file= recipe keyword:
+
+#+begin_src emacs-lisp :lexical t :eval never-export
+(elpaca-defscript +elpaca-tangle-org-file (:type elisp)
+  "Tangle E's :literate-file."
+  (require 'ob-tangle)
+  (setq org-confirm-babel-evaluate nil)
+  (org-babel-tangle-file ,(plist-get (elpaca<-recipe e) :literate-file)))
+#+end_src
+
+And the following recipe illustrates how to use the =:build= keyword to use it:
+
+#+begin_src emacs-lisp :lexical t
+(example :literate-file "example.org" :build (:after elpaca-source +elpaca-tangle-org-file))
+#+end_src
 
 ***** :files
 :PROPERTIES:
