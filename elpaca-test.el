@@ -256,8 +256,9 @@ BATCH, TIMEOUT, and EARLY match :interactive, :timeout, :early-init keys."
 
 ;;;###autoload
 (defmacro elpaca-test (&rest body)
-  "Test Elpaca in a clean environment.
+  "Create a minimal, shareable environment to reproduce an Elpaca issue.
 BODY is a plist which allows multiple values for certain keys.
+:before runs in this Emacs; :init and :early-init run inside the spawned Emacs.
 The following keys are recognized:
   :name description of the test
 
@@ -270,12 +271,15 @@ The following keys are recognized:
   :depth number of Elpaca repository commits to clone
 
   :dir `user-emacs-directory' name.
-    Expanded in temporary filedirectory if it is a relative path or nil.
+    Expanded in a temporary file directory if it is a relative path or nil.
     Otherwise, the absolute file path is used.
 
   :init `user', (:file \"path/to/init.el\") or forms...
     Content of the init.el file.
-    `user' is shorthand for `user-emacs-diretory'/init.el.
+    `user' is shorthand for `user-emacs-directory'/init.el.
+
+  :before Forms run in this Emacs (before the test) to stage files into the test
+    dir for :init to use (e.g. `elpaca-test-package-stub').
 
   :early-init Content of the init.el file. Accepts same args as :init.
 
