@@ -117,7 +117,7 @@ If INSTALLERP is non-nil, stop after Elpaca installer."
       (delete-region (point-min) url-http-end-of-headers)
       (string-trim (buffer-substring-no-properties (point-min) (point-max))))))
 
-(defun elpaca--test-write-init (file ref installer depth repo forms)
+(defun elpaca-test--write-init (file ref installer depth repo forms)
   "Write init.el FILE with FORMS in test environment.
 If FILE is nil, use upstream INSTALLER file.
 For DEPTH, REPO, REF, FORMS see `elpaca-test' keyword args."
@@ -326,7 +326,7 @@ The following keys are recognized:
        (unless (file-exists-p default-directory) (make-directory default-directory 'parents))
        ,@(when localp '((elpaca-test--copy-local-store)))
        ,@(when early `((elpaca-test--write-early-init ,early-file ',(unless early-file early))))
-       (elpaca--test-write-init
+       (elpaca-test--write-init
         ,init-file ',ref ',installer ',depth ',repo ',(when (or localp (null init-file))
                                                         (unless (equal init '(user)) init)))
        ,@(when-let* ((before (plist-get args :before)))
