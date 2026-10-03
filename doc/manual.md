@@ -343,7 +343,7 @@ When non-nil, inherit *PROPS* from `elpaca-order-functions` and possibly `elpaca
 returns the recipe as declared:
 
 ```emacs-lisp
-(:source nil :package "doct" :id doct :inherit nil)
+(:source "User Declaration" :package "doct" :id doct :inherit nil)
 ```
 
 With inheritance enabled:
@@ -632,8 +632,8 @@ This is useful if you want to guarantee the values of certain keywords despite a
 ```
 
 ```emacs-lisp
-(:source nil :package "burger" :id burger :type git :protocol https :inherit t
-         :depth treeless :cheese extra)
+(:source "User Declaration" :package "burger" :id burger :type git :protocol
+         https :inherit t :depth treeless :cheese extra)
 ```
 
 
@@ -728,7 +728,7 @@ This is useful for declaring default order properties. For example, the followin
 ```
 
 ```emacs-lisp
-(:source nil :package "burger" :id burger :inherit nil)
+(:source "User Declaration" :package "burger" :id burger :inherit nil)
 ```
 
 
@@ -859,12 +859,12 @@ The following commands are available in the `elpaca-ui-mode`:
 | elpaca-ui-mark-delete      | d       | Mark package at point for ‘elpaca-delete’.                                  |
 | elpaca-ui-mark-fetch       | f       | Mark package at point for ‘elpaca-fetch’.                                   |
 | elpaca-ui-search-marked    | g a     | Search for &ldquo;#unique #marked&rdquo;                                    |
-| elpaca-ui-search-installed | g i     | Search for &ldquo;#unique #installed&rdquo;                                 |
+| elpaca-ui-search-installed | g i     | Search for &ldquo;#installed&rdquo;                                         |
 | elpaca-log                 | g l     | When INTERACTIVE is non-nil, Display ‘elpaca-log-buffer’ filtered by QUERY. |
 | elpaca-manager             | g m     | Display Elpaca’s package management UI.                                     |
 | elpaca-ui-search-orphaned  | g o     | Search for &ldquo;#unique #orphan&rdquo;                                    |
 | elpaca-ui-search-refresh   | g r     | Rerun the current search for BUFFER.                                        |
-| elpaca-ui-search-tried     | g t     | Search for &ldquo;#unique #installed !#declared&rdquo;                      |
+| elpaca-ui-search-tried     | g t     | Search for &ldquo;#installed !#declared&rdquo;                              |
 | elpaca-ui-mark-try         | i       | Mark package at point for ‘elpaca-try’.                                     |
 | elpaca-ui-mark-merge       | m       | Mark package at point for ‘elpaca-merge’.                                   |
 | elpaca-ui-mark-pull        | p       | Mark package at point for ‘elpaca-pull’.                                    |

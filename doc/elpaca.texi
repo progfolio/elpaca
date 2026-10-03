@@ -482,7 +482,7 @@ For example@comma{} without inheritance:
 returns the recipe as declared:
 
 @lisp
-(:source nil :package "doct" :id doct :inherit nil)
+(:source "User Declaration" :package "doct" :id doct :inherit nil)
 @end lisp
 
 With inheritance enabled:
@@ -781,8 +781,8 @@ This is useful if you want to guarantee the values of certain keywords despite a
 @end lisp
 
 @lisp
-(:source nil :package "burger" :id burger :type git :protocol https :inherit t
-         :depth treeless :cheese extra)
+(:source "User Declaration" :package "burger" :id burger :type git :protocol
+         https :inherit t :depth treeless :cheese extra)
 @end lisp
 
 @node Menus
@@ -903,7 +903,7 @@ For example@comma{} the following function disables recipe inheritance by defaul
 @end lisp
 
 @lisp
-(:source nil :package "burger" :id burger :inherit nil)
+(:source "User Declaration" :package "burger" :id burger :inherit nil)
 @end lisp
 
 @node Queues
@@ -1058,7 +1058,7 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @tab Search for ``#unique #marked''
 @item elpaca-ui-search-installed
 @tab g i
-@tab Search for ``#unique #installed''
+@tab Search for ``#installed''
 @item elpaca-log
 @tab g l
 @tab When INTERACTIVE is non-nil@comma{} Display ‘elpaca-log-buffer’ filtered by QUERY@.
@@ -1073,7 +1073,7 @@ The following commands are available in the @samp{elpaca-ui-mode}:
 @tab Rerun the current search for BUFFER@.
 @item elpaca-ui-search-tried
 @tab g t
-@tab Search for ``#unique #installed !#declared''
+@tab Search for ``#installed !#declared''
 @item elpaca-ui-mark-try
 @tab i
 @tab Mark package at point for ‘elpaca-try’.
