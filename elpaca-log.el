@@ -264,6 +264,7 @@ It must accept a package ID symbol and REF string as its first two arguments."
     (set-keymap-parent m elpaca-ui-mode-map)
     (define-key m (kbd "gd") 'elpaca-log-view-diff)
     (define-key m (kbd "gu") 'elpaca-log-updates)
+    (define-key m (kbd "t") 'elpaca-ui-mark-merge-to)
     m))
 
 (define-derived-mode elpaca-log-mode elpaca-ui-mode "elpaca-log-mode"
