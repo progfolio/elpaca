@@ -1,6 +1,6 @@
 # Elpaca: An Elisp Package Manager
 
-<p align="center"><img src="./images/elpaca.svg"/></p>
+<p align="center"><img src="./images/elpaca.svg" width="200"/></p>
 
 <p align="center">"Chews data, spits packages."</p>
 
