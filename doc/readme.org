@@ -38,6 +38,18 @@ Elpaca:
 See the [[./doc/manual.md][manual]] and [[https://github.com/progfolio/elpaca/wiki][wiki]] for in-depth information on Elpaca usage, customization, and development.
 Users who wish to experiment with Elpaca may find the example [[./doc/init.el][init.el]] and [[./doc/early-init.el][early-init.el]] files useful.
 
+* Getting help with an AI agent
+:PROPERTIES:
+:CUSTOM_ID: agent-skills
+:END:
+
+This repository ships [[./.agents/skills/README.md][agent skills]] that help an AI coding agent debug Elpaca problems and answer usage questions.
+Copy =.agents/skills/= into your agent's skills directory (Claude Code also finds them in this repository via =.claude/skills=), then ask it about an Elpaca error, warning or failed install.
+The skills only give guidance; they tell the agent to ask before editing your config or deleting packages.
+
+An agent can't replace a bug report.
+Before opening an issue, run ~M-x elpaca-version~ and reproduce the problem with =elpaca-test=, as described in the [[https://github.com/progfolio/elpaca/wiki/Troubleshooting][wiki]].
+
 * Video Tour
 :PROPERTIES:
 :CUSTOM_ID: video-tour
