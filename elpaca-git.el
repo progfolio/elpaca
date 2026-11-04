@@ -127,6 +127,11 @@ This is the branch that would be checked out upon cloning."
     (invoked (error "Remote default branch error: %S" stderr))
     (t (error "Unable to determine remote default branch: %S" result))))
 
+(defun elpaca-git--resolve-source-ready (e &optional reason)
+  "Resolve the source-ready condition for E.
+If REASON is non-nil, fail packages waiting on the condition."
+  (elpaca-resolve 'elpaca-git--source-ready (elpaca<-source-dir e) reason))
+
 (defun elpaca-git--checkout-ref (e)
   "Check out E's ref."
   (let* ((recipe (elpaca<-recipe e))
@@ -153,6 +158,7 @@ This is the branch that would be checked out upon cloning."
     (if (null target)
         (unless (eq (elpaca<-status e) 'failed)
           (elpaca-note e "ref checked out")
+          (elpaca-git--resolve-source-ready e)
           (elpaca-continue e))
       (cond
        ((and ref (or branch tag))
@@ -173,6 +179,10 @@ This is the branch that would be checked out upon cloning."
                                          elpaca-default-remote-name)
                                      "/" branch)))))
           :sentinel (lambda (process event)
+                      (when (and (memq (process-status process) '(exit signal))
+                                 (zerop (process-exit-status process)))
+                        (elpaca-git--resolve-source-ready
+                         (process-get process :elpaca)))
                       (elpaca--process-sentinel (concat target " checked out") process event)))))))
 
 (defvar elpaca-git--tag-regexp
@@ -389,10 +399,10 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
   (if-let* (((not (elpaca<-builtp e)))
             (source-dir (elpaca<-source-dir e))
             (shared (elpaca--shared-source-dir (elpaca<-id e) source-dir))
-            ((or (gethash (cons 'source-dir-exists source-dir) elpaca--conditions)
+            ((or (gethash (cons 'elpaca-git--source-ready source-dir) elpaca--conditions)
                  (eq (elpaca<-current-step shared) 'elpaca-git--checkout-ref)
                  (memq 'elpaca-git--checkout-ref (elpaca<-build-steps shared)))))
-      (elpaca-block-until e 'source-dir-exists source-dir)
+      (elpaca-block-until e 'elpaca-git--source-ready source-dir)
     (setf (elpaca<-build-steps e)
           (append elpaca-git-default-build-steps (elpaca<-build-steps e)))
     (elpaca-continue e)))
@@ -437,6 +447,14 @@ COMMAND must satisfy `elpaca--make-process' :command SPEC arg, which see."
     "Return ENTRIES for packages with a dirty worktree."
     (cl-remove-if-not #'elpaca-git-worktree-dirty-p entries :key #'caar))
   (add-to-list 'elpaca-ui-search-tags (cons 'dirty 'elpaca-git--tag-dirty)))
+
+(defun elpaca-git--resolve-failed (e)
+  "Fail the source-ready condition for E if checkout is pending."
+  (when (or (eq (elpaca<-current-step e) 'elpaca-git--checkout-ref)
+            (memq 'elpaca-git--checkout-ref (elpaca<-build-steps e)))
+    (elpaca-git--resolve-source-ready e (format "%S failed" (elpaca<-id e)))))
+
+(elpaca-subscribe 'failed #'elpaca-git--resolve-failed)
 
 (provide 'elpaca-git)
 ;;; elpaca-git.el ends here
