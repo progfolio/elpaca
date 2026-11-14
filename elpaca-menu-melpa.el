@@ -27,6 +27,9 @@
 (require 'elpaca)
 (require 'url)
 
+(defconst elpaca-melpa-branch "main"
+  "MELPA branch to pull and checkout.")
+
 (defvar elpaca-menu-melpa--index-cache
   (elpaca--read-file (expand-file-name "melpa.eld" elpaca-cache-directory))
   "MELPA recipe cache.")
@@ -60,9 +63,9 @@
                (append-to-file (point-min) (point-max)
                                (expand-file-name ".git/info/sparse-checkout" path)))
              (elpaca-process-call "git" "remote" "add" "origin" "https://github.com/melpa/melpa.git")
-             (elpaca-process-call "git" "pull" "--depth=1" "origin" "master")
-             (elpaca-process-call "git" "checkout" "master")
-             (elpaca-process-call "git" "branch" "--set-upstream-to" "origin/master" "master")))
+             (elpaca-process-call "git" "pull" "--depth=1" "origin" elpaca-melpa-branch)
+             (elpaca-process-call "git" "checkout" elpaca-melpa-branch)
+             (elpaca-process-call "git" "branch" "--set-upstream-to" (format "origin/%s" elpaca-melpa-branch))))
            (err (car (cl-remove-if #'zerop (delq nil processes) :key #'car))))
       (when err (error "Unable to clone MELPA: %S" err))
       (message "Downloading MELPA recipes...100%%"))))
@@ -71,7 +74,7 @@
   "Update recipes in MELPA menu."
   (let ((default-directory (expand-file-name "melpa/" elpaca-cache-directory)))
     (message "Downloading MELPA...")
-    (elpaca-with-process-call ("git" "pull")
+    (elpaca-with-process-call ("git" "pull" "origin" elpaca-melpa-branch)
       (message "%s" (if success "Downloading MELPA...100%" stderr)))))
 
 (defun elpaca-menu-melpa--convert (file metadata)
